@@ -1,0 +1,21 @@
+{
+    "server": {
+        "listen": "0.0.0.0",
+        "port": 8000,
+        "use_ssl": false,
+        "ssl_certificate": "cert/ssl-server-cert.pem"
+    },
+
+    "users": [
+        {
+            "name": "user",
+            "password_hash": "6d0007e52f7afb7d5a0650b0ffb8a4d1",
+            "home": "/home/user"
+        },
+        {
+            "name": "guest",
+            "password_hash": "",
+            "home": "/home/guest"
+        }
+    ]
+}

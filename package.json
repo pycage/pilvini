@@ -1,0 +1,7 @@
+{
+  "name": "pilvini",
+  "version": "0.1.0",
+  "dependencies": {
+    "lwip": "0.0.9"
+  }
+}
