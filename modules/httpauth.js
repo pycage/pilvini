@@ -38,6 +38,8 @@ exports.Authenticator = function(authType, users)
     {
         if (m_authType === "Basic")
         {
+            console.log("[" + new Date().toLocaleString() + "] [HttpBasicAuth] " +
+                        "AUTH REQUEST");
             response.writeHead(401,
                                {
                                    "WWW-Authenticate": "Basic realm=\"" + realm + "\""

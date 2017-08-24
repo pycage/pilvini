@@ -15,7 +15,7 @@ const modCrypto = require("crypto"),
       modLockStore = require("./modules/lockstore.js"),
       modMime = require("./modules/mime.js");
 
-const VERSION = "0.1.0";
+const VERSION = "0.1.0rc";
 
 console.debug = function(msg)
 {
@@ -262,7 +262,7 @@ function handleRequest(request, response)
                        {
                            if (code === 206 && to !== -1)
                            {
-                               console.log("Ranged GET " + "bytes " + from + "-" + to + "/" + size);
+                               console.debug("Ranged GET " + "bytes " + from + "-" + to + "/" + size);
                                response.setHeader("Content-Range", "bytes " + from + "-" + to + "/" + size);
                            }
                            response.setHeader("Content-Length", out.length);
