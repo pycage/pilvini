@@ -69,7 +69,8 @@ function loadNextThumbnail(forLocation, images)
         beforeSend: function (xhr) { xhr.overrideMimeType("text/plain; charset=x-user-defined"); }
     };
 
-    $.ajax(url, settings).done(function (data, status, xhr)
+    $.ajax(url, settings)
+    .done(function (data, status, xhr)
     {
         var contentType = "image/png"; //xhr.getResponseHeader("Content-Type");
 
@@ -86,7 +87,9 @@ function loadNextThumbnail(forLocation, images)
 
         var speed = Math.ceil((data.length / 1024) / ((then - now) / 1000.0));
         console.log("Loading took " + (then - now) + " ms, size: " + data.length + " B (" + speed + " kB/s).");
-
+    })
+    .always(function ()
+    {
         if (window.location.href === forLocation)
         {
             loadNextThumbnail(forLocation, images);
