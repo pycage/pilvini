@@ -1,16 +1,17 @@
 # pilvini
 ## X-Platform Personal Cloud Drive
 
-> pilvi [Finnish: cloud]<br>
-> -ni   [Finnish: my]<br>
-> Example: pilvini - my cloud
+> [Finnish]<br>
+> **-ni** *(poss. suff.)* my ~<br>
+> **pilvi** *(n.)* cloud<br>
+> **pilvini** my cloud
 
 *pilvini* is a cloud drive service implementing the WebDAV protoctol running on
 Node.js. But this is not all: *pilvini* also features a fancy HTML5 web
 interface in case you cannot or want not use a WebDAV client.
 
-The purpose of *pilvini* is to make your filesystem accessible to you worldwide,
-SSL-encrypted and guarded by authorization.
+The purpose of *pilvini* is to make your home filesystem accessible to you worldwide
+in a secure way, SSL-encrypted and guarded by authorization.
 
 *pilvini* runs on whatever platform Node.js is running.
 
@@ -46,6 +47,7 @@ text editor:
    * `use_ssl` Set this value to `true` to enable SSL secure connections.
      For SSL, you will also have to supply a server certificate.
    * `ssl_certificate` The path to the SSL server certificate if SSL is enabled.
+   * `ssl_key` The path to the SSL server private key if SSL is enabled.
 
  * `users` This is the users configuration section. You can add as much users
    as you like.
@@ -54,6 +56,9 @@ text editor:
      one easily with `echo -n "<password>" | md5`, or use an online MD5 hash
      generator, such as [http://www.adamek.biz/md5-generator.php].
    * `home` This is the path that *pilvini* makes accessible.
+
+ * `global` This is the section for global settings.
+   * `debug` Set this value to true to enable verbose debug logging.
 
 If you are giving other users access to *pilvini*, you should make sure that
 none of them can access its `config.json` file. While the MD5-hashed passwords
@@ -73,7 +78,7 @@ and *pilvini* welcomes you and is ready for incoming connections:
   ( Pilvini ).--.  | (c) 2017 Martin Grimme
  (  Cloud Drive  ) | https://github.com/pycage/pilvini
   ```````````````  |
-Listening....      | Port 8000
+Listening....      | Port 7443 (SSL)
 ```
 
 ## Usage

@@ -73,7 +73,6 @@ function readStats(path, callback)
             var file = files[i];
             modFs.stat(modPath.join(path, file), function (file) { return function (err, stat)
             {
-                console.log(file + " " + stat);
                 result.push([file, stat]);
                 if (result.length === files.length)
                 {
@@ -124,7 +123,6 @@ function makeThumbnail(icon, path, file)
 {
     var imageFile = modPath.join(path, file);
 
-    console.log("Thumbnail: " + file);
     return "<img data-x-thumbnail='/::thumbnail" + encodeURI(imageFile) + "' src='/::res/file-icons/empty.png'" +
            " style='width: 80px; background-image: url(" + icon + ");" +
            " background-size: 48px;" +
@@ -402,8 +400,8 @@ function makeIndex(href, home, callback)
     var path = decodeURI(href);
     var fullPath = modPath.join(home, decodeURI(href));
 
-    console.log("User Path: " + path);
-    console.log("Full path: " + fullPath);
+    console.debug("User Path: " + path + "\n" +
+                  "Full path: " + fullPath);
 
     prepareClipboard(home, function ()
     {

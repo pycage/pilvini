@@ -73,6 +73,8 @@ exports.Authenticator = function(authType, users)
         }
         else
         {
+            console.log("[" + new Date().toLocaleString() + "] [HttpBasicAuth] " +
+                        "DENY user = " + userName);
             return null;
         }
     };

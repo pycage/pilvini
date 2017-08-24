@@ -17,21 +17,30 @@ const modCrypto = require("crypto"),
 
 const VERSION = "0.1.0";
 
+console.debug = function(msg)
+{
+    if (config.global && config.global.debug)
+    {
+        console.log("[" + new Date().toLocaleString() + "] [DEBUG] >>>\n" +
+                    msg +
+                    "\n<<<");
+    }
+};
+
 function getFile(response, path)
 {
     modFs.readFile(path, function (err, data)
     {
         if (err)
         {
-            response.writeHead(404, "Not found");
+            response.writeHeadLogged(404, "Not found");
             response.end();
         }
         else
         {
-            //console.log("-> " + Buffer.byteLength(data, "utf-8"));
             response.setHeader("Content-Length", Buffer.byteLength(data, "utf-8"));
             response.setHeader("Content-Type", modMime.mimeType(path));
-            response.writeHead(200, "OK");
+            response.writeHeadLogged(200, "OK");
             response.write(data);
             response.end();
         }
@@ -68,14 +77,28 @@ function readRequest(request, callback)
 
 function handleRequest(request, response)
 {
-    console.log("\n[" + new Date().toLocaleString() + "] " + request.connection.remoteAddress + ": " + request.method + " " + request.url);
+    // check for authorization
+    var authUser = basicAuth.authorize(request);
+    if (! authUser)
+    {
+        basicAuth.requestAuthorization(response, "Users");
+        response.write("Authorization required.");
+        response.end();
+        return;
+    }
+
+    response.request = request;
+    response.user = authUser;
+    response.writeHeadLogged = function (code, status)
+    {
+        console.log("[" + new Date().toLocaleString() + "] [Server] " +
+                    "[client " + this.user + "@" + this.connection.remoteAddress + ":" + this.connection.remotePort + "] " +
+                    "< " + this.request.method + " " + this.request.url + " : " +
+                    "HTTP " + code + " " + status);
+        this.writeHead(code, status);
+    };
 
     var urlObj = modUrl.parse(request.url, true);
-
-    for (var header in request.headers)
-    {
-        console.log("  - " + header + " = " + request.headers[header]);
-    }
 
     /*
     console.log("href: " + urlObj.href +
@@ -83,24 +106,20 @@ function handleRequest(request, response)
                 " search: " + urlObj.search);
     for (var key in urlObj.query)
     {
-      console.log("key: " + key + " value: " + urlObj.query[key]);
+      console.debug("key: " + key + " value: " + urlObj.query[key]);
     }
     */
 
-    // check for authorization
-    var authUser = basicAuth.authorize(request);
-    if (authUser)
+    console.log("[" + new Date().toLocaleString() + "] [Server] " +
+                "[client " + authUser + "@" + request.connection.remoteAddress + ":" + request.connection.remotePort + "] " +
+                "> " + request.method + " " + request.url);
+
+    var headerString = "Header:";
+    for (var header in request.headers)
     {
-        //console.log("Access granted");
+        headerString += "\n - " + header + " = " + request.headers[header];
     }
-    else
-    {
-        console.log("Authorization requested by: " + request.connection.remoteAddress);
-        basicAuth.requestAuthorization(response, "Users");
-        response.write("Authorization required.");
-        response.end();
-        return;
-    }
+    console.debug(headerString);
 
     var userHome = ".";
     for (var i = 0; i < config.users.length; ++i)
@@ -130,7 +149,7 @@ function handleRequest(request, response)
         davSession.copy(urlObj.pathname, destinationUrlObj.pathname, function(code, status)
         {
             // TODO: multistatus
-            response.writeHead(code, status);
+            response.writeHeadLogged(code, status);
             response.end();
         });
     }
@@ -139,25 +158,26 @@ function handleRequest(request, response)
     	davSession.del(urlObj.pathname,
     			       function(code, status)
     			       {
-    					   response.writeHead(code, status);
+                           response.writeHeadLogged(code, status);
     					   response.end();
     			       });
     }
     else if (request.method === "GET")
     {
-        if (urlObj.pathname.indexOf("/index.html") === urlObj.pathname.length - 11)
+        if (urlObj.pathname.indexOf("/index.html") !== -1 &&
+                urlObj.pathname.indexOf("/index.html") === urlObj.pathname.length - 11)
         {
             modBrowser.makeIndex(modPath.dirname(urlObj.pathname), userHome, function (ok, data)
             {
                 if (! ok)
                 {
-                    response.writeHead(404, "Not found");
+                    response.writeHeadLogged(404, "Not found");
                     response.end();
                 }
                 else
                 {
                     response.setHeader("Content-Length", Buffer.byteLength(data, "utf-8"));
-                    response.writeHead(200, "OK");
+                    response.writeHeadLogged(200, "OK");
                     response.write(data);
                     response.end();
                 }
@@ -198,8 +218,8 @@ function handleRequest(request, response)
                                     console.log("Image batch end: " + imageFile);
                                     if (err)
                                     {
-                                        console.log(err);
-                                        response.writeHead(500, "Internal Server Error");
+                                        console.error(err);
+                                        response.writeHeadLogged(500, "Internal Server Error");
                                         response.end();
 
                                     }
@@ -211,8 +231,8 @@ function handleRequest(request, response)
                             }
                             else
                             {
-                                console.log(err);
-                                response.writeHead(500, "Internal Server Error");
+                                console.error(err);
+                                response.writeHeadLogged(500, "Internal Server Error");
                                 response.end();
                             }
                         });
@@ -247,8 +267,8 @@ function handleRequest(request, response)
                            }
                            response.setHeader("Content-Length", out.length);
                            response.setHeader("Content-Type", modMime.mimeType(urlObj.pathname));
-                           console.log("Content-Type: " + modMime.mimeType(urlObj.pathname));
-                           response.writeHead(code, status);
+                           console.debug("Content-Type: " + modMime.mimeType(urlObj.pathname));
+                           response.writeHeadLogged(code, status);
                            response.write(out);
                            response.end();
                        });
@@ -271,12 +291,12 @@ function handleRequest(request, response)
     	                var depth = request.headers.depth || "infinity";
     	                var timeout = request.headers.timeout || "";
     	                
-    				  	console.log("\n" + xml + "\n");
+                        console.debug(xml);
     				  	
     				  	davSession.lock(urlObj.pathname, depth, timeout,
     				  	                function(code, status)
     				  	                {
-    				  	                    response.writeHead(code, status);
+                                            response.writeHeadLogged(code, status);
     				  	                    response.end();
     				  	                });
     			    });
@@ -286,7 +306,7 @@ function handleRequest(request, response)
     	davSession.mkcol(urlObj.pathname,
     					 function(code, status)
     					 {
-    					     response.writeHead(code, status);
+                             response.writeHeadLogged(code, status);
     					     response.end();
     					 });
     }
@@ -297,7 +317,7 @@ function handleRequest(request, response)
         davSession.move(urlObj.pathname, destinationUrlObj.pathname, function(code, status)
         {
             // TODO: multistatus
-            response.writeHead(code, status);
+            response.writeHeadLogged(code, status);
             response.end();
         });
     }
@@ -306,7 +326,7 @@ function handleRequest(request, response)
         readRequest(request,
                     function(xml)
                     {
-                        console.log(xml);
+                        console.debug(xml);
                         response.setHeader("DAV", "2");
                         response.end();
                     });
@@ -319,15 +339,15 @@ function handleRequest(request, response)
     {
         readRequest(request, function(xml)
         {
-            console.log("\n" + xml);
+            console.debug(xml);
             var depth = request.headers.depth || "infinity";
                         
             davSession.propfind(urlObj.pathname, depth, xml,
                                 function(code, status, out)
             {
-                console.log(code + " " + status + " " + out);
+                console.debug(out);
                 //response.setHeader("content-encoding", "gzip");
-                response.writeHead(code, status);
+                response.writeHeadLogged(code, status);
                 
                 /*
                 var buffer = new Buffer(out, "binary");
@@ -347,8 +367,7 @@ function handleRequest(request, response)
     {
         davSession.put(urlObj.pathname, request, function(code, status)
         {
-            console.log(code + " " + status);
-            response.writeHead(code, status);
+            response.writeHeadLogged(code, status);
             response.end();
         });
         /*
@@ -361,7 +380,7 @@ function handleRequest(request, response)
     							  	   function(code, status)
     							  	   {
     								   	   console.log(code + " " + status);
-    								   	   response.writeHead(code, status);
+                                           response.writeHeadLogged(code, status);
     								   	   response.end();
     							  	   });
     				});
@@ -369,8 +388,7 @@ function handleRequest(request, response)
     }
     else
     {
-    	console.log("Unsupported method: " + request.method);
-    	response.writeHead(405, "Method not allowed");
+        response.writeHeadLogged(405, "Method Not Allowed");
     	response.end();
     }
 }
@@ -388,8 +406,9 @@ var basicAuth = new modHttpAuth.Authenticator("Basic", authUsers);
 var server;
 if (config.server.use_ssl)
 {
+    var sslServerKey = modFs.readFileSync(modPath.join(__dirname, config.server.ssl_key), "utf8");
     var sslServerCert = modFs.readFileSync(modPath.join(__dirname, config.server.ssl_certificate), "utf8");
-    server = modHttps.createServer({ key: sslServerCert, cert: sslServerCert });
+    server = modHttps.createServer({ key: sslServerKey, cert: sslServerCert });
 }
 else
 {

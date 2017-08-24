@@ -1,9 +1,10 @@
 {
     "server": {
         "listen": "0.0.0.0",
-        "port": 8000,
-        "use_ssl": false,
-        "ssl_certificate": "cert/ssl-server-cert.pem"
+        "port": 7443,
+        "use_ssl": true,
+        "ssl_certificate": "cert/www.example.com.cert",
+        "ssl_key": "cert/www.example.com.key"
     },
 
     "users": [
@@ -17,5 +18,9 @@
             "password_hash": "",
             "home": "/home/guest"
         }
-    ]
+    ],
+
+    "global": {
+        "debug": false
+    }
 }

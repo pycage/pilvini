@@ -151,7 +151,7 @@ var DavSession = function(home)
             {
                 if (err)
                 {
-                    console.log(err);
+                    console.error(err);
                     callback("Internal Server Error");
                 }
                 else if (stats.isDirectory())
@@ -160,8 +160,8 @@ var DavSession = function(home)
                     {
                         if (err)
                         {
-                            console.log(err);
-                            callback("Failed to read directory");
+                            console.error(err);
+                            callback("Forbidden");
                         }
                         else
                         {
@@ -169,8 +169,8 @@ var DavSession = function(home)
                             {
                                 if (err)
                                 {
-                                    console.log(err);
-                                    callback("Failed to create directory");
+                                    console.error(err);
+                                    callback("Forbidden");
                                 }
                                 else
                                 {
@@ -207,29 +207,19 @@ var DavSession = function(home)
         var path = pathFromHref(href, m_home);
         var destinationPath = pathFromHref(destinationHref, m_home);
 
-        console.log("Copy: " + path + " -> " + destinationPath);
+        console.debug("Copy: " + path + " -> " + destinationPath);
 
         recursiveCopy(path, destinationPath, function (err)
         {
             if (err)
             {
-                resultCallback(401, "Not Permitted");
+                resultCallback(401, "Forbidden");
             }
             else
             {
                 resultCallback(201, "Copied");
             }
         });
-
-        /*
-        // TODO: error handling
-        var reader = modFs.createReadStream(path);
-        reader.on("end", function ()
-        {
-            resultCallback(201, "Copied");
-        });
-        reader.pipe(modFs.createWriteStream(destinationPath));
-        */
     };
 
     that.del = function(href, resultCallback)
@@ -242,7 +232,7 @@ var DavSession = function(home)
             {
                 if (err)
                 {
-                    console.log(err);
+                    console.error(err);
                     callback("Internal Server Error");
                 }
                 else if (stats.isDirectory())
@@ -251,7 +241,7 @@ var DavSession = function(home)
                     {
                         if (err)
                         {
-                            console.log(err);
+                            console.error(err);
                             callback("Failed to read directory");
                         }
                         else
@@ -262,12 +252,12 @@ var DavSession = function(home)
                                 {
                                     if (err)
                                     {
-                                        console.log(err.message);
-                                        callback("Not permitted");
+                                        console.error(err);
+                                        callback("Forbidden");
                                     }
                                     else
                                     {
-                                        console.log("Deleted " + path);
+                                        console.debug("Deleted " + path);
                                         callback();
                                     }
                                 });
@@ -289,12 +279,12 @@ var DavSession = function(home)
                     {
                         if (err)
                         {
-                            console.log(err.message);
-                            callback("Not permitted");
+                            console.error(err);
+                            callback("Forbidden");
                         }
                         else
                         {
-                            console.log("Deleted " + path);
+                            console.debug("Deleted " + path);
                             callback();
                         }
                     });
@@ -306,11 +296,11 @@ var DavSession = function(home)
         {
             if (err)
             {
-                resultCallback(403, "Not Permitted");
+                resultCallback(403, "Forbidden");
             }
             else
             {
-                console.log("Deleted " + path);
+                console.debug("Deleted " + path);
                 resultCallback(204, "No Content");
             }
         });
@@ -319,7 +309,7 @@ var DavSession = function(home)
     that.get = function(href, range, resultCallback)
     {
         var path = pathFromHref(href, m_home);
-        console.log("Get for " + path + ", range: " + range);
+        console.debug("Get for " + path + ", range: " + range);
 
         // TODO: compression and chunked
         
@@ -329,7 +319,7 @@ var DavSession = function(home)
             {
                 if (err)
                 {
-                    resultCallback(403, "Not permitted", 0, -1, 0, "");
+                    resultCallback(403, "Forbidden", 0, -1, 0, "");
                     return;
                 }
 
@@ -338,7 +328,7 @@ var DavSession = function(home)
                 modFs.read(fd, buffer, 0, range[1] - range[0] + 1, range[0],
                         function(err, bytesRead, buffer)
                 {
-                    console.log("Bytes read: " + bytesRead);
+                    console.debug("Bytes read: " + bytesRead);
                     resultCallback(206, "Partial Content",
                             range[0], range[1],
                             modFs.statSync(path).size,
@@ -352,7 +342,7 @@ var DavSession = function(home)
             {
                 if (err)
                 {
-                    resultCallback(403, "Not permitted", 0, -1, 0, "");
+                    resultCallback(403, "Forbidden", 0, -1, 0, "");
                 }
                 else
                 {
@@ -413,7 +403,7 @@ var DavSession = function(home)
         var path = pathFromHref(href, m_home);
         var destinationPath = pathFromHref(destinationHref, m_home);
 
-        console.log("Move: " + path + " -> " + destinationPath);
+        console.debug("Move: " + path + " -> " + destinationPath);
         
         modFs.rename(path, destinationPath, function(err)
         {
@@ -468,15 +458,14 @@ var DavSession = function(home)
             }
         }
 
-        console.log("Props: " + props);
+        console.debug("Props: " + props);
 
         var path = pathFromHref(href, m_home);
-        console.log("Propfind for " + path + "\n");
         modFs.stat(path, function(err, stats)
         {
             if (err)
             {
-                resultCallback(404, "Resource not available", "");
+                resultCallback(404, "Resource Not Available", "");
             }
             else if (stats.isDirectory() && depth !== "0")
             {
@@ -529,18 +518,18 @@ var DavSession = function(home)
         {
             if (err)
             {
-                console.log("Failed to write file");
+                console.error(err);
                 resultCallback(409, "Conflict");
                 return;
             }
 
-            console.log("Writing file " + path);
+            console.debug("Writing file " + path);
             
             var writeStream = modFs.createWriteStream("", { "fd": fd });
             
             stream.on("data", function(data)
             {
-                //console.log("Writing chunk: " + data.length + " bytes");
+                console.debug("Writing chunk: " + data.length + " bytes");
                 writeStream.write(data);
             });
             
@@ -551,7 +540,7 @@ var DavSession = function(home)
             
             writeStream.on("finish", function()
             {
-                console.log("File written");
+                console.debug("File written");
                 resultCallback(200, "OK");
             });
         });
