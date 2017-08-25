@@ -221,7 +221,7 @@ function makeHtmlHead()
               "  <meta http-equiv='Content-Type' content='text/html; charset=utf-8'></meta>" +
               "  <meta name='viewport' content='width=device-width, initial-scale=1'></meta>" +
               "  <link rel='stylesheet' href='https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css'/>" +
-              "  <script src='https://code.jquery.com/jquery-2.2.4.min.js'></script>" +
+              "  <script src='https://code.jquery.com/jquery-2.1.4.min.js'></script>" +
               "  <script src='https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js'></script>" +
               "  <script src='/::res/browser/index.js'></script>" +
               "</head>";
