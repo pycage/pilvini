@@ -1,10 +1,11 @@
 "use strict";
 
+const attempt = require("./modules/attempt.js").attempt;
+
 const modCrypto = require("crypto"),
       modFs = require("fs"),
       modHttp = require("http"),
       modHttps = require("https"),
-      modLwip = require("lwip"),
       modPath = require("path"),
       modUrl = require("url"),
       modZlib = require("zlib"),
@@ -13,7 +14,8 @@ const modCrypto = require("crypto"),
       modBrowser = require("./modules/browser.js"),
       modDav = require("./modules/dav.js"),
       modLockStore = require("./modules/lockstore.js"),
-      modMime = require("./modules/mime.js");
+      modMime = require("./modules/mime.js"),
+      modThumbnail = attempt(function () { return require("./modules/thumbnail.js"); });
 
 const VERSION = "0.1.0rc";
 
@@ -206,34 +208,18 @@ function handleRequest(request, response)
                 {
                     modFs.mkdir(thumbDir, function (err)
                     {
-                        modLwip.open(imageFile, function (err, image)
+                        modThumbnail.makeImageThumbnail(imageFile, thumbFile, function (err)
                         {
-                            if (! err)
-                            {
-                                var scale = Math.max(80 / image.width(), 80 / image.height());
-
-                                console.log("Image batch start: " + imageFile + " to " + thumbFile);
-                                image.batch().scale(scale).writeFile(thumbFile, function (err)
-                                {
-                                    console.log("Image batch end: " + imageFile);
-                                    if (err)
-                                    {
-                                        console.error(err);
-                                        response.writeHeadLogged(500, "Internal Server Error");
-                                        response.end();
-
-                                    }
-                                    else
-                                    {
-                                        getFile(response, thumbFile);
-                                    }
-                                });
-                            }
-                            else
+                            if (err)
                             {
                                 console.error(err);
                                 response.writeHeadLogged(500, "Internal Server Error");
                                 response.end();
+
+                            }
+                            else
+                            {
+                                getFile(response, thumbFile);
                             }
                         });
                     });

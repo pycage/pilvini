@@ -1,8 +1,11 @@
 "use strict";
 
+const attempt = require("./attempt.js").attempt;
+
 const modFs = require("fs"),
       modPath = require("path"),
-      modMime = require("./mime.js");
+      modMime = require("./mime.js"),
+      modThumbnail = attempt(function () { return require("./thumbnail.js"); });
 
 const MIME_INFO = {
     "application/java-archive": { "icon": "package.png" },
@@ -155,7 +158,7 @@ function makeItem(path, file, stat, active)
     else if (mimeType.indexOf("image/") == 0)
     {
         href = "#";
-        if (mimeType === "image/svg+xml")
+        if (! modThumbnail || mimeType === "image/svg+xml")
         {
             iconHtml = makeIcon(icon);
         }
