@@ -49,19 +49,24 @@ text editor:
    * `ssl_certificate` The path to the SSL server certificate if SSL is enabled.
    * `ssl_key` The path to the SSL server private key if SSL is enabled.
 
+ * `authentication` This is the authentication configuration section.
+   * `method` The HTTP authentication method to use. Either `basic` or `digest`.
+   * `realm` The name of the HTTP authentication realm.
+
  * `users` This is the users configuration section. You can add as much users
    as you like.
    * `name` The login name of the user.
-   * `password_hash` A MD5 hash of the user's login password. You can obtain
-     one easily with `echo -n "<password>" | md5`, or use an online MD5 hash
-     generator, such as [http://www.adamek.biz/md5-generator.php].
+   * `password_hash` A MD5 hash of the user's login name, realm, and password.
+     You can obtain one easily with `echo -n "<user>:<realm>:<password>" | md5`,
+     or use an online MD5 hash generator, such as
+     [http://www.adamek.biz/md5-generator.php].
    * `home` This is the path that *pilvini* makes accessible.
 
  * `global` This is the section for global settings.
    * `debug` Set this value to true to enable verbose debug logging.
 
 If you are giving other users access to *pilvini*, you should make sure that
-none of them can access its `config.json` file. While the MD5-hashed passwords
+none of them can access its `config.json` file. While the hashed passwords
 cannot be used to reconstruct the password, it is possible to find a matching
 string by brute-force or to construct one mathematically!
 
@@ -91,3 +96,22 @@ that supports HTML5.
 ```
 https://<address>:<port>/index.html
 ```
+
+## Windows Explorer and WebDAV
+
+While Windows Explorer theoretically supports the WebDAV protocol for mounting
+remote shares, it is in practise very picky.
+
+ * It will not accept a WebDAV server with a self-signed SSL certificate,
+   unless that certificate has been added to Windows' trust store manually.
+
+ * It will not accept a WebDAV server over plain HTTP (no SSL) with the basic
+   authentication method. Configure the server to use the digest method instead,
+   or use SSL.
+
+ * It is very chatty and moving the mouse cursor over folders can cause a lot of
+   network traffic.
+
+ * For every request, it has to be reminded to send the authentication header.
+   As a consequence of this it sends every request twice. First unauthorized,
+   then authorized.

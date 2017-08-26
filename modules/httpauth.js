@@ -2,14 +2,43 @@
 
 const modCrypto = require("crypto");
 
-exports.Authenticator = function(authType, users)
+function md5(data)
+{
+    return modCrypto.createHash("md5").update(data).digest("hex");
+}
+
+function parseDigestParameters(s)
+{
+    var result = { };
+
+    var parts = s.split(",");
+    for (var i = 0; i < parts.length; ++i)
+    {
+        var part = parts[i];
+        var pos = part.indexOf("=");
+        if (pos !== -1)
+        {
+            var key = part.substr(0, pos).trim();
+            var value = part.substr(pos + 1).trim();
+            if (value.startsWith("\"") && value.endsWith("\""))
+            {
+                value = value.substr(1, value.length - 2);
+            }
+            result[key] = value;
+        }
+    }
+    return result;
+}
+
+exports.Authenticator = function(authType, realm, users)
 {
     var that = this;
     var m_authType = authType;
+    var m_realm = realm;
     var m_users = users;
 
-    /* Authorizes the given request and returns whether the authorization was
-     * successful.
+    /* Authorizes the given request and returns the user name if the
+     * authorization was successful. Returns null otherwise.
      */
     that.authorize = function(request)
     {
@@ -24,7 +53,7 @@ exports.Authenticator = function(authType, users)
         }
         else if (m_authType === "Digest")
         {
-            return digestAuth(authHeader);
+            return digestAuth(request, authHeader);
         }
         else
         {
@@ -34,7 +63,7 @@ exports.Authenticator = function(authType, users)
 
     /* Requests authorization on the given response for the given realm.
      */
-    that.requestAuthorization = function(response, realm)
+    that.requestAuthorization = function(response)
     {
         if (m_authType === "Basic")
         {
@@ -42,7 +71,21 @@ exports.Authenticator = function(authType, users)
                         "AUTH REQUEST");
             response.writeHead(401,
                                {
-                                   "WWW-Authenticate": "Basic realm=\"" + realm + "\""
+                                   "WWW-Authenticate": "Basic realm=\"" + m_realm + "\""
+                               });
+        }
+        else if (m_authType === "Digest")
+        {
+            console.log("[" + new Date().toLocaleString() + "] [HttpDigestAuth] " +
+                        "AUTH REQUEST");
+            var nonce = Math.random();
+            var opaque = md5(m_realm);
+            response.writeHead(401,
+                               {
+                                   "WWW-Authenticate": "Digest realm=\"" + m_realm + "\", " +
+                                                       "qop=\"auth\", " +
+                                                       "nonce=\"" + nonce + "\", " +
+                                                       "opaque=\"" + opaque + "\""
                                });
         }
     };
@@ -64,10 +107,7 @@ exports.Authenticator = function(authType, users)
 
         var userName = tokenParts[0];
         var password = tokenParts[1];
-
-        var hash = modCrypto.createHash("md5");
-        hash.update(password);
-        var passwordHash = hash.digest("hex");
+        var passwordHash = md5(userName + ":" + m_realm + ":" + password);
 
         if (m_users[userName] && (m_users[userName] === "" || m_users[userName] === passwordHash))
         {
@@ -81,9 +121,36 @@ exports.Authenticator = function(authType, users)
         }
     };
 
-    var digestAuth = function(authHeader)
+    var digestAuth = function(request, authHeader)
     {
-        // TODO: implement
-        return null;
+        if (authHeader.indexOf("Digest ") != 0)
+        {
+            return null;
+        }
+
+        var params = parseDigestParameters(authHeader.replace(/^Digest /, ""));
+
+        if (! m_users[params.username])
+        {
+            // unknown user
+            console.log("[" + new Date().toLocaleString() + "] [HttpDigestAuth] " +
+                        "DENY user = " + params.username);
+            return null;
+        }
+
+        var ha1 = m_users[params.username];
+        var ha2 = md5(request.method + ":" + params.uri);
+        var expected = md5([ha1, params.nonce, params.nc, params.cnonce, params.qop, ha2].join(":"));
+
+        if (params.response !== expected)
+        {
+            // invalid client response
+            console.log("[" + new Date().toLocaleString() + "] [HttpDigestAuth] " +
+                        "DENY user = " + params.username);
+            return null;
+        }
+
+        // passed
+        return params.username;
     };
 };

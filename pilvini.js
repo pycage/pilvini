@@ -79,11 +79,24 @@ function readRequest(request, callback)
 
 function handleRequest(request, response)
 {
+    /*
+    // obtain or create session
+    var cookie = modCookies.getCookie(request, "SessionId");
+    if (! cookie.name())
+    {
+        modCookies.setCookie(response, new modCookies.Cookie("SessionId", "42"));
+    }
+    */
+
     // check for authorization
-    var authUser = basicAuth.authorize(request);
+    var authUser = httpAuth.authorize(request);
     if (! authUser)
     {
-        basicAuth.requestAuthorization(response, "Users");
+        console.log("[" + new Date().toLocaleString() + "] [Server] " +
+                    "[" + request.connection.remoteAddress + ":" + request.connection.remotePort + "] " +
+                    "> " + "UNAUTHORIZED " + request.method + " " + request.url);
+
+        httpAuth.requestAuthorization(response, "Users");
         response.write("Authorization required.");
         response.end();
         return;
@@ -132,15 +145,6 @@ function handleRequest(request, response)
             break;
         }
     }
-
-    // obtain or create session
-    /*
-    var cookie = modCookies.getCookie(request, "SessionId");
-    if (! cookie.name())
-    {
-        modCookies.setCookie(response, new modCookies.Cookie("SessionId", "42"));
-    }
-    */
 
     var davSession = new modDav.DavSession(userHome);
 
@@ -356,21 +360,6 @@ function handleRequest(request, response)
             response.writeHeadLogged(code, status);
             response.end();
         });
-        /*
-    	readRequest(request,
-    				function(putData)
-    				{
-    					console.log("Writing " + putData.length + " bytes");
-    					
-    					davSession.put(urlObj.pathname, putData,
-    							  	   function(code, status)
-    							  	   {
-    								   	   console.log(code + " " + status);
-                                           response.writeHeadLogged(code, status);
-    								   	   response.end();
-    							  	   });
-    				});
-    				*/
     }
     else
     {
@@ -387,7 +376,20 @@ for (var i = 0; i < config.users.length; ++i)
     var user = config.users[i];
     authUsers[user.name] = user.password_hash;
 }
-var basicAuth = new modHttpAuth.Authenticator("Basic", authUsers);
+
+var httpAuth;
+if (config.authentication.method === "basic")
+{
+    httpAuth = new modHttpAuth.Authenticator("Basic", "Users", authUsers);
+}
+else if (config.authentication.method === "digest")
+{
+    httpAuth = new modHttpAuth.Authenticator("Digest", "Users", authUsers);
+}
+else
+{
+    throw "Invalid authentication method '" + config.authentication.method + "'";
+}
 
 var server;
 if (config.server.use_ssl)

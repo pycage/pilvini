@@ -7,10 +7,15 @@
         "ssl_key": "cert/www.example.com.key"
     },
 
+    "authentication": {
+        "method": "basic",
+        "realm": "pilvini"
+    },
+
     "users": [
         {
             "name": "user",
-            "password_hash": "6d0007e52f7afb7d5a0650b0ffb8a4d1",
+            "password_hash": "cec87dbff57453376e76e84fa17ab292",
             "home": "/home/user"
         },
         {
