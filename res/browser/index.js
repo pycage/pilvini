@@ -27,12 +27,6 @@ function closeMoreMenu(callback)
     $("#more-menu").popup("close");
 }
 
-function previewImage(url)
-{
-    $("#preview-image").attr("src", url);
-    $.mobile.navigate("#preview-page", { "transition": "fade" });
-}
-
 function loadThumbnails(page)
 {
     console.log("Location: " + window.location.href);

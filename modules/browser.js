@@ -15,14 +15,14 @@ const MIME_INFO = {
     "application/x-iso9660-image": { "icon": "optical.png" },
     "application/zip": { "icon": "package.png" },
     "audio/mp3": { "icon": "audio.png" },
-    "image/gif": { "icon": "image.png" },
-    "image/jpeg": { "icon": "image.png" },
-    "image/png": { "icon": "image.png" },
-    "image/svg+xml": { "icon": "image.png" },
+    "image/gif": { "icon": "image.png", "viewer": "viewImage" },
+    "image/jpeg": { "icon": "image.png", "viewer": "viewImage" },
+    "image/png": { "icon": "image.png", "viewer": "viewImage" },
+    "image/svg+xml": { "icon": "image.png", "viewer": "viewImage" },
     "text/html": { "icon": "html.png" },
     "text/plain": { "icon": "text.png" },
     "text/rtf": { "icon": "document.png" },
-    "text/vcard": { "icon": "contacts.png" },
+    "text/vcard": { "icon": "contacts.png", "viewer": "viewVCard" },
     "video/mp4": { "icon": "video.png" }
 };
 
@@ -138,6 +138,7 @@ function makeItem(path, file, stat, active)
     var out = "";
 
     var mimeType = modMime.mimeType(file);
+    var mimeInfo = MIME_INFO[mimeType];
     var name = file;
     var icon = getIcon(mimeType);
     var href = "";
@@ -146,6 +147,18 @@ function makeItem(path, file, stat, active)
     var action = "";
 
     var iconHtml = "";
+
+    if (active && mimeInfo && mimeInfo.viewer)
+    {
+        action = "onclick='" + mimeInfo.viewer +
+                "(\"" + encodeURI(file) + "\");'";
+        href="#";
+    }
+    else
+    {
+        href = active ? encodeURI(file)
+                      : "";
+    }
 
     if (stat.isDirectory())
     {
@@ -167,15 +180,11 @@ function makeItem(path, file, stat, active)
             iconHtml = makeThumbnail(icon, path, file);
         }
 
-        action = active ? "onclick='previewImage(\"" + encodeURI(file) + "\");'"
-                        : "";
         info = makeInfo(file, stat);
         ajaxMode = "data-ajax='false'";
     }
     else
     {
-        href = active ? encodeURI(file)
-                      : "";
         info = makeInfo(file, stat);
         ajaxMode = "data-ajax='false'";
         iconHtml = makeIcon(icon);
@@ -227,6 +236,8 @@ function makeHtmlHead()
               "  <script src='https://code.jquery.com/jquery-2.1.4.min.js'></script>" +
               "  <script src='https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js'></script>" +
               "  <script src='/::res/browser/index.js'></script>" +
+              "  <script src='/::res/viewer/image.js'></script>" +
+              "  <script src='/::res/viewer/vcard.js'></script>" +
               "</head>";
 
     return out;
@@ -360,17 +371,16 @@ function makeClipboardPage(clipboardStats)
     return out;
 }
 
-function makePreviewPage()
+function makeViewerPage()
 {
-    var out = "<div data-role='page' id='preview-page'>" +
+    var out = "<div data-role='page' id='viewer-page'>" +
 
               "  <div data-role='header' data-position='fixed' data-tap-toggle='false'>" +
-              "    <h1>Preview</h1>" +
+              "    <h1></h1>" +
               "    <a class='ui-btn ui-btn-icon-left ui-icon-back ui-corner-all' href='#' data-rel='back'>Back</a>" +
               "  </div>" +
 
               "  <div class='ui-content'>" +
-              "    <img id='preview-image' style='width: 100%'/>" +
               "  </div>" +
 
               "</div>";
@@ -389,7 +399,7 @@ function makeHtml(path, stats, clipboardStats)
               "<input id='upload' type='file' multiple style='display: none;'/>" +
 
               makeMainPage(path, stats) +
-              makePreviewPage() +
+              makeViewerPage() +
               makeClipboardPage(clipboardStats) +
 
               "</body>" +
