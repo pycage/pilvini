@@ -380,11 +380,11 @@ for (var i = 0; i < config.users.length; ++i)
 var httpAuth;
 if (config.authentication.method === "basic")
 {
-    httpAuth = new modHttpAuth.Authenticator("Basic", "Users", authUsers);
+    httpAuth = new modHttpAuth.Authenticator("Basic", config.authentication.realm, authUsers);
 }
 else if (config.authentication.method === "digest")
 {
-    httpAuth = new modHttpAuth.Authenticator("Digest", "Users", authUsers);
+    httpAuth = new modHttpAuth.Authenticator("Digest", config.authentication.realm, authUsers);
 }
 else
 {
