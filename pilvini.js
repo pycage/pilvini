@@ -55,11 +55,11 @@ function parseRange(range)
     if (parts[0] === "bytes")
     {
         parts = parts[1].split("-");
-        return [parts[0], parts[1]];
+        return [parseInt(parts[0], 10), parseInt(parts[1] || "-1", 10)];
     }
     else
     {
-        return [0, -1];
+        return [];
     }
 }
 
@@ -195,7 +195,7 @@ function handleRequest(request, response)
             var thumbDir = modPath.join(userHome, ".thumbnails");
 
             var href = urlObj.pathname.substr(12);
-            var hrefUrl = decodeURI(href);
+            var hrefUrl = decodeURIComponent(href);
             var imageFile = modPath.join(userHome, hrefUrl.replace("/", modPath.sep));
 
             var hash = modCrypto.createHash("md5");
@@ -241,25 +241,44 @@ function handleRequest(request, response)
         }
 
         /* Header: range = bytes=248426-252521 */
-        var range = [0, -1];
+        var range = [];
         if (request.headers.range)
         {
             range = parseRange(request.headers.range);
         }
         
         davSession.get(urlObj.pathname, range,
-                       function(code, status, from, to, size, out)
+                       function(code, status, from, to, totalSize, stream, dataSize)
                        {
-                           if (code === 206 && to !== -1)
+                           if (code === 206)
                            {
-                               console.debug("Ranged GET " + "bytes " + from + "-" + to + "/" + size);
-                               response.setHeader("Content-Range", "bytes " + from + "-" + to + "/" + size);
+                               response.setHeader("Content-Range", "bytes " + from + "-" + to + "/" + totalSize);
                            }
-                           response.setHeader("Content-Length", out.length);
+
+                           response.setHeader("Accept-Ranges", "bytes");
+                           response.setHeader("Content-Length", dataSize);
                            response.setHeader("Content-Type", modMime.mimeType(urlObj.pathname));
                            console.debug("Content-Type: " + modMime.mimeType(urlObj.pathname));
                            response.writeHeadLogged(code, status);
-                           response.write(out);
+                           if (stream)
+                           {
+                               stream.pipe(response);
+                           }
+                           else
+                           {
+                               response.end();
+                           }
+                       });
+    }
+    else if (request.method === "HEAD")
+    {
+        davSession.head(urlObj.pathname,
+                       function(code, status, size)
+                       {
+                           response.setHeader("Content-Length", size);
+                           response.setHeader("Content-Type", modMime.mimeType(urlObj.pathname));
+                           console.debug("Content-Type: " + modMime.mimeType(urlObj.pathname));
+                           response.writeHeadLogged(code, status);
                            response.end();
                        });
     }

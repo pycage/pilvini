@@ -25,7 +25,7 @@ var CountToken = function (count, callback)
 
 function pathFromHref(href, home)
 {
-    var hrefDecoded = decodeURI(href);
+    var hrefDecoded = decodeURIComponent(href);
     var path = modPath.join(home, hrefDecoded.replace("/", modPath.sep));
     return path;
 }
@@ -313,30 +313,35 @@ var DavSession = function(home)
 
         // TODO: compression and chunked
         
-        if (range[1] !== -1)
+        modFs.stat(path, function (err, stats)
         {
-            modFs.open(path, "r", function(err, fd)
+            if (err)
             {
-                if (err)
-                {
-                    resultCallback(403, "Forbidden", 0, -1, 0, "");
-                    return;
-                }
+                resultCallback(403, "Forbidden", 0, -1, 0, null, 0);
+                return;
+            }
 
-                // seek
-                var buffer = new Buffer(range[1] - range[0] + 1);
-                modFs.read(fd, buffer, 0, range[1] - range[0] + 1, range[0],
-                        function(err, bytesRead, buffer)
-                {
-                    console.debug("Bytes read: " + bytesRead);
-                    resultCallback(206, "Partial Content",
-                            range[0], range[1],
-                            modFs.statSync(path).size,
-                            buffer.toString("binary"));
-                });
-            });
-        }
-        else
+            var stream = null;
+            if (range.length == 0)
+            {
+                stream = modFs.createReadStream(path);
+                resultCallback(200, "OK", 0, -1, stats.size, stream, stats.size);
+            }
+            else
+            {
+                var from = Math.min(range[0],
+                                    stats.size - 1);
+                var to = Math.min(range[1] !== -1 ? range[1] : stats.size - 1,
+                                  stats.size - 1);
+
+                console.log("Bytes Range: " + from + "-" + to + "/" + stats.size);
+                stream = modFs.createReadStream(path, { start: from, end: to });
+                resultCallback(206, "Partial Content", from, to, stats.size, stream, to - from + 1);
+            }
+        });
+
+        /*
+        if (range.length == 0)
         {
             modFs.readFile(path, function(err, data)
             {
@@ -350,6 +355,78 @@ var DavSession = function(home)
                 }
             });
         }
+        else
+        {
+            modFs.stat(path, function (err, stats)
+            {
+                if (err)
+                {
+                    resultCallback(403, "Forbidden", 0, -1, 0, "");
+                    return;
+                }
+
+                modFs.open(path, "r", function (err, fd)
+                {
+                    if (err)
+                    {
+                        resultCallback(403, "Forbidden", 0, -1, 0, "");
+                        return;
+                    }
+
+                    var from = range[0];
+                    var to = range[1] !== -1 ? range[1]
+                                             : stats.size - 1;
+
+                    if (from > stats.size - 1)
+                    {
+                        from = stats.size - 1;
+                    }
+                    if (to > stats.size - 1)
+                    {
+                        to = stats.size - 1;
+                    }
+
+                    // seek
+                    console.log("Get range: " + from + "-" + to + "/" + stats.size);
+                    var buffer = new Buffer(to - from + 1);
+                    modFs.read(fd, buffer, 0, buffer.length, 0 + from,
+                               function(err, bytesRead, buf)
+                    {
+                        if (err)
+                        {
+                            resultCallback(403, "Forbidden", 0, -1, 0, "");
+                            return;
+                        }
+
+                        console.debug("Bytes read: " + bytesRead);
+                        console.debug("Hex: " + buf.slice(0, 6).toString("hex"));
+                        resultCallback(206, "Partial Content",
+                                       from, to,
+                                       stats.size,
+                                       buf);
+                    });
+                });
+            });
+        }
+        */
+    };
+
+    that.head = function(href, resultCallback)
+    {
+        var path = pathFromHref(href, m_home);
+        console.debug("Head for " + path);
+
+        modFs.stat(path, function(err, stats)
+        {
+            if (err)
+            {
+                resultCallback(403, "Forbidden", 0);
+            }
+            else
+            {
+                resultCallback(200, "OK", stats.size);
+            }
+        });
     };
     
     that.lock = function(href, depth, timeout, resultCallback)
