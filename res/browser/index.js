@@ -145,13 +145,21 @@ function checkSelected()
 
     if (size === 0)
     {
-        $("#mi-cut, #mi-copy, #mi-delete, #mi-unselectall").addClass("ui-state-disabled");
+        $("#mi-cut, #mi-copy, #mi-delete, #mi-rename, #mi-unselectall").addClass("ui-state-disabled");
         $("#mi-selectall").removeClass("ui-state-disabled");
     }
     else
     {
         $("#mi-cut, #mi-copy, #mi-delete, #mi-unselectall").removeClass("ui-state-disabled");
         $("#mi-selectall").addClass("ui-state-disabled");
+        if (size === 1)
+        {
+            $("#mi-rename").removeClass("ui-state-disabled");
+        }
+        else
+        {
+            $("#mi-rename").addClass("ui-state-disabled");
+        }
     }
 }
 
@@ -202,6 +210,7 @@ function showNewDirDialog()
 
 function showNameDialog(item)
 {
+    item = $(item);
     var name = item.find("a h2").html();
     console.log("Name: " + name);
     $("#name-dialog form input").val(name);
@@ -212,7 +221,8 @@ function showNameDialog(item)
         var newName = $("#name-dialog form input").val();
         renameItem(item, newName);
 
-        $("name-dialog").popup("close");
+        $("#name-dialog").popup("close");
+        window.location.reload();
     });
 
     $("#name-dialog").popup("open");

@@ -279,6 +279,8 @@ function makeMoreMenu()
               "    <li id='mi-copy' data-icon='false'><a href='#' onclick='closeMoreMenu(function () { clearClipboard(function () { eachSelected(copyItem); }); });'>Copy</a></li>" +
               "    <li id='mi-delete' data-icon='false'><a href='#' onclick='closeMoreMenu(function () { eachSelected(removeItem); });'>Delete</a></li>" +
               "    <li data-role='list-divider'></li>" +
+              "    <li id='mi-rename' data-icon='false'><a href='#' onclick='closeMoreMenu(function () { eachSelected(showNameDialog); });'>Rename</a></li>" +
+              "    <li data-role='list-divider'></li>" +
               "    <li id='mi-selectall' data-icon='false'><a href='#' onclick='closeMoreMenu(selectAll);'>Select All</a></li>" +
               "    <li id='mi-unselectall' data-icon='false'><a href='#' onclick='closeMoreMenu(unselectAll);'>Unselect All</a></li>" +
               "    <li data-role='list-divider'></li>" +
@@ -325,6 +327,27 @@ function makeNewDirDialog()
     return out;
 }
 
+function makeNameDialog()
+{
+    var out = "<div id='name-dialog' data-role='popup' data-dismissible='false'>" +
+
+              "  <div data-role='header'><h1 class='page-title'>New directory</h1></div>" +
+
+              "  <div class='ui-content'>" +
+              "    <form>" +
+              "      <label>Name:</label>" +
+              "      <input type='text'>" +
+              "    </form>" +
+
+              "    <a class='accept-btn ui-btn ui-btn-inline ui-corner-all ui-shadow' href='#'>Accept</a>" +
+              "    <a class='cancel-btn ui-btn ui-btn-inline ui-corner-all ui-shadow' data-rel='back' href='#'>Cancel</a>" +
+              "  </div>" +
+
+              "</div>";
+
+    return out;
+}
+
 function makeMainPage(path, stats)
 {
     var out = "<div id='main-page' data-role='page'>" +
@@ -337,6 +360,7 @@ function makeMainPage(path, stats)
 
               makeMessageDialog() +
               makeNewDirDialog() +
+              makeNameDialog() +
 
               "  <div data-role='header' data-position='fixed' data-tap-toggle='false'>" +
               "    <h1 onclick='$(\"#breadcrumbs\").popup(\"open\", { positionTo: this });'>" + path + "</h1>" +
