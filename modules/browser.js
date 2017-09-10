@@ -126,7 +126,7 @@ function makeThumbnail(icon, path, file)
 {
     var imageFile = modPath.join(path, file);
 
-    return "<img data-x-thumbnail='/::thumbnail" + encodeURIComponent(imageFile) + "' src='/::res/file-icons/empty.png'" +
+    return "<img data-x-thumbnail='/::thumbnail" + encodeURI(imageFile) + "' src='/::res/file-icons/empty.png'" +
            " style='width: 80px; background-image: url(" + icon + ");" +
            " background-size: 48px;" +
            " background-repeat: no-repeat;" +
@@ -151,12 +151,12 @@ function makeItem(path, file, stat, active)
     if (active && mimeInfo && mimeInfo.viewer)
     {
         action = "onclick='" + mimeInfo.viewer +
-                "(\"" + encodeURIComponent(file) + "\");'";
+                "(\"" + encodeURI(file) + "\");'";
         href="#";
     }
     else
     {
-        href = active ? encodeURIComponent(file)
+        href = active ? encodeURI(file)
                       : "";
     }
 
@@ -259,7 +259,7 @@ function makeBreadcrumbs(path)
         }
 
         breadcrumbPath += "/" + pathParts[i]
-        out += "  <li data-icon='false'><a href='" + encodeURIComponent(breadcrumbPath) + "/index.html' data-ajax='false''>" + pathParts[i] + "</a></li>";
+        out += "  <li data-icon='false'><a href='" + encodeURI(breadcrumbPath) + "/index.html' data-ajax='false''>" + pathParts[i] + "</a></li>";
     }
 
     out += "</ul>";
@@ -340,7 +340,7 @@ function makeMainPage(path, stats)
 
               "  <div data-role='header' data-position='fixed' data-tap-toggle='false'>" +
               "    <h1 onclick='$(\"#breadcrumbs\").popup(\"open\", { positionTo: this });'>" + path + "</h1>" +
-              (path !== "/" ? "    <a class='ui-btn ui-btn-icon-left ui-icon-back ui-corner-all' href='" + encodeURIComponent(modPath.join(modPath.dirname(path), "index.html")) + "' data-ajax='false'>Up</a>" : "") +
+              (path !== "/" ? "    <a class='ui-btn ui-btn-icon-left ui-icon-back ui-corner-all' href='" + encodeURI(modPath.join(modPath.dirname(path), "index.html")) + "' data-ajax='false'>Up</a>" : "") +
               "    <a class='ui-btn ui-btn-icon-right ui-btn-right ui-icon-bars ui-corner-all' href='#more-menu' data-rel='popup'>More</a>" +
               "  </div>" +
 
