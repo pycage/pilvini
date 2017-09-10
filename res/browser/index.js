@@ -67,6 +67,10 @@ function loadNextThumbnail(forLocation, images)
     .done(function (data, status, xhr)
     {
         var contentType = "image/png"; //xhr.getResponseHeader("Content-Type");
+        if (url.toLowerCase().endsWith(".svg"))
+        {
+            contentType = "image/svg+xml";
+        }
 
         var buffer = "";
         for (var i = 0; i < data.length; ++i)

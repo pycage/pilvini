@@ -200,7 +200,7 @@ function handleRequest(request, response)
 
             var hash = modCrypto.createHash("md5");
             hash.update(imageFile);
-            var thumbFile = modPath.join(thumbDir, hash.digest("hex") + ".png");
+            var thumbFile = modPath.join(thumbDir, hash.digest("hex"));
 
             modFs.stat(thumbFile, function (err, stats)
             {

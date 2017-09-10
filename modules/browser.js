@@ -171,7 +171,7 @@ function makeItem(path, file, stat, active)
     else if (mimeType.indexOf("image/") == 0)
     {
         href = "#";
-        if (! modThumbnail || mimeType === "image/svg+xml")
+        if (! modThumbnail)
         {
             iconHtml = makeIcon(icon);
         }

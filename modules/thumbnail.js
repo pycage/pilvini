@@ -1,24 +1,44 @@
-const modLwip = require("lwip");
+const modFs = require("fs"),
+      modLwip = require("lwip");
 
 exports.makeImageThumbnail = function (imageFile, thumbFile, callback)
 {
-    modLwip.open(imageFile, function (err, image)
+    if (imageFile.toLowerCase().endsWith(".svg"))
     {
-        if (! err)
+        var reader = modFs.createReadStream(imageFile);
+        reader.on("end", function ()
         {
-            var scale = Math.max(80 / image.width(), 80 / image.height());
-
-            var begin = Date.now();
-            image.batch().scale(scale).writeFile(thumbFile, function (err)
+            callback(null);
+        });
+        reader.pipe(modFs.createWriteStream(thumbFile));
+    }
+    else
+    {
+        try
+        {
+            modLwip.open(imageFile, function (err, image)
             {
-                console.debug("Thumbnailing " + imageFile + " -> " + thumbFile +
-                              " took " + (Date.now() - begin) + " ms");
-                callback(err);
+                if (! err)
+                {
+                    var scale = Math.max(80 / image.width(), 80 / image.height());
+
+                    var begin = Date.now();
+                    image.batch().scale(scale).writeFile(thumbFile, "png", function (err)
+                    {
+                        console.debug("Thumbnailing " + imageFile + " -> " + thumbFile +
+                                      " took " + (Date.now() - begin) + " ms");
+                        callback(err);
+                    });
+                }
+                else
+                {
+                    callback(err);
+                }
             });
         }
-        else
+        catch (err)
         {
             callback(err);
         }
-    });
+    }
 }
