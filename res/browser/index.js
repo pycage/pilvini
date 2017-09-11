@@ -9,10 +9,11 @@ function currentPath()
 
 function escapeHtml(text)
 {
-    return text.replace(/[\"&<>]/g, function (a)
+    return text.replace(/[\"'&<>]/g, function (a)
     {
         return {
             '"': '&quot;',
+            '\'': '&apos;',
             '&': '&amp;',
             '<': '&lt;',
             '>': '&gt;'
@@ -22,10 +23,11 @@ function escapeHtml(text)
 
 function unescapeHtml(text)
 {
-    return text.replace(/&quot;|&amp;|&lt;|&gt;/g, function (a)
+    return text.replace(/&quot;|&apos;|&amp;|&lt;|&gt;/g, function (a)
     {
         return {
             "&quot;": "\"",
+            "&apos;": "'",
             "&amp;": "&",
             "&lt;": "<",
             "&gt;": ">"

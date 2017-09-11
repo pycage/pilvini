@@ -28,10 +28,11 @@ const MIME_INFO = {
 
 function escapeHtml(text)
 {
-    return text.replace(/[\"&<>]/g, function (a)
+    return text.replace(/[\"'&<>]/g, function (a)
     {
         return {
             '"': '&quot;',
+            '\'': '&apos;',
             '&': '&amp;',
             '<': '&lt;',
             '>': '&gt;'
@@ -139,7 +140,7 @@ function makeThumbnail(icon, path, file)
 {
     var imageFile = modPath.join(path, file);
 
-    return "<img data-x-thumbnail='/::thumbnail" + encodeURI(imageFile) + "' src='/::res/file-icons/empty.png'" +
+    return "<img data-x-thumbnail='/::thumbnail" + escapeHtml(encodeURI(imageFile)) + "' src='/::res/file-icons/empty.png'" +
            " style='width: 80px; background-image: url(" + icon + ");" +
            " background-size: 48px;" +
            " background-repeat: no-repeat;" +
@@ -164,7 +165,7 @@ function makeItem(path, file, stat, active)
     if (active && mimeInfo && mimeInfo.viewer)
     {
         action = "onclick='" + mimeInfo.viewer +
-                "(\"" + encodeURIComponent(file) + "\");'";
+                "(\"" + escapeHtml(encodeURIComponent(file)) + "\");'";
         href="#";
     }
     else
@@ -175,15 +176,15 @@ function makeItem(path, file, stat, active)
 
     if (stat.isDirectory())
     {
-        href = active ? modPath.join(file, "index.html")
+        href = active ? modPath.join(encodeURIComponent(file), "index.html")
                       : "#";
         icon = "/::res/file-icons/folder.png";
         iconHtml = makeIcon(icon);
         ajaxMode = "data-ajax='false'";
     }
-    else if (mimeType.indexOf("image/") == 0)
+    else if (mimeType.startsWith("image/") ||
+             mimeType.startsWith("audio/"))
     {
-        href = "#";
         if (! modThumbnail)
         {
             iconHtml = makeIcon(icon);
@@ -203,7 +204,7 @@ function makeItem(path, file, stat, active)
         iconHtml = makeIcon(icon);
     }
 
-    out += "<a href='" + href + "' "+ ajaxMode + " " + action + ">";
+    out += "<a href='" + escapeHtml(href) + "' "+ ajaxMode + " " + action + ">";
     out += iconHtml;
     out += "<h2>" + escapeHtml(name) + "</h2>";
     out += "<p>" + info + "</p>";
@@ -272,7 +273,7 @@ function makeBreadcrumbs(path)
         }
 
         breadcrumbPath += "/" + pathParts[i]
-        out += "  <li data-icon='false'><a href='" + encodeURI(breadcrumbPath) + "/index.html' data-ajax='false''>" + escapeHtml(pathParts[i]) + "</a></li>";
+        out += "  <li data-icon='false'><a href='" + escapeHtml(encodeURI(breadcrumbPath)) + "/index.html' data-ajax='false''>" + escapeHtml(pathParts[i]) + "</a></li>";
     }
 
     out += "</ul>";

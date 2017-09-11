@@ -212,7 +212,7 @@ function handleRequest(request, response)
                 {
                     modFs.mkdir(thumbDir, function (err)
                     {
-                        modThumbnail.makeImageThumbnail(imageFile, thumbFile, function (err)
+                        modThumbnail.makeThumbnail(modMime.mimeType(imageFile), imageFile, thumbFile, function (err)
                         {
                             if (err)
                             {
