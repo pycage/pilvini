@@ -7,6 +7,32 @@ function currentPath()
                         : "/" + path;
 }
 
+function escapeHtml(text)
+{
+    return text.replace(/[\"&<>]/g, function (a)
+    {
+        return {
+            '"': '&quot;',
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;'
+        }[a];
+    });
+}
+
+function unescapeHtml(text)
+{
+    return text.replace(/&quot;|&amp;|&lt;|&gt;/g, function (a)
+    {
+        return {
+            "&quot;": "\"",
+            "&amp;": "&",
+            "&lt;": "<",
+            "&gt;": ">"
+        }[a];
+    });
+}
+
 function showMessage(msg)
 {
     $("#message-dialog h1").html("Error");
@@ -215,8 +241,7 @@ function showNewDirDialog()
 function showNameDialog(item)
 {
     item = $(item);
-    var name = item.find("a h2").html();
-    console.log("Name: " + name);
+    var name = unescapeHtml(item.find("a h2").html());
     $("#name-dialog form input").val(name);
 
     $("#name-dialog .accept-btn").off();
@@ -226,7 +251,6 @@ function showNameDialog(item)
         renameItem(item, newName);
 
         $("#name-dialog").popup("close");
-        window.location.reload();
     });
 
     $("#name-dialog").popup("open");
@@ -267,8 +291,8 @@ function clearClipboard(callback)
     binItems.each(function ()
     {
         var item = this;
-        var name = $(item).find("a h2").html();
-        var target = encodeURI("/.clipboard/" + name);
+        var name = unescapeHtml($(item).find("a h2").html());
+        var target = "/.clipboard/" + encodeURIComponent(name);
 
         $.ajax({
                    url: target,
@@ -313,9 +337,9 @@ function cutItem(item)
 {
     console.log("Cut item");
 
-    var name = $(item).find("a h2").html();
-    var target = encodeURI(name);
-    var newTarget = encodeURI("/.clipboard/" + name);
+    var name = unescapeHtml($(item).find("a h2").html());
+    var target = encodeURIComponent(name);
+    var newTarget = "/.clipboard/" + encodeURIComponent(name);
 
     $.ajax({
                url: target,
@@ -337,9 +361,9 @@ function copyItem(item)
 {
     console.log("Copy item");
 
-    var name = $(item).find("a h2").html();
-    var target = encodeURI(name);
-    var newTarget = encodeURI("/.clipboard/" + name);
+    var name = unescapeHtml($(item).find("a h2").html());
+    var target = encodeURIComponent(name);
+    var newTarget = "/.clipboard/" + encodeURIComponent(name);
 
     $.ajax({
                url: target,
@@ -370,9 +394,9 @@ function pasteItems()
         var item = this;
 
         var path = currentPath();
-        var name = $(item).find("a h2").html();
-        var target = encodeURI("/.clipboard/" + name);
-        var newTarget = encodeURI((path !== "/" ? path : "") + "/" + name);
+        var name = unescapeHtml($(item).find("a h2").html());
+        var target = "/.clipboard/" + encodeURIComponent(name);
+        var newTarget = encodeURI(path !== "/" ? path : "") + "/" + encodeURIComponent(name);
 
         $.ajax({
                    url: target,
@@ -403,9 +427,9 @@ function renameItem(item, newName)
     console.log("Rename item");
 
     var path = currentPath();
-    var name = $(item).find("a h2").html();
-    var target = encodeURI(name);
-    var newTarget = encodeURI((path !== "/" ? path : "") + "/" + newName);
+    var name = unescapeHtml($(item).find("a h2").html());
+    var target = encodeURIComponent(name);
+    var newTarget = encodeURI(path !== "/" ? path : "") + "/" + encodeURIComponent(newName);
 
     $.ajax({
                url: target,
@@ -415,6 +439,7 @@ function renameItem(item, newName)
     .done(function () {
         console.log("File renamed: " + name + " -> " + newName);
         $(item).find("a h2").html(newName);
+        window.location.reload();
     })
     .fail(function () {
         showMessage("Failed to rename: " + name + " -> " + newName);
@@ -425,8 +450,8 @@ function removeItem(item)
 {
     console.log("Remove item");
 
-    var name = $(item).find("a h2").html();
-    var target = encodeURI(name);
+    var name = unescapeHtml($(item).find("a h2").html());
+    var target = encodeURIComponent(name);
 
     $.ajax({
                url: target,
@@ -490,7 +515,7 @@ function uploadFiles(files)
     for (i = 0; i < files.length; ++i)
     {
         var file = files[i];
-        var target = window.location.href.replace("index.html", encodeURI(file.name));
+        var target = window.location.href.replace("index.html", encodeURIComponent(file.name));
 
         upload(file, target, function ()
         {
@@ -506,7 +531,7 @@ function uploadFiles(files)
 
 function makeDirectory(name)
 {
-    var target = encodeURI(name);
+    var target = encodeURIComponent(name);
 
     $.ajax({
                url: target,

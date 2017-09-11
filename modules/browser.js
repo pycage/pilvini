@@ -26,6 +26,19 @@ const MIME_INFO = {
     "video/mp4": { "icon": "video.png" }
 };
 
+function escapeHtml(text)
+{
+    return text.replace(/[\"&<>]/g, function (a)
+    {
+        return {
+            '"': '&quot;',
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;'
+        }[a];
+    });
+}
+
 function getIcon(mimeType)
 {
     var info = MIME_INFO[mimeType];
@@ -151,12 +164,12 @@ function makeItem(path, file, stat, active)
     if (active && mimeInfo && mimeInfo.viewer)
     {
         action = "onclick='" + mimeInfo.viewer +
-                "(\"" + encodeURI(file) + "\");'";
+                "(\"" + encodeURIComponent(file) + "\");'";
         href="#";
     }
     else
     {
-        href = active ? encodeURI(file)
+        href = active ? encodeURIComponent(file)
                       : "";
     }
 
@@ -192,7 +205,7 @@ function makeItem(path, file, stat, active)
 
     out += "<a href='" + href + "' "+ ajaxMode + " " + action + ">";
     out += iconHtml;
-    out += "<h2>" + name + "</h2>";
+    out += "<h2>" + escapeHtml(name) + "</h2>";
     out += "<p>" + info + "</p>";
     out += "</a>";
     if (active)
@@ -259,7 +272,7 @@ function makeBreadcrumbs(path)
         }
 
         breadcrumbPath += "/" + pathParts[i]
-        out += "  <li data-icon='false'><a href='" + encodeURI(breadcrumbPath) + "/index.html' data-ajax='false''>" + pathParts[i] + "</a></li>";
+        out += "  <li data-icon='false'><a href='" + encodeURI(breadcrumbPath) + "/index.html' data-ajax='false''>" + escapeHtml(pathParts[i]) + "</a></li>";
     }
 
     out += "</ul>";
@@ -363,7 +376,7 @@ function makeMainPage(path, stats)
               makeNameDialog() +
 
               "  <div data-role='header' data-position='fixed' data-tap-toggle='false'>" +
-              "    <h1 onclick='$(\"#breadcrumbs\").popup(\"open\", { positionTo: this });'>" + path + "</h1>" +
+              "    <h1 onclick='$(\"#breadcrumbs\").popup(\"open\", { positionTo: this });'>" + escapeHtml(path) + "</h1>" +
               (path !== "/" ? "    <a class='ui-btn ui-btn-icon-left ui-icon-back ui-corner-all' href='" + encodeURI(modPath.join(modPath.dirname(path), "index.html")) + "' data-ajax='false'>Up</a>" : "") +
               "    <a class='ui-btn ui-btn-icon-right ui-btn-right ui-icon-bars ui-corner-all' href='#more-menu' data-rel='popup'>More</a>" +
               "  </div>" +
