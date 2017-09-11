@@ -227,21 +227,21 @@ function parseId3v1(fd, tags, resultCallback)
             resultCallback();
         }
 
-        tags["TITLE"] = buffer.slice(3, 33).toString("latin1");
-        tags["ARTIST"] = buffer.slice(33, 63).toString("latin1");
-        tags["ALBUM"] = buffer.slice(63, 93).toString("latin1");
-        tags["YEAR"] = buffer.slice(93, 97).toString("latin1");
+        tags["TITLE"] = buffer.slice(3, 33).toString("binary");
+        tags["ARTIST"] = buffer.slice(33, 63).toString("binary");
+        tags["ALBUM"] = buffer.slice(63, 93).toString("binary");
+        tags["YEAR"] = buffer.slice(93, 97).toString("binary");
 
         if (buffer[125] === 0 && buffer[126] !== 0)
         {
             // ID3v1.1
-            tags["COMMENT"] = buffer.slice(97, 125).toString("latin1");
+            tags["COMMENT"] = buffer.slice(97, 125).toString("binary");
             tags["TRACKNUMBER"] = buffer[126];
         }
         else
         {
             // ID3v1
-            tags["COMMENT"] = buffer.slice(97, 127).toString("latin1");
+            tags["COMMENT"] = buffer.slice(97, 127).toString("binary");
         }
         var genre = buffer[127];
         tags["GENRE"] = genre < GENRES.length ? GENRES[genre]
@@ -351,12 +351,21 @@ function parseId3v2(fd, rev, tags, resultCallback)
                 return;
             }
 
-            console.debug("Tag " + key + " = " +
-                          (isStringKey(key) ? value
-                                            : (key === "PICTURE") ? "<image>"
-                                                                  : "<" + value.length + " bytes>"));
             if (value)
             {
+                if (isStringKey(key))
+                {
+                    console.debug("Tag " + key + " = " + value);
+                }
+                else if (key === "PICTURE")
+                {
+                    console.debug("Tag " + key + " = <image " + (value.data ? value.data.length : 0) + " bytes>");
+                }
+                else
+                {
+                    console.debug("Tag " + key + " = <" + value.length + " bytes>");
+                }
+
                 tags[key] = value;
             }
             parseFrame(buffer, pos, params, frameCallback);
@@ -414,6 +423,7 @@ function parseId3v2(fd, rev, tags, resultCallback)
         var value = "";
         if (flags & params.flagCompressed)
         {
+            console.debug("Compressed ID3 tag data is currently not supported.");
             value = "<compressed>";
         }
         else
@@ -636,7 +646,7 @@ exports.Tags = function (file)
                 }
                 else
                 {
-                    console.log("probably ID3v1");
+                    console.debug("probably ID3v1");
                     parseId3v1(fd, m_tags, closeCallback);
                 }
             });

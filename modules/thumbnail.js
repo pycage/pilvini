@@ -39,6 +39,12 @@ function makeAudioThumbnail(file, thumbFile, callback)
         if (tagParser.has("PICTURE"))
         {
             var apic = tagParser.get("PICTURE");
+            if (! apic.data)
+            {
+                callback("No data");
+                return;
+            }
+
             var imageData = new Buffer(apic.data, "binary");
             var imageType = {
                 "image/png": "png",

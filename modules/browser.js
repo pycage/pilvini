@@ -23,7 +23,9 @@ const MIME_INFO = {
     "text/plain": { "icon": "text.png" },
     "text/rtf": { "icon": "document.png" },
     "text/vcard": { "icon": "contacts.png", "viewer": "viewVCard" },
-    "video/mp4": { "icon": "video.png" }
+    "video/mp4": { "icon": "video.png" },
+    "video/x-flv": { "icon": "video.png" },
+    "video/x-msvideo": { "icon": "video.png" }
 };
 
 function escapeHtml(text)

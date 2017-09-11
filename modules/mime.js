@@ -2,8 +2,10 @@
 
 const EXTENSIONS = {
     ".apk":   "application/java-archive",
+    ".avi":   "video/x-msvideo",
     ".css":   "text/css",
     ".exe":   "application/x-executable",
+    ".flv":   "video/x-flv",
     ".gif":   "image/gif",
     ".gz":    "application/x-gzip",
     ".htm":   "text/html",
