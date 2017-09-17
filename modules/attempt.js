@@ -6,7 +6,6 @@ exports.attempt = function (f)
     }
     catch (err)
     {
-        console.error(err);
         return undefined;
     }
 };
