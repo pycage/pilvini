@@ -9,7 +9,7 @@ const modFs = require("fs"),
 
 const MIME_INFO = {
     "application/java-archive": { "icon": "package.png" },
-    "application/pdf": { "icon": "pdf.png" },
+    "application/pdf": { "icon": "pdf.png", "viewer": "viewPdf" },
     "application/vnd.oasis.opendocument.text": { "icon": "document.png" },
     "application/x-gzip": { "icon": "package.png" },
     "application/x-iso9660-image": { "icon": "optical.png" },
@@ -167,7 +167,7 @@ function makeItem(path, file, stat, active)
     if (active && mimeInfo && mimeInfo.viewer)
     {
         action = "onclick='" + mimeInfo.viewer +
-                "(\"" + escapeHtml(encodeURIComponent(file)) + "\");'";
+                "(window.location.href.replace(/index.html$/, \"\") + \"" + escapeHtml(encodeURIComponent(file)) + "\");'";
         href="#";
     }
     else
@@ -253,6 +253,7 @@ function makeHtmlHead()
               "  <script src='https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js'></script>" +
               "  <script src='/::res/browser/index.js'></script>" +
               "  <script src='/::res/viewer/image.js'></script>" +
+              "  <script src='/::res/viewer/pdf.js'></script>" +
               "  <script src='/::res/viewer/vcard.js'></script>" +
               "</head>";
 
