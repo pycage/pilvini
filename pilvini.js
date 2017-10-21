@@ -387,7 +387,18 @@ function handleRequest(request, response)
     }
 }
 
-var config = JSON.parse(modFs.readFileSync(modPath.join(__dirname, "config.json"), "utf8"));
+var config;
+var configPath = modPath.join(__dirname, "config.json");
+try
+{
+    config = JSON.parse(modFs.readFileSync(configPath, "utf8"));
+}
+catch (err)
+{
+    console.error("Failed to read configuration: " + err);
+    process.exit(1);
+}
+
 
 var authUsers = { };
 for (var i = 0; i < config.users.length; ++i)

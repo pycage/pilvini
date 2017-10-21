@@ -9,7 +9,7 @@ const modFs = require("fs"),
 
 const MIME_INFO = {
     "application/java-archive": { "icon": "package.png" },
-    "application/pdf": { "icon": "pdf.png" },
+    "application/pdf": { "icon": "pdf.png", "viewer": "viewPdf" },
     "application/vnd.oasis.opendocument.text": { "icon": "document.png" },
     "application/x-gzip": { "icon": "package.png" },
     "application/x-iso9660-image": { "icon": "optical.png" },
@@ -167,7 +167,7 @@ function makeItem(path, file, stat, active)
     if (active && mimeInfo && mimeInfo.viewer)
     {
         action = "onclick='" + mimeInfo.viewer +
-                "(\"" + escapeHtml(encodeURIComponent(file)) + "\");'";
+                "(window.location.href.replace(/index.html$/, \"\") + \"" + escapeHtml(encodeURIComponent(file)) + "\");'";
         href="#";
     }
     else
@@ -255,6 +255,7 @@ function makeHtmlHead()
               "  <script src='https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js'></script>" +
               "  <script src='/::res/browser/index.js'></script>" +
               "  <script src='/::res/viewer/image.js'></script>" +
+              "  <script src='/::res/viewer/pdf.js'></script>" +
               "  <script src='/::res/viewer/vcard.js'></script>" +
               "</head>";
 
@@ -382,7 +383,7 @@ function makeMainPage(path, stats)
 
               "  <div data-role='header' data-position='fixed' data-tap-toggle='false'>" +
               "    <h1 onclick='$(\"#breadcrumbs\").popup(\"open\", { positionTo: this });'>" + escapeHtml(path) + "</h1>" +
-              (path !== "/" ? "    <a class='ui-btn ui-btn-icon-left ui-icon-back ui-corner-all' href='" + encodeURI(modPath.join(modPath.dirname(path), "index.html")) + "' data-ajax='false'>Up</a>" : "") +
+              (path !== "/" ? "    <a class='ui-btn ui-btn-icon-left ui-icon-back ui-corner-all' href='" + escapeHtml(encodeURI(modPath.dirname(path) + "/index.html").replace("//", "/")) + "' data-ajax='false'>Up</a>" : "") +
               "    <a class='ui-btn ui-btn-icon-right ui-btn-right ui-icon-bars ui-corner-all' href='#more-menu' data-rel='popup'>More</a>" +
               "  </div>" +
 
