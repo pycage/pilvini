@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+  <title>Page Title</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"></meta>
+  <meta name="viewport" content="width=device-width, initial-scale=1"></meta>
+  <link rel="stylesheet" href="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css">
+  <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+  <script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+  <script src="showdown.js"></script>
+
+  <script>
+    $(document).ready(function ()
+    {
+      var href = decodeURI(window.location.search.substr(6));
+      var title = $("#header h1");
+      title.html(href);
+
+      //$("#navbar a:eq(1)").addClass("ui-btn-active");
+
+      $.mobile.loading("show");
+      var settings = {
+        beforeSend: function (xhr) { xhr.overrideMimeType("text/x-markdown"); }
+      };
+
+      $.ajax(href, settings)
+      .done(function (data, status, xhr)
+      {
+          var converter = new Showdown.converter();
+          $("#view").html(converter.makeHtml(data));
+      })
+      .complete(function ()
+      {
+        $.mobile.loading("hide");
+      });
+    });
+  </script>
+
+</head>
+<body>
+
+  <div data-role="page" data-theme="a">
+
+    <div id="header" data-role="header" data-position="fixed" data-tap-toggle="false">
+      <a href="#" data-rel="back" class="ui-btn ui-icon-carat-l ui-btn-icon-left ui-btn-icon-notext ui-corner-all">Back</a>
+      <h1 class="page-title">TITLE</h1>
+    </div>
+
+    <div id="content-page" role="main" class="ui-content">
+      <div id="view"></div>
+      <!--
+      <div id="editor" style="display: none;">
+        <textarea id="editor-area"></textarea>
+      </div>
+      -->
+    </div>
+
+    <!--
+    <div data-role="footer" data-position="fixed" data-tap-toggle="false">
+      <div data-role="navbar">
+        <ul>
+          <li><a href="#" data-icon="eye">View</a></li>
+          <li><a href="#" data-icon="edit">Edit</a></li>
+        </ul>
+      </div>
+    </div>
+    -->
+
+  </div>
+
+</body>
+</html>

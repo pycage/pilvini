@@ -14,6 +14,7 @@ const EXTENSIONS = {
     ".jar":   "application/java-archive",
     ".jpeg":  "image/jpeg",
     ".jpg":   "image/jpeg",
+    ".md":    "text/x-markdown",
     ".mp3":   "audio/mp3",
     ".mp4":   "video/mp4",
     ".odt":   "application/vnd.oasis.opendocument.text",

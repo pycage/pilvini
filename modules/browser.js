@@ -23,6 +23,7 @@ const MIME_INFO = {
     "text/plain": { "icon": "text.png" },
     "text/rtf": { "icon": "document.png" },
     "text/vcard": { "icon": "contacts.png", "viewer": "viewVCard" },
+    "text/x-markdown": { "icon": "document.png", "viewer": "viewMarkdown" },
     "video/mp4": { "icon": "video.png" },
     "video/x-flv": { "icon": "video.png" },
     "video/x-msvideo": { "icon": "video.png" }
@@ -256,7 +257,8 @@ function makeHtmlHead()
               "  <script src='https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js'></script>" +
               "  <script src='/::res/browser/index.js'></script>" +
               "  <script src='/::res/viewer/image.js'></script>" +
-              "  <script src='/::res/viewer/pdf.js'></script>" +
+              "  <script src='/::res/viewer/markdown.js'></script>" +
+              "  <script src='/::res/viewer/pdf.js'></script>" +              
               "  <script src='/::res/viewer/vcard.js'></script>" +
               "</head>";
 
