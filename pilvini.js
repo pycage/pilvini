@@ -89,7 +89,11 @@ function handleRequest(request, response)
     */
 
     // check for authorization
-    var authUser = httpAuth.authorize(request);
+    var authUser = "*";
+    if (request.url !== "/::res/apple-touch-icon.png")
+    {
+        authUser = httpAuth.authorize(request);
+    }
     if (! authUser)
     {
         console.log("[" + new Date().toLocaleString() + "] [Server] " +
