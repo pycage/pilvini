@@ -90,7 +90,9 @@ function handleRequest(request, response)
 
     // check for authorization
     var authUser = "*";
-    if (request.url !== "/::res/apple-touch-icon.png")
+    if (request.url !== "/::res/apple-touch-icon.png" &&
+            request.url !== "/::res/favicon.png" &&
+            request.url !== "/::res/favicon-32x32.png")
     {
         authUser = httpAuth.authorize(request);
     }

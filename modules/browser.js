@@ -248,7 +248,8 @@ function makeHtmlHead()
               "  <title></title>" +
               "  <meta http-equiv='Content-Type' content='text/html; charset=utf-8'></meta>" +
               "  <meta name='viewport' content='width=device-width, initial-scale=1'></meta>" +
-              "  <link rel='icon' href='/::res/favicon.png'>" +
+              "  <link rel='icon' type='image/png' sizes='192x192' href='/::res/favicon.png'>" +
+              "  <link rel='icon' type='image/png' sizes='32x32' href='/::res/favicon-32x32.png'>" +
               "  <link rel='apple-touch-icon' sizes='180x180' href='/::res/apple-touch-icon.png'>" +
               "  <link rel='stylesheet' href='https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css'>" +
               "  <script src='https://code.jquery.com/jquery-2.1.4.min.js'></script>" +
