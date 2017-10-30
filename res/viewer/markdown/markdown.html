@@ -2,72 +2,133 @@
 <html>
 <head>
 
-  <title>Page Title</title>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"></meta>
-  <meta name="viewport" content="width=device-width, initial-scale=1"></meta>
-  <link rel="stylesheet" href="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css">
-  <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
-  <script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
-  <script src="showdown.js"></script>
+<title>Page Title</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"></meta>
+<meta name="viewport" content="width=device-width, initial-scale=1"></meta>
+<link rel="stylesheet" href="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css">
+<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+<script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+<script src="showdown.js"></script>
 
-  <script>
-    $(document).ready(function ()
-    {
-      var href = decodeURI(window.location.search.substr(6));
-      var title = $("#header h1");
-      title.html(href);
+<script>
+function setMarkdown(md)
+{
+    var converter = new Showdown.converter();
+    $("#view").html(converter.makeHtml(md));
+}
 
-      //$("#navbar a:eq(1)").addClass("ui-btn-active");
-
-      $.mobile.loading("show");
-      var settings = {
-        beforeSend: function (xhr) { xhr.overrideMimeType("text/x-markdown"); }
-      };
-
-      $.ajax(href, settings)
-      .done(function (data, status, xhr)
-      {
-          var converter = new Showdown.converter();
-          $("#view").html(converter.makeHtml(data));
-      })
-      .complete(function ()
-      {
-        $.mobile.loading("hide");
-      });
+function upload(href, md)
+{
+    $.ajax({
+               url: href,
+               type: "PUT",
+               contentType: "text/x-markdown",
+               processData: false,
+               data: md
+           })
+    .done(function () {
+    })
+    .fail(function () {
+        alert("Failed to upload.");
+    })
+    .always(function () {
     });
-  </script>
+}
+
+function updateUi(mode)
+{
+    $("#header").find("a").hide();
+    $("#view").hide();
+    $("#editor").hide();
+
+    var footer = $("#content-page div[data-role=footer]");
+    footer.find("a").removeClass("ui-btn-active");
+    footer.find("a:eq(" + mode + ")").addClass("ui-btn-active");
+
+    if (mode === 0)
+    {
+        $("#header").find("a").show();
+        $("#view").show();
+    }
+    else
+    {
+        $("#editor").show();
+        $("#editor-area").trigger("input");
+    }
+}
+
+$(document).ready(function ()
+{
+    var href = decodeURI(window.location.search.substr(6));
+    var parts = href.split("/");
+    var name = decodeURI(parts[parts.length - 1]);
+    document.title = name;
+    var title = $("#header h1");
+    title.html(name);
+
+    $("#navbar a:eq(0)").on("click", function ()
+    {
+        updateUi(0);
+        var markdown = $("#editor-area").val();
+        setMarkdown(markdown);
+        upload(href, markdown);
+    });
+
+    $("#navbar a:eq(1)").on("click", function ()
+    {
+        updateUi(1);
+    });
+
+    updateUi(0);
+
+    $.mobile.loading("show");
+    var settings = {
+        beforeSend: function (xhr) { xhr.overrideMimeType("text/x-markdown"); }
+    };
+
+    $.ajax(href, settings)
+    .done(function (data, status, xhr)
+    {
+        if (xhr.status === 200)
+        {
+            setMarkdown(data);
+            $("#editor-area").val(data);
+        }
+    })
+    .complete(function ()
+    {
+        $.mobile.loading("hide");
+    });
+});
+</script>
 
 </head>
 <body>
 
-  <div data-role="page" data-theme="a">
+<div data-role="page" data-theme="a">
 
-    <div id="header" data-role="header" data-position="fixed" data-tap-toggle="false">
-      <a href="#" data-rel="back" class="ui-btn ui-icon-carat-l ui-btn-icon-left ui-btn-icon-notext ui-corner-all">Back</a>
-      <h1 class="page-title">TITLE</h1>
-    </div>
+<div id="header" data-role="header" data-position="fixed" data-tap-toggle="false">
+<h1 class="page-title">TITLE</h1>
+<a href="#" data-rel="back" class="ui-btn ui-btn-icon-left ui-icon-back ui-corner-all">Back</a>
+</div>
 
-    <div id="content-page" role="main" class="ui-content">
-      <div id="view"></div>
-      <!--
-      <div id="editor" style="display: none;">
-        <textarea id="editor-area"></textarea>
-      </div>
-      -->
-    </div>
+<div id="content-page" role="main" class="ui-content">
+<div id="view"></div>
+<div id="editor" style="display: none;">
+<textarea id="editor-area"></textarea>
+</div>
+</div>
 
-    <!--
-    <div data-role="footer" data-position="fixed" data-tap-toggle="false">
-      <div data-role="navbar">
-        <ul>
-          <li><a href="#" data-icon="eye">View</a></li>
-          <li><a href="#" data-icon="edit">Edit</a></li>
-        </ul>
-      </div>
-    </div>
-    -->
+<div data-role="footer" data-position="fixed" data-tap-toggle="false">
+<div id="navbar" data-role="navbar">
+<ul>
+<li><a href="#" data-icon="eye" class="ui-btn-active">View</a></li>
+<li><a href="#" data-icon="edit">Edit</a></li>
+</ul>
+</div>
+</div>
 
-  </div>
+</div>
 
 </body>
 </html>
