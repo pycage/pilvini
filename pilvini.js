@@ -262,7 +262,15 @@ function handleRequest(request, response)
                            }
 
                            response.setHeader("Accept-Ranges", "bytes");
-                           response.setHeader("Content-Length", dataSize);
+                           if (dataSize !== -1)
+                           {
+                               response.setHeader("Content-Length", dataSize);
+                           }
+                           else
+                           {
+                               response.setHeader("Transfer-Encoding", "chunked");
+                           }
+
                            response.setHeader("Content-Type", modMime.mimeType(urlObj.pathname));
                            console.debug("Content-Type: " + modMime.mimeType(urlObj.pathname));
                            response.writeHeadLogged(code, status);

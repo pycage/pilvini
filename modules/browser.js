@@ -179,6 +179,7 @@ function makeItem(path, file, stat, active)
 
     if (stat.isDirectory())
     {
+        mimeType = "application/x-folder";
         href = active ? modPath.join(encodeURIComponent(file), "index.html")
                       : "#";
         icon = "/::res/file-icons/folder.png";
@@ -207,7 +208,7 @@ function makeItem(path, file, stat, active)
         iconHtml = makeIcon(icon);
     }
 
-    out += "<a href='" + escapeHtml(href) + "' "+ ajaxMode + " " + action + ">";
+    out += "<a data-mimetype='" + mimeType + "' href='" + escapeHtml(href) + "' "+ ajaxMode + " " + action + ">";
     out += iconHtml;
     out += "<h2>" + escapeHtml(name) + "</h2>";
     out += "<p>" + info + "</p>";
@@ -295,6 +296,8 @@ function makeMoreMenu()
               "  <ul data-role='listview'>" +
               "    <li id='mi-upload' data-icon='false'><a href='#' onclick='closeMoreMenu(); $(\"#upload\").click();'>Upload Files</a></li>" +
               "    <li id='mi-newdir' data-icon='false'><a href='#' onclick='closeMoreMenu(showNewDirDialog);'>New Directory</a></li>" +
+              "    <li data-role='list-divider'></li>" +
+              "    <li id='mi-download' data-icon='false'><a href='#' onclick='closeMoreMenu(function () { eachSelected(downloadItem) });'>Download</a></li>" +
               "    <li data-role='list-divider'></li>" +
               "    <li id='mi-paste' data-icon='false'><a href='#' onclick='closeMoreMenu(pasteItems());'>Paste</a></li>" +
               "    <li id='mi-cut' data-icon='false'><a href='#' onclick='closeMoreMenu(function () { clearClipboard(function () { eachSelected(cutItem); }); });'>Cut</a></li>" +
@@ -443,6 +446,7 @@ function makeHtml(path, stats, clipboardStats)
               "<body>" +
 
               "<input id='upload' type='file' multiple style='display: none;'/>" +
+              "<a id='download' data-ajax='false' href='#' download='name' style='display: none;'></a>" +
 
               makeMainPage(path, stats) +
               makeViewerPage() +

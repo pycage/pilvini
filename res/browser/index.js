@@ -177,12 +177,12 @@ function checkSelected()
 
     if (size === 0)
     {
-        $("#mi-cut, #mi-copy, #mi-delete, #mi-rename, #mi-unselectall").addClass("ui-state-disabled");
+        $("#mi-download, #mi-cut, #mi-copy, #mi-delete, #mi-rename, #mi-unselectall").addClass("ui-state-disabled");
         $("#mi-selectall").removeClass("ui-state-disabled");
     }
     else
     {
-        $("#mi-cut, #mi-copy, #mi-delete, #mi-unselectall").removeClass("ui-state-disabled");
+        $("#mi-download, #mi-cut, #mi-copy, #mi-delete, #mi-unselectall").removeClass("ui-state-disabled");
         $("#mi-selectall").addClass("ui-state-disabled");
         if (size === 1)
         {
@@ -422,6 +422,22 @@ function pasteItems()
             }
         });
     });
+}
+
+function downloadItem(item)
+{
+    var mimeType = $(item).find("a").data("mimetype");
+    var name = unescapeHtml($(item).find("a h2").html());
+    var target = encodeURIComponent(name);
+
+    var downloader = $("#download");
+    downloader.attr("href", target);
+    downloader.attr("download", mimeType === "application/x-folder" ? name + ".zip"
+                                                                    : name);
+
+    var event = document.createEvent('Event');
+    event.initEvent('click', true, true);
+    downloader.get(0).dispatchEvent(event);
 }
 
 function renameItem(item, newName)

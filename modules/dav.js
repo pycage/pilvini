@@ -3,7 +3,8 @@
 const modFs = require("fs"),
       modPath = require("path"),
       modUrl = require("url"),
-      modXmlsax = require("./xmlsax.js");
+      modXmlsax = require("./xmlsax.js"),
+      modZip = require("./zip.js");
 
 
 var CountToken = function (count, callback)
@@ -321,6 +322,22 @@ var DavSession = function(home)
                 return;
             }
 
+            if (stats.isDirectory())
+            {
+                modZip.makeZip(path, function (err, stream)
+                {
+                    if (err)
+                    {
+                        resultCallback(500, "Internal Server Error", 0, -1, 0, null, 0);
+                    }
+                    else
+                    {
+                        resultCallback(200, "OK", 0, -1, 0, stream, -1);
+                    }
+                });
+                return;
+            }
+
             var stream = null;
             if (range.length == 0)
             {
@@ -339,76 +356,6 @@ var DavSession = function(home)
                 resultCallback(206, "Partial Content", from, to, stats.size, stream, to - from + 1);
             }
         });
-
-        /*
-        if (range.length == 0)
-        {
-            modFs.readFile(path, function(err, data)
-            {
-                if (err)
-                {
-                    resultCallback(403, "Forbidden", 0, -1, 0, "");
-                }
-                else
-                {
-                    resultCallback(200, "OK", 0, -1, data.length, data);
-                }
-            });
-        }
-        else
-        {
-            modFs.stat(path, function (err, stats)
-            {
-                if (err)
-                {
-                    resultCallback(403, "Forbidden", 0, -1, 0, "");
-                    return;
-                }
-
-                modFs.open(path, "r", function (err, fd)
-                {
-                    if (err)
-                    {
-                        resultCallback(403, "Forbidden", 0, -1, 0, "");
-                        return;
-                    }
-
-                    var from = range[0];
-                    var to = range[1] !== -1 ? range[1]
-                                             : stats.size - 1;
-
-                    if (from > stats.size - 1)
-                    {
-                        from = stats.size - 1;
-                    }
-                    if (to > stats.size - 1)
-                    {
-                        to = stats.size - 1;
-                    }
-
-                    // seek
-                    console.log("Get range: " + from + "-" + to + "/" + stats.size);
-                    var buffer = new Buffer(to - from + 1);
-                    modFs.read(fd, buffer, 0, buffer.length, 0 + from,
-                               function(err, bytesRead, buf)
-                    {
-                        if (err)
-                        {
-                            resultCallback(403, "Forbidden", 0, -1, 0, "");
-                            return;
-                        }
-
-                        console.debug("Bytes read: " + bytesRead);
-                        console.debug("Hex: " + buf.slice(0, 6).toString("hex"));
-                        resultCallback(206, "Partial Content",
-                                       from, to,
-                                       stats.size,
-                                       buf);
-                    });
-                });
-            });
-        }
-        */
     };
 
     that.head = function(href, resultCallback)
