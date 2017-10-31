@@ -293,24 +293,42 @@ function makeBreadcrumbs(path)
 function makeMoreMenu()
 {
     var out = "<div id='more-menu' data-role='popup' data-arrow='t'>" +
-              "  <ul data-role='listview'>" +
-              "    <li id='mi-upload' data-icon='false'><a href='#' onclick='closeMoreMenu(); $(\"#upload\").click();'>Upload Files</a></li>" +
-              "    <li id='mi-newdir' data-icon='false'><a href='#' onclick='closeMoreMenu(showNewDirDialog);'>New Directory</a></li>" +
-              "    <li data-role='list-divider'></li>" +
+
+              "  <div data-role='collapsible-set'>" +
+              "  <div data-role='collapsible'>" +
+              "    <h2>New</h2>" +
+              "    <ul data-role='listview'>" +
+              "      <li id='mi-newdir' data-icon='false'><a href='#' onclick='closeMoreMenu(showNewDirDialog);'>Directory</a></li>" +
+              "      <li id='mi-newfile' data-icon='false'><a href='#' onclick='closeMoreMenu(showNewFileDialog);'>File</a></li>" +
+              "    </ul>" +
+              "  </div>" +
+
+              "  <div data-role='collapsible'>" +
+              "    <h2>Clipboard</h2>" +
+              "    <ul data-role='listview'>" +
+              "      <li id='mi-cut' data-icon='false'><a href='#' onclick='closeMoreMenu(function () { clearClipboard(function () { eachSelected(cutItem); }); });'>Cut</a></li>" +
+              "      <li id='mi-copy' data-icon='false'><a href='#' onclick='closeMoreMenu(function () { clearClipboard(function () { eachSelected(copyItem); }); });'>Copy</a></li>" +
+              "      <li id='mi-paste' data-icon='false'><a href='#' onclick='closeMoreMenu(pasteItems());'>Paste</a></li>" +
+              "      <li id='mi-showclipboard' data-icon='false'><a href='#clipboard-page'>Show</a></li>" +
+              "    </ul>" +
+              "  </div>" +
+
+              "  <div data-role='collapsible'>" +
+              "    <h2>Action</h2>" +
+              "    <ul data-role='listview'>" +
+              "    <li id='mi-upload' data-icon='false'><a href='#' onclick='closeMoreMenu(); $(\"#upload\").click();'>Upload</a></li>" +
               "    <li id='mi-download' data-icon='false'><a href='#' onclick='closeMoreMenu(function () { eachSelected(downloadItem) });'>Download</a></li>" +
-              "    <li data-role='list-divider'></li>" +
-              "    <li id='mi-paste' data-icon='false'><a href='#' onclick='closeMoreMenu(pasteItems());'>Paste</a></li>" +
-              "    <li id='mi-cut' data-icon='false'><a href='#' onclick='closeMoreMenu(function () { clearClipboard(function () { eachSelected(cutItem); }); });'>Cut</a></li>" +
-              "    <li id='mi-copy' data-icon='false'><a href='#' onclick='closeMoreMenu(function () { clearClipboard(function () { eachSelected(copyItem); }); });'>Copy</a></li>" +
-              "    <li id='mi-delete' data-icon='false'><a href='#' onclick='closeMoreMenu(function () { eachSelected(removeItem); });'>Delete</a></li>" +
-              "    <li data-role='list-divider'></li>" +
               "    <li id='mi-rename' data-icon='false'><a href='#' onclick='closeMoreMenu(function () { eachSelected(showNameDialog); });'>Rename</a></li>" +
+              "    <li id='mi-delete' data-icon='false'><a href='#' onclick='closeMoreMenu(function () { eachSelected(removeItem); });'>Delete</a></li>" +
+              "    </ul>" +
+              "  </div>" +
+
+              "  <ul data-role='listview'>" +
               "    <li data-role='list-divider'></li>" +
               "    <li id='mi-selectall' data-icon='false'><a href='#' onclick='closeMoreMenu(selectAll);'>Select All</a></li>" +
               "    <li id='mi-unselectall' data-icon='false'><a href='#' onclick='closeMoreMenu(unselectAll);'>Unselect All</a></li>" +
-              "    <li data-role='list-divider'></li>" +
-              "    <li id='mi-showclipboard' data-icon='false'><a href='#clipboard-page'>Show Clipboard</a></li>" +
               "  </ul>" +
+            "  </div>" +
               "</div>";
     return out;
 }
@@ -356,7 +374,7 @@ function makeNameDialog()
 {
     var out = "<div id='name-dialog' data-role='popup' data-dismissible='false'>" +
 
-              "  <div data-role='header'><h1 class='page-title'>New directory</h1></div>" +
+              "  <div data-role='header'><h1 class='page-title'>Enter name</h1></div>" +
 
               "  <div class='ui-content'>" +
               "    <form>" +

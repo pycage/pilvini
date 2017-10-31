@@ -240,6 +240,30 @@ function showNewDirDialog()
     $("#newdir-dialog").popup("open");
 }
 
+function showNewFileDialog()
+{
+    $("#name-dialog form input").val("New File");
+
+    $("#name-dialog .accept-btn").off();
+    $("#name-dialog .accept-btn").on("click", function ()
+    {
+        var name = $("#name-dialog form input").val();
+        if (name !== "")
+        {
+            $("#name-dialog").one("popupafterclose", function ()
+            {
+                setTimeout(function ()
+                {
+                    makeFile(name);
+                }, 100);
+            });
+        }
+        $("#name-dialog").popup("close");
+    });
+
+    $("#name-dialog").popup("open");
+}
+
 function showNameDialog(item)
 {
     item = $(item);
@@ -555,12 +579,36 @@ function makeDirectory(name)
                url: target,
                type: "MKCOL"
            })
-    .done(function () {
+    .done(function ()
+    {
         console.log("Directory created: " + name);
         window.location.reload();
     })
-    .fail(function () {
+    .fail(function ()
+    {
         showMessage("Failed to create directory: " + name);
+    });
+}
+
+function makeFile(name)
+{
+    var target = encodeURIComponent(name);
+
+    $.ajax({
+               url: target,
+               type: "PUT",
+               contentType: "application/x-octet-stream",
+               processData: false,
+               data: ""
+           })
+    .done(function ()
+    {
+        console.log("File created: " + name);
+        window.location.reload();
+    })
+    .fail(function ()
+    {
+        showMessage("Failed to create file: " + name);
     });
 }
 
