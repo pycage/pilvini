@@ -458,10 +458,16 @@ function downloadItem(item)
     downloader.attr("href", target);
     downloader.attr("download", mimeType === "application/x-folder" ? name + ".zip"
                                                                     : name);
-
-    var event = document.createEvent('Event');
-    event.initEvent('click', true, true);
-    downloader.get(0).dispatchEvent(event);
+    if (downloader.get(0).click)
+    {
+        downloader.get(0).click();
+    }
+    else
+    {
+        var event = document.createEvent('Event');
+        event.initEvent('click', true, true);
+        downloader.get(0).dispatchEvent(event);
+    }
 }
 
 function renameItem(item, newName)
