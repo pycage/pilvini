@@ -269,8 +269,11 @@ function handleRequest(request, response)
             {
                 modFs.stat(thumbFile, function (err, stats)
                 {
-                    console.debug("Thunbail mtime: " + stats.mtime + ", image mtime: " + imageStats.mtime);
-                    if (! err && imageStats.mtime < stats.mtime)
+                    console.debug("Thumbnail mtime: " +
+                                  (stats ? stats.mtime : "<unavailable>") +
+                                  ", image mtime: " +
+                                  (imageStats ? imageStats.mtime : "<unavailable>"));
+                    if (! err && stats && imageStats && imageStats.mtime < stats.mtime)
                     {
                         getFile(response, thumbFile);
                     }
