@@ -38,6 +38,56 @@ console.debug = function(msg)
     }
 };
 
+/* Limits the files in the given directory to a certain amount by removing
+ * the oldest files.
+ */
+function limitFiles(path, amount)
+{
+    modFs.readdir(path, function (err, files)
+    {
+        if (err)
+        {
+            return;
+        }
+
+        var result = [];
+        for (var i = 0; i < files.length; ++i)
+        {
+            var filePath = modPath.join(path, files[i]);
+            modFs.stat(filePath, function (file) { return function (err, stat)
+            {
+                result.push([file, stat]);
+                if (result.length === files.length)
+                {
+                    result.sort(function (a, b)
+                    {
+                        if (! a[1] || ! b[1])
+                        {
+                            return 0;
+                        }
+                        else if (a[1].mtimeMs < b[1].mtimeMs)
+                        {
+                            return -1;
+                        }
+                        else
+                        {
+                            return a[0].toLowerCase() < b[0].toLowerCase() ? -1 : 1;
+                        }
+                    });
+
+                    while (result.length > amount)
+                    {
+                        var path = result[0][0];
+                        console.debug("Clearing old thumbnail: " + path);
+                        result.shift();
+                        modFs.unlink(path, function (err) { });
+                    }
+                }
+            }; } (filePath));
+        }
+    });
+}
+
 function getFile(response, path)
 {
     modFs.readFile(path, function (err, data)
@@ -238,6 +288,7 @@ function handleRequest(request, response)
                             {
                                 getFile(response, thumbFile);
                             }
+                            limitFiles(thumbDir, 1000);
                         });
                     });
                 }
