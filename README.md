@@ -18,19 +18,20 @@ in a secure way, SSL-encrypted and guarded by authorization.
 ## Requirements:
 
  * Node.js
+ * jszip
  * lwip image processing library (optional, if you want to see image thumbnails in the web interface)
 
 ## Installation
 
 Put the `pilvini` directory wherever you like and enter the directory.
 
-If you want to enable image thumbnailing in the web interface, run
+Run
 
 ```
 # npm install
 ```
 
-to install the `lwip` image processing library.
+to install the `lwip` image processing library and `jszip`.
 
 ## Configuration
 

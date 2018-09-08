@@ -351,7 +351,7 @@ var DavSession = function(home)
                 var to = Math.min(range[1] !== -1 ? range[1] : stats.size - 1,
                                   stats.size - 1);
 
-                console.log("Bytes Range: " + from + "-" + to + "/" + stats.size);
+                console.debug("Bytes Range: " + from + "-" + to + "/" + stats.size);
                 stream = modFs.createReadStream(path, { start: from, end: to });
                 resultCallback(206, "Partial Content", from, to, stats.size, stream, to - from + 1);
             }

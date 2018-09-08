@@ -19,6 +19,15 @@ const modCrypto = require("crypto"),
 
 const VERSION = "0.1.0rc";
 
+// whitelist of URLs that are accessible without authorization
+// (some browsers are picky and have problems with favicons behind an auth wall)
+const UNAUTHORIZED_WHITELIST = [
+            "/::res/apple-touch-icon.png",
+            "/::res/favicon.png",
+            "/::res/favicon-32x32.png"
+        ];
+
+
 console.debug = function(msg)
 {
     if (config.global && config.global.debug)
@@ -90,9 +99,7 @@ function handleRequest(request, response)
 
     // check for authorization
     var authUser = "*";
-    if (request.url !== "/::res/apple-touch-icon.png" &&
-            request.url !== "/::res/favicon.png" &&
-            request.url !== "/::res/favicon-32x32.png")
+    if (UNAUTHORIZED_WHITELIST.indexOf(request.url) === -1)
     {
         authUser = httpAuth.authorize(request);
     }
