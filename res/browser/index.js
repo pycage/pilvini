@@ -318,7 +318,7 @@ function clearClipboard(callback)
     {
         var item = this;
         var name = unescapeHtml($(item).find("a h2").html());
-        var target = "/.clipboard/" + encodeURIComponent(name);
+        var target = "/.pilvini/clipboard/" + encodeURIComponent(name);
 
         $.ajax({
                    url: target,
@@ -365,7 +365,7 @@ function cutItem(item)
 
     var name = unescapeHtml($(item).find("a h2").html());
     var target = encodeURIComponent(name);
-    var newTarget = "/.clipboard/" + encodeURIComponent(name);
+    var newTarget = "/.pilvini/clipboard/" + encodeURIComponent(name);
 
     $.ajax({
                url: target,
@@ -389,7 +389,7 @@ function copyItem(item)
 
     var name = unescapeHtml($(item).find("a h2").html());
     var target = encodeURIComponent(name);
-    var newTarget = "/.clipboard/" + encodeURIComponent(name);
+    var newTarget = "/.pilvini/clipboard/" + encodeURIComponent(name);
 
     $.ajax({
                url: target,
@@ -421,7 +421,7 @@ function pasteItems()
 
         var path = currentPath();
         var name = unescapeHtml($(item).find("a h2").html());
-        var target = "/.clipboard/" + encodeURIComponent(name);
+        var target = "/.pilvini/clipboard/" + encodeURIComponent(name);
         var newTarget = encodeURI(path !== "/" ? path : "") + "/" + encodeURIComponent(name);
 
         $.ajax({

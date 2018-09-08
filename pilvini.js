@@ -15,7 +15,8 @@ const modCrypto = require("crypto"),
       modDav = require("./modules/dav.js"),
       modLockStore = require("./modules/lockstore.js"),
       modMime = require("./modules/mime.js"),
-      modThumbnail = attempt(function () { return require("./modules/thumbnail.js"); });
+      modThumbnail = attempt(function () { return require("./modules/thumbnail.js"); }),
+      modUtils = require("./modules/utils.js");
 
 const VERSION = "0.1.0rc";
 
@@ -255,7 +256,7 @@ function handleRequest(request, response)
         }
         else if (urlObj.pathname.indexOf("/::thumbnail/") === 0)
         {
-            var thumbDir = modPath.join(userHome, ".thumbnails");
+            var thumbDir = modPath.join(userHome, ".pilvini", "thumbnails");
 
             var href = urlObj.pathname.substr(12);
             var hrefUrl = decodeURIComponent(href);
@@ -279,7 +280,7 @@ function handleRequest(request, response)
                     }
                     else
                     {
-                        modFs.mkdir(thumbDir, function (err)
+                        modUtils.mkdirs(thumbDir, function (err)
                         {
                             modThumbnail.makeThumbnail(modMime.mimeType(imageFile), imageFile, thumbFile, function (err)
                             {
@@ -464,6 +465,7 @@ function handleRequest(request, response)
     	response.end();
     }
 }
+
 
 var config;
 var configPath = modPath.join(__dirname, "config.json");

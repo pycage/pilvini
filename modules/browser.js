@@ -5,7 +5,8 @@ const attempt = require("./attempt.js").attempt;
 const modFs = require("fs"),
       modPath = require("path"),
       modMime = require("./mime.js"),
-      modThumbnail = attempt(function () { return require("./thumbnail.js"); });
+      modThumbnail = attempt(function () { return require("./thumbnail.js"); }),
+      modUtils = require("./utils.js");
 
 const MIME_INFO = {
     "application/java-archive": { "icon": "package.png" },
@@ -58,14 +59,14 @@ function getIcon(mimeType)
 
 function prepareClipboard(home, callback)
 {
-    var path = modPath.join(home, ".clipboard");
+    var path = modPath.join(home, ".pilvini", "clipboard");
 
     // create clipboard if missing
     modFs.stat(path, function (err, stats)
     {
         if (err)
         {
-            modFs.mkdir(path, function (err)
+            modUtils.mkdirs(path, function (err)
             {
                 callback();
             });
@@ -112,7 +113,8 @@ function readStats(path, callback)
                         }
                         else
                         {
-                            return a[0].toLowerCase() < b[0].toLowerCase() ? -1 : 1;
+                            //return a[0].toLowerCase() < b[0].toLowerCase() ? -1 : 1;
+                            return a[1].mtime > b[1].mtime ? -1 : 1;
                         }
                     });
 
@@ -488,7 +490,7 @@ function makeIndex(href, home, callback)
     {
         readStats(fullPath, function (stats)
         {
-            readStats(modPath.join(home, ".clipboard"), function (clipboardStats)
+            readStats(modPath.join(home, ".pilvini", "clipboard"), function (clipboardStats)
             {
                 var html = makeHtml(path, stats, clipboardStats);
                 callback(true, html);
