@@ -65,7 +65,7 @@ function limitFiles(path, amount)
                         {
                             return 0;
                         }
-                        else if (a[1].mtimeMs < b[1].mtimeMs)
+                        else if (a[1].mtime < b[1].mtime)
                         {
                             return -1;
                         }
@@ -265,33 +265,36 @@ function handleRequest(request, response)
             hash.update(imageFile);
             var thumbFile = modPath.join(thumbDir, hash.digest("hex"));
 
-            modFs.stat(thumbFile, function (err, stats)
+            modFs.stat(imageFile, function (err, imageStats)
             {
-                if (! err)
+                modFs.stat(thumbFile, function (err, stats)
                 {
-                    getFile(response, thumbFile);
-                }
-                else
-                {
-                    modFs.mkdir(thumbDir, function (err)
+                    console.debug("Thunbail mtime: " + stats.mtime + ", image mtime: " + imageStats.mtime);
+                    if (! err && imageStats.mtime < stats.mtime)
                     {
-                        modThumbnail.makeThumbnail(modMime.mimeType(imageFile), imageFile, thumbFile, function (err)
+                        getFile(response, thumbFile);
+                    }
+                    else
+                    {
+                        modFs.mkdir(thumbDir, function (err)
                         {
-                            if (err)
+                            modThumbnail.makeThumbnail(modMime.mimeType(imageFile), imageFile, thumbFile, function (err)
                             {
-                                console.error(err);
-                                response.writeHeadLogged(500, "Internal Server Error");
-                                response.end();
-
-                            }
-                            else
-                            {
-                                getFile(response, thumbFile);
-                            }
-                            limitFiles(thumbDir, 1000);
+                                if (err)
+                                {
+                                    console.error(err);
+                                    response.writeHeadLogged(500, "Internal Server Error");
+                                    response.end();
+                                }
+                                else
+                                {
+                                    getFile(response, thumbFile);
+                                }
+                                limitFiles(thumbDir, 1000);
+                            });
                         });
-                    });
-                }
+                    }
+                });
             });
             return;
         }
