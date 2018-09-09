@@ -18,7 +18,7 @@ const modCrypto = require("crypto"),
       modThumbnail = attempt(function () { return require("./modules/thumbnail.js"); }),
       modUtils = require("./modules/utils.js");
 
-const VERSION = "0.1.0rc";
+const VERSION = "0.1.0";
 
 // whitelist of URLs that are accessible without authorization
 // (some browsers are picky and have problems with favicons behind an auth wall)
@@ -89,6 +89,8 @@ function limitFiles(path, amount)
     });
 }
 
+/* Retrieves the given file via HTTP.
+ */
 function getFile(response, path)
 {
     modFs.readFile(path, function (err, data)
@@ -109,6 +111,9 @@ function getFile(response, path)
     });
 }
 
+/* Parses a HTTP range attribute and returns a [from, to] tuple.
+ * Returns an empty tuple if the range could not be parsed.
+ */
 function parseRange(range)
 {
     var parts = range.split("=");
@@ -123,20 +128,25 @@ function parseRange(range)
     }
 }
 
+/* Reads HTTP request payload.
+ */
 function readRequest(request, callback)
 {
     var chunks = [];
 
     request.on("data", function(chunk)
-                       {
-                           chunks.push(chunk);
-                       });
+    {
+        chunks.push(chunk);
+    });
+
     request.on("end", function()
-                      {
-                          callback(Buffer.concat(chunks).toString("binary"));
-                      });
+    {
+        callback(Buffer.concat(chunks).toString("binary"));
+    });
 }
 
+/* Handles HTTP requests and produces a response.
+ */
 function handleRequest(request, response)
 {
     /*
@@ -152,10 +162,12 @@ function handleRequest(request, response)
     var authUser = "*";
     if (UNAUTHORIZED_WHITELIST.indexOf(request.url) === -1)
     {
+        // URL is not whitelisted and authorization is required
         authUser = httpAuth.authorize(request);
     }
     if (! authUser)
     {
+        // authorization failed
         console.log("[" + new Date().toLocaleString() + "] [Server] " +
                     "[" + request.connection.remoteAddress + ":" + request.connection.remotePort + "] " +
                     "> " + "UNAUTHORIZED " + request.method + " " + request.url);
@@ -166,6 +178,7 @@ function handleRequest(request, response)
         return;
     }
 
+    // a logging version of response.writeHead
     response.request = request;
     response.user = authUser;
     response.writeHeadLogged = function (code, status)
@@ -193,12 +206,15 @@ function handleRequest(request, response)
                 "[client " + authUser + "@" + request.connection.remoteAddress + ":" + request.connection.remotePort + "] " +
                 "> " + request.method + " " + request.url);
 
-    var headerString = "Header:";
-    for (var header in request.headers)
+    console.debug(function ()
     {
-        headerString += "\n - " + header + " = " + request.headers[header];
-    }
-    console.debug(headerString);
+        var headerString = "Header:";
+        for (var header in request.headers)
+        {
+            headerString += "\n - " + header + " = " + request.headers[header];
+        }
+        return headerString;
+    } ());
 
     var userHome = ".";
     for (var i = 0; i < config.users.length; ++i)
@@ -225,18 +241,18 @@ function handleRequest(request, response)
     }
     else if (request.method === "DELETE")
     {
-    	davSession.del(urlObj.pathname,
-    			       function(code, status)
-    			       {
-                           response.writeHeadLogged(code, status);
-    					   response.end();
-    			       });
+    	davSession.del(urlObj.pathname, function(code, status)
+        {
+            response.writeHeadLogged(code, status);
+            response.end();
+        });
     }
     else if (request.method === "GET")
     {
         if (urlObj.pathname.indexOf("/index.html") !== -1 &&
-                urlObj.pathname.indexOf("/index.html") === urlObj.pathname.length - 11)
+            urlObj.pathname.indexOf("/index.html") === urlObj.pathname.length - 11)
         {
+            // provide browser GUI
             modBrowser.makeIndex(modPath.dirname(urlObj.pathname), userHome, function (ok, data)
             {
                 if (! ok)
@@ -256,33 +272,36 @@ function handleRequest(request, response)
         }
         else if (urlObj.pathname.indexOf("/::thumbnail/") === 0)
         {
+            // provide thumbnails
             var thumbDir = modPath.join(userHome, ".pilvini", "thumbnails");
 
             var href = urlObj.pathname.substr(12);
             var hrefUrl = decodeURIComponent(href);
-            var imageFile = modPath.join(userHome, hrefUrl.replace("/", modPath.sep));
+            var targetFile = modPath.join(userHome, hrefUrl.replace("/", modPath.sep));
 
             var hash = modCrypto.createHash("md5");
-            hash.update(imageFile);
+            hash.update(targetFile);
             var thumbFile = modPath.join(thumbDir, hash.digest("hex"));
 
-            modFs.stat(imageFile, function (err, imageStats)
+            modFs.stat(targetFile, function (err, targetStats)
             {
-                modFs.stat(thumbFile, function (err, stats)
+                modFs.stat(thumbFile, function (err, thumbnailStats)
                 {
                     console.debug("Thumbnail mtime: " +
-                                  (stats ? stats.mtime : "<unavailable>") +
-                                  ", image mtime: " +
-                                  (imageStats ? imageStats.mtime : "<unavailable>"));
-                    if (! err && stats && imageStats && imageStats.mtime < stats.mtime)
+                                  (thumbnailStats ? thumbnailStats.mtime : "<unavailable>") +
+                                  ", target mtime: " +
+                                  (targetStats ? targetStats.mtime : "<unavailable>"));
+                    if (! err && thumbnailStats && targetStats && targetStats.mtime < thumbnailStats.mtime)
                     {
+                        // thumbnail exists and is not outdated
                         getFile(response, thumbFile);
                     }
                     else
                     {
+                        // generate thumbnail
                         modUtils.mkdirs(thumbDir, function (err)
                         {
-                            modThumbnail.makeThumbnail(modMime.mimeType(imageFile), imageFile, thumbFile, function (err)
+                            modThumbnail.makeThumbnail(modMime.mimeType(targetFile), targetFile, thumbFile, function (err)
                             {
                                 if (err)
                                 {
@@ -304,6 +323,7 @@ function handleRequest(request, response)
         }
         else if (urlObj.pathname.indexOf("/::res/") === 0)
         {
+            // provide file from ressource fork
             var res = urlObj.pathname.substr(7);
             var path = modPath.join(__dirname, "res", res);
 
@@ -311,55 +331,57 @@ function handleRequest(request, response)
             return;
         }
 
+        // retrieve file
+
         /* Header: range = bytes=248426-252521 */
         var range = [];
         if (request.headers.range)
         {
             range = parseRange(request.headers.range);
         }
-        
-        davSession.get(urlObj.pathname, range,
-                       function(code, status, from, to, totalSize, stream, dataSize)
-                       {
-                           if (code === 206)
-                           {
-                               response.setHeader("Content-Range", "bytes " + from + "-" + to + "/" + totalSize);
-                           }
 
-                           response.setHeader("Accept-Ranges", "bytes");
-                           if (dataSize !== -1)
-                           {
-                               response.setHeader("Content-Length", dataSize);
-                           }
-                           else
-                           {
-                               response.setHeader("Transfer-Encoding", "chunked");
-                           }
+        var callback = function (code, status, from, to, totalSize, stream, dataSize)
+        {
+            if (code === 206)
+            {
+                response.setHeader("Content-Range", "bytes " + from + "-" + to + "/" + totalSize);
+            }
 
-                           response.setHeader("Content-Type", modMime.mimeType(urlObj.pathname));
-                           console.debug("Content-Type: " + modMime.mimeType(urlObj.pathname));
-                           response.writeHeadLogged(code, status);
-                           if (stream)
-                           {
-                               stream.pipe(response);
-                           }
-                           else
-                           {
-                               response.end();
-                           }
-                       });
+            response.setHeader("Accept-Ranges", "bytes");
+            if (dataSize !== -1)
+            {
+                response.setHeader("Content-Length", dataSize);
+            }
+            else
+            {
+                response.setHeader("Transfer-Encoding", "chunked");
+            }
+
+            response.setHeader("Content-Type", modMime.mimeType(urlObj.pathname));
+            console.debug("Content-Type: " + modMime.mimeType(urlObj.pathname));
+            response.writeHeadLogged(code, status);
+            if (stream)
+            {
+                stream.pipe(response);
+            }
+            else
+            {
+                response.end();
+            }
+        };
+
+        davSession.get(urlObj.pathname, range, callback);
     }
     else if (request.method === "HEAD")
     {
-        davSession.head(urlObj.pathname,
-                       function(code, status, size)
-                       {
-                           response.setHeader("Content-Length", size);
-                           response.setHeader("Content-Type", modMime.mimeType(urlObj.pathname));
-                           console.debug("Content-Type: " + modMime.mimeType(urlObj.pathname));
-                           response.writeHeadLogged(code, status);
-                           response.end();
-                       });
+        davSession.head(urlObj.pathname, function(code, status, size)
+        {
+            response.setHeader("Content-Length", size);
+            response.setHeader("Content-Type", modMime.mimeType(urlObj.pathname));
+            console.debug("Content-Type: " + modMime.mimeType(urlObj.pathname));
+            response.writeHeadLogged(code, status);
+            response.end();
+        });
     }
     else if (request.method === "LOCK")
     {
@@ -373,35 +395,32 @@ function handleRequest(request, response)
         </D:owner>
         </D:lockinfo>
          */
-    	readRequest(request,
-    			    function(xml)
-    			    {
-    	                var depth = request.headers.depth || "infinity";
-    	                var timeout = request.headers.timeout || "";
-    	                
-                        console.debug(xml);
-    				  	
-    				  	davSession.lock(urlObj.pathname, depth, timeout,
-    				  	                function(code, status)
-    				  	                {
-                                            response.writeHeadLogged(code, status);
-    				  	                    response.end();
-    				  	                });
-    			    });
+    	readRequest(request, function(xml)
+        {
+            var depth = request.headers.depth || "infinity";
+            var timeout = request.headers.timeout || "";
+
+            console.debug(xml);
+
+            davSession.lock(urlObj.pathname, depth, timeout, function (code, status)
+            {
+                response.writeHeadLogged(code, status);
+                response.end();
+            });
+        });
     }
     else if (request.method === "MKCOL")
     {
-    	davSession.mkcol(urlObj.pathname,
-    					 function(code, status)
-    					 {
-                             response.writeHeadLogged(code, status);
-    					     response.end();
-    					 });
+    	davSession.mkcol(urlObj.pathname, function(code, status)
+        {
+            response.writeHeadLogged(code, status);
+            response.end();
+        });
     }
     else if (request.method === "MOVE")
     {
         var destinationUrlObj = modUrl.parse(request.headers.destination, true);
-        
+
         davSession.move(urlObj.pathname, destinationUrlObj.pathname, function(code, status)
         {
             // TODO: multistatus
@@ -411,13 +430,12 @@ function handleRequest(request, response)
     }
     else if (request.method === "OPTIONS")
     {
-        readRequest(request,
-                    function(xml)
-                    {
-                        console.debug(xml);
-                        response.setHeader("DAV", "2");
-                        response.end();
-                    });
+        readRequest(request, function(xml)
+        {
+            console.debug(xml);
+            response.setHeader("DAV", "2");
+            response.end();
+        });
     }
     else if (request.method === "POST")
     {
@@ -429,14 +447,13 @@ function handleRequest(request, response)
         {
             console.debug(xml);
             var depth = request.headers.depth || "infinity";
-                        
-            davSession.propfind(urlObj.pathname, depth, xml,
-                                function(code, status, out)
+
+            davSession.propfind(urlObj.pathname, depth, xml, function(code, status, out)
             {
                 console.debug(out);
                 //response.setHeader("content-encoding", "gzip");
                 response.writeHeadLogged(code, status);
-                
+
                 /*
                 var buffer = new Buffer(out, "binary");
                 modZlib.gzip(buffer, function(err, outBuffer)
@@ -445,7 +462,7 @@ function handleRequest(request, response)
                     response.end();
                 });
                 */
-                
+
                 response.write(out);
                 response.end();
             });
@@ -467,6 +484,7 @@ function handleRequest(request, response)
 }
 
 
+// read configuration
 var config;
 var configPath = modPath.join(__dirname, "config.json");
 try
@@ -479,7 +497,7 @@ catch (err)
     process.exit(1);
 }
 
-
+// setup users
 var authUsers = { };
 for (var i = 0; i < config.users.length; ++i)
 {
@@ -487,6 +505,7 @@ for (var i = 0; i < config.users.length; ++i)
     authUsers[user.name] = user.password_hash;
 }
 
+// setup HTTP authenticator
 var httpAuth;
 if (config.authentication.method === "basic")
 {
@@ -501,6 +520,7 @@ else
     throw "Invalid authentication method '" + config.authentication.method + "'";
 }
 
+// setup HTTP server
 var server;
 if (config.server.use_ssl)
 {
@@ -513,6 +533,7 @@ else
     server = modHttp.createServer();
 }
 
+// run HTTP server
 server.on("request", handleRequest);
 server.listen(config.server.port, config.server.listen);
 
