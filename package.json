@@ -1,6 +1,6 @@
 {
   "name": "pilvini",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "dependencies": {
     "jszip": "^3.1.4",
     "lwip": "0.0.9"

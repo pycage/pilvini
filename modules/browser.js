@@ -261,7 +261,7 @@ function makeHtmlHead()
               "  <script src='/::res/browser/index.js'></script>" +
               "  <script src='/::res/viewer/image.js'></script>" +
               "  <script src='/::res/viewer/markdown.js'></script>" +
-              "  <script src='/::res/viewer/pdf.js'></script>" +              
+              "  <script src='/::res/viewer/pdf.js'></script>" +
               "  <script src='/::res/viewer/vcard.js'></script>" +
               "</head>";
 
@@ -284,10 +284,58 @@ function makeBreadcrumbs(path)
         }
 
         breadcrumbPath += "/" + pathParts[i]
-        out += "  <li data-icon='false'><a href='" + escapeHtml(encodeURI(breadcrumbPath)) + "/index.html' data-ajax='false''>" + escapeHtml(pathParts[i]) + "</a></li>";
+        out += "  <li data-icon='false'><a href='" + escapeHtml(encodeURI(breadcrumbPath)) + "/index.html' data-ajax='false'>" + escapeHtml(pathParts[i]) + "</a></li>";
     }
 
     out += "</ul>";
+
+    return out;
+}
+
+function makeFavorites(home)
+{
+    var favsFile = modPath.join(home, ".pilvini", "favorites.json");
+    if (! modFs.existsSync(favsFile))
+    {
+        return "";
+    }
+
+    try
+    {
+        var favs = modFs.readFileSync(favsFile, "utf8");
+    }
+    catch (err)
+    {
+        console.error("Failed to read favorites: " + err);
+        return "";
+    }
+
+    try
+    {
+        var doc = JSON.parse(favs);
+    }
+    catch (err)
+    {
+        console.error("Invalid favorites document: " + err);
+        return "";
+    }
+
+    var out = "<ul data-role='listview'>";
+
+    for (var i = 0; i < doc.length; ++i)
+    {
+        var node = doc[i];
+        var href = node["href"];
+        var name = node["name"];
+
+        out += "<li data-icon='star'>" +
+               "<a href='" + href + "' data-ajax='false'>" +
+               name +
+               "</a></li>";
+    }
+
+    out += "  <li data-role='list-divider'></li>" +
+           "</ul>";
 
     return out;
 }
@@ -393,13 +441,14 @@ function makeNameDialog()
     return out;
 }
 
-function makeMainPage(path, stats)
+function makeMainPage(home, path, stats)
 {
     var out = "<div id='main-page' data-role='page'>" +
 
               makeMoreMenu() +
 
               "  <div id='breadcrumbs' data-role='popup' data-arrow='t'>" +
+              makeFavorites(home) +
               makeBreadcrumbs(path) +
               "  </div>" +
 
@@ -457,7 +506,7 @@ function makeViewerPage()
     return out;
 }
 
-function makeHtml(path, stats, clipboardStats)
+function makeHtml(home, path, stats, clipboardStats)
 {
     var out = "<!DOCTYPE html>" +
 
@@ -468,7 +517,7 @@ function makeHtml(path, stats, clipboardStats)
               "<input id='upload' type='file' multiple style='display: none;'/>" +
               "<a id='download' data-ajax='false' href='#' download='name' style='display: none;'></a>" +
 
-              makeMainPage(path, stats) +
+              makeMainPage(home, path, stats) +
               makeViewerPage() +
               makeClipboardPage(clipboardStats) +
 
@@ -492,7 +541,7 @@ function makeIndex(href, home, callback)
         {
             readStats(modPath.join(home, ".pilvini", "clipboard"), function (clipboardStats)
             {
-                var html = makeHtml(path, stats, clipboardStats);
+                var html = makeHtml(home, path, stats, clipboardStats);
                 callback(true, html);
             });
         });

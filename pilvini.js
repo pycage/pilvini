@@ -18,7 +18,7 @@ const modCrypto = require("crypto"),
       modThumbnail = attempt(function () { return require("./modules/thumbnail.js"); }),
       modUtils = require("./modules/utils.js");
 
-const VERSION = "0.1.0";
+const VERSION = "0.2.0rc";
 
 // whitelist of URLs that are accessible without authorization
 // (some browsers are picky and have problems with favicons behind an auth wall)
