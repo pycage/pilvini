@@ -113,8 +113,8 @@ function readStats(path, callback)
                         }
                         else
                         {
-                            //return a[0].toLowerCase() < b[0].toLowerCase() ? -1 : 1;
-                            return a[1].mtime > b[1].mtime ? -1 : 1;
+                            return a[0].toLowerCase() < b[0].toLowerCase() ? -1 : 1;
+                            //return a[1].mtime > b[1].mtime ? -1 : 1;
                         }
                     });
 
