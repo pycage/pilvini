@@ -183,11 +183,14 @@ function handleRequest(request, response)
     response.user = authUser;
     response.writeHeadLogged = function (code, status)
     {
-        console.log("[" + new Date().toLocaleString() + "] [Server] " +
-                    "[client " + this.user + "@" + (this.connection.remoteAddress || "<unknown>") +
-                    ":" + (this.connection.remotePort || "<unknown>") + "] " +
-                    "< " + this.request.method + " " + this.request.url + " : " +
-                    "HTTP " + code + " " + status);
+        if (this.connection)
+        {
+            console.log("[" + new Date().toLocaleString() + "] [Server] " +
+                        "[client " + this.user + "@" + (this.connection.remoteAddress || "<unknown>") +
+                        ":" + (this.connection.remotePort || "<unknown>") + "] " +
+                        "< " + this.request.method + " " + this.request.url + " : " +
+                        "HTTP " + code + " " + status);
+        }
         this.writeHead(code, status);
     };
 

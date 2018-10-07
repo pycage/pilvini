@@ -60,7 +60,7 @@ function loadThumbnails(page)
     console.log("Location: " + window.location.href);
 
     var images = [];
-    $(page).find("li a img").each(function (idx)
+    $(page).find(".fileitem a img").each(function (idx)
     {
         var url = $(this).attr("data-x-thumbnail");
         if (url)
@@ -144,7 +144,7 @@ function toggleSelect(item)
 function selectAll()
 {
     console.log("Select all");
-    var items = $("#filesbox > ul > li");
+    var items = $("#filesbox .fileitem");
     items.data("selected", true);
     items.find("> a:eq(1)").addClass("ui-btn-b");
 
@@ -155,7 +155,7 @@ function unselectAll()
 {
     console.log("Unselect all");
 
-    var items = $("#filesbox > ul > li");
+    var items = $("#filesbox .fileitem");
     items.data("selected", false);
     items.find("> a:eq(1)").removeClass("ui-btn-b");
 
@@ -164,7 +164,7 @@ function unselectAll()
 
 function checkSelected()
 {
-    var items = $("#filesbox > ul > li");
+    var items = $("#filesbox .fileitem");
     var size = 0;
     items.each(function ()
     {
@@ -199,7 +199,7 @@ function eachSelected(callback)
 {
     console.log("Each selected");
 
-    var items = $("#filesbox > ul > li");
+    var items = $("#filesbox .fileitem");
     var size = 0;
     items.each(function ()
     {
@@ -563,7 +563,7 @@ function uploadFiles(files)
     for (i = 0; i < files.length; ++i)
     {
         var file = files[i];
-        var target = window.location.href.replace("index.html", encodeURIComponent(file.name));
+        var target = window.location.pathname.replace("index.html", encodeURIComponent(file.name));
 
         upload(file, target, function ()
         {
@@ -701,6 +701,12 @@ $(document).on("pagecreate", "#main-page", function (ev)
 
     $("#filesbox").on("dragover", onDragOver);
     $("#filesbox").on("drop", onDrop);
+
+    $("#image-popup").on("popupbeforeposition", function ()
+    {
+        var maxHeight = $(window).height() - 24 + "px";
+        $("#image-popup img" ).css("max-height", maxHeight);
+    });
 
     unselectAll();
     checkClipboard();

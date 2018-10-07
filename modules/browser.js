@@ -30,6 +30,35 @@ const MIME_INFO = {
     "video/x-msvideo": { "icon": "video.png" }
 };
 
+function readSettings(home)
+{
+    var settingsFile = modPath.join(home, ".pilvini", "settings.json");
+    if (! modFs.existsSync(settingsFile))
+    {
+        return { };
+    }
+
+    try
+    {
+        var settings = modFs.readFileSync(settingsFile, "utf8");
+    }
+    catch (err)
+    {
+        console.error("Failed to read settings: " + err);
+        return { };
+    }
+
+    try
+    {
+        return JSON.parse(settings);
+    }
+    catch (err)
+    {
+        console.error("Invalid settings document: " + err);
+        return { };
+    }
+}
+
 function escapeHtml(text)
 {
     return text.replace(/[\"'&<>]/g, function (a)
@@ -78,7 +107,7 @@ function prepareClipboard(home, callback)
     });
 }
 
-function readStats(path, callback)
+function readStats(sortMode, path, callback)
 {
     modFs.readdir(path, function (err, files)
     {
@@ -113,8 +142,17 @@ function readStats(path, callback)
                         }
                         else
                         {
-                            return a[0].toLowerCase() < b[0].toLowerCase() ? -1 : 1;
-                            //return a[1].mtime > b[1].mtime ? -1 : 1;
+                            switch (sortMode)
+                            {
+                            case "date":
+                                return a[1].mtime < b[1].mtime ? -1 : 1;
+                            case "date-desc":
+                                return a[1].mtime > b[1].mtime ? -1 : 1;
+                            case "name-desc":
+                                return a[0].toLowerCase() > b[0].toLowerCase() ? -1 : 1;
+                            default:
+                                return a[0].toLowerCase() < b[0].toLowerCase() ? -1 : 1;
+                            }
                         }
                     });
 
@@ -170,7 +208,7 @@ function makeItem(path, file, stat, active)
     if (active && mimeInfo && mimeInfo.viewer)
     {
         action = "onclick='" + mimeInfo.viewer +
-                "(window.location.href.replace(/index.html$/, \"\") + \"" + escapeHtml(encodeURIComponent(file)) + "\");'";
+                 "(window.location.pathname.replace(/index.html$/, \"\") + \"" + escapeHtml(encodeURIComponent(file)) + "\");'";
         href="#";
     }
     else
@@ -223,6 +261,75 @@ function makeItem(path, file, stat, active)
     return out;
 }
 
+function makeGridItem(path, file, stat, active)
+{
+    var out = "";
+
+    var mimeType = modMime.mimeType(file);
+    var mimeInfo = MIME_INFO[mimeType];
+    var name = file;
+    var icon = getIcon(mimeType);
+    var href = "";
+    var info = "";
+    var ajaxMode = "";
+    var action = "";
+
+    var iconHtml = "";
+
+    if (active && mimeInfo && mimeInfo.viewer)
+    {
+        action = "onclick='" + mimeInfo.viewer +
+                 "(window.location.pathname.replace(/index.html$/, \"\") + \"" + escapeHtml(encodeURIComponent(file)) + "\");'";
+        href="#";
+    }
+    else
+    {
+        href = active ? encodeURIComponent(file)
+                      : "";
+    }
+
+    if (stat.isDirectory())
+    {
+        mimeType = "application/x-folder";
+        href = active ? modPath.join(encodeURIComponent(file), "index.html")
+                      : "#";
+        icon = "/::res/file-icons/folder.png";
+        iconHtml = makeIcon(icon);
+        ajaxMode = "data-ajax='false'";
+    }
+    else if (mimeType.startsWith("image/") ||
+             mimeType.startsWith("audio/"))
+    {
+        if (! modThumbnail)
+        {
+            iconHtml = makeIcon(icon);
+        }
+        else
+        {
+            iconHtml = makeThumbnail(icon, path, file);
+        }
+
+        info = makeInfo(file, stat);
+        ajaxMode = "data-ajax='false'";
+    }
+    else
+    {
+        info = makeInfo(file, stat);
+        ajaxMode = "data-ajax='false'";
+        iconHtml = makeIcon(icon);
+    }
+
+    out += "<a data-mimetype='" + mimeType + "' href='" + escapeHtml(href) + "' "+ ajaxMode + " " + action + ">";
+    out += iconHtml;
+    out += "</a>";
+    if (active)
+    {
+        out += "<a data-icon='check' href='#' onclick='toggleSelect($(this).parent());'></a>";
+    }
+
+    return out;
+}
+
 function makeFiles(path, stats, active)
 {
     var out = "";
@@ -237,11 +344,44 @@ function makeFiles(path, stats, active)
             continue;
         }
 
-        out += "<li data-icon='false'>";
+        out += "<li data-icon='false' class='fileitem'>";
         out += makeItem(path, file, stat, active);
         out += "</li>";
     }
     out += "</ul>";
+
+    return out;
+}
+
+function makeFilesGrid(path, stats, active)
+{
+    var out = "";
+    out += "<p>";
+    var currentDate = "";
+    for (var i = 0; i < stats.length; ++i)
+    {
+        var file = stats[i][0];
+        var stat = stats[i][1];
+
+        if (! stat || file.indexOf(".") === 0)
+        {
+            continue;
+        }
+
+        var thisDate = stat.mtime.toDateString();
+        if (thisDate !== currentDate)
+        {
+            currentDate = thisDate;
+            out += "</p>";
+            out += "<h3>" + thisDate + "</h3>";
+            out += "<p>";
+        }
+
+        out += "<div style='display: inline' class='fileitem'>";
+        out += makeGridItem(path, file, stat, active);
+        out += "</div>&nbsp;";
+    }
+    out += "</p>"
 
     return out;
 }
@@ -441,7 +581,17 @@ function makeNameDialog()
     return out;
 }
 
-function makeMainPage(home, path, stats)
+function makeImagePopup()
+{
+    var out = "<div id='image-popup' data-role='popup' data-dismissable='true' data-theme='b' data-overlay-theme='b' data-corners='false'>" +
+              "  <a href='#' data-rel='back' class='ui-btn ui-corner-all ui-shadow ui-btn-a ui-icon-delete ui-btn-icon-notext ui-btn-right'></a>" +
+              "  <img>" +
+              "</div>";
+
+    return out;
+}
+
+function makeMainPage(viewMode, home, path, stats)
 {
     var out = "<div id='main-page' data-role='page'>" +
 
@@ -455,6 +605,7 @@ function makeMainPage(home, path, stats)
               makeMessageDialog() +
               makeNewDirDialog() +
               makeNameDialog() +
+              makeImagePopup() +
 
               "  <div data-role='header' data-position='fixed' data-tap-toggle='false'>" +
               "    <h1 onclick='$(\"#breadcrumbs\").popup(\"open\", { positionTo: this });'>" + escapeHtml(path) + "</h1>" +
@@ -463,7 +614,7 @@ function makeMainPage(home, path, stats)
               "  </div>" +
 
               "  <div id='filesbox' class='ui-content'>" +
-              makeFiles(path, stats, true) +
+              (viewMode === "list" ? makeFiles(path, stats, true) : makeFilesGrid(path, stats, true)) +
               "  </div>" +
 
               "</div>";
@@ -506,7 +657,7 @@ function makeViewerPage()
     return out;
 }
 
-function makeHtml(home, path, stats, clipboardStats)
+function makeHtml(viewMode, home, path, stats, clipboardStats)
 {
     var out = "<!DOCTYPE html>" +
 
@@ -517,7 +668,7 @@ function makeHtml(home, path, stats, clipboardStats)
               "<input id='upload' type='file' multiple style='display: none;'/>" +
               "<a id='download' data-ajax='false' href='#' download='name' style='display: none;'></a>" +
 
-              makeMainPage(home, path, stats) +
+              makeMainPage(viewMode, home, path, stats) +
               makeViewerPage() +
               makeClipboardPage(clipboardStats) +
 
@@ -532,16 +683,23 @@ function makeIndex(href, home, callback)
     var path = decodeURIComponent(href);
     var fullPath = modPath.join(home, decodeURIComponent(href));
 
+    var settings = readSettings(home);
+    console.debug("Settings: " + JSON.stringify(settings));
+    var viewMode = settings.view || "list";
+    var sortMode = settings.sort || "name";
+
     console.debug("User Path: " + path + "\n" +
-                  "Full path: " + fullPath);
+                  "Full Path: " + fullPath + "\n" +
+                  "View Mode: " + viewMode + "\n" +
+                  "Sort Mode: " + sortMode);
 
     prepareClipboard(home, function ()
     {
-        readStats(fullPath, function (stats)
+        readStats(sortMode, fullPath, function (stats)
         {
-            readStats(modPath.join(home, ".pilvini", "clipboard"), function (clipboardStats)
+            readStats(sortMode, modPath.join(home, ".pilvini", "clipboard"), function (clipboardStats)
             {
-                var html = makeHtml(home, path, stats, clipboardStats);
+                var html = makeHtml(viewMode, home, path, stats, clipboardStats);
                 callback(true, html);
             });
         });
