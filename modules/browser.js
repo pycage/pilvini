@@ -353,11 +353,23 @@ function makeFiles(path, stats, active)
     return out;
 }
 
-function makeFilesGrid(path, stats, active)
+function makeFilesGrid(sortMode, path, stats, active)
 {
+    function getSectionHeader(name, stat)
+    {
+        if (sortMode === "name" || sortMode === "name-desc")
+        {
+            return name[0];
+        }
+        else
+        {
+            return stat.mtime.toDateString();
+        }
+    }
+
     var out = "";
     out += "<p>";
-    var currentDate = "";
+    var currentHeader = "";
     for (var i = 0; i < stats.length; ++i)
     {
         var file = stats[i][0];
@@ -368,12 +380,12 @@ function makeFilesGrid(path, stats, active)
             continue;
         }
 
-        var thisDate = stat.mtime.toDateString();
-        if (thisDate !== currentDate)
+        var thisHeader = getSectionHeader(file, stat);
+        if (thisHeader !== currentHeader)
         {
-            currentDate = thisDate;
+            currentHeader = thisHeader;
             out += "</p>";
-            out += "<h3>" + thisDate + "</h3>";
+            out += "<h3>" + thisHeader + "</h3>";
             out += "<p>";
         }
 
@@ -480,11 +492,40 @@ function makeFavorites(home)
     return out;
 }
 
-function makeMoreMenu()
+function makeMoreMenu(viewMode, sortMode)
 {
+    var sortByNameExt = "";
+    var sortByDateExt = "";
+
+    switch (sortMode)
+    {
+    case "name":
+        sortByNameExt = " (↓)";
+    break;
+    case "name-desc":
+        sortByNameExt = " (↑)";
+        break;
+    case "date":
+        sortByDateExt = " (↓)";
+        break;
+    case "date-desc":
+        sortByDateExt = " (↑)";
+        break;
+    }
+
     var out = "<div id='more-menu' data-role='popup' data-arrow='t'>" +
 
               "  <div data-role='collapsible-set'>" +
+              "  <div data-role='collapsible'>" +
+              "    <h2>View</h2>" +
+              "    <ul data-role='listview'>" +
+              "      <li id='mi-listview' data-icon='false'><a href='#' onclick='changeSettings(\"view\", \"list\");'>As List</a></li>" +
+              "      <li id='mi-gridview' data-icon='false'><a href='#' onclick='changeSettings(\"view\", \"grid\");'>As Grid</a></li>" +
+              "      <li id='mi-sort-by-name' data-icon='false'><a href='#' onclick='changeSettings(\"sort\", \"name\", \"name-desc\");'>By Name" + sortByNameExt + "</a></li>" +
+              "      <li id='mi-sort-by-date' data-icon='false'><a href='#' onclick='changeSettings(\"sort\", \"date\", \"date-desc\");'>By Date" + sortByDateExt + "</a></li>" +
+              "    </ul>" +
+              "  </div>" +
+
               "  <div data-role='collapsible'>" +
               "    <h2>New</h2>" +
               "    <ul data-role='listview'>" +
@@ -591,11 +632,11 @@ function makeImagePopup()
     return out;
 }
 
-function makeMainPage(viewMode, home, path, stats)
+function makeMainPage(viewMode, sortMode, home, path, stats)
 {
     var out = "<div id='main-page' data-role='page'>" +
 
-              makeMoreMenu() +
+              makeMoreMenu(viewMode, sortMode) +
 
               "  <div id='breadcrumbs' data-role='popup' data-arrow='t'>" +
               makeFavorites(home) +
@@ -614,7 +655,7 @@ function makeMainPage(viewMode, home, path, stats)
               "  </div>" +
 
               "  <div id='filesbox' class='ui-content'>" +
-              (viewMode === "list" ? makeFiles(path, stats, true) : makeFilesGrid(path, stats, true)) +
+              (viewMode === "list" ? makeFiles(path, stats, true) : makeFilesGrid(sortMode, path, stats, true)) +
               "  </div>" +
 
               "</div>";
@@ -657,7 +698,7 @@ function makeViewerPage()
     return out;
 }
 
-function makeHtml(viewMode, home, path, stats, clipboardStats)
+function makeHtml(viewMode, sortMode, home, path, stats, clipboardStats)
 {
     var out = "<!DOCTYPE html>" +
 
@@ -668,7 +709,7 @@ function makeHtml(viewMode, home, path, stats, clipboardStats)
               "<input id='upload' type='file' multiple style='display: none;'/>" +
               "<a id='download' data-ajax='false' href='#' download='name' style='display: none;'></a>" +
 
-              makeMainPage(viewMode, home, path, stats) +
+              makeMainPage(viewMode, sortMode, home, path, stats) +
               makeViewerPage() +
               makeClipboardPage(clipboardStats) +
 
@@ -699,7 +740,7 @@ function makeIndex(href, home, callback)
         {
             readStats(sortMode, modPath.join(home, ".pilvini", "clipboard"), function (clipboardStats)
             {
-                var html = makeHtml(viewMode, home, path, stats, clipboardStats);
+                var html = makeHtml(viewMode, sortMode, home, path, stats, clipboardStats);
                 callback(true, html);
             });
         });

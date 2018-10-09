@@ -618,6 +618,56 @@ function makeFile(name)
     });
 }
 
+function changeSettings(key, value, altValue)
+{
+    var settingsFile = "/.pilvini/settings.json";
+
+    function apply(json)
+    {
+        if (json[key] === value)
+        {
+            json[key] = altValue;
+        }
+        else
+        {
+            json[key] = value;
+        }
+
+        console.log("Uploading settings...");
+        $.ajax({
+            url: settingsFile,
+            type: "PUT",
+            data: JSON.stringify(json),
+            processData: false,
+            beforeSend: function (xhr) { xhr.overrideMimeType("text/plain; charset=x-user-defined"); }
+        })
+        .done(function ()
+        {
+            console.log("Settings changed: " + key + " = " + value);
+            window.location.reload();
+        })
+        .fail(function (xhr, status, err)
+        {
+            showMessage("Failed to change settings: " + err);
+        });
+    }
+
+    $.ajax({
+        type: "GET",
+        url: settingsFile,
+        dataType: "json"
+    })
+    .done(function (data, status, xhr)
+    {
+        console.log("Data: " + JSON.stringify(data));
+        apply(data);
+    })
+    .fail(function (xhr, status, err)
+    {
+        apply({ });
+    });
+}
+
 function onFilesSelected(ev)
 {
     uploadFiles(ev.target.files);
