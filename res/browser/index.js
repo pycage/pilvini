@@ -691,7 +691,6 @@ function onDrop(ev)
 
 function onItemTouchStart(ev)
 {
-    console.log("Touch start");
     this.lastX = ev.originalEvent.touches[0].pageX;
 }
 
@@ -699,22 +698,23 @@ function onItemTouchMove(ev)
 {
     var dx = ev.originalEvent.touches[0].pageX - this.lastX;
 
-    if (dx > $(this).width() * 0.66)
+    var upButton = $("#upButton");
+    if (upButton.length)
     {
-        console.log("Go Back");
-        var upButton = $("#upButton");
-        if (upButton)
+        if (dx > $(this).width() * 0.66)
         {
             window.location.assign(upButton.attr("href"));
         }
+        else if (dx > 32)
+        {
+            $("#filesbox").css("margin-left", dx + "px");
+        }
     }
     //ev.preventDefault();
-    $("#filesbox").css("margin-left", dx + "px");
 }
 
 function onItemTouchEnd(ev)
 {
-    console.log("Touch End");
     $("#filesbox").css("margin-left", "0px");
 }
 
