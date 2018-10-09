@@ -691,47 +691,31 @@ function onDrop(ev)
 
 function onItemTouchStart(ev)
 {
+    console.log("Touch start");
     this.lastX = ev.originalEvent.touches[0].pageX;
-    this.offsetX = 0;
-    //this.bgColor = $(this).find("a").css("background-color");
 }
 
 function onItemTouchMove(ev)
 {
-    var x = this.offsetX;
     var dx = ev.originalEvent.touches[0].pageX - this.lastX;
-    this.lastX = ev.originalEvent.touches[0].pageX;
 
-    var itemWidth = $(this).width();
-    if (Math.abs(x + dx) > itemWidth * 0.75)
+    if (dx > $(this).width() * 0.66)
     {
-        ev.preventDefault();
-        //$(this).find("a").css("background-color", "red");
+        console.log("Go Back");
+        var upButton = $("#upButton");
+        if (upButton)
+        {
+            window.location.assign(upButton.attr("href"));
+        }
     }
-    else
-    {
-        //$(this).find("a").css("background-color", this.bgColor);
-    }
-    if (Math.abs(x + dx) > 30)
-    {
-        $(this).css("margin-left", (x + dx) + "px");
-    }
-    this.offsetX = (x + dx);
+    //ev.preventDefault();
+    $("#filesbox").css("margin-left", dx + "px");
 }
 
 function onItemTouchEnd(ev)
 {
-    //$(this).find("a").css("background-color", this.bgColor);
-    $(this).css("margin-left", "0");
-
-    var x = this.offsetX;
-    var itemWidth = $(this).width();
-
-    if (Math.abs(x) > itemWidth * 0.75)
-    {
-        ev.preventDefault();
-        removeItem(this);
-    }
+    console.log("Touch End");
+    $("#filesbox").css("margin-left", "0px");
 }
 
 function init()
@@ -743,14 +727,12 @@ $.event.special.tap.emitTapOnTaphold = false;
 
 $(document).on("pagecreate", "#main-page", function (ev)
 {
-    /*
-    $("#filesbox li").on("touchstart", onItemTouchStart);
-    $("#filesbox li").on("touchmove", onItemTouchMove);
-    $("#filesbox li").on("touchend", onItemTouchEnd);
-    */
+    $("body").on("touchstart", onItemTouchStart);
+    $("body").on("touchmove", onItemTouchMove);
+    $("body").on("touchend", onItemTouchEnd);
 
-    $("#filesbox").on("dragover", onDragOver);
-    $("#filesbox").on("drop", onDrop);
+    $("body").on("dragover", onDragOver);
+    $("body").on("drop", onDrop);
 
     $("#image-popup").on("popupbeforeposition", function ()
     {
