@@ -691,31 +691,80 @@ function onDrop(ev)
 
 function onItemTouchStart(ev)
 {
-    this.lastX = ev.originalEvent.touches[0].pageX;
+    this.swipeContext = {
+        beginX: ev.originalEvent.touches[0].screenX,
+        beginY: ev.originalEvent.touches[0].screenY,
+        status: 0
+     };
 }
 
 function onItemTouchMove(ev)
 {
-    var dx = ev.originalEvent.touches[0].pageX - this.lastX;
-
     var upButton = $("#upButton");
-    if (upButton.length)
+    if (! upButton.length)
     {
-        if (dx > $(this).width() * 0.66)
-        {
-            window.location.assign(upButton.attr("href"));
-        }
-        else if (dx > 32)
-        {
-            $("#filesbox").css("margin-left", dx + "px");
-        }
+        return;
     }
+
+    var dx = ev.originalEvent.touches[0].screenX - this.swipeContext.beginX;
+    var dy = ev.originalEvent.touches[0].screenY - this.swipeContext.beginY;
+    
+    var swipeThreshold = $(this).width() * 0.50;
+
+    switch (this.swipeContext.status)
+    {
+    case 0: // initiated
+        if (dx > 16)
+        {
+            var angle = Math.atan(dy / dx);
+            if (Math.abs(angle) > Math.PI / 4)
+            {
+                this.swipeContext.status = 3;
+            }
+            else
+            {
+                this.swipeContext.status = 1;
+            }
+        }
+        break;
+
+    case 1: // swiping
+        $(".ui-header, #filesbox").css("margin-left", Math.min(swipeThreshold, dx) + "px");
+        
+        if (dx > swipeThreshold)
+        {
+            $("#main-page").css("background-color", "#a0a0a0");
+            this.swipeContext.status = 2;
+        }
+        break;
+
+    case 2: // activated
+        $(".ui-header, #filesbox").css("margin-left", Math.min(swipeThreshold, dx) + "px");
+
+        if (dx < swipeThreshold)
+        {
+            $("#main-page").css("background-color", "");
+            this.swipeContext.status = 1;
+        }
+        break;
+
+    case 3: // aborted
+        break;
+    }
+
     //ev.preventDefault();
 }
 
 function onItemTouchEnd(ev)
 {
-    $("#filesbox").css("margin-left", "0px");
+    $("#main-page").css("background-color", "");
+    $(".ui-header, #filesbox").css("margin-left", 0 + "px");
+
+    var upButton = $("#upButton");
+    if (upButton.length && this.swipeContext.status === 2)
+    {
+        window.location.assign(upButton.attr("href"));
+    }
 }
 
 function init()
@@ -727,10 +776,12 @@ $.event.special.tap.emitTapOnTaphold = false;
 
 $(document).on("pagecreate", "#main-page", function (ev)
 {
+    /* setup swipe suppport */
     $("body").on("touchstart", onItemTouchStart);
     $("body").on("touchmove", onItemTouchMove);
     $("body").on("touchend", onItemTouchEnd);
 
+    /* setup drag and drop for external files */
     $("body").on("dragover", onDragOver);
     $("body").on("drop", onDrop);
 
