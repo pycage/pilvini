@@ -202,6 +202,7 @@ function makeItem(path, file, stat, active)
     var info = "";
     var ajaxMode = "";
     var action = "";
+    var fileUrl = modPath.join(path, file);
 
     var iconHtml = "";
 
@@ -248,7 +249,7 @@ function makeItem(path, file, stat, active)
         iconHtml = makeIcon(icon);
     }
 
-    out += "<a data-mimetype='" + mimeType + "' href='" + escapeHtml(href) + "' "+ ajaxMode + " " + action + ">";
+    out += "<a class='filelink' data-mimetype='" + mimeType + "' data-url='" + escapeHtml(fileUrl) + "' href='" + escapeHtml(href) + "' "+ ajaxMode + " " + action + ">";
     out += iconHtml;
     out += "<h2>" + escapeHtml(name) + "</h2>";
     out += "<p>" + info + "</p>";
@@ -273,6 +274,7 @@ function makeGridItem(path, file, stat, active)
     var info = "";
     var ajaxMode = "";
     var action = "";
+    var fileUrl = modPath.join(path, file);
 
     var iconHtml = "";
 
@@ -319,7 +321,7 @@ function makeGridItem(path, file, stat, active)
         iconHtml = makeIcon(icon);
     }
 
-    out += "<a data-mimetype='" + mimeType + "' href='" + escapeHtml(href) + "' "+ ajaxMode + " " + action + ">";
+    out += "<a class='filelink' data-mimetype='" + mimeType + "' data-url='" + escapeHtml(fileUrl) + "' href='" + escapeHtml(href) + "' "+ ajaxMode + " " + action + ">";
     out += iconHtml;
     out += "</a>";
     if (active)
@@ -625,8 +627,13 @@ function makeNameDialog()
 function makeImagePopup()
 {
     var out = "<div id='image-popup' data-role='popup' data-dismissable='true' data-theme='b' data-overlay-theme='b' data-corners='false'>" +
-              "  <a href='#' data-rel='back' class='ui-btn ui-corner-all ui-shadow ui-btn-a ui-icon-delete ui-btn-icon-notext ui-btn-right'></a>" +
+              "  <div data-role='header'>" +
+              "    <h1>Preview</h1>" +
+              "    <a class='ui-btn ui-btn-right ui-btn-icon-notext ui-icon-delete ui-corner-all' href='#' data-rel='back'></a>" +
+              "  </div>" +
+              "  <a id='image-popup-previous' class='ui-btn ui-btn-icon-notext ui-icon-carat-l' style='display: inline' href='#'></a>" +
               "  <img>" +
+              "  <a id='image-popup-next' class='ui-btn ui-btn-icon-notext ui-icon-carat-r' style='display: inline' href='#'></a>" +
               "</div>";
 
     return out;

@@ -787,8 +787,11 @@ $(document).on("pagecreate", "#main-page", function (ev)
 
     $("#image-popup").on("popupbeforeposition", function ()
     {
-        var maxHeight = $(window).height() - 24 + "px";
-        $("#image-popup img" ).css("max-height", maxHeight);
+        var maxWidth = $(window).width() - 32 + "px";
+        $("#image-popup img").css("max-width", maxWidth);
+
+        var maxHeight = $(window).height() - 80 + "px";
+        $("#image-popup img").css("max-height", maxHeight);
     });
 
     unselectAll();
