@@ -37,16 +37,19 @@ var VC_PROPERTIES = ["SOURCE",
 function loadVCard(href)
 {
     var page = $("#viewer-page");
-    $.mobile.loading("show");
 
-    var settings = {
+    var parts = href.split("/");
+    var name = decodeURI(parts[parts.length - 1]);
+    page.find("header h1").html(name);
+
+    sh.popup("busy-popup");
+  
+    $.ajax(href, {
         beforeSend: function (xhr) { xhr.overrideMimeType("text/vcard"); }
-    };
-
-    $.ajax(href, settings)
+    })
     .done(function (data, status, xhr)
     {
-        var listView = page.find(".ui-content ul");
+        var listView = page.find("section ul");
 
         var coll = new VCardCollection(data);
         var cards = coll.cards();
@@ -61,15 +64,15 @@ function loadVCard(href)
             var photo = card.prefOf("PHOTO");
 
             var html = "";
-            html += "<li data-icon='false'>";
-            html += "<a href=''>";
-            html += "<img style='width: 80px; background-repeat: no-repeat; background-position: 50% 50%;' src='/::res/file-icons/empty.png'/>";
-            html += fn.value();
+            html += "<li style='height: 80px;'>";
+            html += "<div class='sh-left' style='width: 80px; background-repeat: no-repeat; background-position: 50% 50%;'></div>";
+            html += "<div style='position: absolute; left: 80px; right: 0; top: 1em; padding-left: 0.5em;'>"
+            html += "<h1>" + fn.value() + "</h1>";
             if (org)
             {
                 html += " (" + org.value().replace(";", " ") + ")";
             }
-            html += "<p>";
+            html += "<h2 class='sh-font-small'>";
             if (tel)
             {
                 html += "<b>Phone</b> " + tel.value()+ " ";
@@ -78,13 +81,13 @@ function loadVCard(href)
             {
                 html += "<b>e-Mail</b> " + mail.value() + " ";
             }
-            html += "</p>";
-            html += "</a>";
+            html += "</h2>";
+            html += "</div>";
             html += "</li>";
 
             var li = $(html);
 
-            var img = li.find("img");
+            var img = li.find("> div:first-child");
             if (photo)
             {
                 var pic = "data:image/jpeg;base64," + photo.value();
@@ -103,20 +106,17 @@ function loadVCard(href)
     })
     .complete(function ()
     {
-        var listView = page.find(".ui-content ul");
-        listView.listview().listview("refresh");
-        $.mobile.loading("hide");
+        sh.popup_close("busy-popup");
     });
 }
 
 function viewVCard(href)
 {
     var page = $("#viewer-page");
-    page.find(".ui-content").html("<ul data-role='listview'></ul>");
+    page.find("section").html("<ul></ul>");
 
     loadVCard(href);
-
-    $.mobile.navigate("#viewer-page");
+    sh.push("viewer-page");
 }
 
 function VCProperty(group, name, parameters, value)

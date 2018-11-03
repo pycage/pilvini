@@ -1,0 +1,27 @@
+.sh-theme-default {
+    --color-primary: #404040;
+    --color-primary-background: #f0f0f0;
+    --color-highlight: #000000;
+    --color-highlight-background: #d0d0ef;
+    --color-content-background: white;
+    --color-content-alt-background: #f0f0f0;
+    --color-disabled: #a0a0a0;
+    --color-border: #a0a0a0;
+
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+
+
+.sh-theme-dark {
+    --color-primary: #ffffff;
+    --color-primary-background: #404040;
+    --color-highlight: #ffff00;
+    --color-highlight-background: #0000ff;
+    --color-content-background: #000000;
+    --color-content-alt-background: #404040;
+    --color-disabled: #808080;
+    --color-border: #a0a0a0;
+
+    font-family: Arial, Helvetica, sans-serif;
+}

@@ -1,0 +1,21 @@
+a {
+    border-radius: 0.1em;
+    border: solid 1px var(--color-border);
+    padding: 0.2em;
+    margin: 0.1em;
+    min-width: 4em;
+    background-color: var(--color-primary-background);
+    color: var(--color-primary);
+    text-align: center;
+    cursor: pointer;
+}
+
+a:hover {
+    color: var(--color-highlight);
+    background-color: var(--color-highlight-background);
+}
+
+a:active {
+    color: var(--color-highlight);
+    background-color: var(--color-highlight-background);
+}

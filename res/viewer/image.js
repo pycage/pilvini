@@ -2,7 +2,7 @@ function viewImage(href)
 {
     function getImageFiles()
     {
-        var items = $("a.filelink");
+        var items = $("#filesbox .filelink");
         var images = [];
     
         for (var i = 0; i < items.length; ++i)
@@ -23,10 +23,9 @@ function viewImage(href)
     function previousImage()
     {
         var img = $("#image-popup img");
-        var src = decodeURIComponent(img.attr("src"));
+        var src = img.attr("src");
         var images = getImageFiles();
     
-        console.log("src: " + src);
         var idx = images.indexOf(src);
         if (idx !== -1)
         {
@@ -44,10 +43,11 @@ function viewImage(href)
     function nextImage()
     {
         var img = $("#image-popup img");
-        var src = decodeURIComponent(img.attr("src"));
+        var src = img.attr("src");
         var images = getImageFiles();
     
         console.log("src: " + src);
+        console.log(images);
         var idx = images.indexOf(src);
         if (idx !== -1)
         {
@@ -66,17 +66,47 @@ function viewImage(href)
     var popup = $("#image-popup");
     var img = popup.find("img");
 
+    var w = popup.width() - 32;
+    var h = popup.height() - 32;
+
+    img.css("maxWidth", w + "px");
+    img.css("maxHeight", h + "px");
+
     img.off("load").one("load", function ()
     {
-        $.mobile.loading("hide");
-        popup.popup("open", { positionTo: "window" });
-        $("#image-popup").popup("reposition", {positionTo: 'window'});
-        $("#image-popup").attr("tabindex", -1).focus();
+        sh.popup_close("busy-popup");
+        
+        console.log("has class: " + popup.is(".sh-visible"));
+        if (popup.is(".sh-visible"))
+        {
+            img.parent().animate({
+                width: (img.width() + 2) + "px",
+                height: (img.height() + 2) + "px"
+            }, 350, function ()
+            {
+                img.css("visibility", "inherit");
+            });
+        }
+        else
+        {
+            img.parent().width(img.width());
+            img.parent().height(img.height());
+            img.css("visibility", "inherit");
+            sh.popup("image-popup");
+            $("#image-popup").attr("tabindex", -1).focus();
+        }
     });
+    /*
     $("#image-popup-previous").off("click").one("click", previousImage);
     $("#image-popup-next").off("click").one("click", nextImage);
+    */
     $("#image-popup").off("keydown").on("keydown", function (ev)
     {
+        if (! $(this).hasClass("sh-visible"))
+        {
+            return;
+        }
+
         console.log("key pressed: " + ev.which);
         switch (ev.which)
         {
@@ -90,8 +120,13 @@ function viewImage(href)
         }
         ev.preventDefault();
     });
+    $("#image-popup").on("sh-closed", function ()
+    {
+        $(this).off("keydown");
+    });
 
-    $.mobile.loading("show", { text: "Loading", textVisible: true });
+    sh.popup("busy-popup");
+    img.css("visibility", "hidden");
     img.attr("src", href);
 
     var idx = href.lastIndexOf("/");
@@ -104,26 +139,5 @@ function viewImage(href)
     {
         name = href;
     }
-    popup.find("h1").html(name);
-
-
-    /*
-    var page = $("#viewer-page");
-    page.find(".ui-content").html("<img style='width: 100%'/>");
-    page.find(".ui-content img").attr("src", href);
-
-    var idx = href.lastIndexOf("/");
-    var name;
-    if (idx !== -1)
-    {
-        name = href.substr(idx + 1);
-    }
-    else
-    {
-        name = href;
-    }
-    page.find("h1").html(name);
-
-    $.mobile.navigate("#viewer-page");
-    */
+    popup.find("h1").html(decodeURIComponent(name));
 }

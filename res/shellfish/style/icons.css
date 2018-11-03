@@ -1,0 +1,50 @@
+@font-face {
+    font-family: Material;
+    /*src: url("../assets/Material-Design-Iconic-Font.ttf") format("truetype");*/
+    src: url("https://cdnjs.cloudflare.com/ajax/libs/material-design-iconic-font/2.2.0/fonts/Material-Design-Iconic-Font.ttf?v=2.2.0") format("truetype");
+}
+
+.sh-fw-icon {
+    width: 1.5em;
+    text-align: center;
+}
+
+.sh-icon-arrow-up:before {
+    font-family: Material; content: "\f303";
+}
+
+.sh-icon-back:before {
+    font-family: Material; content: "\f2ea";
+}
+
+.sh-icon-bug:before {
+    font-family: Material; content: "\f120";
+}
+
+.sh-icon-edit:before {
+    font-family: Material; content: "\f158";
+}
+
+.sh-icon-checked:before {
+    font-family: Material; content: "\f26b";
+}
+
+.sh-icon-checked-circle:before {
+    font-family: Material; content: "\f269";
+}
+
+.sh-icon-gear:before {
+    font-family: Material; content: "\f1c6";
+}
+
+.sh-icon-html5:before {
+    font-family: Material; content: "\f351";
+}
+
+.sh-icon-menu:before {
+    font-family: Material; content: "\f197";
+}
+
+.sh-icon-trashcan:before {
+    font-family: Material; content: "\f154";
+}

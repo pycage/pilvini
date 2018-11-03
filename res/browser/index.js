@@ -2,7 +2,7 @@
 
 function currentPath()
 {
-    var path = $("#main-page div h1").html();
+    var path = $("#main-page > header h1").html();
     return path === "/" ? path
                         : "/" + path;
 }
@@ -35,24 +35,11 @@ function unescapeHtml(text)
     });
 }
 
-function showMessage(msg)
+function showError(msg)
 {
     $("#message-dialog h1").html("Error");
     $("#message-dialog p").html(msg);
-    $("#message-dialog").popup("open");
-}
-
-function closeMoreMenu(callback)
-{
-    if (callback)
-    {
-        $("#more-menu").one("popupafterclose", function ()
-        {
-            console.log("invoking callback");
-            setTimeout(callback, 100);
-        });
-    }
-    $("#more-menu").popup("close");
+    sh.popup("message-dialog");
 }
 
 function loadThumbnails(page)
@@ -60,7 +47,7 @@ function loadThumbnails(page)
     console.log("Location: " + window.location.href);
 
     var images = [];
-    $(page).find(".fileitem a img").each(function (idx)
+    $(page).find(".fileitem .thumbnail").each(function (idx)
     {
         var url = $(this).attr("data-x-thumbnail");
         if (url)
@@ -125,18 +112,7 @@ function loadNextThumbnail(forLocation, images)
 
 function toggleSelect(item)
 {
-    console.log("toggleSelect " + item);
-    var selected = ! (item.data("selected") || false);
-    item.data("selected", selected);
-
-    if (selected)
-    {
-        $(item).find("> a:eq(1)").addClass("ui-btn-b");
-    }
-    else
-    {
-        $(item).find("> a:eq(1)").removeClass("ui-btn-b");
-    }
+    $(item).toggleClass("sh-selected");
 
     checkSelected();
 }
@@ -144,9 +120,7 @@ function toggleSelect(item)
 function selectAll()
 {
     console.log("Select all");
-    var items = $("#filesbox .fileitem");
-    items.data("selected", true);
-    items.find("> a:eq(1)").addClass("ui-btn-b");
+    $("#filesbox .fileitem > div.sh-right").addClass("sh-selected");
 
     checkSelected();
 }
@@ -154,43 +128,32 @@ function selectAll()
 function unselectAll()
 {
     console.log("Unselect all");
-
-    var items = $("#filesbox .fileitem");
-    items.data("selected", false);
-    items.find("> a:eq(1)").removeClass("ui-btn-b");
+    $("#filesbox .fileitem > div.sh-right").removeClass("sh-selected");
 
     checkSelected();
 }
 
 function checkSelected()
 {
-    var items = $("#filesbox .fileitem");
-    var size = 0;
-    items.each(function ()
-    {
-        if ($(this).data("selected") == true)
-        {
-            ++size;
-        }
-    });
+    var size = $("#filesbox .fileitem > div.sh-right.sh-selected").length;
     console.log(size);
 
     if (size === 0)
     {
-        $("#mi-download, #mi-cut, #mi-copy, #mi-delete, #mi-rename, #mi-unselectall").addClass("ui-state-disabled");
-        $("#mi-selectall").removeClass("ui-state-disabled");
+        $("#mi-download, #mi-cut, #mi-copy, #mi-delete, #mi-rename, #mi-unselectall").addClass("sh-disabled");
+        //$("#mi-selectall").removeClass("sh-disabled");
     }
     else
     {
-        $("#mi-download, #mi-cut, #mi-copy, #mi-delete, #mi-unselectall").removeClass("ui-state-disabled");
-        $("#mi-selectall").addClass("ui-state-disabled");
+        $("#mi-download, #mi-cut, #mi-copy, #mi-delete, #mi-unselectall").removeClass("sh-disabled");
+        //$("#mi-selectall").addClass("sh-disabled");
         if (size === 1)
         {
-            $("#mi-rename").removeClass("ui-state-disabled");
+            $("#mi-rename").removeClass("sh-disabled");
         }
         else
         {
-            $("#mi-rename").addClass("ui-state-disabled");
+            $("#mi-rename").addClass("sh-disabled");
         }
     }
 }
@@ -199,87 +162,72 @@ function eachSelected(callback)
 {
     console.log("Each selected");
 
-    var items = $("#filesbox .fileitem");
-    var size = 0;
+    var items = $("#filesbox .fileitem > div.sh-right.sh-selected");
     items.each(function ()
     {
-        if ($(this).data("selected"))
-        {
-            callback(this);
-        }
+        callback($(this).parent());
     });
     unselectAll();
 }
 
 function showNewDirDialog()
 {
-    $("#newdir-dialog .accept-btn").off();
-    $("#newdir-dialog .accept-btn").on("click", function ()
+    function acceptCb()
     {
+        sh.popup_close("newdir-dialog");
         var name = $("#newdir-dialog form input").val();
 
         if (name !== "")
         {
-            $("#newdir-dialog").one("popupafterclose", function ()
-            {
-                setTimeout(function ()
-                {
-                    makeDirectory(name);
-                }, 100);
-            });
+            makeDirectory(name);
         }
-        $("#newdir-dialog").popup("close");
-    });
+        else
+        {
+            showError("Invalid name.");
+        }
+    }
 
-    $("#newdir-dialog .cancel-btn").off();
-    $("#newdir-dialog .cancel-btn").on("click", function ()
-    {
-        $("#newdir-dialog").popup("close");
-    });
-
-    $("#newdir-dialog").popup("open");
+    $("#newdir-dialog form input").val("");
+    $("#newdir-dialog a:first-child").off("click").on("click", acceptCb);
+    sh.popup("newdir-dialog");
 }
 
 function showNewFileDialog()
 {
-    $("#name-dialog form input").val("New File");
-
-    $("#name-dialog .accept-btn").off();
-    $("#name-dialog .accept-btn").on("click", function ()
+    function acceptCb()
     {
+        sh.popup_close("name-dialog");
         var name = $("#name-dialog form input").val();
+
         if (name !== "")
         {
-            $("#name-dialog").one("popupafterclose", function ()
-            {
-                setTimeout(function ()
-                {
-                    makeFile(name);
-                }, 100);
-            });
+            makeFile(name);
         }
-        $("#name-dialog").popup("close");
-    });
+        else
+        {
+            showError("Invalid name.");
+        }
+    }
 
-    $("#name-dialog").popup("open");
+    $("#name-dialog form input").val("");
+    $("#name-dialog a:first-child").off("click").on("click", acceptCb);
+    sh.popup("name-dialog");
 }
 
 function showNameDialog(item)
 {
-    item = $(item);
-    var name = unescapeHtml(item.find("a h2").html());
-    $("#name-dialog form input").val(name);
-
-    $("#name-dialog .accept-btn").off();
-    $("#name-dialog .accept-btn").on("click", function ()
+    function acceptCb()
     {
         var newName = $("#name-dialog form input").val();
         renameItem(item, newName);
+        sh.popup_close("name-dialog");
+    }
 
-        $("#name-dialog").popup("close");
-    });
-
-    $("#name-dialog").popup("open");
+    item = $(item);
+    var name = unescapeHtml(item.find("h1:first-child").html());
+    $("#name-dialog form input").val(name);
+    $("#name-dialog a:first-child").off("click").on("click", acceptCb);
+    sh.popup("name-dialog");
 }
 
 function checkClipboard()
@@ -288,11 +236,11 @@ function checkClipboard()
 
     if (size === 0)
     {
-        $("#mi-paste, #mi-showclipboard").addClass("ui-state-disabled");
+        $("#mi-paste, #mi-showclipboard").addClass("sh-disabled");
     }
     else
     {
-        $("#mi-paste, #mi-showclipboard").removeClass("ui-state-disabled");
+        $("#mi-paste, #mi-showclipboard").removeClass("sh-disabled");
     }
 }
 
@@ -317,7 +265,7 @@ function clearClipboard(callback)
     binItems.each(function ()
     {
         var item = this;
-        var name = unescapeHtml($(item).find("a h2").html());
+        var name = unescapeHtml($(item).find("h1").html());
         var target = "/.pilvini/clipboard/" + encodeURIComponent(name);
 
         $.ajax({
@@ -331,7 +279,7 @@ function clearClipboard(callback)
         })
         .fail(function ()
         {
-            showMessage("Failed to remove: " + name);
+            showError("Failed to remove: " + name);
         })
         .always(function ()
         {
@@ -349,11 +297,11 @@ function copyItemToClipboard(item)
 {
     var img = $(item).find("img:eq(0)").clone();
     var info = $(item).find("p").clone();
-    var name = $(item).find("a h2").html();
+    var name = $(item).find("h1").html();
 
-    var copy = $("<li data-icon='false'><a href='#'><h2>" + name + "</h2></a></li>");
-    copy.find("a").prepend(img);
-    copy.find("a").append(info);
+    var copy = $("<li><h1>" + name + "</h1></li>");
+    copy.prepend(img);
+    copy.append(info);
     copy.appendTo("#clipboard ul");
 
     checkClipboard();
@@ -363,7 +311,8 @@ function cutItem(item)
 {
     console.log("Cut item");
 
-    var name = unescapeHtml($(item).find("a h2").html());
+    // TODO: use data-url
+    var name = unescapeHtml($(item).find("h1").html());
     var target = encodeURIComponent(name);
     var newTarget = "/.pilvini/clipboard/" + encodeURIComponent(name);
 
@@ -379,7 +328,7 @@ function cutItem(item)
         $("#filesbox ul").listview("refresh");
     })
     .fail(function () {
-        showMessage("Failed to cut: " + name);
+        showError("Failed to cut: " + name);
     });
 }
 
@@ -387,7 +336,8 @@ function copyItem(item)
 {
     console.log("Copy item");
 
-    var name = unescapeHtml($(item).find("a h2").html());
+    // TODO: use data-url
+    var name = unescapeHtml($(item).find("h1").html());
     var target = encodeURIComponent(name);
     var newTarget = "/.pilvini/clipboard/" + encodeURIComponent(name);
 
@@ -401,7 +351,7 @@ function copyItem(item)
         copyItemToClipboard(item);
     })
     .fail(function () {
-        showMessage("Failed to copy: " + name);
+        showError("Failed to copy: " + name);
     });
 }
 
@@ -420,7 +370,8 @@ function pasteItems()
         var item = this;
 
         var path = currentPath();
-        var name = unescapeHtml($(item).find("a h2").html());
+        // TODO: use data-url
+        var name = unescapeHtml($(item).find("h1").html());
         var target = "/.pilvini/clipboard/" + encodeURIComponent(name);
         var newTarget = encodeURI(path !== "/" ? path : "") + "/" + encodeURIComponent(name);
 
@@ -435,7 +386,7 @@ function pasteItems()
         })
         .fail(function ()
         {
-            showMessage("Failed to paste: " + name);
+            showError("Failed to paste: " + name);
         })
         .always(function ()
         {
@@ -450,8 +401,9 @@ function pasteItems()
 
 function downloadItem(item)
 {
-    var mimeType = $(item).find("a").data("mimetype");
-    var name = unescapeHtml($(item).find("a h2").html());
+    var mimeType = $(item).data("mimetype");
+    // TODO: use data-url
+    var name = unescapeHtml($(item).find("h1").html());
     var target = encodeURIComponent(name);
 
     var downloader = $("#download");
@@ -475,7 +427,7 @@ function renameItem(item, newName)
     console.log("Rename item");
 
     var path = currentPath();
-    var name = unescapeHtml($(item).find("a h2").html());
+    var name = unescapeHtml($(item).find("h1:first-child").html());
     var target = encodeURIComponent(name);
     var newTarget = encodeURI(path !== "/" ? path : "") + "/" + encodeURIComponent(newName);
 
@@ -486,11 +438,11 @@ function renameItem(item, newName)
            })
     .done(function () {
         console.log("File renamed: " + name + " -> " + newName);
-        $(item).find("a h2").html(newName);
+        $(item).find("h1").html(newName);
         window.location.reload();
     })
     .fail(function () {
-        showMessage("Failed to rename: " + name + " -> " + newName);
+        showError("Failed to rename: " + name + " -> " + newName);
     });
 }
 
@@ -498,7 +450,8 @@ function removeItem(item)
 {
     console.log("Remove item");
 
-    var name = unescapeHtml($(item).find("a h2").html());
+    // TODO: use data-url
+    var name = unescapeHtml($(item).find("h1").html());
     var target = encodeURIComponent(name);
 
     $.ajax({
@@ -508,10 +461,9 @@ function removeItem(item)
     .done(function () {
         console.log("File removed: " + name);
         $(item).remove();
-        $("#filesbox ul").listview("refresh");
     })
     .fail(function () {
-        showMessage("Failed to remove: " + name);
+        showError("Failed to remove: " + name);
     });
 }
 
@@ -536,7 +488,7 @@ function upload(file, target, callback)
             console.log("File uploaded: " + file.name + ", size: " + data.length);
         })
         .fail(function () {
-            showMessage("Failed to upload: " + file.name);
+            showError("Failed to upload: " + file.name);
         })
         .always(function () {
             callback();
@@ -592,7 +544,7 @@ function makeDirectory(name)
     })
     .fail(function ()
     {
-        showMessage("Failed to create directory: " + name);
+        showError("Failed to create directory: " + name);
     });
 }
 
@@ -614,7 +566,7 @@ function makeFile(name)
     })
     .fail(function ()
     {
-        showMessage("Failed to create file: " + name);
+        showError("Failed to create file: " + name);
     });
 }
 
@@ -648,7 +600,7 @@ function changeSettings(key, value, altValue)
         })
         .fail(function (xhr, status, err)
         {
-            showMessage("Failed to change settings: " + err);
+            showError("Failed to change settings: " + err);
         });
     }
 
@@ -695,12 +647,17 @@ function onItemTouchStart(ev)
         beginX: ev.originalEvent.touches[0].screenX,
         beginY: ev.originalEvent.touches[0].screenY,
         status: 0
-     };
+    };
 }
 
 function onItemTouchMove(ev)
 {
-    var upButton = $("#upButton");
+    if ($(sh.topmost(".sh-visible")).attr("id") !== "main-page")
+    {
+        return;
+    }
+
+    var upButton = $(sh.topmost(".sh-page.sh-visible")).find("#upButton");
     if (! upButton.length)
     {
         return;
@@ -714,7 +671,7 @@ function onItemTouchMove(ev)
     switch (this.swipeContext.status)
     {
     case 0: // initiated
-        if (dx > 16)
+        if (dx > 32)
         {
             var angle = Math.atan(dy / dx);
             if (Math.abs(angle) > Math.PI / 4)
@@ -723,27 +680,30 @@ function onItemTouchMove(ev)
             }
             else
             {
+                $("#main-page").addClass("sh-page-transitioning");
                 this.swipeContext.status = 1;
             }
         }
         break;
 
     case 1: // swiping
-        $(".ui-header, #filesbox").css("margin-left", Math.min(swipeThreshold, dx) + "px");
+        $("#main-page, #main-page > header").css("left", Math.max(0, Math.min(swipeThreshold, dx)) + "px")
+                                            .css("right", -Math.max(0, Math.min(swipeThreshold, dx)) + "px");
         
         if (dx > swipeThreshold)
         {
-            $("#main-page").css("background-color", "#a0a0a0");
+            $("body").css("background-color", "#a0a0a0");
             this.swipeContext.status = 2;
         }
         break;
 
     case 2: // activated
-        $(".ui-header, #filesbox").css("margin-left", Math.min(swipeThreshold, dx) + "px");
+    $("#main-page, #main-page > header").css("left", Math.max(0, Math.min(swipeThreshold, dx)) + "px")
+                                        .css("right", -Math.max(0, Math.min(swipeThreshold, dx)) + "px");
 
         if (dx < swipeThreshold)
         {
-            $("#main-page").css("background-color", "");
+            $("body").css("background-color", "");
             this.swipeContext.status = 1;
         }
         break;
@@ -757,25 +717,30 @@ function onItemTouchMove(ev)
 
 function onItemTouchEnd(ev)
 {
-    $("#main-page").css("background-color", "");
-    $(".ui-header, #filesbox").css("margin-left", 0 + "px");
+    $("body").css("background-color", "");
+    $("#main-page, #main-page > header").css("left", 0).css("right", 0);
+    $("#main-page").removeClass("sh-page-transitioning");
 
     var upButton = $("#upButton");
     if (upButton.length && this.swipeContext.status === 2)
     {
-        window.location.assign(upButton.attr("href"));
+        window.location.assign(upButton.data("url"));
     }
 }
 
 function init()
 {
     $("#upload").on("change", onFilesSelected);
-}
+    sh.push("main-page", function () { }, true);
 
-$.event.special.tap.emitTapOnTaphold = false;
+    var page = $("#main-page");
+    setTimeout(function () { loadThumbnails(page); }, 500);
 
-$(document).on("pagecreate", "#main-page", function (ev)
-{
+    $("#viewer-page").on("sh-closed", function ()
+    {
+        $(this).find("section").html("");
+    });
+
     /* setup swipe suppport */
     $("body").on("touchstart", onItemTouchStart);
     $("body").on("touchmove", onItemTouchMove);
@@ -785,25 +750,8 @@ $(document).on("pagecreate", "#main-page", function (ev)
     $("body").on("dragover", onDragOver);
     $("body").on("drop", onDrop);
 
-    $("#image-popup").on("popupbeforeposition", function ()
-    {
-        var maxWidth = $(window).width() - 32 + "px";
-        $("#image-popup img").css("max-width", maxWidth);
-
-        var maxHeight = $(window).height() - 80 + "px";
-        $("#image-popup img").css("max-height", maxHeight);
-    });
-
     unselectAll();
     checkClipboard();
-
-    var page = ev.target;
-    setTimeout(function () { loadThumbnails(page); }, 500);
-});
-
-$(document).on("pagebeforeshow", "#clipboard-page", function (ev)
-{
-    $("#clipboard ul").listview("refresh");
-});
+}
 
 $(document).ready(init);

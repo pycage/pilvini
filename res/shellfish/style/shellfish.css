@@ -1,0 +1,186 @@
+@import url("button.css");
+@import url("icons.css");
+@import url("menu.css");
+@import url("page.css");
+@import url("popup.css");
+@import url("theme.css");
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+    
+    padding: 0;
+    margin: 0;
+
+    background-color: var(--color-primary-background);
+    color: var(--color-primary);
+    font-size: 0.5cm;
+    font-weight: 100;
+}
+
+h1, h2, h3 {
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+h1 {
+    font-size: 100%;
+    font-weight: bold;
+    padding-left: 4pt;
+    padding-right: 4pt;
+}
+
+h2 {
+    font-size: 100%;
+    font-weight: normal;
+    padding-left: 4pt;
+    padding-right: 4pt;
+}
+
+p {
+    padding-left: 4pt;
+    padding-right: 4pt;
+}
+
+header {
+    height: 2em;
+    line-height: 2em;
+    z-index: 1;
+    background-color: var(--color-primary-background);
+    color: var(--color-primary);
+    border-bottom: solid 1px var(--color-border);
+    
+    text-align: center;
+}
+
+footer {
+    height: 2em;
+    line-height: 2em;
+    z-index: 1;
+    
+    background-color: var(--color-primary-background);
+    color: var(--color-primary);
+    border-top: solid 1px var(--color-border);
+    
+    text-align: center;
+}
+
+
+
+/* List */
+
+li {
+    position: relative;
+    list-style: none;
+    color: var(--color-primary);
+}
+
+li[onclick] {
+    cursor: pointer;
+}
+
+li[onclick]:active {
+    color: var(--color-highlight);
+    background-color: var(--color-highlight-background);
+}
+
+section > ul > li:nth-child(odd) { background-color: var(--color-content-background); }
+section > ul > li:nth-child(even) { background-color: var(--color-content-alt-background); }
+
+/* *** */
+
+span[onclick]:hover, li[onclick]:hover, h1[onclick]:hover, h2[onclick]:hover {
+    color: var(--color-highlight);
+    background-color: var(--color-highlight-background);
+}
+
+
+/* Text Input */
+
+input[type=text] {
+    border-radius: 0;
+    border: none;
+    background-color: inherit;
+    border-bottom: solid 2px var(--color-border);
+    padding-bottom: 2px;
+}
+
+/* *** */
+
+span.sh-busy-indicator {
+    display: inline-block;
+    animation: sh-busy-indicator-rotation 1.5s infinite linear;
+}
+
+span.sh-busy-indicator:before {
+    font-family: Material;
+    width: 1.25em;
+    text-align: center;
+    content: "\f3ec";
+    text-shadow: var(--color-primary-background) 0px 0px 1px;
+}
+
+@keyframes sh-busy-indicator-rotation {
+  0% {
+      transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(359deg);
+  }
+}
+
+.sh-left {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+}
+
+.sh-right {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.sh-dropshadow {
+    -webkit-box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+       -moz-box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+            box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+}
+
+.sh-blur {
+    -webkit-filter: blur(5px);
+       -moz-filter: blur(5px);
+       -ms-filter: blur(5px);
+        -o-filter: blur(5px);
+           filter: blur(5px);
+}
+
+.sh-disabled {
+    background-color: inherit;
+    color: var(--color-disabled);
+    pointer-events: none;
+}
+
+.sh-selected {
+    background-color: var(--color-primary);
+    color: var(--color-primary-background);
+}
+
+.sh-visible {
+    visibility: visible;
+}
+
+.sh-font-small {
+    font-size: 80%;
+}
+

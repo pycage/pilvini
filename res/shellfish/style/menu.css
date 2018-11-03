@@ -1,0 +1,62 @@
+.sh-menu {
+    visibility: hidden;
+
+    position: fixed;
+    overflow: hidden;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.sh-menu > * {
+    position: absolute;
+    border: solid 1px var(--color-border);
+    
+    -webkit-box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+       -moz-box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+            box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+
+    color: var(--color-primary);
+    background-color: var(--color-primary-background);
+}
+
+.sh-menu h1 {
+    line-height: 2em;
+}
+
+.sh-menu li {
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+    line-height: 2em;
+    background-color: var(--color-content-background);
+}
+
+h1.sh-submenu {
+    border-bottom: solid 0.25em var(--color-border);
+}
+
+h1.sh-submenu-visible {
+    border-bottom: none;
+}
+
+h1.sh-submenu + ul {
+    display: none;
+    border-left: solid 0.25em var(--color-border);
+}
+
+h1.sh-submenu-visible + ul {
+    display: block;
+}
+
+h1.sh-submenu:before {
+    font-family: Material;
+    content: "\f2f5";
+    padding-right: 0.25em;
+}
+
+h1.sh-submenu-visible:before {
+    font-family: Material;
+    content: "\f2f1";
+    padding-right: 0.25em;
+}

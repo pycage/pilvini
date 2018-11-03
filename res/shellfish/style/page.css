@@ -1,0 +1,46 @@
+.sh-page {
+    visibility: hidden;
+    position: absolute;
+    color: var(--color-primary);
+    background-color: var(--color-content-background);
+    top: 0;
+    left: 0;
+    width: 100%;
+    min-height: 100%;
+    padding-top: 2em;
+}
+
+.sh-page > header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+}
+
+.sh-page > footer {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.sh-page.sh-fullscreen > header {
+    visibility: hidden;
+}
+
+.sh-page.sh-fullscreen {
+    padding-top: 0;
+}
+
+.sh-page.sh-fullscreen > footer {
+    visibility: hidden;
+}
+
+.sh-page.sh-page-transitioning {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+}

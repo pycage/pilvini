@@ -172,22 +172,22 @@ function makeInfo(file, stat)
 
 function makeIcon(icon)
 {
-    return "<img src='/::res/file-icons/empty.png'" +
+    return "<div class='sh-left'" + /*"<img src='/::res/file-icons/empty.png'" + */
            " style='width: 80px; background-image: url(" + icon + ");" +
            " background-size: 48px;" +
            " background-repeat: no-repeat;" +
-           " background-position: 50% 50%;'/>";
+           " background-position: 50% 50%;'></div>";
 }
 
 function makeThumbnail(icon, path, file)
 {
     var imageFile = modPath.join(path, file);
 
-    return "<img data-x-thumbnail='/::thumbnail" + escapeHtml(encodeURI(imageFile)) + "' src='/::res/file-icons/empty.png'" +
+    return "<div class='thumbnail sh-left' data-x-thumbnail='/::thumbnail" + escapeHtml(encodeURI(imageFile)) + "'" + //"' src='/::res/file-icons/empty.png'" +
            " style='width: 80px; background-image: url(" + icon + ");" +
            " background-size: 48px;" +
            " background-repeat: no-repeat;" +
-           " background-position: 50% 50%;'/>";
+           " background-position: 50% 50%;'></div>";
 }
 
 function makeItem(path, file, stat, active)
@@ -200,9 +200,8 @@ function makeItem(path, file, stat, active)
     var icon = getIcon(mimeType);
     var href = "";
     var info = "";
-    var ajaxMode = "";
     var action = "";
-    var fileUrl = modPath.join(path, file);
+    var fileUrl = encodeURI(modPath.join(path, file));
 
     var iconHtml = "";
 
@@ -225,7 +224,7 @@ function makeItem(path, file, stat, active)
                       : "#";
         icon = "/::res/file-icons/folder.png";
         iconHtml = makeIcon(icon);
-        ajaxMode = "data-ajax='false'";
+        action = "onclick='window.location.href=\"" + href + "\";'"
     }
     else if (mimeType.startsWith("image/") ||
              mimeType.startsWith("audio/"))
@@ -240,24 +239,31 @@ function makeItem(path, file, stat, active)
         }
 
         info = makeInfo(file, stat);
-        ajaxMode = "data-ajax='false'";
     }
     else
     {
         info = makeInfo(file, stat);
-        ajaxMode = "data-ajax='false'";
         iconHtml = makeIcon(icon);
+        action = "onclick='window.location.href=\"" + escapeHtml(href) + "\";'"
     }
 
-    out += "<a class='filelink' data-mimetype='" + mimeType + "' data-url='" + escapeHtml(fileUrl) + "' href='" + escapeHtml(href) + "' "+ ajaxMode + " " + action + ">";
+    out += "<li class='fileitem filelink' style='height: 80px;' data-mimetype='" + mimeType + "' data-url='" + escapeHtml(fileUrl) + "' " + action + ">";
     out += iconHtml;
-    out += "<h2>" + escapeHtml(name) + "</h2>";
-    out += "<p>" + info + "</p>";
-    out += "</a>";
+    out += "<div style='position: absolute; left: 80px; right: 42px; top: 1em; padding-left: 0.5em;'>";
+    out += "<h1>" + escapeHtml(name) + "</h1>";
+    out += "<h2 class='sh-font-small'>" + info + "</h2>";
+    out += "</div>";
+    
     if (active)
     {
-        out += "<a data-icon='check' href='#' onclick='toggleSelect($(this).parent());'></a>";
+        out += "<div class='sh-right' style='width: 42px; text-align: center; border-left: solid 1px var(--color-border);' " +
+               "     onclick='event.stopPropagation(); toggleSelect(this);'>" +
+               "  <span class='sh-icon-checked-circle' " +
+               "        style='width: 42px; text-align: center; line-height: 80px;'>" +
+               "  </span>" +
+               "</div>";
     }
+    out += "</li>";
 
     return out;
 }
@@ -272,7 +278,6 @@ function makeGridItem(path, file, stat, active)
     var icon = getIcon(mimeType);
     var href = "";
     var info = "";
-    var ajaxMode = "";
     var action = "";
     var fileUrl = modPath.join(path, file);
 
@@ -297,7 +302,7 @@ function makeGridItem(path, file, stat, active)
                       : "#";
         icon = "/::res/file-icons/folder.png";
         iconHtml = makeIcon(icon);
-        ajaxMode = "data-ajax='false'";
+        action = "onclick='window.location.href=\"" + href + "\";'"
     }
     else if (mimeType.startsWith("image/") ||
              mimeType.startsWith("audio/"))
@@ -312,22 +317,24 @@ function makeGridItem(path, file, stat, active)
         }
 
         info = makeInfo(file, stat);
-        ajaxMode = "data-ajax='false'";
     }
     else
     {
         info = makeInfo(file, stat);
-        ajaxMode = "data-ajax='false'";
         iconHtml = makeIcon(icon);
+        action = "onclick='window.location.href=\"" + escapeHtml(href) + "\";'"
     }
 
-    out += "<a class='filelink' data-mimetype='" + mimeType + "' data-url='" + escapeHtml(fileUrl) + "' href='" + escapeHtml(href) + "' "+ ajaxMode + " " + action + ">";
+    out += "<div class='fileitem' style='position: relative; display: inline-block; width: 80px; height: 80px;' data-mimetype='" + mimeType + "' data-url='" + escapeHtml(fileUrl) + "'" + action + ">";
     out += iconHtml;
-    out += "</a>";
+    out += "</div>";
+
+    /*
     if (active)
     {
         out += "<a data-icon='check' href='#' onclick='toggleSelect($(this).parent());'></a>";
     }
+    */
 
     return out;
 }
@@ -335,7 +342,7 @@ function makeGridItem(path, file, stat, active)
 function makeFiles(path, stats, active)
 {
     var out = "";
-    out += "<ul data-role='listview'>";
+    out += "<ul>";
     for (var i = 0; i < stats.length; ++i)
     {
         var file = stats[i][0];
@@ -346,9 +353,7 @@ function makeFiles(path, stats, active)
             continue;
         }
 
-        out += "<li data-icon='false' class='fileitem'>";
         out += makeItem(path, file, stat, active);
-        out += "</li>";
     }
     out += "</ul>";
 
@@ -390,10 +395,9 @@ function makeFilesGrid(sortMode, path, stats, active)
             out += "<h3>" + thisHeader + "</h3>";
             out += "<p>";
         }
-
-        out += "<div style='display: inline' class='fileitem'>";
+        
         out += makeGridItem(path, file, stat, active);
-        out += "</div>&nbsp;";
+        out += "&nbsp;";
     }
     out += "</p>"
 
@@ -406,13 +410,16 @@ function makeHtmlHead()
               "  <title></title>" +
               "  <meta http-equiv='Content-Type' content='text/html; charset=utf-8'></meta>" +
               "  <meta name='viewport' content='width=device-width, initial-scale=1'></meta>" +
+
               "  <link rel='icon' type='image/png' sizes='192x192' href='/::res/favicon.png'>" +
               "  <link rel='icon' type='image/png' sizes='32x32' href='/::res/favicon-32x32.png'>" +
               "  <link rel='apple-touch-icon' sizes='180x180' href='/::res/apple-touch-icon.png'>" +
-              "  <link rel='stylesheet' href='https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css'>" +
+              "  <link rel='stylesheet' href='/::res/shellfish/style/shellfish.css'>" +
+
               "  <script src='https://code.jquery.com/jquery-2.1.4.min.js'></script>" +
-              "  <script src='https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js'></script>" +
+              "  <script src='/::res/shellfish/core/shellfish.js'></script>" +
               "  <script src='/::res/browser/index.js'></script>" +
+
               "  <script src='/::res/viewer/image.js'></script>" +
               "  <script src='/::res/viewer/markdown.js'></script>" +
               "  <script src='/::res/viewer/pdf.js'></script>" +
@@ -426,8 +433,8 @@ function makeBreadcrumbs(path)
 {
     var pathParts = path.split("/");
 
-    var out = "<ul data-role='listview'>" +
-              "  <li data-icon='false'><a href='/index.html' data-ajax='false''>/</a></li>";
+    var out = "<ul>" +
+              "  <li onclick='window.location.href=\"/index.html\";'>/</li>";
 
     var breadcrumbPath = "";
     for (var i = 0; i < pathParts.length; ++i)
@@ -438,7 +445,7 @@ function makeBreadcrumbs(path)
         }
 
         breadcrumbPath += "/" + pathParts[i]
-        out += "  <li data-icon='false'><a href='" + escapeHtml(encodeURI(breadcrumbPath)) + "/index.html' data-ajax='false'>" + escapeHtml(pathParts[i]) + "</a></li>";
+        out += "  <li onclick='window.location.href=\"" + escapeHtml(encodeURI(breadcrumbPath)) + "/index.html\";'>" + escapeHtml(pathParts[i]) + "</li>";
     }
 
     out += "</ul>";
@@ -474,7 +481,7 @@ function makeFavorites(home)
         return "";
     }
 
-    var out = "<ul data-role='listview'>";
+    var out = "<ul>";
 
     for (var i = 0; i < doc.length; ++i)
     {
@@ -482,13 +489,13 @@ function makeFavorites(home)
         var href = node["href"];
         var name = node["name"];
 
-        out += "<li data-icon='star'>" +
-               "<a href='" + href + "' data-ajax='false'>" +
+        out += "<li onclick='window.location.href=\"" + href + "\";'>" +
+               "<span class='sh-fw-icon sh-icon-bug'></span>" +
                name +
-               "</a></li>";
+               "</li>";
     }
 
-    out += "  <li data-role='list-divider'></li>" +
+    out += "  <hr>" +
            "</ul>";
 
     return out;
@@ -515,87 +522,85 @@ function makeMoreMenu(viewMode, sortMode)
         break;
     }
 
-    var out = "<div id='more-menu' data-role='popup' data-arrow='t'>" +
+    var out = "<div id='more-menu' class='sh-menu' onclick='sh.menu_close();'>" +
+              "  <div onclick='event.stopPropagation();'>" +
 
-              "  <div data-role='collapsible-set'>" +
-              "  <div data-role='collapsible'>" +
-              "    <h2>View</h2>" +
-              "    <ul data-role='listview'>" +
-              "      <li id='mi-listview' data-icon='false'><a href='#' onclick='changeSettings(\"view\", \"list\");'>As List</a></li>" +
-              "      <li id='mi-gridview' data-icon='false'><a href='#' onclick='changeSettings(\"view\", \"grid\");'>As Grid</a></li>" +
-              "      <li id='mi-sort-by-name' data-icon='false'><a href='#' onclick='changeSettings(\"sort\", \"name\", \"name-desc\");'>By Name" + sortByNameExt + "</a></li>" +
-              "      <li id='mi-sort-by-date' data-icon='false'><a href='#' onclick='changeSettings(\"sort\", \"date\", \"date-desc\");'>By Date" + sortByDateExt + "</a></li>" +
+              "    <h1 class='sh-submenu' onclick='sh.toggle_submenu(this);'>View</h1>" +
+              "    <ul>" +
+              "      <li id='mi-listview' onclick='changeSettings(\"view\", \"list\");'>As List</li>" +
+              "      <li id='mi-gridview' onclick='changeSettings(\"view\", \"grid\");'>As Grid</li>" +
+              "      <li id='mi-sort-by-name' onclick='changeSettings(\"sort\", \"name\", \"name-desc\");'>By Name" + sortByNameExt + "</li>" +
+              "      <li id='mi-sort-by-date' onclick='changeSettings(\"sort\", \"date\", \"date-desc\");'>By Date" + sortByDateExt + "</li>" +
               "    </ul>" +
-              "  </div>" +
 
-              "  <div data-role='collapsible'>" +
-              "    <h2>New</h2>" +
-              "    <ul data-role='listview'>" +
-              "      <li id='mi-newdir' data-icon='false'><a href='#' onclick='closeMoreMenu(showNewDirDialog);'>Directory</a></li>" +
-              "      <li id='mi-newfile' data-icon='false'><a href='#' onclick='closeMoreMenu(showNewFileDialog);'>File</a></li>" +
+              "    <h1 class='sh-submenu' onclick='sh.toggle_submenu(this);'>New</h1>" +
+              "    <ul>" +
+              "      <li id='mi-newdir' onclick='sh.menu_close(); showNewDirDialog();'>Directory</li>" +
+              "      <li id='mi-newfile' onclick='sh.menu_close(); showNewFileDialog();'>File</li>" +
               "    </ul>" +
-              "  </div>" +
 
-              "  <div data-role='collapsible'>" +
-              "    <h2>Clipboard</h2>" +
-              "    <ul data-role='listview'>" +
-              "      <li id='mi-cut' data-icon='false'><a href='#' onclick='closeMoreMenu(function () { clearClipboard(function () { eachSelected(cutItem); }); });'>Cut</a></li>" +
-              "      <li id='mi-copy' data-icon='false'><a href='#' onclick='closeMoreMenu(function () { clearClipboard(function () { eachSelected(copyItem); }); });'>Copy</a></li>" +
-              "      <li id='mi-paste' data-icon='false'><a href='#' onclick='closeMoreMenu(pasteItems());'>Paste</a></li>" +
-              "      <li id='mi-showclipboard' data-icon='false'><a href='#clipboard-page'>Show</a></li>" +
+              "    <h1 class='sh-submenu' onclick='sh.toggle_submenu(this);'>Clipboard</h1>" +
+              "    <ul>" +
+              "      <li id='mi-cut' onclick='sh.menu_close(); clearClipboard(function () { eachSelected(cutItem); });'>Cut</li>" +
+              "      <li id='mi-copy' onclick='sh.menu_close(); clearClipboard(function () { eachSelected(copyItem); });'>Copy</li>" +
+              "      <li id='mi-paste' onclick='sh.menu_close(); pasteItems();'>Paste</li>" +
+              "      <li id='mi-showclipboard' onclick='sh.menu_close(); sh.push(\"clipboard-page\");'>Show</li>" +
               "    </ul>" +
-              "  </div>" +
 
-              "  <div data-role='collapsible'>" +
-              "    <h2>Action</h2>" +
-              "    <ul data-role='listview'>" +
-              "    <li id='mi-upload' data-icon='false'><a href='#' onclick='closeMoreMenu(); $(\"#upload\").click();'>Upload</a></li>" +
-              "    <li id='mi-download' data-icon='false'><a href='#' onclick='closeMoreMenu(function () { eachSelected(downloadItem) });'>Download</a></li>" +
-              "    <li id='mi-rename' data-icon='false'><a href='#' onclick='closeMoreMenu(function () { eachSelected(showNameDialog); });'>Rename</a></li>" +
-              "    <li id='mi-delete' data-icon='false'><a href='#' onclick='closeMoreMenu(function () { eachSelected(removeItem); });'>Delete</a></li>" +
+              "    <h1 class='sh-submenu' onclick='sh.toggle_submenu(this);'>Action</h1>" +
+              "    <ul>" +
+              "      <li id='mi-upload' onclick='sh.menu_close(); $(\"#upload\").click();'>Upload</li>" +
+              "      <li id='mi-download' onclick='sh.menu_close(); eachSelected(downloadItem);'>Download</li>" +
+              "      <li id='mi-rename' onclick='sh.menu_close(); eachSelected(showNameDialog);'>Rename</li>" +
+              "      <li id='mi-delete' onclick='sh.menu_close(); eachSelected(removeItem);'>Delete</li>" +
               "    </ul>" +
-              "  </div>" +
 
-              "  <ul data-role='listview'>" +
-              "    <li data-role='list-divider'></li>" +
-              "    <li id='mi-selectall' data-icon='false'><a href='#' onclick='closeMoreMenu(selectAll);'>Select All</a></li>" +
-              "    <li id='mi-unselectall' data-icon='false'><a href='#' onclick='closeMoreMenu(unselectAll);'>Unselect All</a></li>" +
-              "  </ul>" +
-            "  </div>" +
+              "    <ul>" +
+              "      <li id='mi-selectall' onclick='sh.menu_close(); selectAll();'>Select All</li>" +
+              "      <li id='mi-unselectall' onclick='sh.menu_close(); unselectAll();'>Unselect All</li>" +
+              "    </ul>" +
+
+              "  </div>" +
               "</div>";
     return out;
 }
 
 function makeMessageDialog()
 {
-    var out = "<div id='message-dialog' data-role='popup' data-dismissible='false'>" +
+    var out = "<div id='message-dialog' class='sh-popup'>" +
 
-              "  <div data-role='header'><h1 class='page-title'></h1></div>" +
-
-              "  <div class='ui-content'>" +
-              "    <p></p>" +
-
-              "    <a class='accept-btn ui-btn ui-btn-inline ui-corner-all ui-shadow' data-rel='back' href='#'>OK</a>" +
+              "  <div class='sh-dropshadow' style='background-color: var(--color-primary-background);'>" +
+              "    <header><h1 class='sh-left'></h1></header>" +
+              "    <section><p></p></section>" +
+              "    <footer><span class='sh-right'><a onclick='sh.popup_close(\"message-dialog\");'>OK</a></span></footer>" +
               "  </div>" +
 
               "</div>";
+
     return out;
 }
 
 function makeNewDirDialog()
 {
-    var out = "<div id='newdir-dialog' data-role='popup' data-dismissible='false'>" +
+    var out = "<div id='newdir-dialog' class='sh-popup'>" +
+    
+              "  <div class='sh-dropshadow' style='background-color: var(--color-primary-background);'>" +
+              "    <header><h1 class='sh-left'>New directory</h1></header>" +
 
-              "  <div data-role='header'><h1 class='page-title'>New directory</h1></div>" +
+              "    <section>" +
+              "      <form>" +
+              "        <label>Name:</label>" +
+              "        <input type='text'>" +
+              "      </form>" +
+              "    </section>" +
 
-              "  <div class='ui-content'>" +
-              "    <form>" +
-              "      <label>Name:</label>" +
-              "      <input type='text'>" +
-              "    </form>" +
+              "    <footer>" +
+              "      <span class='sh-right'>" +
+              "        <a>Create</a>" +
+              "        <a onclick='sh.popup_close(\"newdir-dialog\");'>Cancel</a>" +
+              "      </span>" +
+              "    </footer>" +
 
-              "    <a class='accept-btn ui-btn ui-btn-inline ui-corner-all ui-shadow' href='#'>Create</a>" +
-              "    <a class='cancel-btn ui-btn ui-btn-inline ui-corner-all ui-shadow' data-rel='back' href='#'>Cancel</a>" +
               "  </div>" +
 
               "</div>";
@@ -605,18 +610,42 @@ function makeNewDirDialog()
 
 function makeNameDialog()
 {
-    var out = "<div id='name-dialog' data-role='popup' data-dismissible='false'>" +
+    var out = "<div id='name-dialog' class='sh-popup'>" +
+    
+              "  <div class='sh-dropshadow' style='background-color: var(--color-primary-background);'>" +
+              "    <header><h1 class='sh-left'>Enter name</h1></header>" +
 
-              "  <div data-role='header'><h1 class='page-title'>Enter name</h1></div>" +
+              "    <section>" +
+              "      <form>" +
+              "        <label>Name:</label>" +
+              "        <input type='text'>" +
+              "      </form>" +
+              "    </section>" +
 
-              "  <div class='ui-content'>" +
-              "    <form>" +
-              "      <label>Name:</label>" +
-              "      <input type='text'>" +
-              "    </form>" +
+              "    <footer>" +
+              "      <span class='sh-right'>" +
+              "        <a>Accept</a>" +
+              "        <a onclick='sh.popup_close(\"name-dialog\");'>Cancel</a>" +
+              "      </span>" +
+              "    </footer>" +
 
-              "    <a class='accept-btn ui-btn ui-btn-inline ui-corner-all ui-shadow' href='#'>Accept</a>" +
-              "    <a class='cancel-btn ui-btn ui-btn-inline ui-corner-all ui-shadow' data-rel='back' href='#'>Cancel</a>" +
+              "  </div>" +
+
+              "</div>";
+
+    return out;
+}
+
+function makeBusyPopup()
+{
+    var out = "<div id='busy-popup' class='sh-popup'>" +
+
+              "  <div style='color: var(--color-primary);" +
+              "              text-align: center;" +
+              "              padding: 1em;" +
+              "              '>" +
+              "    <span class='sh-busy-indicator' style='font-size: 200%;'></span><br><br>" +
+              "    <span>Loading</span>" +
               "  </div>" +
 
               "</div>";
@@ -626,14 +655,11 @@ function makeNameDialog()
 
 function makeImagePopup()
 {
-    var out = "<div id='image-popup' data-role='popup' data-dismissable='true' data-theme='b' data-overlay-theme='b' data-corners='false'>" +
-              "  <div data-role='header'>" +
-              "    <h1>Preview</h1>" +
-              "    <a class='ui-btn ui-btn-right ui-btn-icon-notext ui-icon-delete ui-corner-all' href='#' data-rel='back'></a>" +
+    var out = "<div id='image-popup' class='sh-popup' style='background-color: rgba(0, 0, 0, 0.8);' onclick='sh.popup_close(\"image-popup\");'>" +
+              "  <div class='sh-dropshadow' style='position: relative; background-color: black;'>" +
+              "    <h1 class='sh-font-small' style='position: absolute; margin: 0; padding: 0; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; text-align: left; left: 0.25em; right: 0.25em; bottom: 0.25em; text-shadow: #000 0px 0px 1px; color: white;'></h1>" +
+              "    <img>" +
               "  </div>" +
-              "  <a id='image-popup-previous' class='ui-btn ui-btn-icon-notext ui-icon-carat-l' style='display: inline' href='#'></a>" +
-              "  <img>" +
-              "  <a id='image-popup-next' class='ui-btn ui-btn-icon-notext ui-icon-carat-r' style='display: inline' href='#'></a>" +
               "</div>";
 
     return out;
@@ -641,29 +667,27 @@ function makeImagePopup()
 
 function makeMainPage(viewMode, sortMode, home, path, stats)
 {
-    var out = "<div id='main-page' data-role='page'>" +
+    var parentDir = escapeHtml(encodeURI(modPath.dirname(path) + "/index.html").replace("//", "/"));
+
+    var out = "<div id='main-page' class='sh-page'>" +
 
               makeMoreMenu(viewMode, sortMode) +
 
-              "  <div id='breadcrumbs' data-role='popup' data-arrow='t'>" +
+              "  <div id='breadcrumbs' class='sh-menu' onclick='sh.menu_close();'>" +
               makeFavorites(home) +
               makeBreadcrumbs(path) +
               "  </div>" +
 
-              makeMessageDialog() +
-              makeNewDirDialog() +
-              makeNameDialog() +
-              makeImagePopup() +
+              "  <header class='sh-dropshadow'>" +
+              (path !== "/" ? "<span id='upButton' class='sh-left sh-fw-icon sh-icon-arrow-up' data-url='" + parentDir + "' onclick='window.location.href=\"" + parentDir + "\"'></span>"
+                            : "") +
+              "    <h1 onclick='sh.menu(this, \"breadcrumbs\");'>" + escapeHtml(path) + "</h1>" +
+              "    <span class='sh-right sh-fw-icon sh-icon-menu' onclick='sh.menu(this, \"more-menu\");'></span>" +
+              "  </header>" +
 
-              "  <div data-role='header' data-position='fixed' data-tap-toggle='false'>" +
-              "    <h1 onclick='$(\"#breadcrumbs\").popup(\"open\", { positionTo: this });'>" + escapeHtml(path) + "</h1>" +
-              (path !== "/" ? "    <a id='upButton' class='ui-btn ui-btn-icon-left ui-icon-back ui-corner-all' href='" + escapeHtml(encodeURI(modPath.dirname(path) + "/index.html").replace("//", "/")) + "' data-ajax='false'>Up</a>" : "") +
-              "    <a class='ui-btn ui-btn-icon-right ui-btn-right ui-icon-bars ui-corner-all' href='#more-menu' data-rel='popup'>More</a>" +
-              "  </div>" +
-
-              "  <div id='filesbox' class='ui-content'>" +
+              "  <section id='filesbox'>" +
               (viewMode === "list" ? makeFiles(path, stats, true) : makeFilesGrid(sortMode, path, stats, true)) +
-              "  </div>" +
+              "  </section>" +
 
               "</div>";
 
@@ -672,16 +696,16 @@ function makeMainPage(viewMode, sortMode, home, path, stats)
 
 function makeClipboardPage(clipboardStats)
 {
-    var out = "<div data-role='page' id='clipboard-page'>" +
+    var out = "<div id='clipboard-page' class='sh-page'>" +
 
-              "  <div data-role='header' data-position='fixed' data-tap-toggle='false'>" +
+              "  <header>" +
+              "    <span class='sh-fw-icon sh-icon-back' onclick='sh.pop();'></span>" +
               "    <h1>Clipboard</h1>" +
-              "    <a class='ui-btn ui-btn-icon-left ui-icon-back ui-corner-all' href='#main-page'>Back</a>" +
-              "  </div>" +
+              "  </header>" +
 
-              "  <div id='clipboard' class='ui-content'>" +
+              "  <section id='clipboard'>" +
               makeFiles("", clipboardStats, false) +
-              "  </div>" +
+              "  </section>" +
 
               "</div>";
 
@@ -690,15 +714,15 @@ function makeClipboardPage(clipboardStats)
 
 function makeViewerPage()
 {
-    var out = "<div data-role='page' id='viewer-page'>" +
+    var out = "<div id='viewer-page' class='sh-page'>" +
 
-              "  <div data-role='header' data-position='fixed' data-tap-toggle='false'>" +
-              "    <h1></h1>" +
-              "    <a class='ui-btn ui-btn-icon-left ui-icon-back ui-corner-all' href='#' data-rel='back'>Back</a>" +
-              "  </div>" +
+              "  <header>" +
+              "    <span class='sh-left sh-fw-icon sh-icon-back' onclick='sh.pop();'></span>" +
+              "    <h1>Viewer</h1>" +
+              "  </header>" +
 
-              "  <div class='ui-content'>" +
-              "  </div>" +
+              "  <section>" +
+              "  </section>" +
 
               "</div>";
 
@@ -711,15 +735,23 @@ function makeHtml(viewMode, sortMode, home, path, stats, clipboardStats)
 
               "<html>" +
               makeHtmlHead() +
-              "<body>" +
+              "<body class='sh-theme-default'>" +
 
               "<input id='upload' type='file' multiple style='display: none;'/>" +
               "<a id='download' data-ajax='false' href='#' download='name' style='display: none;'></a>" +
 
               makeMainPage(viewMode, sortMode, home, path, stats) +
+              makeNewDirDialog() +
+              makeNameDialog() +
+              makeMessageDialog() +
+              
+              makeBusyPopup() +
+              makeImagePopup() +
+
               makeViewerPage() +
               makeClipboardPage(clipboardStats) +
 
+              
               "</body>" +
               "</html>";
 
@@ -728,8 +760,8 @@ function makeHtml(viewMode, sortMode, home, path, stats, clipboardStats)
 
 function makeIndex(href, home, callback)
 {
-    var path = decodeURIComponent(href);
-    var fullPath = modPath.join(home, decodeURIComponent(href));
+    var path = decodeURI(href);
+    var fullPath = modPath.join(home, decodeURI(href));
 
     var settings = readSettings(home);
     console.debug("Settings: " + JSON.stringify(settings));
