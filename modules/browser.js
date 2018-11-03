@@ -674,8 +674,10 @@ function makeMainPage(viewMode, sortMode, home, path, stats)
               makeMoreMenu(viewMode, sortMode) +
 
               "  <div id='breadcrumbs' class='sh-menu' onclick='sh.menu_close();'>" +
+              "    <div>" +
               makeFavorites(home) +
               makeBreadcrumbs(path) +
+              "    </div>" +
               "  </div>" +
 
               "  <header class='sh-dropshadow'>" +
