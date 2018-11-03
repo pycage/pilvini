@@ -244,7 +244,7 @@ function makeItem(path, file, stat, active)
     {
         info = makeInfo(file, stat);
         iconHtml = makeIcon(icon);
-        if (action !== "")
+        if (action === "")
         {
             action = "onclick='window.location.href=\"" + escapeHtml(href) + "\";'"
         }
@@ -325,7 +325,7 @@ function makeGridItem(path, file, stat, active)
     {
         info = makeInfo(file, stat);
         iconHtml = makeIcon(icon);
-        if (action !== "")
+        if (action === "")
         {
             action = "onclick='window.location.href=\"" + escapeHtml(href) + "\";'"
         }
