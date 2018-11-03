@@ -244,7 +244,10 @@ function makeItem(path, file, stat, active)
     {
         info = makeInfo(file, stat);
         iconHtml = makeIcon(icon);
-        action = "onclick='window.location.href=\"" + escapeHtml(href) + "\";'"
+        if (action !== "")
+        {
+            action = "onclick='window.location.href=\"" + escapeHtml(href) + "\";'"
+        }
     }
 
     out += "<li class='fileitem filelink' style='height: 80px;' data-mimetype='" + mimeType + "' data-url='" + escapeHtml(fileUrl) + "' " + action + ">";
@@ -322,7 +325,10 @@ function makeGridItem(path, file, stat, active)
     {
         info = makeInfo(file, stat);
         iconHtml = makeIcon(icon);
-        action = "onclick='window.location.href=\"" + escapeHtml(href) + "\";'"
+        if (action !== "")
+        {
+            action = "onclick='window.location.href=\"" + escapeHtml(href) + "\";'"
+        }
     }
 
     out += "<div class='fileitem' style='position: relative; display: inline-block; width: 80px; height: 80px;' data-mimetype='" + mimeType + "' data-url='" + escapeHtml(fileUrl) + "'" + action + ">";
