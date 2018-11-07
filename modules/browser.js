@@ -348,7 +348,7 @@ function makeGridItem(path, file, stat, active)
 function makeFiles(path, stats, active)
 {
     var out = "";
-    out += "<ul>";
+    out += "<ul class='sh-listview'>";
     for (var i = 0; i < stats.length; ++i)
     {
         var file = stats[i][0];
@@ -707,7 +707,7 @@ function makeClipboardPage(clipboardStats)
     var out = "<div id='clipboard-page' class='sh-page'>" +
 
               "  <header>" +
-              "    <span class='sh-fw-icon sh-icon-back' onclick='sh.pop();'></span>" +
+              "    <span class='sh-left sh-fw-icon sh-icon-back' onclick='sh.pop();'></span>" +
               "    <h1>Clipboard</h1>" +
               "  </header>" +
 

@@ -1,0 +1,17 @@
+.sh-listview li {
+    position: relative;
+    list-style: none;
+    color: var(--color-primary);
+}
+
+.sh-listview li[onclick] {
+    cursor: pointer;
+}
+
+.sh-listview li[onclick]:active {
+    color: var(--color-highlight);
+    background-color: var(--color-highlight-background);
+}
+
+.sh-listview li:nth-child(odd) { background-color: var(--color-content-background); }
+.sh-listview li:nth-child(even) { background-color: var(--color-content-alt-background); }

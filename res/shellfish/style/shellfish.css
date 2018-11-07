@@ -1,5 +1,6 @@
 @import url("button.css");
 @import url("icons.css");
+@import url("listview.css");
 @import url("menu.css");
 @import url("page.css");
 @import url("popup.css");
@@ -73,29 +74,6 @@ footer {
     text-align: center;
 }
 
-
-
-/* List */
-
-li {
-    position: relative;
-    list-style: none;
-    color: var(--color-primary);
-}
-
-li[onclick] {
-    cursor: pointer;
-}
-
-li[onclick]:active {
-    color: var(--color-highlight);
-    background-color: var(--color-highlight-background);
-}
-
-section > ul > li:nth-child(odd) { background-color: var(--color-content-background); }
-section > ul > li:nth-child(even) { background-color: var(--color-content-alt-background); }
-
-/* *** */
 
 span[onclick]:hover, li[onclick]:hover, h1[onclick]:hover, h2[onclick]:hover {
     color: var(--color-highlight);
