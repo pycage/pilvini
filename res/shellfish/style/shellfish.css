@@ -1,4 +1,5 @@
 @import url("button.css");
+@import url("html.css");
 @import url("icons.css");
 @import url("listview.css");
 @import url("menu.css");
@@ -26,7 +27,7 @@ body {
     font-weight: 100;
 }
 
-h1, h2, h3 {
+h1, h2 {
     white-space: nowrap;
     text-overflow: ellipsis;
     overflow: hidden;

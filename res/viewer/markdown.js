@@ -57,7 +57,7 @@ function viewMarkdown(href)
 
     page.find("section").html("<script src='/::res/viewer/markdown/showdown.js'></script>");
 
-    page.find("section").append("<div>");
+    page.find("section").append("<div class='sh-html'>");
     var viewBox = page.find("section div");
     viewBox.css("padding", "0.5em");
 
