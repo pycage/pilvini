@@ -45,6 +45,7 @@ function viewMarkdown(href)
     }
 
     var page = $("#viewer-page");
+    var originalContent = "";
 
     var parts = href.split("/");
     var name = decodeURI(parts[parts.length - 1]);
@@ -70,7 +71,11 @@ function viewMarkdown(href)
     sh.push(page);
     page.one("sh-closed", function ()
     {
-        upload(href, editBox.val());
+        var data = editBox.val();
+        if (data !== originalContent)
+        {
+            upload(href, editBox.val());
+        }
         toggleButton.remove();
     });
 
@@ -82,15 +87,12 @@ function viewMarkdown(href)
     })
     .success(function (data, status, xhr)
     {
+        originalContent = data;
         setMarkdown(data);
         editBox.val(data);
     })
     .complete(function ()
     {
         sh.popup_close("busy-popup");
-    })
-
-
-
-    //window.location.href = "/::res/viewer/markdown/markdown.html?file=" + encodeURI(href);
+    });
 }

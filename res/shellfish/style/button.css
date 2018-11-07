@@ -1,9 +1,9 @@
 a {
-    border-radius: 0.1em;
+    border-radius: 0.1rem;
     border: solid 1px var(--color-border);
-    padding: 0.2em;
-    margin: 0.1em;
-    min-width: 4em;
+    padding: 0.2rem;
+    margin: 0.1rem;
+    min-width: 4rem;
     background-color: var(--color-primary-background);
     color: var(--color-primary);
     text-align: center;

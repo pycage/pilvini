@@ -22,18 +22,19 @@
 }
 
 .sh-menu h1 {
-    line-height: 2em;
+    line-height: 2rem;
 }
 
 .sh-menu li {
-    padding-left: 0.5em;
-    padding-right: 0.5em;
-    line-height: 2em;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    line-height: 2rem;
     background-color: var(--color-content-background);
+    list-style: none;
 }
 
 h1.sh-submenu {
-    border-bottom: solid 0.25em var(--color-border);
+    border-bottom: solid 0.25rem var(--color-border);
 }
 
 h1.sh-submenu-visible {
@@ -42,7 +43,7 @@ h1.sh-submenu-visible {
 
 h1.sh-submenu + ul {
     display: none;
-    border-left: solid 0.25em var(--color-border);
+    border-left: solid 0.25rem var(--color-border);
 }
 
 h1.sh-submenu-visible + ul {
@@ -52,11 +53,11 @@ h1.sh-submenu-visible + ul {
 h1.sh-submenu:before {
     font-family: Material;
     content: "\f2f5";
-    padding-right: 0.25em;
+    padding-right: 0.25rem;
 }
 
 h1.sh-submenu-visible:before {
     font-family: Material;
     content: "\f2f1";
-    padding-right: 0.25em;
+    padding-right: 0.25rem;
 }

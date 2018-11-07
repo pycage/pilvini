@@ -45,6 +45,10 @@
     font-family: Material; content: "\f197";
 }
 
+.sh-icon-star-circle:before {
+    font-family: Material; content: "\f27a";
+}
+
 .sh-icon-trashcan:before {
     font-family: Material; content: "\f154";
 }

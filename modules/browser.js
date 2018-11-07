@@ -12,6 +12,9 @@ const MIME_INFO = {
     "application/java-archive": { "icon": "package.png" },
     "application/pdf": { "icon": "pdf.png", "viewer": "viewPdf" },
     "application/vnd.oasis.opendocument.text": { "icon": "document.png" },
+    "application/x-batch": { "icon": "text.png", "viewer": "viewText" },
+    "application/x-python": { "icon": "text.png", "viewer": "viewText" },
+    "application/x-shellscript": { "icon": "text.png", "viewer": "viewText" },
     "application/x-gzip": { "icon": "package.png" },
     "application/x-iso9660-image": { "icon": "optical.png" },
     "application/zip": { "icon": "package.png" },
@@ -21,7 +24,7 @@ const MIME_INFO = {
     "image/png": { "icon": "image.png", "viewer": "viewImage" },
     "image/svg+xml": { "icon": "image.png", "viewer": "viewImage" },
     "text/html": { "icon": "html.png" },
-    "text/plain": { "icon": "text.png" },
+    "text/plain": { "icon": "text.png", "viewer": "viewText" },
     "text/rtf": { "icon": "document.png" },
     "text/vcard": { "icon": "contacts.png", "viewer": "viewVCard" },
     "text/x-markdown": { "icon": "document.png", "viewer": "viewMarkdown" },
@@ -126,13 +129,14 @@ function readStats(sortMode, path, callback)
                 result.push([file, stat]);
                 if (result.length === files.length)
                 {
-                    result.sort(function (a, b)
+                    var r = result
+                    .filter(function (a)
                     {
-                        if (! a[1] || ! b[1])
-                        {
-                            return 0;
-                        }
-                        else if (a[1].isDirectory() && ! b[1].isDirectory())
+                        return !! a[1];
+                    })
+                    .sort(function (a, b)
+                    {
+                        if (a[1].isDirectory() && ! b[1].isDirectory())
                         {
                             return -1;
                         }
@@ -156,7 +160,7 @@ function readStats(sortMode, path, callback)
                         }
                     });
 
-                    callback(result);
+                    callback(r);
                 }
             }; } (file));
         }
@@ -429,6 +433,7 @@ function makeHtmlHead()
               "  <script src='/::res/viewer/image.js'></script>" +
               "  <script src='/::res/viewer/markdown.js'></script>" +
               "  <script src='/::res/viewer/pdf.js'></script>" +
+              "  <script src='/::res/viewer/text.js'></script>" +
               "  <script src='/::res/viewer/vcard.js'></script>" +
               "</head>";
 
@@ -496,7 +501,7 @@ function makeFavorites(home)
         var name = node["name"];
 
         out += "<li onclick='window.location.href=\"" + href + "\";'>" +
-               "<span class='sh-fw-icon sh-icon-bug'></span>" +
+               "<span class='sh-fw-icon sh-icon-star-circle'></span>" +
                name +
                "</li>";
     }
