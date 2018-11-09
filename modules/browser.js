@@ -501,7 +501,7 @@ function makeFavorites(home)
         var name = node["name"];
 
         out += "<li onclick='window.location.href=\"" + href + "\";'>" +
-               "<span class='sh-fw-icon sh-icon-star-circle'></span>" +
+               "<span class='sh-fw-icon sh-icon-star-circle'></span> " +
                name +
                "</li>";
     }
