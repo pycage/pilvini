@@ -433,6 +433,7 @@ var DavSession = function(home)
         {
             if (err)
             {
+                console.error(err);
                 resultCallback(409, "Conflict");
             }
             else

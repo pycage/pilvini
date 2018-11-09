@@ -295,14 +295,10 @@ function clearClipboard(callback)
 
 function copyItemToClipboard(item)
 {
-    var img = $(item).find("img:eq(0)").clone();
-    var info = $(item).find("p").clone();
-    var name = $(item).find("h1").html();
-
-    var copy = $("<li><h1>" + name + "</h1></li>");
-    copy.prepend(img);
-    copy.append(info);
-    copy.appendTo("#clipboard ul");
+    var li = $(item).clone();
+    li.off("click");
+    li.find("div").last().remove();
+    li.appendTo("#clipboard ul");
 
     checkClipboard();
 }
@@ -325,7 +321,6 @@ function cutItem(item)
         console.log("File cut: " + name);
         copyItemToClipboard(item);
         $(item).remove();
-        $("#filesbox ul").listview("refresh");
     })
     .fail(function () {
         showError("Failed to cut: " + name);
