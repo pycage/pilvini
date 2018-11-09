@@ -199,7 +199,7 @@ function makeFileItem(pathUri, file, stat, active, callback)
     var icon = getIcon(mimeType);
     var href = "";
     var info = "";
-    var uri = (pathUri + "/" + encodeURIComponent(file)).replace("'", "%27").replace("//", "/");
+    var uri = (pathUri + "/" + encodeURIComponent(file)).replace(/'/g, "%27").replace("//", "/");
     var action = "onclick=\"window.location.href='" + uri + "';\"";
 
     var iconHtml = "";
@@ -214,7 +214,7 @@ function makeFileItem(pathUri, file, stat, active, callback)
         mimeType = "application/x-folder";
         icon = "/::res/file-icons/folder.png";
         iconHtml = makeIcon(icon);
-        action = "onclick='loadDirectory(\"" + uri + "\");'";
+        action = "onclick=\"loadDirectory('" + uri + "');\"";
     }
     else if (mimeType.startsWith("image/") ||
              mimeType.startsWith("audio/"))
@@ -377,7 +377,7 @@ function makeBreadcrumbs(uri)
         }
 
         breadcrumbUri += "/" + uriParts[i];
-        out += "  <li onclick=\"loadDirectory('" + breadcrumbUri.replace("'", "%27") + "');\">" + escapeHtml(decodeURI(uriParts[i])) + "</li>";
+        out += "  <li onclick=\"loadDirectory('" + breadcrumbUri.replace(/'/g, "%27") + "');\">" + escapeHtml(decodeURI(uriParts[i])) + "</li>";
     }
 
     out += "</ul>";
@@ -421,7 +421,7 @@ function makeFavorites(userRoot)
         var href = node["href"];
         var name = node["name"];
 
-        out += "<li onclick=\"loadDirectory('" + href.replace("'", "%27") + "');\">" +
+        out += "<li onclick=\"loadDirectory('" + href.replace(/'/g, "%27") + "');\">" +
                "<span class=\"sh-fw-icon sh-icon-star-circle\"></span> " +
                name +
                "</li>";
