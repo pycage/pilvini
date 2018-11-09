@@ -67,11 +67,13 @@ function loadVCard(href)
             html += "<li style='height: 80px;'>";
             html += "<div class='sh-left' style='width: 80px; background-repeat: no-repeat; background-position: 50% 50%;'></div>";
             html += "<div style='position: absolute; left: 80px; right: 0; top: 1em; padding-left: 0.5em;'>"
-            html += "<h1>" + fn.value() + "</h1>";
+            html += "<h1>";
+            html += fn.value();
             if (org)
             {
                 html += " (" + org.value().replace(";", " ") + ")";
             }
+            html += "</h1>";
             html += "<h2 class='sh-font-small'>";
             if (tel)
             {
@@ -113,7 +115,7 @@ function loadVCard(href)
 function viewVCard(href)
 {
     var page = $("#viewer-page");
-    page.find("section").html("<ul></ul>");
+    page.find("section").html("<ul class='sh-listview'></ul>");
 
     loadVCard(href);
     sh.push("viewer-page");
