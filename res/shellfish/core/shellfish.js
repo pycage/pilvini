@@ -13,7 +13,15 @@ sh.push = function (which, callback, immediate)
     var prevPage = $(".sh-page.sh-visible").last();
     if (prevPage.length)
     {
-        prevPage.prop("rememberedScrollTop",  $(document).scrollTop());
+        console.log("Prev page: " + prevPage);
+        if (prevPage[0] === page[0])
+        {
+            prevPage = [];
+        }
+        else
+        {
+            prevPage.prop("rememberedScrollTop",  $(document).scrollTop());
+        }
     }
 
     page.addClass("sh-page-transitioning");

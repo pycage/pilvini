@@ -274,6 +274,29 @@ function handleRequest(request, response)
             });
             return;
         }
+        else if (urlObj.pathname.indexOf("/::browser/") === 0)
+        {
+            var uri = urlObj.pathname.substr(10);
+            //var href = urlObj.pathname.substr(10);
+            //var hrefUrl = decodeURIComponent(href);
+            //var targetPath = modPath.join(userHome, hrefUrl.replace("/", modPath.sep));
+            modBrowser.createMainPage(uri, userHome, function (ok, data)
+            {
+                if (! ok)
+                {
+                    response.writeHeadLogged(404, "Not found");
+                    response.end();
+                }
+                else
+                {
+                    response.setHeader("Content-Length", Buffer.byteLength(data, "utf-8"));
+                    response.writeHeadLogged(200, "OK");
+                    response.write(data);
+                    response.end();
+                }
+            });
+            return;
+        }
         else if (urlObj.pathname.indexOf("/::thumbnail/") === 0)
         {
             // provide thumbnails

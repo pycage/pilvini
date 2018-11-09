@@ -33,9 +33,9 @@ const MIME_INFO = {
     "video/x-msvideo": { "icon": "video.png" }
 };
 
-function readSettings(home)
+function readSettings(userRoot)
 {
-    var settingsFile = modPath.join(home, ".pilvini", "settings.json");
+    var settingsFile = modPath.join(userRoot, ".pilvini", "settings.json");
     if (! modFs.existsSync(settingsFile))
     {
         return { };
@@ -89,9 +89,9 @@ function getIcon(mimeType)
     }
 }
 
-function prepareClipboard(home, callback)
+function prepareClipboard(userRoot, callback)
 {
-    var path = modPath.join(home, ".pilvini", "clipboard");
+    var path = modPath.join(userRoot, ".pilvini", "clipboard");
 
     // create clipboard if missing
     modFs.stat(path, function (err, stats)
@@ -176,59 +176,45 @@ function makeInfo(file, stat)
 
 function makeIcon(icon)
 {
-    return "<div class='sh-left'" + /*"<img src='/::res/file-icons/empty.png'" + */
-           " style='width: 80px; background-image: url(" + icon + ");" +
+    return "<div class=\"sh-left\"" +
+           " style=\"width: 80px; background-image: url(" + icon + ");" +
            " background-size: 48px;" +
            " background-repeat: no-repeat;" +
-           " background-position: 50% 50%;'></div>";
+           " background-position: 50% 50%;\"></div>";
 }
 
-function makeThumbnail(icon, path, file)
+function makeThumbnail(icon, uri)
 {
-    var imageFile = modPath.join(path, file);
-
-    return "<div class='thumbnail sh-left' data-x-thumbnail='/::thumbnail" + escapeHtml(encodeURI(imageFile)) + "'" + //"' src='/::res/file-icons/empty.png'" +
-           " style='width: 80px; background-image: url(" + icon + ");" +
+    return "<div class=\"thumbnail sh-left\" data-x-thumbnail=\"/::thumbnail" + uri + "\"" +
+           " style=\"width: 80px; background-image: url(" + icon + ");" +
            " background-size: 48px;" +
            " background-repeat: no-repeat;" +
-           " background-position: 50% 50%;'></div>";
+           " background-position: 50% 50%;\"></div>";
 }
 
-function makeItem(path, file, stat, active)
+function makeFileItem(pathUri, file, stat, active, callback)
 {
-    var out = "";
-
     var mimeType = modMime.mimeType(file);
     var mimeInfo = MIME_INFO[mimeType];
-    var name = file;
     var icon = getIcon(mimeType);
     var href = "";
     var info = "";
-    var action = "";
-    var fileUrl = encodeURI(modPath.join(path, file));
+    var uri = (pathUri + "/" + encodeURIComponent(file)).replace("'", "%27").replace("//", "/");
+    var action = "onclick=\"window.location.href='" + uri + "';\"";
 
     var iconHtml = "";
 
     if (active && mimeInfo && mimeInfo.viewer)
     {
-        action = "onclick='" + mimeInfo.viewer +
-                 "(window.location.pathname.replace(/index.html$/, \"\") + \"" + escapeHtml(encodeURIComponent(file)) + "\");'";
-        href="#";
-    }
-    else
-    {
-        href = active ? encodeURIComponent(file)
-                      : "";
+        action = "onclick=\"" + mimeInfo.viewer + "('" + uri + "');\"";
     }
 
     if (stat.isDirectory())
     {
         mimeType = "application/x-folder";
-        href = active ? modPath.join(encodeURIComponent(file), "index.html")
-                      : "#";
         icon = "/::res/file-icons/folder.png";
         iconHtml = makeIcon(icon);
-        action = "onclick='window.location.href=\"" + href + "\";'"
+        action = "onclick='loadDirectory(\"" + uri + "\");'";
     }
     else if (mimeType.startsWith("image/") ||
              mimeType.startsWith("audio/"))
@@ -239,7 +225,7 @@ function makeItem(path, file, stat, active)
         }
         else
         {
-            iconHtml = makeThumbnail(icon, path, file);
+            iconHtml = makeThumbnail(icon, uri);
         }
 
         info = makeInfo(file, stat);
@@ -248,111 +234,15 @@ function makeItem(path, file, stat, active)
     {
         info = makeInfo(file, stat);
         iconHtml = makeIcon(icon);
-        if (action === "")
-        {
-            action = "onclick='window.location.href=\"" + escapeHtml(href) + "\";'"
-        }
     }
 
-    out += "<li class='fileitem filelink' style='height: 80px;' data-mimetype='" + mimeType + "' data-url='" + escapeHtml(fileUrl) + "' " + action + ">";
-    out += iconHtml;
-    out += "<div style='position: absolute; left: 80px; right: 42px; top: 1em; padding-left: 0.5em;'>";
-    out += "<h1>" + escapeHtml(name) + "</h1>";
-    out += "<h2 class='sh-font-small'>" + info + "</h2>";
-    out += "</div>";
-    
-    if (active)
-    {
-        out += "<div class='sh-right' style='width: 42px; text-align: center; border-left: solid 1px var(--color-border);' " +
-               "     onclick='event.stopPropagation(); toggleSelect(this);'>" +
-               "  <span class='sh-icon-checked-circle' " +
-               "        style='width: 42px; text-align: center; line-height: 80px;'>" +
-               "  </span>" +
-               "</div>";
-    }
-    out += "</li>";
-
-    return out;
+    return callback(uri, info, mimeType, action, iconHtml);
 }
 
-function makeGridItem(path, file, stat, active)
+function makeFiles(uri, stats, active)
 {
     var out = "";
-
-    var mimeType = modMime.mimeType(file);
-    var mimeInfo = MIME_INFO[mimeType];
-    var name = file;
-    var icon = getIcon(mimeType);
-    var href = "";
-    var info = "";
-    var action = "";
-    var fileUrl = modPath.join(path, file);
-
-    var iconHtml = "";
-
-    if (active && mimeInfo && mimeInfo.viewer)
-    {
-        action = "onclick='" + mimeInfo.viewer +
-                 "(window.location.pathname.replace(/index.html$/, \"\") + \"" + escapeHtml(encodeURIComponent(file)) + "\");'";
-        href="#";
-    }
-    else
-    {
-        href = active ? encodeURIComponent(file)
-                      : "";
-    }
-
-    if (stat.isDirectory())
-    {
-        mimeType = "application/x-folder";
-        href = active ? modPath.join(encodeURIComponent(file), "index.html")
-                      : "#";
-        icon = "/::res/file-icons/folder.png";
-        iconHtml = makeIcon(icon);
-        action = "onclick='window.location.href=\"" + href + "\";'"
-    }
-    else if (mimeType.startsWith("image/") ||
-             mimeType.startsWith("audio/"))
-    {
-        if (! modThumbnail)
-        {
-            iconHtml = makeIcon(icon);
-        }
-        else
-        {
-            iconHtml = makeThumbnail(icon, path, file);
-        }
-
-        info = makeInfo(file, stat);
-    }
-    else
-    {
-        info = makeInfo(file, stat);
-        iconHtml = makeIcon(icon);
-        if (action === "")
-        {
-            action = "onclick='window.location.href=\"" + escapeHtml(href) + "\";'"
-        }
-    }
-
-    out += "<div class='fileitem' style='position: relative; display: inline-block; width: 80px; height: 80px;' data-mimetype='" + mimeType + "' data-url='" + escapeHtml(fileUrl) + "'" + action + ">";
-    out += iconHtml;
-    out += "</div>";
-
-    /*
-    if (active)
-    {
-        out += "<a data-icon='check' href='#' onclick='toggleSelect($(this).parent());'></a>";
-    }
-    */
-
-    return out;
-}
-
-function makeFiles(path, stats, active)
-{
-    var out = "";
-    out += "<ul class='sh-listview'>";
+    out += "<ul class=\"sh-listview\">";
     for (var i = 0; i < stats.length; ++i)
     {
         var file = stats[i][0];
@@ -363,14 +253,37 @@ function makeFiles(path, stats, active)
             continue;
         }
 
-        out += makeItem(path, file, stat, active);
+        out += makeFileItem(uri, file, stat, active, function (uri, info, mimeType, action, iconHtml)
+        {
+            var out = "";
+    
+            out += "<li class=\"fileitem filelink\" style=\"height: 80px;\" data-mimetype=\"" + mimeType + "\" data-url=\"" + uri + "\" " + action + ">";
+            out += iconHtml;
+            out += "<div style=\"position: absolute; left: 80px; right: 42px; top: 1em; padding-left: 0.5em;\">";
+            out += "<h1>" + escapeHtml(file) + "</h1>";
+            out += "<h2 class=\"sh-font-small\">" + info + "</h2>";
+            out += "</div>";
+            
+            if (active)
+            {
+                out += "<div class=\"sh-right\" style=\"width: 42px; text-align: center; border-left: solid 1px var(--color-border);\" " +
+                       "     onclick=\"event.stopPropagation(); toggleSelect(this);\">" +
+                       "  <span class=\"sh-icon-checked-circle\" " +
+                       "        style=\"width: 42px; text-align: center; line-height: 80px;\">" +
+                       "  </span>" +
+                       "</div>";
+            }
+            out += "</li>";
+    
+            return out;
+        });
     }
     out += "</ul>";
 
     return out;
 }
 
-function makeFilesGrid(sortMode, path, stats, active)
+function makeFilesGrid(sortMode, uri, stats, active)
 {
     function getSectionHeader(name, stat)
     {
@@ -406,7 +319,15 @@ function makeFilesGrid(sortMode, path, stats, active)
             out += "<p>";
         }
         
-        out += makeGridItem(path, file, stat, active);
+        out += makeFileItem(uri, file, stat, active, function (uri, info, mimeType, action, iconHtml)
+        {
+            var out = "";
+            out += "<div class='fileitem' style='position: relative; display: inline-block; width: 80px; height: 80px;' data-mimetype='" + mimeType + "' data-url='" + uri + "'" + action + ">";
+            out += iconHtml;
+            out += "</div>";
+
+            return out;
+        });
         out += "&nbsp;";
     }
     out += "</p>"
@@ -440,23 +361,23 @@ function makeHtmlHead()
     return out;
 }
 
-function makeBreadcrumbs(path)
+function makeBreadcrumbs(uri)
 {
-    var pathParts = path.split("/");
+    var uriParts = uri.split("/");
 
     var out = "<ul>" +
-              "  <li onclick='window.location.href=\"/index.html\";'>/</li>";
+              "  <li onclick=\"loadDirectory('/');\">/</li>";
 
-    var breadcrumbPath = "";
-    for (var i = 0; i < pathParts.length; ++i)
+    var breadcrumbUri = "";
+    for (var i = 0; i < uriParts.length; ++i)
     {
-        if (pathParts[i] === "")
+        if (uriParts[i] === "")
         {
             continue;
         }
 
-        breadcrumbPath += "/" + pathParts[i]
-        out += "  <li onclick='window.location.href=\"" + escapeHtml(encodeURI(breadcrumbPath)) + "/index.html\";'>" + escapeHtml(pathParts[i]) + "</li>";
+        breadcrumbUri += "/" + uriParts[i];
+        out += "  <li onclick=\"loadDirectory('" + breadcrumbUri.replace("'", "%27") + "');\">" + escapeHtml(decodeURI(uriParts[i])) + "</li>";
     }
 
     out += "</ul>";
@@ -464,9 +385,9 @@ function makeBreadcrumbs(path)
     return out;
 }
 
-function makeFavorites(home)
+function makeFavorites(userRoot)
 {
-    var favsFile = modPath.join(home, ".pilvini", "favorites.json");
+    var favsFile = modPath.join(userRoot, ".pilvini", "favorites.json");
     if (! modFs.existsSync(favsFile))
     {
         return "";
@@ -500,8 +421,8 @@ function makeFavorites(home)
         var href = node["href"];
         var name = node["name"];
 
-        out += "<li onclick='window.location.href=\"" + href + "\";'>" +
-               "<span class='sh-fw-icon sh-icon-star-circle'></span> " +
+        out += "<li onclick=\"loadDirectory('" + href.replace("'", "%27") + "');\">" +
+               "<span class=\"sh-fw-icon sh-icon-star-circle\"></span> " +
                name +
                "</li>";
     }
@@ -676,30 +597,30 @@ function makeImagePopup()
     return out;
 }
 
-function makeMainPage(viewMode, sortMode, home, path, stats)
+function makeMainPage(viewMode, sortMode, userRoot, uri, stats)
 {
-    var parentDir = escapeHtml(encodeURI(modPath.dirname(path) + "/index.html").replace("//", "/"));
+    var parentUri = modPath.dirname(uri);
 
-    var out = "<div id='main-page' class='sh-page'>" +
+    var out = "<div id=\"main-page\" class=\"sh-page\">" +
 
               makeMoreMenu(viewMode, sortMode) +
 
-              "  <div id='breadcrumbs' class='sh-menu' onclick='sh.menu_close();'>" +
+              "  <div id=\"breadcrumbs\" class=\"sh-menu\" onclick=\"sh.menu_close();\">" +
               "    <div>" +
-              makeFavorites(home) +
-              makeBreadcrumbs(path) +
+              makeFavorites(userRoot) +
+              makeBreadcrumbs(uri) +
               "    </div>" +
               "  </div>" +
 
-              "  <header class='sh-dropshadow'>" +
-              (path !== "/" ? "<span id='upButton' class='sh-left sh-fw-icon sh-icon-arrow-up' data-url='" + parentDir + "' onclick='window.location.href=\"" + parentDir + "\"'></span>"
-                            : "") +
-              "    <h1 onclick='sh.menu(this, \"breadcrumbs\");'>" + escapeHtml(path) + "</h1>" +
+              "  <header class=\"sh-dropshadow\">" +
+              (uri !== "/" ? "<span id='upButton' class='sh-left sh-fw-icon sh-icon-arrow-up' data-url='" + parentUri + "' onclick='loadDirectory(\"" + parentUri + "\");'></span>"
+                           : "") +
+              "    <h1 onclick='sh.menu(this, \"breadcrumbs\");'>" + escapeHtml(decodeURI(uri)) + "</h1>" +
               "    <span class='sh-right sh-fw-icon sh-icon-menu' onclick='sh.menu(this, \"more-menu\");'></span>" +
               "  </header>" +
 
-              "  <section id='filesbox'>" +
-              (viewMode === "list" ? makeFiles(path, stats, true) : makeFilesGrid(sortMode, path, stats, true)) +
+              "  <section id=\"filesbox\" data-url=\"" + uri + "\">" +
+              (viewMode === "list" ? makeFiles(uri, stats, true) : makeFilesGrid(sortMode, uri, stats, true)) +
               "  </section>" +
 
               "</div>";
@@ -709,14 +630,14 @@ function makeMainPage(viewMode, sortMode, home, path, stats)
 
 function makeClipboardPage(clipboardStats)
 {
-    var out = "<div id='clipboard-page' class='sh-page'>" +
+    var out = "<div id=\"clipboard-page\" class=\"sh-page\">" +
 
               "  <header>" +
-              "    <span class='sh-left sh-fw-icon sh-icon-back' onclick='sh.pop();'></span>" +
+              "    <span class=\"sh-left sh-fw-icon sh-icon-back\" onclick=\"sh.pop();\"></span>" +
               "    <h1>Clipboard</h1>" +
               "  </header>" +
 
-              "  <section id='clipboard'>" +
+              "  <section id=\"clipboard\">" +
               makeFiles("", clipboardStats, false) +
               "  </section>" +
 
@@ -742,7 +663,7 @@ function makeViewerPage()
     return out;
 }
 
-function makeHtml(viewMode, sortMode, home, path, stats, clipboardStats)
+function makeHtml(viewMode, sortMode, userRoot, uri, stats, clipboardStats)
 {
     var out = "<!DOCTYPE html>" +
 
@@ -753,7 +674,7 @@ function makeHtml(viewMode, sortMode, home, path, stats, clipboardStats)
               "<input id='upload' type='file' multiple style='display: none;'/>" +
               "<a id='download' data-ajax='false' href='#' download='name' style='display: none;'></a>" +
 
-              makeMainPage(viewMode, sortMode, home, path, stats) +
+              makeMainPage(viewMode, sortMode, userRoot, uri, stats) +
               makeNewDirDialog() +
               makeNameDialog() +
               makeMessageDialog() +
@@ -764,35 +685,53 @@ function makeHtml(viewMode, sortMode, home, path, stats, clipboardStats)
               makeViewerPage() +
               makeClipboardPage(clipboardStats) +
 
-              
               "</body>" +
               "</html>";
 
     return out;
 }
 
-function makeIndex(href, home, callback)
+function createMainPage(uri, userRoot, callback)
 {
-    var path = decodeURI(href);
-    var fullPath = modPath.join(home, decodeURI(href));
+    var path = modUtils.uriToPath(uri, userRoot);
 
-    var settings = readSettings(home);
+    var settings = readSettings(userRoot);
     console.debug("Settings: " + JSON.stringify(settings));
     var viewMode = settings.view || "list";
     var sortMode = settings.sort || "name";
 
-    console.debug("User Path: " + path + "\n" +
-                  "Full Path: " + fullPath + "\n" +
+    console.debug("Full Path: " + path + "\n" +
                   "View Mode: " + viewMode + "\n" +
                   "Sort Mode: " + sortMode);
 
-    prepareClipboard(home, function ()
+    readStats(sortMode, path, function (stats)
     {
-        readStats(sortMode, fullPath, function (stats)
+        var html = makeMainPage(viewMode, sortMode, userRoot, uri, stats);
+        callback(true, html);
+    });
+}
+exports.createMainPage = createMainPage;
+
+function makeIndex(uri, userRoot, callback)
+{
+    var path = modUtils.uriToPath(uri, userRoot);
+
+    var settings = readSettings(userRoot);
+    console.debug("Settings: " + JSON.stringify(settings));
+    var viewMode = settings.view || "list";
+    var sortMode = settings.sort || "name";
+
+    console.debug("Full Path: " + path + "\n" +
+                  "View Mode: " + viewMode + "\n" +
+                  "Sort Mode: " + sortMode);
+
+    prepareClipboard(userRoot, function ()
+    {
+        readStats(sortMode, path, function (stats)
         {
-            readStats(sortMode, modPath.join(home, ".pilvini", "clipboard"), function (clipboardStats)
+            readStats(sortMode, modPath.join(userRoot, ".pilvini", "clipboard"), function (clipboardStats)
             {
-                var html = makeHtml(viewMode, sortMode, home, path, stats, clipboardStats);
+                var html = makeHtml(viewMode, sortMode, userRoot, uri, stats, clipboardStats);
                 callback(true, html);
             });
         });

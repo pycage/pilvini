@@ -1,10 +1,8 @@
 "use strict";
 
-function currentPath()
+function currentUri()
 {
-    var path = $("#main-page > header h1").html();
-    return path === "/" ? path
-                        : "/" + path;
+    return $("#main-page > section").data("url");
 }
 
 function escapeHtml(text)
@@ -44,7 +42,7 @@ function showError(msg)
 
 function loadThumbnails(page)
 {
-    console.log("Location: " + window.location.href);
+    console.log("Location: " + currentUri());
 
     var images = [];
     $(page).find(".fileitem .thumbnail").each(function (idx)
@@ -58,7 +56,7 @@ function loadThumbnails(page)
     });
 
     console.log("loadThumbnails: " + images.length + " images");
-    loadNextThumbnail(window.location.href, images);
+    loadNextThumbnail(currentUri(), images);
 }
 
 function loadNextThumbnail(forLocation, images)
@@ -103,7 +101,7 @@ function loadNextThumbnail(forLocation, images)
     })
     .always(function ()
     {
-        if (window.location.href === forLocation)
+        if (currentUri() === forLocation)
         {
             loadNextThumbnail(forLocation, images);
         }
@@ -295,7 +293,9 @@ function clearClipboard(callback)
 
 function copyItemToClipboard(item)
 {
+    var name = unescapeHtml($(item).find("h1").html());
     var li = $(item).clone();
+    li.data("url", "/.pilvini/clipboard/" + encodeURIComponent(name));
     li.off("click");
     li.find("div").last().remove();
     li.appendTo("#clipboard ul");
@@ -307,15 +307,16 @@ function cutItem(item)
 {
     console.log("Cut item");
 
-    // TODO: use data-url
     var name = unescapeHtml($(item).find("h1").html());
-    var target = encodeURIComponent(name);
-    var newTarget = "/.pilvini/clipboard/" + encodeURIComponent(name);
+    var sourceUri = $(item).data("url");
+    var targetUri = "/.pilvini/clipboard/" + encodeURIComponent(name);
+    //var target = encodeURIComponent(name);
+    //var newTarget = "/.pilvini/clipboard/" + encodeURIComponent(name);
 
     $.ajax({
-               url: target,
+               url: sourceUri,
                type: "MOVE",
-               beforeSend: function(xhr) { xhr.setRequestHeader("Destination", newTarget); },
+               beforeSend: function(xhr) { xhr.setRequestHeader("Destination", targetUri); },
            })
     .done(function () {
         console.log("File cut: " + name);
@@ -331,15 +332,16 @@ function copyItem(item)
 {
     console.log("Copy item");
 
-    // TODO: use data-url
     var name = unescapeHtml($(item).find("h1").html());
-    var target = encodeURIComponent(name);
-    var newTarget = "/.pilvini/clipboard/" + encodeURIComponent(name);
+    var sourceUri = $(item).data("url");
+    var targetUri = "/.pilvini/clipboard/" + encodeURIComponent(name);
+    //var target = encodeURIComponent(name);
+    //var newTarget = "/.pilvini/clipboard/" + encodeURIComponent(name);
 
     $.ajax({
-               url: target,
+               url: sourceUri,
                type: "COPY",
-               beforeSend: function(xhr) { xhr.setRequestHeader("Destination", newTarget); },
+               beforeSend: function(xhr) { xhr.setRequestHeader("Destination", targetUri); },
            })
     .done(function () {
         console.log("File copied: " + name);
@@ -364,16 +366,17 @@ function pasteItems()
     {
         var item = this;
 
-        var path = currentPath();
-        // TODO: use data-url
+        //var path = currentPath();
         var name = unescapeHtml($(item).find("h1").html());
-        var target = "/.pilvini/clipboard/" + encodeURIComponent(name);
-        var newTarget = encodeURI(path !== "/" ? path : "") + "/" + encodeURIComponent(name);
+        var sourceUri = $(item).data("url");
+        var targetUri = currentUri() + "/" + name;
+        //var target = "/.pilvini/clipboard/" + encodeURIComponent(name);
+        //var newTarget = encodeURI(path !== "/" ? path : "") + "/" + encodeURIComponent(name);
 
         $.ajax({
-                   url: target,
+                   url: sourceUri,
                    type: "MOVE",
-                   beforeSend: function(xhr) { xhr.setRequestHeader("Destination", newTarget); },
+                   beforeSend: function(xhr) { xhr.setRequestHeader("Destination", targetUri); },
                })
         .done(function ()
         {
@@ -388,7 +391,7 @@ function pasteItems()
             tokens.pop();
             if (tokens.length === 0)
             {
-                window.location.reload();
+                loadDirectory(currentUri());
             }
         });
     });
@@ -421,20 +424,22 @@ function renameItem(item, newName)
 {
     console.log("Rename item");
 
-    var path = currentPath();
+    //var path = currentPath();
     var name = unescapeHtml($(item).find("h1:first-child").html());
-    var target = encodeURIComponent(name);
-    var newTarget = encodeURI(path !== "/" ? path : "") + "/" + encodeURIComponent(newName);
+    var sourceUri = $(item).data("url");
+    var targetUri = currentUri() + "/" + encodeURIComponent(newName);
+    //var target = encodeURIComponent(name);
+    //var newTarget = encodeURI(path !== "/" ? path : "") + "/" + encodeURIComponent(newName);
 
     $.ajax({
-               url: target,
+               url: sourceUri,
                type: "MOVE",
-               beforeSend: function(xhr) { xhr.setRequestHeader("Destination", newTarget); },
+               beforeSend: function(xhr) { xhr.setRequestHeader("Destination", targetUri); },
            })
     .done(function () {
         console.log("File renamed: " + name + " -> " + newName);
         $(item).find("h1").html(newName);
-        window.location.reload();
+        loadDirectory(currentUri());
     })
     .fail(function () {
         showError("Failed to rename: " + name + " -> " + newName);
@@ -447,10 +452,10 @@ function removeItem(item)
 
     // TODO: use data-url
     var name = unescapeHtml($(item).find("h1").html());
-    var target = encodeURIComponent(name);
+    var targetUri = currentUri() + "/" + encodeURIComponent(name);
 
     $.ajax({
-               url: target,
+               url: targetUri,
                type: "DELETE"
            })
     .done(function () {
@@ -510,15 +515,15 @@ function uploadFiles(files)
     for (i = 0; i < files.length; ++i)
     {
         var file = files[i];
-        var target = window.location.pathname.replace("index.html", encodeURIComponent(file.name));
+        var targetUri = currentUri() + "/" + encodeURIComponent(file.name);
 
-        upload(file, target, function ()
+        upload(file, targetUri, function ()
         {
             tokens.pop();
 
             if (tokens.length === 0)
             {
-                window.location.reload();
+                loadDirectory(currentUri());
             }
         });
     }
@@ -526,16 +531,16 @@ function uploadFiles(files)
 
 function makeDirectory(name)
 {
-    var target = encodeURIComponent(name);
+    var targetUri = currentUri() + "/" + encodeURIComponent(name);
 
     $.ajax({
-               url: target,
+               url: targetUri,
                type: "MKCOL"
            })
     .done(function ()
     {
         console.log("Directory created: " + name);
-        window.location.reload();
+        loadDirectory(currentUri());
     })
     .fail(function ()
     {
@@ -545,10 +550,10 @@ function makeDirectory(name)
 
 function makeFile(name)
 {
-    var target = encodeURIComponent(name);
+    var targetUri = currentUri() + "/" + encodeURIComponent(name);
 
     $.ajax({
-               url: target,
+               url: targetUri,
                type: "PUT",
                contentType: "application/x-octet-stream",
                processData: false,
@@ -557,7 +562,7 @@ function makeFile(name)
     .done(function ()
     {
         console.log("File created: " + name);
-        window.location.reload();
+        loadDirectory(currentUri());
     })
     .fail(function ()
     {
@@ -591,7 +596,7 @@ function changeSettings(key, value, altValue)
         .done(function ()
         {
             console.log("Settings changed: " + key + " = " + value);
-            window.location.reload();
+            loadDirectory(currentUri());
         })
         .fail(function (xhr, status, err)
         {
@@ -719,8 +724,30 @@ function onItemTouchEnd(ev)
     var upButton = $("#upButton");
     if (upButton.length && this.swipeContext.status === 2)
     {
-        window.location.assign(upButton.data("url"));
+        loadDirectory(upButton.data("url"));
     }
+}
+
+function loadDirectory(href)
+{
+    console.log("Load: " + href);
+    sh.popup("busy-popup");
+    
+    $("#main-page").load("/::browser" + href + " #main-page > *", function (data, status, xhr)
+    {
+        console.log(status);
+        console.log(data);
+        sh.push("main-page", function ()
+        {
+            var page = $("#main-page");
+            setTimeout(function () { loadThumbnails(page); }, 500);
+        
+            unselectAll();
+            checkClipboard();
+    
+            sh.popup_close("busy-popup");
+        });
+    });
 }
 
 function init()

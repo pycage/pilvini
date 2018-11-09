@@ -30,3 +30,10 @@ function mkdirs(path, callback)
     });
 }
 exports.mkdirs = mkdirs;
+
+
+function uriToPath(uri, userRoot)
+{
+    return modPath.join(userRoot, decodeURI(uri).replace("/", modPath.sep));
+}
+exports.uriToPath = uriToPath;
