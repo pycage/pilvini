@@ -499,7 +499,7 @@ function uploadFiles(files)
         return;
     }
 
-    $.mobile.loading("show", { text: "Uploading", textVisible: true });
+    sh.popup("busy-popup");
 
     var tokens = [];
     for (var i = 0; i < files.length; ++i)
