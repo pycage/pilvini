@@ -13,6 +13,7 @@ const modCrypto = require("crypto"),
       modHttpAuth = require("./modules/httpauth.js"),
       modBrowser = require("./modules/browser.js"),
       modDav = require("./modules/dav.js"),
+      modId3Tags = require("./modules/id3tags"),
       modLockStore = require("./modules/lockstore.js"),
       modMime = require("./modules/mime.js"),
       modThumbnail = attempt(function () { return require("./modules/thumbnail.js"); }),
@@ -220,17 +221,17 @@ function handleRequest(request, response)
         return headerString;
     } ());
 
-    var userHome = ".";
+    var userRoot = ".";
     for (var i = 0; i < config.users.length; ++i)
     {
         if (config.users[i].name === authUser)
         {
-            userHome = config.users[i].home;
+            userRoot = config.users[i].home;
             break;
         }
     }
 
-    var davSession = new modDav.DavSession(userHome);
+    var davSession = new modDav.DavSession(userRoot);
 
     if (request.method === "COPY")
     {
@@ -257,7 +258,7 @@ function handleRequest(request, response)
             urlObj.pathname.indexOf("/index.html") === urlObj.pathname.length - 11)
         {
             // provide browser GUI
-            modBrowser.makeIndex(modPath.dirname(urlObj.pathname), userHome, function (ok, data)
+            modBrowser.makeIndex(modPath.dirname(urlObj.pathname), userRoot, function (ok, data)
             {
                 if (! ok)
                 {
@@ -274,13 +275,10 @@ function handleRequest(request, response)
             });
             return;
         }
-        else if (urlObj.pathname.indexOf("/::browser/") === 0)
+        else if (urlObj.pathname.indexOf("/::shell/") === 0)
         {
-            var uri = urlObj.pathname.substr(10);
-            //var href = urlObj.pathname.substr(10);
-            //var hrefUrl = decodeURIComponent(href);
-            //var targetPath = modPath.join(userHome, hrefUrl.replace("/", modPath.sep));
-            modBrowser.createMainPage(uri, userHome, function (ok, data)
+            
+            function callback (ok, data)
             {
                 if (! ok)
                 {
@@ -294,17 +292,63 @@ function handleRequest(request, response)
                     response.write(data);
                     response.end();
                 }
+            }
+            
+            if (urlObj.search.indexOf("ajax") !== -1)
+            {
+                var uri = urlObj.pathname.substr(8);
+                modBrowser.createMainPage(uri, userRoot, callback);
+            }
+            else
+            {
+                modBrowser.makeIndex("/", userRoot, callback);
+            }
+            return;
+        }
+        else if (urlObj.pathname.indexOf("/::tags/") === 0)
+        {
+            var uri = urlObj.pathname.substr(7);
+            console.log("URI: " + uri);
+            var path = modUtils.uriToPath(uri, userRoot);
+            var tagParser = new modId3Tags.Tags(path);
+
+            tagParser.read(function (err)
+            {
+                if (err)
+                {
+                    response.writeHeadLogged(404, "Not found");
+                    response.end();
+                }
+                else
+                {
+                    var json = { };
+                    var keys = tagParser.keys();
+                    for (var i = 0; i < keys.length; ++i)
+                    {
+                        var key = keys[i];
+                        console.debug("Key: " + key);
+                        json[key] = tagParser.get(key);
+                    }
+
+                    var data = Buffer.from(JSON.stringify(json));
+                    response.setHeader("Content-Length", Buffer.byteLength(data, "utf-8"));
+                    response.setHeader("Content-Type", "text/json");
+                    response.writeHeadLogged(200, "OK");
+                    response.write(data);
+                    response.end();
+                }
             });
             return;
+
         }
         else if (urlObj.pathname.indexOf("/::thumbnail/") === 0)
         {
             // provide thumbnails
-            var thumbDir = modPath.join(userHome, ".pilvini", "thumbnails");
+            var thumbDir = modPath.join(userRoot, ".pilvini", "thumbnails");
 
             var href = urlObj.pathname.substr(12);
             var hrefUrl = decodeURIComponent(href);
-            var targetFile = modPath.join(userHome, hrefUrl.replace("/", modPath.sep));
+            var targetFile = modPath.join(userRoot, hrefUrl.replace("/", modPath.sep));
 
             var hash = modCrypto.createHash("md5");
             hash.update(targetFile);

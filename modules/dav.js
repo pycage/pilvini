@@ -3,6 +3,7 @@
 const modFs = require("fs"),
       modPath = require("path"),
       modUrl = require("url"),
+      modUtils = require("./utils.js"),
       modXmlsax = require("./xmlsax.js"),
       modZip = require("./zip.js");
 
@@ -24,11 +25,14 @@ var CountToken = function (count, callback)
     }
 };
 
-function pathFromHref(href, home)
+function pathFromHref(href, userRoot)
 {
+    return modUtils.uriToPath(href, userRoot);
+    /*
     var hrefDecoded = decodeURIComponent(href);
-    var path = modPath.join(home, hrefDecoded.replace("/", modPath.sep));
+    var path = modPath.join(userRoot, hrefDecoded.replace("/", modPath.sep));
     return path;
+    */
 }
 
 function readCollection(path, callback)

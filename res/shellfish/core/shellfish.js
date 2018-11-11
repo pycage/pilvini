@@ -302,6 +302,25 @@ sh.popup_close = function (which, callback)
     }
 }
 
+sh.set_footer = function (whichPage, size)
+{
+    var page = sh.item(whichPage);
+    if (page.length)
+    {
+        if (size === 0)
+        {
+            page.find("> footer").css("visibility", "hidden");
+            page.css("padding-bottom", "0");
+        }
+        else
+        {
+            page.find("> footer").css("visibility", "visible")
+                                 .height(size);
+            page.css("padding-bottom", size + "px");
+        }
+    }
+}
+
 sh.item = function (which)
 {
     switch ($.type(which))

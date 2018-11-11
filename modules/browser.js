@@ -10,6 +10,7 @@ const modFs = require("fs"),
 
 const MIME_INFO = {
     "application/java-archive": { "icon": "package.png" },
+    "application/ogg": { "icon": "audio.png", "viewer": "viewAudio" },
     "application/pdf": { "icon": "pdf.png", "viewer": "viewPdf" },
     "application/vnd.oasis.opendocument.text": { "icon": "document.png" },
     "application/x-batch": { "icon": "text.png", "viewer": "viewText" },
@@ -18,7 +19,7 @@ const MIME_INFO = {
     "application/x-gzip": { "icon": "package.png" },
     "application/x-iso9660-image": { "icon": "optical.png" },
     "application/zip": { "icon": "package.png" },
-    "audio/mp3": { "icon": "audio.png" },
+    "audio/mp3": { "icon": "audio.png", "viewer": "viewAudio" },
     "image/gif": { "icon": "image.png", "viewer": "viewImage" },
     "image/jpeg": { "icon": "image.png", "viewer": "viewImage" },
     "image/png": { "icon": "image.png", "viewer": "viewImage" },
@@ -351,6 +352,7 @@ function makeHtmlHead()
               "  <script src='/::res/shellfish/core/shellfish.js'></script>" +
               "  <script src='/::res/browser/index.js'></script>" +
 
+              "  <script src='/::res/viewer/audio.js'></script>" +
               "  <script src='/::res/viewer/image.js'></script>" +
               "  <script src='/::res/viewer/markdown.js'></script>" +
               "  <script src='/::res/viewer/pdf.js'></script>" +
@@ -623,6 +625,9 @@ function makeMainPage(viewMode, sortMode, userRoot, uri, stats)
               (viewMode === "list" ? makeFiles(uri, stats, true) : makeFilesGrid(sortMode, uri, stats, true)) +
               "  </section>" +
 
+              "  <footer class=\"sh-dropshadow\">" +
+              "  </footer>" +
+
               "</div>";
 
     return out;
@@ -673,6 +678,7 @@ function makeHtml(viewMode, sortMode, userRoot, uri, stats, clipboardStats)
 
               "<input id='upload' type='file' multiple style='display: none;'/>" +
               "<a id='download' data-ajax='false' href='#' download='name' style='display: none;'></a>" +
+              "<audio id='audio' style='display: none;'></audio>" +
 
               makeMainPage(viewMode, sortMode, userRoot, uri, stats) +
               makeNewDirDialog() +

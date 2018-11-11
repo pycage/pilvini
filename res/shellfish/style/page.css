@@ -22,17 +22,18 @@
     left: 0;
     right: 0;
     bottom: 0;
-}
-
-.sh-page.sh-fullscreen > header {
     visibility: hidden;
 }
 
-.sh-page.sh-fullscreen {
+.sh-page.sh-page-fullscreen > header {
+    visibility: hidden;
+}
+
+.sh-page.sh-page-fullscreen {
     padding-top: 0;
 }
 
-.sh-page.sh-fullscreen > footer {
+.sh-page.sh-page-fullscreen > footer {
     visibility: hidden;
 }
 

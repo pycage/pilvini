@@ -733,10 +733,9 @@ function loadDirectory(href)
     console.log("Load: " + href);
     sh.popup("busy-popup");
     
-    $("#main-page").load("/::browser" + href + " #main-page > *", function (data, status, xhr)
+    $("#main-page").load("/::shell" + href + "?ajax #main-page > *", function (data, status, xhr)
     {
         console.log(status);
-        console.log(data);
         sh.push("main-page", function ()
         {
             var page = $("#main-page");
@@ -746,7 +745,9 @@ function loadDirectory(href)
             checkClipboard();
     
             sh.popup_close("busy-popup");
-        });
+
+            page.trigger("pilvini-page-replaced");
+        }, true);
     });
 }
 

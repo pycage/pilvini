@@ -33,6 +33,10 @@
     font-family: Material; content: "\f269";
 }
 
+.sh-icon-close:before {
+    font-family: Material; content: "\f136";
+}
+
 .sh-icon-gear:before {
     font-family: Material; content: "\f1c6";
 }
@@ -41,8 +45,56 @@
     font-family: Material; content: "\f351";
 }
 
+.sh-icon-media-fwd:before {
+    font-family: Material; content: "\f39f";
+}
+
+.sh-icon-media-loop:before {
+    font-family: Material; content: "\f3ae";
+}
+
+.sh-icon-media-next:before {
+    font-family: Material; content: "\f3b4";
+}
+
+.sh-icon-media-pause:before {
+    font-family: Material; content: "\f3a7";
+}
+
+.sh-icon-media-pause-circle:before {
+    font-family: Material; content: "\f3a5";
+}
+
+.sh-icon-media-play:before {
+    font-family: Material; content: "\f3aa";
+}
+
+.sh-icon-media-play-circle:before {
+    font-family: Material; content: "\f3a8";
+}
+
+.sh-icon-media-playlist:before {
+    font-family: Material; content: "\f3ab";
+}
+
+.sh-icon-media-previous:before {
+    font-family: Material; content: "\f3b5";
+}
+
+.sh-icon-media-rwd:before {
+    font-family: Material; content: "\f3a0";
+}
+
+.sh-icon-media-shuffle:before {
+    font-family: Material; content: "\f3b3";
+}
+
+.sh-icon-media-stop:before {
+    font-family: Material; content: "\f3b6";
+}
+
 .sh-icon-menu:before {
-    font-family: Material; content: "\f197";
+    font-family: Material; content: "\f31e";
 }
 
 .sh-icon-star-circle:before {

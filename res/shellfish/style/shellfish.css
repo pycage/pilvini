@@ -167,3 +167,8 @@ span.sh-busy-indicator:before {
 .sh-font-small {
     font-size: 80%;
 }
+
+.sh-inverse {
+    color: var(--color-primary-background);
+    background-color: var(--color-primary);
+}

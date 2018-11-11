@@ -76,7 +76,6 @@ function viewImage(href)
     {
         sh.popup_close("busy-popup");
         
-        console.log("has class: " + popup.is(".sh-visible"));
         if (popup.is(".sh-visible"))
         {
             img.parent().animate({
