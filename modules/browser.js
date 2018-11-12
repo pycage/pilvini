@@ -429,10 +429,41 @@ function makeFavorites(userRoot)
                "</li>";
     }
 
-    out += "  <hr>" +
+    out += "  <hr/>" +
            "</ul>";
 
     return out;
+}
+
+function isFavorite(uri, userRoot)
+{
+    var favsFile = modPath.join(userRoot, ".pilvini", "favorites.json");
+    if (! modFs.existsSync(favsFile))
+    {
+        return false;
+    }
+
+    try
+    {
+        var favs = modFs.readFileSync(favsFile, "utf8");
+    }
+    catch (err)
+    {
+        console.error("Failed to read favorites: " + err);
+        return false;
+    }
+
+    try
+    {
+        var doc = JSON.parse(favs);
+    }
+    catch (err)
+    {
+        console.error("Invalid favorites document: " + err);
+        return false;
+    }
+
+    return doc.find(function (a) { return a.href === uri; }) !== undefined;
 }
 
 function makeMoreMenu(viewMode, sortMode)
@@ -602,6 +633,7 @@ function makeImagePopup()
 function makeMainPage(viewMode, sortMode, userRoot, uri, stats)
 {
     var parentUri = modPath.dirname(uri);
+    var isFav = isFavorite(uri, userRoot);
 
     var out = "<div id=\"main-page\" class=\"sh-page\">" +
 
@@ -609,6 +641,11 @@ function makeMainPage(viewMode, sortMode, userRoot, uri, stats)
 
               "  <div id=\"breadcrumbs\" class=\"sh-menu\" onclick=\"sh.menu_close();\">" +
               "    <div>" +
+              "      <ul>" +
+              (isFav ? "<li onclick='removeFavorite();'>Remove from Favorites</li>"
+                     : "<li onclick='addFavorite();'>Add to Favorites</li>") +
+              "        <hr/>" +
+              "      </ul>" +
               makeFavorites(userRoot) +
               makeBreadcrumbs(uri) +
               "    </div>" +
@@ -617,7 +654,11 @@ function makeMainPage(viewMode, sortMode, userRoot, uri, stats)
               "  <header class=\"sh-dropshadow\">" +
               (uri !== "/" ? "<span id='upButton' class='sh-left sh-fw-icon sh-icon-arrow-up' data-url='" + parentUri + "' onclick='loadDirectory(\"" + parentUri + "\");'></span>"
                            : "") +
-              "    <h1 onclick='sh.menu(this, \"breadcrumbs\");'>" + escapeHtml(decodeURI(uri)) + "</h1>" +
+              "    <h1 onclick='sh.menu(this, \"breadcrumbs\");'>" + 
+              (isFav ? "<span class='sh-fw-icon sh-icon-star-circle'></span> " 
+                     : "" ) +
+              escapeHtml(decodeURI(uri)) +
+              "</h1>" +
               "    <span class='sh-right sh-fw-icon sh-icon-menu' onclick='sh.menu(this, \"more-menu\");'></span>" +
               "  </header>" +
 

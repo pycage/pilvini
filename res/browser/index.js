@@ -620,6 +620,105 @@ function changeSettings(key, value, altValue)
     });
 }
 
+
+/* Adds the given entry to the favorites menu.
+ */
+function addFavorite()
+{
+    function extractName(uri)
+    {
+        var parts = uri.split("/");
+        var p = parts[parts.length - 1];
+        return p !== "" ? decodeURIComponent(p)
+                        : "/";
+    }
+
+    var favsFile = "/.pilvini/favorites.json";
+
+    var name = extractName(currentUri());
+    var uri = currentUri();
+
+    function apply(json)
+    {
+        json.push({ "name": name, "href": uri });
+        $.ajax({
+            url: favsFile,
+            type: "PUT",
+            data: JSON.stringify(json),
+            processData: false,
+            beforeSend: function (xhr) { xhr.overrideMimeType("text/plain; charset=x-user-defined"); }
+        })
+        .done(function ()
+        {
+            loadDirectory(currentUri());
+        })
+        .fail(function (xhr, status, err)
+        {
+            showError("Failed to add favorite.");
+        });
+    }
+
+    $.ajax({
+        type: "GET",
+        url: favsFile,
+        dataType: "json"
+    })
+    .done(function (data, status, xhr)
+    {
+        apply(data);
+    })
+    .fail(function (xhr, status, err)
+    {
+        // file might not exist yet
+        apply([]);
+    });
+}
+
+function removeFavorite()
+{
+    var favsFile = "/.pilvini/favorites.json";
+    var uri = currentUri();
+
+    function apply(json)
+    {
+        json = json.filter(function (a)
+        {
+            return a.href !== uri;
+        });
+
+        $.ajax({
+            url: favsFile,
+            type: "PUT",
+            data: JSON.stringify(json),
+            processData: false,
+            beforeSend: function (xhr) { xhr.overrideMimeType("text/plain; charset=x-user-defined"); }
+        })
+        .done(function ()
+        {
+            loadDirectory(currentUri());
+        })
+        .fail(function (xhr, status, err)
+        {
+            showError("Failed to remove favorite.");
+        });
+    }
+
+    $.ajax({
+        type: "GET",
+        url: favsFile,
+        dataType: "json"
+    })
+    .done(function (data, status, xhr)
+    {
+        apply(data);
+    })
+    .fail(function (xhr, status, err)
+    {
+        // file might not exist yet
+        apply([]);
+    });
+}
+
 function onFilesSelected(ev)
 {
     uploadFiles(ev.target.files);
