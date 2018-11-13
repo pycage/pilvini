@@ -47,9 +47,14 @@ h2 {
     padding-right: 0.5rem;
 }
 
-p {
+form, p {
     padding-left: 0.5rem;
     padding-right: 0.5rem;
+}
+
+form {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
 }
 
 header {
@@ -91,10 +96,13 @@ span[onclick]:active, li[onclick]:active, h1[onclick]:active, h2[onclick]:active
 
 input[type=text] {
     border-radius: 0;
+    background-image: none;
+    background-color: transparent;
     border: none;
-    background-color: inherit;
     border-bottom: solid 2px var(--color-border);
     padding-bottom: 2px;
+    font-family: inherit;
+    font-size: 100%;
 }
 
 /* *** */

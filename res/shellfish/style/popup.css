@@ -16,9 +16,17 @@
     position: relative;
     border: solid 1px var(--color-border);
 
-    background-color: var(--color-primary-background);
+    background-color: var(--color-content-background);
 }
 
 .sh-popup header, .sh-popup footer {
     position: relative;
+}
+
+.sh-popup header {
+    background-color: var(--color-highlight-background);
+}
+
+.sh-popup footer {
+    border: none;
 }
