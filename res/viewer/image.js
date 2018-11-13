@@ -119,7 +119,49 @@ function viewImage(href)
         }
         ev.preventDefault();
     });
-    $("#image-popup").on("sh-closed", function ()
+
+    img.off("touchstart").on("touchstart", function (ev)
+    {
+        this.swipeContext = {
+            beginX: ev.originalEvent.touches[0].screenX,
+            dx: 0
+        };
+
+        $("#image-popup h1").css("display", "none");
+    });
+
+    img.off("touchmove").on("touchmove", function (ev)
+    {
+        var dx = ev.originalEvent.touches[0].screenX - this.swipeContext.beginX;
+    
+        var value = Math.min(1.0, Math.abs(dx) / ($(window).width() / 3));
+
+        $(this).css("margin-left", dx)
+               .css("opacity", 1.0 - value);
+
+        this.swipeContext.dx = dx;
+    });
+
+    img.off("touchend").on("touchend", function (ev)
+    {
+        var dx = this.swipeContext.dx;
+        if (dx < - $(window).width() / 3)
+        {
+            nextImage();
+        }
+        else if (dx > $(window).width() / 3)
+        {
+            previousImage();
+        }
+
+        $(this).css("margin-left", 0)
+               .css("opacity", 1);
+        $("#image-popup h1").css("display", "block");
+    });
+
+
+
+    $("#image-popup").off("sh-closed").on("sh-closed", function ()
     {
         $(this).off("keydown");
     });

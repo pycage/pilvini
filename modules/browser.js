@@ -646,7 +646,7 @@ function makeBusyPopup()
 function makeImagePopup()
 {
     var out = "<div id='image-popup' class='sh-popup' style='background-color: rgba(0, 0, 0, 0.8);' onclick='sh.popup_close(\"image-popup\");'>" +
-              "  <div class='sh-dropshadow' style='position: relative; background-color: black;'>" +
+              "  <div class='sh-dropshadow' style='position: relative; background-color: black; overflow: hidden;'>" +
               "    <h1 class='sh-font-small' style='position: absolute; margin: 0; padding: 0; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; text-align: left; left: 0.25em; right: 0.25em; bottom: 0.25em; text-shadow: #000 0px 0px 1px; color: white;'></h1>" +
               "    <img>" +
               "  </div>" +

@@ -338,7 +338,6 @@ sh.zSort = function (data)
     {
         var aZ = Number($(a).css("zIndex")) || 0;
         var bZ = Number($(b).css("zIndex")) || 0;
-        console.log(aZ + " vs " + bZ);
         return aZ - bZ;
     });
     return data;
