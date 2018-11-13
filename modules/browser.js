@@ -415,7 +415,13 @@ function makeFavorites(userRoot)
         return "";
     }
 
-    var out = "<ul>";
+    if (doc.length === 0)
+    {
+        return;
+    }
+
+    var out = "<h1 class='sh-submenu' onclick='sh.toggle_submenu(this);'>Favorites</h1>" +
+              "<ul>";
 
     for (var i = 0; i < doc.length; ++i)
     {
@@ -466,7 +472,7 @@ function isFavorite(uri, userRoot)
     return doc.find(function (a) { return a.href === uri; }) !== undefined;
 }
 
-function makeMoreMenu(viewMode, sortMode)
+function makeMoreMenu(viewMode, sortMode, permissions)
 {
     var sortByNameExt = "";
     var sortByDateExt = "";
@@ -487,46 +493,68 @@ function makeMoreMenu(viewMode, sortMode)
         break;
     }
 
-    var out = "<div id='more-menu' class='sh-menu' onclick='sh.menu_close();'>" +
-              "  <div onclick='event.stopPropagation();'>" +
+    var out = "";
+    out += "<div id='more-menu' class='sh-menu' onclick='sh.menu_close();'>";
 
-              "    <h1 class='sh-submenu' onclick='sh.toggle_submenu(this);'>View</h1>" +
-              "    <ul>" +
-              "      <li id='mi-listview' onclick='changeSettings(\"view\", \"list\");'>As List</li>" +
-              "      <li id='mi-gridview' onclick='changeSettings(\"view\", \"grid\");'>As Grid</li>" +
-              "      <li id='mi-sort-by-name' onclick='changeSettings(\"sort\", \"name\", \"name-desc\");'>By Name" + sortByNameExt + "</li>" +
-              "      <li id='mi-sort-by-date' onclick='changeSettings(\"sort\", \"date\", \"date-desc\");'>By Date" + sortByDateExt + "</li>" +
-              "    </ul>" +
+    out += "  <div onclick='event.stopPropagation();'>" +
+           "    <h1 class='sh-submenu' onclick='sh.toggle_submenu(this);'>View</h1>" +
+           "    <ul>" +
+           "      <li id='mi-listview' onclick='changeSettings(\"view\", \"list\");'>As List</li>" +
+           "      <li id='mi-gridview' onclick='changeSettings(\"view\", \"grid\");'>As Grid</li>" +
+           "      <li id='mi-sort-by-name' onclick='changeSettings(\"sort\", \"name\", \"name-desc\");'>By Name" + sortByNameExt + "</li>" +
+           "      <li id='mi-sort-by-date' onclick='changeSettings(\"sort\", \"date\", \"date-desc\");'>By Date" + sortByDateExt + "</li>" +
+           "    </ul>";
 
-              "    <h1 class='sh-submenu' onclick='sh.toggle_submenu(this);'>New</h1>" +
-              "    <ul>" +
-              "      <li id='mi-newdir' onclick='sh.menu_close(); showNewDirDialog();'>Directory</li>" +
-              "      <li id='mi-newfile' onclick='sh.menu_close(); showNewFileDialog();'>File</li>" +
-              "    </ul>" +
+    if (permissions.mayCreate())
+    {
+        out += "    <h1 class='sh-submenu' onclick='sh.toggle_submenu(this);'>New</h1>" +
+               "    <ul>" +
+               "      <li id='mi-newdir' onclick='sh.menu_close(); showNewDirDialog();'>Directory</li>" +
+               "      <li id='mi-newfile' onclick='sh.menu_close(); showNewFileDialog();'>File</li>" +
+               "    </ul>";
+    }
 
-              "    <h1 class='sh-submenu' onclick='sh.toggle_submenu(this);'>Clipboard</h1>" +
-              "    <ul>" +
-              "      <li id='mi-cut' onclick='sh.menu_close(); clearClipboard(function () { eachSelected(cutItem); });'>Cut</li>" +
-              "      <li id='mi-copy' onclick='sh.menu_close(); clearClipboard(function () { eachSelected(copyItem); });'>Copy</li>" +
-              "      <li id='mi-paste' onclick='sh.menu_close(); pasteItems();'>Paste</li>" +
-              "      <li id='mi-showclipboard' onclick='sh.menu_close(); sh.push(\"clipboard-page\");'>Show</li>" +
-              "    </ul>" +
+    if (permissions.mayCreate())
+    {
+        out += "    <h1 class='sh-submenu' onclick='sh.toggle_submenu(this);'>Clipboard</h1>" +
+               "    <ul>" +
+               "      <li id='mi-cut' onclick='sh.menu_close(); clearClipboard(function () { eachSelected(cutItem); });'>Cut</li>" +
+               "      <li id='mi-copy' onclick='sh.menu_close(); clearClipboard(function () { eachSelected(copyItem); });'>Copy</li>" +
+               "      <li id='mi-paste' onclick='sh.menu_close(); pasteItems();'>Paste</li>" +
+               "      <li id='mi-showclipboard' onclick='sh.menu_close(); sh.push(\"clipboard-page\");'>Show</li>" +
+               "    </ul>";
+    }
 
-              "    <h1 class='sh-submenu' onclick='sh.toggle_submenu(this);'>Action</h1>" +
-              "    <ul>" +
-              "      <li id='mi-upload' onclick='sh.menu_close(); $(\"#upload\").click();'>Upload</li>" +
-              "      <li id='mi-download' onclick='sh.menu_close(); eachSelected(downloadItem);'>Download</li>" +
-              "      <li id='mi-rename' onclick='sh.menu_close(); eachSelected(showNameDialog);'>Rename</li>" +
-              "      <li id='mi-delete' onclick='sh.menu_close(); eachSelected(removeItem);'>Delete</li>" +
-              "    </ul>" +
+    out += "    <h1 class='sh-submenu' onclick='sh.toggle_submenu(this);'>Action</h1>" +
+           "    <ul>";
 
-              "    <ul>" +
-              "      <li id='mi-selectall' onclick='sh.menu_close(); selectAll();'>Select All</li>" +
-              "      <li id='mi-unselectall' onclick='sh.menu_close(); unselectAll();'>Unselect All</li>" +
-              "    </ul>" +
+    if (permissions.mayCreate())
+    {
+        out += "<li id='mi-upload' onclick='sh.menu_close(); $(\"#upload\").click();'>Upload</li>";
+    }
 
-              "  </div>" +
-              "</div>";
+    out += "<li id='mi-download' onclick='sh.menu_close(); eachSelected(downloadItem);'>Download</li>";
+    
+    if (permissions.mayModify())
+    {
+        out += "<li id='mi-rename' onclick='sh.menu_close(); eachSelected(showNameDialog);'>Rename</li>";
+    }
+
+    if (permissions.mayDelete())
+    {
+        out += "<li id='mi-delete' onclick='sh.menu_close(); eachSelected(removeItem);'>Delete</li>";
+    }
+    
+    out += "    </ul>";
+
+    out += "    <ul>" +
+           "      <li id='mi-selectall' onclick='sh.menu_close(); selectAll();'>Select All</li>" +
+           "      <li id='mi-unselectall' onclick='sh.menu_close(); unselectAll();'>Unselect All</li>" +
+           "    </ul>";
+
+    out += "  </div>" +
+           "</div>";
+
     return out;
 }
 
@@ -630,24 +658,28 @@ function makeImagePopup()
     return out;
 }
 
-function makeMainPage(viewMode, sortMode, userRoot, uri, stats)
+function makeMainPage(viewMode, sortMode, userRoot, uri, stats, permissions)
 {
     var parentUri = modPath.dirname(uri);
-    var isFav = isFavorite(uri, userRoot);
+    var isFav = permissions.mayModify() ? isFavorite(uri, userRoot)
+                                        : false;
 
     var out = "<div id=\"main-page\" class=\"sh-page\">" +
 
-              makeMoreMenu(viewMode, sortMode) +
+              makeMoreMenu(viewMode, sortMode, permissions) +
 
               "  <div id=\"breadcrumbs\" class=\"sh-menu\" onclick=\"sh.menu_close();\">" +
-              "    <div>" +
-              "      <ul>" +
-              (isFav ? "<li onclick='removeFavorite();'>Remove from Favorites</li>"
-                     : "<li onclick='addFavorite();'>Add to Favorites</li>") +
-              "        <hr/>" +
-              "      </ul>" +
-              makeFavorites(userRoot) +
-              makeBreadcrumbs(uri) +
+              "    <div>";
+    if (permissions.mayModify())
+    {
+        out += "<ul>" +
+            (isFav ? "<li onclick='removeFavorite();'>Remove from Favorites</li>"
+                : "<li onclick='addFavorite();'>Add to Favorites</li>") +
+            "  <hr/>" +
+            "</ul>";
+        out += makeFavorites(userRoot);
+    }
+    out += makeBreadcrumbs(uri) +
               "    </div>" +
               "  </div>" +
 
@@ -709,7 +741,7 @@ function makeViewerPage()
     return out;
 }
 
-function makeHtml(viewMode, sortMode, userRoot, uri, stats, clipboardStats)
+function makeHtml(viewMode, sortMode, userRoot, uri, stats, clipboardStats, permissions)
 {
     var out = "<!DOCTYPE html>" +
 
@@ -721,7 +753,7 @@ function makeHtml(viewMode, sortMode, userRoot, uri, stats, clipboardStats)
               "<a id='download' data-ajax='false' href='#' download='name' style='display: none;'></a>" +
               "<audio id='audio' style='display: none;'></audio>" +
 
-              makeMainPage(viewMode, sortMode, userRoot, uri, stats) +
+              makeMainPage(viewMode, sortMode, userRoot, uri, stats, permissions) +
               makeNewDirDialog() +
               makeNameDialog() +
               makeMessageDialog() +
@@ -738,7 +770,7 @@ function makeHtml(viewMode, sortMode, userRoot, uri, stats, clipboardStats)
     return out;
 }
 
-function createMainPage(uri, userRoot, callback)
+function createMainPage(uri, userRoot, permissions, callback)
 {
     var path = modUtils.uriToPath(uri, userRoot);
 
@@ -753,13 +785,13 @@ function createMainPage(uri, userRoot, callback)
 
     readStats(sortMode, path, function (stats)
     {
-        var html = makeMainPage(viewMode, sortMode, userRoot, uri, stats);
+        var html = makeMainPage(viewMode, sortMode, userRoot, uri, stats, permissions);
         callback(true, html);
     });
 }
 exports.createMainPage = createMainPage;
 
-function makeIndex(uri, userRoot, callback)
+function makeIndex(uri, userRoot, permissions, callback)
 {
     var path = modUtils.uriToPath(uri, userRoot);
 
@@ -778,7 +810,7 @@ function makeIndex(uri, userRoot, callback)
         {
             readStats(sortMode, modPath.join(userRoot, ".pilvini", "clipboard"), function (clipboardStats)
             {
-                var html = makeHtml(viewMode, sortMode, userRoot, uri, stats, clipboardStats);
+                var html = makeHtml(viewMode, sortMode, userRoot, uri, stats, clipboardStats, permissions);
                 callback(true, html);
             });
         });

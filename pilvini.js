@@ -17,6 +17,7 @@ const modCrypto = require("crypto"),
       modLockStore = require("./modules/lockstore.js"),
       modMime = require("./modules/mime.js"),
       modThumbnail = attempt(function () { return require("./modules/thumbnail.js"); }),
+      modUserPermissions = require("./modules/userpermissions.js"),
       modUtils = require("./modules/utils.js");
 
 const VERSION = "0.2.0rc";
@@ -179,6 +180,8 @@ function handleRequest(request, response)
         return;
     }
 
+    var permissions = new modUserPermissions.UserPermissions();
+
     // a logging version of response.writeHead
     response.request = request;
     response.user = authUser;
@@ -233,7 +236,7 @@ function handleRequest(request, response)
 
     var davSession = new modDav.DavSession(userRoot);
 
-    if (request.method === "COPY")
+    if (request.method === "COPY" && permissions.mayCreate())
     {
         var destinationUrlObj = modUrl.parse(request.headers.destination, true);
 
@@ -244,7 +247,7 @@ function handleRequest(request, response)
             response.end();
         });
     }
-    else if (request.method === "DELETE")
+    else if (request.method === "DELETE" && permissions.mayDelete())
     {
     	davSession.del(urlObj.pathname, function(code, status)
         {
@@ -258,7 +261,7 @@ function handleRequest(request, response)
             urlObj.pathname.indexOf("/index.html") === urlObj.pathname.length - 11)
         {
             // provide browser GUI
-            modBrowser.makeIndex(modPath.dirname(urlObj.pathname), userRoot, function (ok, data)
+            modBrowser.makeIndex(modPath.dirname(urlObj.pathname), userRoot, permissions, function (ok, data)
             {
                 if (! ok)
                 {
@@ -297,11 +300,11 @@ function handleRequest(request, response)
             if (urlObj.search.indexOf("ajax") !== -1)
             {
                 var uri = urlObj.pathname.substr(8);
-                modBrowser.createMainPage(uri, userRoot, callback);
+                modBrowser.createMainPage(uri, userRoot, permissions, callback);
             }
             else
             {
-                modBrowser.makeIndex("/", userRoot, callback);
+                modBrowser.makeIndex("/", userRoot, permissions, callback);
             }
             return;
         }
@@ -454,7 +457,7 @@ function handleRequest(request, response)
             response.end();
         });
     }
-    else if (request.method === "LOCK")
+    else if (request.method === "LOCK" && permissions.mayModify())
     {
         /*
         <?xml version="1.0" encoding="utf-8"?>
@@ -480,7 +483,7 @@ function handleRequest(request, response)
             });
         });
     }
-    else if (request.method === "MKCOL")
+    else if (request.method === "MKCOL" && permissions.mayCreate())
     {
     	davSession.mkcol(urlObj.pathname, function(code, status)
         {
@@ -488,7 +491,7 @@ function handleRequest(request, response)
             response.end();
         });
     }
-    else if (request.method === "MOVE")
+    else if (request.method === "MOVE" && permissions.mayModify())
     {
         var destinationUrlObj = modUrl.parse(request.headers.destination, true);
 
@@ -539,7 +542,7 @@ function handleRequest(request, response)
             });
         });
     }
-    else if (request.method === "PUT")
+    else if (request.method === "PUT" && permissions.mayModify())
     {
         davSession.put(urlObj.pathname, request, function(code, status)
         {
