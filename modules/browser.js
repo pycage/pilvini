@@ -420,9 +420,7 @@ function makeFavorites(userRoot)
         return;
     }
 
-    var out = "<h1 class='sh-submenu' onclick='sh.toggle_submenu(this);'>Favorites</h1>" +
-              "<ul>";
-
+    var out = "";
     for (var i = 0; i < doc.length; ++i)
     {
         var node = doc[i];
@@ -435,8 +433,7 @@ function makeFavorites(userRoot)
                "</li>";
     }
 
-    out += "  <hr/>" +
-           "</ul>";
+    out += "  <hr/>";
 
     return out;
 }
@@ -672,12 +669,13 @@ function makeMainPage(viewMode, sortMode, userRoot, uri, stats, permissions)
               "    <div>";
     if (permissions.mayModify())
     {
-        out += "<ul>" +
-            (isFav ? "<li onclick='removeFavorite();'>Remove from Favorites</li>"
-                : "<li onclick='addFavorite();'>Add to Favorites</li>") +
-            "  <hr/>" +
-            "</ul>";
+        out += "<h1 class='sh-submenu' onclick='sh.toggle_submenu(this); event.stopPropagation();'>Favorites</h1>" +
+               "<ul>" +
+               (isFav ? "<li onclick='removeFavorite();'>Remove from Favorites</li>"
+                      : "<li onclick='addFavorite();'>Add to Favorites</li>") +
+               "  <hr/>";
         out += makeFavorites(userRoot);
+        out += "</ul>";
     }
     out += makeBreadcrumbs(uri) +
               "    </div>" +
