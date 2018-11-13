@@ -66,6 +66,33 @@ function loadNextThumbnail(forLocation, images)
         return;
     }
 
+    // sort images by visibility to load those in view first
+    var topPos = $(document).scrollTop();
+    var bottomPos = topPos + $(window).height();
+
+    images.sort(function (a, b)
+    {
+        var aPos = $(a).offset().top;
+        var bPos = $(b).offset().top;
+        var aHeight = $(a).height();
+        var bHeight = $(b).height();
+        var aVisible = aPos < bottomPos && aPos + aHeight > topPos;
+        var bVisible = bPos < bottomPos && bPos + bHeight > topPos;
+
+        if (aVisible && ! bVisible)
+        {
+            return -1;
+        }
+        else if (! aVisible && bVisible)
+        {
+            return 1;
+        }
+        else
+        {
+            return aPos - bPos;
+        }
+    });
+
     var img = images.shift();
     var url = $(img).attr("data-x-thumbnail");
     console.log("GET: " + url);
