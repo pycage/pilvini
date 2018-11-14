@@ -539,7 +539,7 @@ function makeMoreMenu(viewMode, sortMode, permissions)
 
     if (permissions.mayDelete())
     {
-        out += "<li id='mi-delete' onclick='sh.menu_close(); eachSelected(removeItem);'>Delete</li>";
+        out += "<li id='mi-delete' onclick='sh.menu_close(); removeSelected();'>Delete</li>";
     }
     
     out += "    </ul>";
@@ -563,6 +563,26 @@ function makeMessageDialog()
               "    <header><h1 class='sh-left'></h1></header>" +
               "    <section><p></p></section>" +
               "    <footer><span class='sh-right'><a onclick='sh.popup_close(\"message-dialog\");'>OK</a></span></footer>" +
+              "  </div>" +
+
+              "</div>";
+
+    return out;
+}
+
+function makeQuestionDialog()
+{
+    var out = "<div id='question-dialog' class='sh-popup'>" +
+
+              "  <div class='sh-dropshadow' style='background-color: var(--color-primary-background);'>" +
+              "    <header><h1 class='sh-left'></h1></header>" +
+              "    <section><p></p></section>" +
+              "    <footer>" +
+              "      <span class='sh-right'>" +
+              "        <a onclick='sh.popup_close(\"question-dialog\");'>Yes</a>" +
+              "        <a onclick='sh.popup_close(\"question-dialog\");'>No</a>" +
+              "      </span>" +
+              "    </footer>" +
               "  </div>" +
 
               "</div>";
@@ -755,6 +775,7 @@ function makeHtml(viewMode, sortMode, userRoot, uri, stats, clipboardStats, perm
               makeNewDirDialog() +
               makeNameDialog() +
               makeMessageDialog() +
+              makeQuestionDialog() +
               
               makeBusyPopup() +
               makeImagePopup() +

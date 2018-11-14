@@ -36,8 +36,22 @@ function unescapeHtml(text)
 function showError(msg)
 {
     $("#message-dialog h1").html("Error");
-    $("#message-dialog p").html(msg);
+    $("#message-dialog p").html(escapeHtml(msg));
     sh.popup("message-dialog");
+}
+
+function showQuestion(title, msg, yesCb, noCb)
+{
+    $("#question-dialog h1").html(escapeHtml(title));
+    $("#question-dialog p").html(escapeHtml(msg));
+    
+    $("#question-dialog footer span a:first-child")
+    .off("click.showQuestion").on("click.showQuestion", yesCb);
+
+    $("#question-dialog footer span a:last-child")
+    .off("click.showQuestion").on("click.showQuestion", noCb);
+    
+    sh.popup("question-dialog");
 }
 
 function loadThumbnails(page)
@@ -193,6 +207,21 @@ function eachSelected(callback)
         callback($(this).parent());
     });
     unselectAll();
+}
+
+function removeSelected()
+{
+    function yesCb()
+    {
+        eachSelected(removeItem);
+    }
+
+    function noCb()
+    {
+
+    }
+
+    showQuestion("Delete", "Delete these entries?", yesCb, noCb);
 }
 
 function showNewDirDialog()
@@ -477,9 +506,8 @@ function removeItem(item)
 {
     console.log("Remove item");
 
-    // TODO: use data-url
     var name = unescapeHtml($(item).find("h1").html());
-    var targetUri = currentUri() + "/" + encodeURIComponent(name);
+    var targetUri = $(item).data("url");
 
     $.ajax({
                url: targetUri,
