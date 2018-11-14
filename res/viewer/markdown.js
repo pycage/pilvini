@@ -16,14 +16,24 @@ function viewMarkdown(href)
         }
         else
         {
+            var data = editBox.val();
+            
             toggleButton.removeClass("sh-icon-checked").addClass("sh-icon-edit");
             viewBox.css("display", "block");
             editBox.css("display", "none");
-            setMarkdown(editBox.val());
+            setMarkdown(data);
+
+            if (data !== originalContent)
+            {
+                upload(href, data, function ()
+                {
+                    originalContent = data;
+                });
+            }
         }
     }
 
-    function upload(href, md)
+    function upload(href, md, successCb)
     {
         $.ajax({
             url: href,
@@ -34,6 +44,7 @@ function viewMarkdown(href)
         })
         .done(function ()
         {
+            successCb();
         })
         .fail(function ()
         {
@@ -74,7 +85,7 @@ function viewMarkdown(href)
         var data = editBox.val();
         if (data !== originalContent)
         {
-            upload(href, editBox.val());
+            upload(href, data, function () { });
         }
         toggleButton.remove();
     });
