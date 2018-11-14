@@ -140,6 +140,8 @@ function viewImage(href)
                .css("opacity", 1.0 - value);
 
         this.swipeContext.dx = dx;
+
+        ev.preventDefault();
     });
 
     img.off("touchend").on("touchend", function (ev)
