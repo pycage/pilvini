@@ -800,7 +800,8 @@ function onItemTouchStart(ev)
     this.swipeContext = {
         beginX: ev.originalEvent.touches[0].screenX,
         beginY: ev.originalEvent.touches[0].screenY,
-        status: 0
+        status: 0,
+        scrollTop: 0
     };
 }
 
@@ -834,7 +835,11 @@ function onItemTouchMove(ev)
             }
             else
             {
+                var scrollTop = $(document).scrollTop();
+                console.log("scrollTop: " + scrollTop);
                 $("#main-page").addClass("sh-page-transitioning");
+                $("#main-page > section").css("margin-top", (-scrollTop) + "px");
+                this.swipeContext.scrollTop = scrollTop;
                 this.swipeContext.status = 1;
             }
         }
@@ -873,7 +878,12 @@ function onItemTouchEnd(ev)
 {
     $("body").css("background-color", "");
     $("#main-page, #main-page > header").css("left", 0).css("right", 0);
+    $("#main-page > section").css("margin-top", 0);
     $("#main-page").removeClass("sh-page-transitioning");
+    if (this.swipeContext.scrollTop > 0)
+    {
+        $(document).scrollTop(this.swipeContext.scrollTop);
+    }
 
     var upButton = $("#upButton");
     if (upButton.length && this.swipeContext.status === 2)
