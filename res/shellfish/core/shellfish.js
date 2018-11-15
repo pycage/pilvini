@@ -211,11 +211,6 @@ sh.menu = function (parent, which, callback)
     
     if (menu.length && p.length && content.length)
     {
-        menu.off("touchmove").on("touchmove", function (ev)
-        {
-            ev.preventDefault();
-        });
-
         var w = Number(p.css("width").replace("px", ""));
         var h = Number(p.css("height").replace("px", ""));
         
@@ -283,11 +278,6 @@ sh.popup = function (which, callback)
     var p = sh.item(which);
     if (p.length)
     {
-        p.off("touchmove").on("touchmove", function (ev)
-        {
-            ev.preventDefault();
-        });
-
         p.addClass("sh-visible");
         p.css("zIndex", $(".sh-page.sh-visible").length + $(".sh-popup.sh-visible").length);
 
