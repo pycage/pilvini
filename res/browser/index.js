@@ -820,13 +820,15 @@ function onItemTouchMove(ev)
 
     var dx = ev.originalEvent.touches[0].screenX - this.swipeContext.beginX;
     var dy = ev.originalEvent.touches[0].screenY - this.swipeContext.beginY;
+    var pos = dx - 16;
     
-    var swipeThreshold = $(this).width() * 0.50;
+    var fullWidth = $(this).width();
+    var swipeThreshold = fullWidth * 0.20;
 
     switch (this.swipeContext.status)
     {
     case 0: // initiated
-        if (dx > 32)
+        if (pos > 0)
         {
             var angle = Math.atan(dy / dx);
             if (Math.abs(angle) > Math.PI / 4)
@@ -846,8 +848,8 @@ function onItemTouchMove(ev)
         break;
 
     case 1: // swiping
-        $("#main-page, #main-page > header").css("left", Math.max(0, Math.min(swipeThreshold, dx)) + "px")
-                                            .css("right", -Math.max(0, Math.min(swipeThreshold, dx)) + "px");
+        $("#main-page, #main-page > header").css("left", Math.max(0, Math.min(fullWidth, pos)) + "px")
+                                            .css("right", -Math.max(0, Math.min(fullWidth, pos)) + "px");
         
         if (dx > swipeThreshold)
         {
@@ -857,8 +859,8 @@ function onItemTouchMove(ev)
         break;
 
     case 2: // activated
-    $("#main-page, #main-page > header").css("left", Math.max(0, Math.min(swipeThreshold, dx)) + "px")
-                                        .css("right", -Math.max(0, Math.min(swipeThreshold, dx)) + "px");
+    $("#main-page, #main-page > header").css("left", Math.max(0, Math.min(fullWidth, pos)) + "px")
+                                        .css("right", -Math.max(0, Math.min(fullWidth, pos)) + "px");
 
         if (dx < swipeThreshold)
         {
