@@ -899,7 +899,9 @@ function loadDirectory(href)
     console.log("Load: " + href);
     sh.popup("busy-popup");
     
-    $("#main-page").load("/::shell" + href + "?ajax #main-page > *", function (data, status, xhr)
+    var prefix =$("#filesbox").data("prefix");
+
+    $("#main-page").load(prefix + href + "?ajax #main-page > *", function (data, status, xhr)
     {
         console.log(status);
         sh.push("main-page", function ()

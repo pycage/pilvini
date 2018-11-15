@@ -34,9 +34,9 @@ const MIME_INFO = {
     "video/x-msvideo": { "icon": "video.png" }
 };
 
-function readSettings(userRoot)
+function readSettings(contentRoot)
 {
-    var settingsFile = modPath.join(userRoot, ".pilvini", "settings.json");
+    var settingsFile = modPath.join(contentRoot, ".pilvini", "settings.json");
     if (! modFs.existsSync(settingsFile))
     {
         return { };
@@ -90,9 +90,9 @@ function getIcon(mimeType)
     }
 }
 
-function prepareClipboard(userRoot, callback)
+function prepareClipboard(contentRoot, callback)
 {
-    var path = modPath.join(userRoot, ".pilvini", "clipboard");
+    var path = modPath.join(contentRoot, ".pilvini", "clipboard");
 
     // create clipboard if missing
     modFs.stat(path, function (err, stats)
@@ -387,9 +387,9 @@ function makeBreadcrumbs(uri)
     return out;
 }
 
-function makeFavorites(userRoot)
+function makeFavorites(contentRoot)
 {
-    var favsFile = modPath.join(userRoot, ".pilvini", "favorites.json");
+    var favsFile = modPath.join(contentRoot, ".pilvini", "favorites.json");
     if (! modFs.existsSync(favsFile))
     {
         return "";
@@ -438,9 +438,9 @@ function makeFavorites(userRoot)
     return out;
 }
 
-function isFavorite(uri, userRoot)
+function isFavorite(uri, contentRoot)
 {
-    var favsFile = modPath.join(userRoot, ".pilvini", "favorites.json");
+    var favsFile = modPath.join(contentRoot, ".pilvini", "favorites.json");
     if (! modFs.existsSync(favsFile))
     {
         return false;
@@ -675,10 +675,10 @@ function makeImagePopup()
     return out;
 }
 
-function makeMainPage(viewMode, sortMode, userRoot, uri, stats, permissions)
+function makeMainPage(viewMode, sortMode, prefix, contentRoot, uri, stats, permissions)
 {
     var parentUri = modPath.dirname(uri);
-    var isFav = permissions.mayModify() ? isFavorite(uri, userRoot)
+    var isFav = permissions.mayModify() ? isFavorite(uri, contentRoot)
                                         : false;
 
     var out = "<div id=\"main-page\" class=\"sh-page\">" +
@@ -694,7 +694,7 @@ function makeMainPage(viewMode, sortMode, userRoot, uri, stats, permissions)
                (isFav ? "<li onclick='removeFavorite();'>Remove from Favorites</li>"
                       : "<li onclick='addFavorite();'>Add to Favorites</li>") +
                "  <hr/>";
-        out += makeFavorites(userRoot);
+        out += makeFavorites(contentRoot);
         out += "</ul>";
     }
     out += makeBreadcrumbs(uri) +
@@ -712,7 +712,7 @@ function makeMainPage(viewMode, sortMode, userRoot, uri, stats, permissions)
               "    <span class='sh-right sh-fw-icon sh-icon-menu' onclick='sh.menu(this, \"more-menu\");'></span>" +
               "  </header>" +
 
-              "  <section id=\"filesbox\" data-url=\"" + uri + "\">" +
+              "  <section id=\"filesbox\" data-prefix=\"" + prefix + "\" data-url=\"" + uri + "\">" +
               (viewMode === "list" ? makeFiles(uri, stats, true) : makeFilesGrid(sortMode, uri, stats, true)) +
               "  </section>" +
 
@@ -759,7 +759,7 @@ function makeViewerPage()
     return out;
 }
 
-function makeHtml(viewMode, sortMode, userRoot, uri, stats, clipboardStats, permissions)
+function makeHtml(viewMode, sortMode, prefix, contentRoot, uri, stats, clipboardStats, permissions)
 {
     var out = "<!DOCTYPE html>" +
 
@@ -771,7 +771,7 @@ function makeHtml(viewMode, sortMode, userRoot, uri, stats, clipboardStats, perm
               "<a id='download' data-ajax='false' href='#' download='name' style='display: none;'></a>" +
               "<audio id='audio' style='display: none;'></audio>" +
 
-              makeMainPage(viewMode, sortMode, userRoot, uri, stats, permissions) +
+              makeMainPage(viewMode, sortMode, prefix, contentRoot, uri, stats, permissions) +
               makeNewDirDialog() +
               makeNameDialog() +
               makeMessageDialog() +
@@ -789,11 +789,11 @@ function makeHtml(viewMode, sortMode, userRoot, uri, stats, clipboardStats, perm
     return out;
 }
 
-function createMainPage(uri, userRoot, permissions, callback)
+function createMainPage(prefix, uri, contentRoot, permissions, callback)
 {
-    var path = modUtils.uriToPath(uri, userRoot);
+    var path = modUtils.uriToPath(uri, contentRoot);
 
-    var settings = readSettings(userRoot);
+    var settings = readSettings(contentRoot);
     console.debug("Settings: " + JSON.stringify(settings));
     var viewMode = settings.view || "list";
     var sortMode = settings.sort || "name";
@@ -804,17 +804,17 @@ function createMainPage(uri, userRoot, permissions, callback)
 
     readStats(sortMode, path, function (stats)
     {
-        var html = makeMainPage(viewMode, sortMode, userRoot, uri, stats, permissions);
+        var html = makeMainPage(viewMode, sortMode, prefix, contentRoot, uri, stats, permissions);
         callback(true, html);
     });
 }
 exports.createMainPage = createMainPage;
 
-function makeIndex(uri, userRoot, permissions, callback)
+function makeIndex(prefix, uri, contentRoot, permissions, callback)
 {
-    var path = modUtils.uriToPath(uri, userRoot);
+    var path = modUtils.uriToPath(uri, contentRoot);
 
-    var settings = readSettings(userRoot);
+    var settings = readSettings(contentRoot);
     console.debug("Settings: " + JSON.stringify(settings));
     var viewMode = settings.view || "list";
     var sortMode = settings.sort || "name";
@@ -823,13 +823,13 @@ function makeIndex(uri, userRoot, permissions, callback)
                   "View Mode: " + viewMode + "\n" +
                   "Sort Mode: " + sortMode);
 
-    prepareClipboard(userRoot, function ()
+    prepareClipboard(contentRoot, function ()
     {
         readStats(sortMode, path, function (stats)
         {
-            readStats(sortMode, modPath.join(userRoot, ".pilvini", "clipboard"), function (clipboardStats)
+            readStats(sortMode, modPath.join(contentRoot, ".pilvini", "clipboard"), function (clipboardStats)
             {
-                var html = makeHtml(viewMode, sortMode, userRoot, uri, stats, clipboardStats, permissions);
+                var html = makeHtml(viewMode, sortMode, prefix, contentRoot, uri, stats, clipboardStats, permissions);
                 callback(true, html);
             });
         });

@@ -32,8 +32,8 @@ function mkdirs(path, callback)
 exports.mkdirs = mkdirs;
 
 
-function uriToPath(uri, userRoot)
+function uriToPath(uri, contentRoot)
 {
-    return modPath.join(userRoot, decodeURIComponent(uri).replace(/\//g, modPath.sep));
+    return modPath.join(contentRoot, decodeURIComponent(uri).replace(/\//g, modPath.sep));
 }
 exports.uriToPath = uriToPath;

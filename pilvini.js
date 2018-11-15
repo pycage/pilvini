@@ -22,15 +22,6 @@ const modCrypto = require("crypto"),
 
 const VERSION = "0.2.0rc";
 
-// whitelist of URLs that are accessible without authorization
-// (some browsers are picky and have problems with favicons behind an auth wall)
-const UNAUTHORIZED_WHITELIST = [
-            "/::res/apple-touch-icon.png",
-            "/::res/favicon.png",
-            "/::res/favicon-32x32.png"
-        ];
-
-
 console.debug = function(msg)
 {
     if (config.global && config.global.debug)
@@ -147,6 +138,26 @@ function readRequest(request, callback)
     });
 }
 
+/* Returns if the given URL is public and may be served without authorization.
+ */
+function isPublic(method, path)
+{
+    if (method !== "GET" && method !== "HEAD")
+    {
+        return false;
+    }
+
+    if (path.indexOf("/::res/" === 0) ||
+        path.indexOf("/::shares/") === 0)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
 /* Handles HTTP requests and produces a response.
  */
 function handleRequest(request, response)
@@ -160,16 +171,12 @@ function handleRequest(request, response)
     }
     */
 
-    // check for authorization
-    var authUser = "*";
-    if (UNAUTHORIZED_WHITELIST.indexOf(request.url) === -1)
+   var urlObj = modUrl.parse(request.url, true);
+
+    var authUser = httpAuth.authorize(request);
+    if (! authUser && ! isPublic(request.method, urlObj.path))
     {
-        // URL is not whitelisted and authorization is required
-        authUser = httpAuth.authorize(request);
-    }
-    if (! authUser)
-    {
-        // authorization failed
+        // authorization required
         console.log("[" + new Date().toLocaleString() + "] [Server] " +
                     "[" + request.connection.remoteAddress + ":" + request.connection.remotePort + "] " +
                     "> " + "UNAUTHORIZED " + request.method + " " + request.url);
@@ -180,7 +187,7 @@ function handleRequest(request, response)
         return;
     }
 
-    var permissions = new modUserPermissions.UserPermissions();
+    var permissions = new modUserPermissions.UserPermissions(authUser);
 
     // a logging version of response.writeHead
     response.request = request;
@@ -198,7 +205,6 @@ function handleRequest(request, response)
         this.writeHead(code, status);
     };
 
-    var urlObj = modUrl.parse(request.url, true);
 
     /*
     console.log("href: " + urlObj.href +
@@ -224,17 +230,17 @@ function handleRequest(request, response)
         return headerString;
     } ());
 
-    var userRoot = ".";
+    var contentRoot = ".";
     for (var i = 0; i < config.users.length; ++i)
     {
         if (config.users[i].name === authUser)
         {
-            userRoot = config.users[i].home;
+            contentRoot = config.users[i].home;
             break;
         }
     }
 
-    var davSession = new modDav.DavSession(userRoot);
+    var davSession = new modDav.DavSession(contentRoot);
 
     if (request.method === "COPY" && permissions.mayCreate())
     {
@@ -257,30 +263,8 @@ function handleRequest(request, response)
     }
     else if (request.method === "GET")
     {
-        if (urlObj.pathname.indexOf("/index.html") !== -1 &&
-            urlObj.pathname.indexOf("/index.html") === urlObj.pathname.length - 11)
-        {
-            // provide browser GUI
-            modBrowser.makeIndex(modPath.dirname(urlObj.pathname), userRoot, permissions, function (ok, data)
-            {
-                if (! ok)
-                {
-                    response.writeHeadLogged(404, "Not found");
-                    response.end();
-                }
-                else
-                {
-                    response.setHeader("Content-Length", Buffer.byteLength(data, "utf-8"));
-                    response.writeHeadLogged(200, "OK");
-                    response.write(data);
-                    response.end();
-                }
-            });
-            return;
-        }
-        else if (urlObj.pathname.indexOf("/::shell/") === 0)
-        {
-            
+        if (urlObj.pathname.indexOf("/::shell/") === 0)
+        {            
             function callback (ok, data)
             {
                 if (! ok)
@@ -300,11 +284,11 @@ function handleRequest(request, response)
             if (urlObj.search.indexOf("ajax") !== -1)
             {
                 var uri = urlObj.pathname.substr(8);
-                modBrowser.createMainPage(uri, userRoot, permissions, callback);
+                modBrowser.createMainPage("/::shell", uri, contentRoot, permissions, callback);
             }
             else
             {
-                modBrowser.makeIndex("/", userRoot, permissions, callback);
+                modBrowser.makeIndex("/::shell", "/", contentRoot, permissions, callback);
             }
             return;
         }
@@ -312,7 +296,7 @@ function handleRequest(request, response)
         {
             var uri = urlObj.pathname.substr(7);
             console.log("URI: " + uri);
-            var path = modUtils.uriToPath(uri, userRoot);
+            var path = modUtils.uriToPath(uri, contentRoot);
             var tagParser = new modId3Tags.Tags(path);
 
             tagParser.read(function (err)
@@ -347,11 +331,11 @@ function handleRequest(request, response)
         else if (urlObj.pathname.indexOf("/::thumbnail/") === 0)
         {
             // provide thumbnails
-            var thumbDir = modPath.join(userRoot, ".pilvini", "thumbnails");
+            var thumbDir = modPath.join(contentRoot, ".pilvini", "thumbnails");
 
             var href = urlObj.pathname.substr(12);
             var hrefUrl = decodeURIComponent(href);
-            var targetFile = modPath.join(userRoot, hrefUrl.replace("/", modPath.sep));
+            var targetFile = modPath.join(contentRoot, hrefUrl.replace("/", modPath.sep));
 
             var hash = modCrypto.createHash("md5");
             hash.update(targetFile);

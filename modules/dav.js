@@ -25,12 +25,12 @@ var CountToken = function (count, callback)
     }
 };
 
-function pathFromHref(href, userRoot)
+function pathFromHref(href, contentRoot)
 {
-    return modUtils.uriToPath(href, userRoot);
+    return modUtils.uriToPath(href, contentRoot);
     /*
     var hrefDecoded = decodeURIComponent(href);
-    var path = modPath.join(userRoot, hrefDecoded.replace("/", modPath.sep));
+    var path = modPath.join(contentRoot, hrefDecoded.replace("/", modPath.sep));
     return path;
     */
 }
