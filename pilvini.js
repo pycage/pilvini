@@ -147,7 +147,7 @@ function isPublic(method, path)
         return false;
     }
 
-    if (path.indexOf("/::res/" === 0) ||
+    if (path.indexOf("/::res/") === 0 ||
         path.indexOf("/::shares/") === 0)
     {
         return true;
