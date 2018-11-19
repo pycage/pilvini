@@ -33,6 +33,16 @@ function unescapeHtml(text)
     });
 }
 
+function offsetUri(uri, offset)
+{
+    var result = uri.split("/").splice(offset + 1).join("/");
+    if (result[0] !== "/")
+    {
+        result = "/" + result;
+    }
+    return result;
+}
+
 function showError(msg)
 {
     $("#message-dialog h1").html("Error");
@@ -899,9 +909,11 @@ function loadDirectory(href)
     console.log("Load: " + href);
     sh.popup("busy-popup");
     
-    var prefix =$("#filesbox").data("prefix");
+    var prefix = $("#filesbox").data("prefix");
+    var depth = $("#filesbox").data("depth");
+    var userUri = offsetUri(href, depth);
 
-    $("#main-page").load(prefix + href + "?ajax #main-page > *", function (data, status, xhr)
+    $("#main-page").load(prefix + userUri + "?ajax #main-page > *", function (data, status, xhr)
     {
         console.log(status);
         sh.push("main-page", function ()

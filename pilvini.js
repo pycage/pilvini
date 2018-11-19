@@ -16,6 +16,7 @@ const modCrypto = require("crypto"),
       modId3Tags = require("./modules/id3tags"),
       modLockStore = require("./modules/lockstore.js"),
       modMime = require("./modules/mime.js"),
+      modShares = require("./modules/shares.js"),
       modThumbnail = attempt(function () { return require("./modules/thumbnail.js"); }),
       modUserPermissions = require("./modules/userpermissions.js"),
       modUtils = require("./modules/utils.js");
@@ -140,22 +141,47 @@ function readRequest(request, callback)
 
 /* Returns if the given URL is public and may be served without authorization.
  */
-function isPublic(method, path)
+function isPublic(method, uri, contentRoot, shares)
 {
+    if (uri === "/favicon.ico")
+    {
+        return true;
+    }
+
+    if (shares.shares().length === 0)
+    {
+        return false;
+    }
+
     if (method !== "GET" && method !== "HEAD")
     {
         return false;
     }
 
-    if (path.indexOf("/::res/") === 0 ||
-        path.indexOf("/::shares/") === 0)
+    var path = "";
+    var uriParts = uri.split("/");
+    if (uri.indexOf("/::res/") === 0)
     {
         return true;
     }
+    else if (uri.indexOf("/::shares") === 0)
+    {
+        var shareId = uriParts[2];
+        var shareRoot = contentRoot + shares.root(shareId);
+        path = modUtils.uriToPath(uri.substr(1 + uriParts[1].length + 1 + uriParts[2].length), shareRoot);
+        console.log("Share ID: " + shareId + ", root: " + shareRoot + ", path: " + path);
+        return shareRoot !== undefined && path.indexOf(shareRoot) === 0;
+    }
+    else if (uri.indexOf("/::") === 0)
+    {
+        path = modUtils.uriToPath(uri.substr(1 + uriParts[1].length), contentRoot);
+    }
     else
     {
-        return false;
+        path = modUtils.uriToPath(uri, contentRoot);
     }
+
+    return shares.isCovered(path);
 }
 
 /* Handles HTTP requests and produces a response.
@@ -171,10 +197,12 @@ function handleRequest(request, response)
     }
     */
 
-   var urlObj = modUrl.parse(request.url, true);
+    var contentRoot = config.server.root;
+    var urlObj = modUrl.parse(request.url, true);
+    var shares = new modShares.Shares(contentRoot);
 
     var authUser = httpAuth.authorize(request);
-    if (! authUser && ! isPublic(request.method, urlObj.path))
+    if (! authUser && ! isPublic(request.method, urlObj.pathname, contentRoot, shares))
     {
         // authorization required
         console.log("[" + new Date().toLocaleString() + "] [Server] " +
@@ -230,17 +258,22 @@ function handleRequest(request, response)
         return headerString;
     } ());
 
-    var contentRoot = ".";
+
+    var userHome = "";
     for (var i = 0; i < config.users.length; ++i)
     {
         if (config.users[i].name === authUser)
         {
-            contentRoot = config.users[i].home;
+            userHome = config.users[i].home;
             break;
         }
     }
+    var userRoot = contentRoot + userHome;
 
-    var davSession = new modDav.DavSession(contentRoot);
+
+
+
+    var davSession = new modDav.DavSession(userRoot);
 
     if (request.method === "COPY" && permissions.mayCreate())
     {
@@ -263,7 +296,42 @@ function handleRequest(request, response)
     }
     else if (request.method === "GET")
     {
-        if (urlObj.pathname.indexOf("/::shell/") === 0)
+        if (urlObj.pathname.indexOf("/::shares/") === 0)
+        {
+            function callback (ok, data)
+            {
+                if (! ok)
+                {
+                    response.writeHeadLogged(404, "Not found");
+                    response.end();
+                }
+                else
+                {
+                    response.setHeader("Content-Length", Buffer.byteLength(data, "utf-8"));
+                    response.writeHeadLogged(200, "OK");
+                    response.write(data);
+                    response.end();
+                }
+            }
+
+            var uri = urlObj.pathname.substr(9);
+            var uriParts = uri.split("/");
+            var shareId = uriParts[1];
+            var shareUri = encodeURI(shares.root(shareId)) + uri.substr(1 + shareId.length);
+            var shareDepth = shares.depth(shareId);
+
+            if (urlObj.search.indexOf("ajax") !== -1)
+            {
+                modBrowser.createMainPage("/::shares/" + shareId, shareUri, userRoot, permissions, shareDepth, callback);
+            }
+            else
+            {
+                modBrowser.makeIndex("/::shares/" + shareId, shareUri, userRoot, permissions, shareDepth, callback);
+            }
+            return;
+
+        }
+        else if (urlObj.pathname.indexOf("/::shell/") === 0)
         {            
             function callback (ok, data)
             {
@@ -284,11 +352,11 @@ function handleRequest(request, response)
             if (urlObj.search.indexOf("ajax") !== -1)
             {
                 var uri = urlObj.pathname.substr(8);
-                modBrowser.createMainPage("/::shell", uri, contentRoot, permissions, callback);
+                modBrowser.createMainPage("/::shell", uri, userRoot, permissions, 0, callback);
             }
             else
             {
-                modBrowser.makeIndex("/::shell", "/", contentRoot, permissions, callback);
+                modBrowser.makeIndex("/::shell", "/", userRoot, permissions, 0, callback);
             }
             return;
         }
@@ -296,7 +364,7 @@ function handleRequest(request, response)
         {
             var uri = urlObj.pathname.substr(7);
             console.log("URI: " + uri);
-            var path = modUtils.uriToPath(uri, contentRoot);
+            var path = modUtils.uriToPath(uri, userRoot);
             var tagParser = new modId3Tags.Tags(path);
 
             tagParser.read(function (err)
@@ -334,8 +402,7 @@ function handleRequest(request, response)
             var thumbDir = modPath.join(contentRoot, ".pilvini", "thumbnails");
 
             var href = urlObj.pathname.substr(12);
-            var hrefUrl = decodeURIComponent(href);
-            var targetFile = modPath.join(contentRoot, hrefUrl.replace("/", modPath.sep));
+            var targetFile = modUtils.uriToPath(href, userRoot);
 
             var hash = modCrypto.createHash("md5");
             hash.update(targetFile);

@@ -1,8 +1,8 @@
 function UserPermissions(authUser)
 {
-    this.mayCreate = function () { return authUser !== ""; }
-    this.mayDelete = function () { return authUser !== ""; }
-    this.mayModify = function () { return authUser !== ""; }
-    this.mayShare = function () { return authUser !== ""; }
+    this.mayCreate = function () { return authUser !== null; }
+    this.mayDelete = function () { return authUser !== null; }
+    this.mayModify = function () { return authUser !== null; }
+    this.mayShare = function () { return authUser !== null; }
 }
 exports.UserPermissions = UserPermissions;

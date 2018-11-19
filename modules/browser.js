@@ -34,9 +34,9 @@ const MIME_INFO = {
     "video/x-msvideo": { "icon": "video.png" }
 };
 
-function readSettings(contentRoot)
+function readSettings(userRoot)
 {
-    var settingsFile = modPath.join(contentRoot, ".pilvini", "settings.json");
+    var settingsFile = modPath.join(userRoot, ".pilvini", "settings.json");
     if (! modFs.existsSync(settingsFile))
     {
         return { };
@@ -77,6 +77,16 @@ function escapeHtml(text)
     });
 }
 
+function offsetUri(uri, offset)
+{
+    var result = uri.split("/").splice(offset + 1).join("/");
+    if (result[0] !== "/")
+    {
+        result = "/" + result;
+    }
+    return result;
+}
+
 function getIcon(mimeType)
 {
     var info = MIME_INFO[mimeType];
@@ -90,9 +100,9 @@ function getIcon(mimeType)
     }
 }
 
-function prepareClipboard(contentRoot, callback)
+function prepareClipboard(userRoot, callback)
 {
-    var path = modPath.join(contentRoot, ".pilvini", "clipboard");
+    var path = modPath.join(userRoot, ".pilvini", "clipboard");
 
     // create clipboard if missing
     modFs.stat(path, function (err, stats)
@@ -387,9 +397,9 @@ function makeBreadcrumbs(uri)
     return out;
 }
 
-function makeFavorites(contentRoot)
+function makeFavorites(userRoot)
 {
-    var favsFile = modPath.join(contentRoot, ".pilvini", "favorites.json");
+    var favsFile = modPath.join(userRoot, ".pilvini", "favorites.json");
     if (! modFs.existsSync(favsFile))
     {
         return "";
@@ -438,9 +448,9 @@ function makeFavorites(contentRoot)
     return out;
 }
 
-function isFavorite(uri, contentRoot)
+function isFavorite(uri, userRoot)
 {
-    var favsFile = modPath.join(contentRoot, ".pilvini", "favorites.json");
+    var favsFile = modPath.join(userRoot, ".pilvini", "favorites.json");
     if (! modFs.existsSync(favsFile))
     {
         return false;
@@ -675,10 +685,11 @@ function makeImagePopup()
     return out;
 }
 
-function makeMainPage(viewMode, sortMode, prefix, contentRoot, uri, stats, permissions)
+function makeMainPage(viewMode, sortMode, prefix, userRoot, uri, stats, permissions, depthOffset)
 {
     var parentUri = modPath.dirname(uri);
-    var isFav = permissions.mayModify() ? isFavorite(uri, contentRoot)
+    var userUri = offsetUri(uri, depthOffset);
+    var isFav = permissions.mayModify() ? isFavorite(uri, userRoot)
                                         : false;
 
     var out = "<div id=\"main-page\" class=\"sh-page\">" +
@@ -694,25 +705,25 @@ function makeMainPage(viewMode, sortMode, prefix, contentRoot, uri, stats, permi
                (isFav ? "<li onclick='removeFavorite();'>Remove from Favorites</li>"
                       : "<li onclick='addFavorite();'>Add to Favorites</li>") +
                "  <hr/>";
-        out += makeFavorites(contentRoot);
+        out += makeFavorites(userRoot);
         out += "</ul>";
     }
-    out += makeBreadcrumbs(uri) +
+    out += makeBreadcrumbs(userUri) +
               "    </div>" +
               "  </div>" +
 
               "  <header class=\"sh-dropshadow\">" +
-              (uri !== "/" ? "<span id='upButton' class='sh-left sh-fw-icon sh-icon-arrow-up' data-url='" + parentUri + "' onclick='loadDirectory(\"" + parentUri + "\");'></span>"
-                           : "") +
+              (userUri !== "/" ? "<span id='upButton' class='sh-left sh-fw-icon sh-icon-arrow-up' data-url='" + parentUri + "' onclick='loadDirectory(\"" + parentUri + "\");'></span>"
+                               : "") +
               "    <h1 onclick='sh.menu(this, \"breadcrumbs\");'>" + 
               (isFav ? "<span class='sh-fw-icon sh-icon-star-circle'></span> " 
                      : "" ) +
-              escapeHtml(decodeURI(uri)) +
+              escapeHtml(decodeURI(userUri)) +
               "</h1>" +
               "    <span class='sh-right sh-fw-icon sh-icon-menu' onclick='sh.menu(this, \"more-menu\");'></span>" +
               "  </header>" +
 
-              "  <section id=\"filesbox\" data-prefix=\"" + prefix + "\" data-url=\"" + uri + "\">" +
+              "  <section id=\"filesbox\" data-prefix=\"" + prefix + "\" data-url=\"" + uri + "\" data-depth=\"" + depthOffset + "\">" +
               (viewMode === "list" ? makeFiles(uri, stats, true) : makeFilesGrid(sortMode, uri, stats, true)) +
               "  </section>" +
 
@@ -759,7 +770,7 @@ function makeViewerPage()
     return out;
 }
 
-function makeHtml(viewMode, sortMode, prefix, contentRoot, uri, stats, clipboardStats, permissions)
+function makeHtml(viewMode, sortMode, prefix, userRoot, uri, stats, clipboardStats, permissions, depthOffset)
 {
     var out = "<!DOCTYPE html>" +
 
@@ -771,7 +782,7 @@ function makeHtml(viewMode, sortMode, prefix, contentRoot, uri, stats, clipboard
               "<a id='download' data-ajax='false' href='#' download='name' style='display: none;'></a>" +
               "<audio id='audio' style='display: none;'></audio>" +
 
-              makeMainPage(viewMode, sortMode, prefix, contentRoot, uri, stats, permissions) +
+              makeMainPage(viewMode, sortMode, prefix, userRoot, uri, stats, permissions, depthOffset) +
               makeNewDirDialog() +
               makeNameDialog() +
               makeMessageDialog() +
@@ -789,11 +800,11 @@ function makeHtml(viewMode, sortMode, prefix, contentRoot, uri, stats, clipboard
     return out;
 }
 
-function createMainPage(prefix, uri, contentRoot, permissions, callback)
+function createMainPage(prefix, uri, userRoot, permissions, depthOffset, callback)
 {
-    var path = modUtils.uriToPath(uri, contentRoot);
+    var path = modUtils.uriToPath(uri, userRoot);
 
-    var settings = readSettings(contentRoot);
+    var settings = readSettings(userRoot);
     console.debug("Settings: " + JSON.stringify(settings));
     var viewMode = settings.view || "list";
     var sortMode = settings.sort || "name";
@@ -804,17 +815,18 @@ function createMainPage(prefix, uri, contentRoot, permissions, callback)
 
     readStats(sortMode, path, function (stats)
     {
-        var html = makeMainPage(viewMode, sortMode, prefix, contentRoot, uri, stats, permissions);
+        var html = makeMainPage(viewMode, sortMode, prefix, userRoot, uri, stats, permissions, depthOffset);
         callback(true, html);
     });
 }
 exports.createMainPage = createMainPage;
 
-function makeIndex(prefix, uri, contentRoot, permissions, callback)
+function makeIndex(prefix, uri, userRoot, permissions, depthOffset, callback)
 {
-    var path = modUtils.uriToPath(uri, contentRoot);
+    console.log(uri + ", " + userRoot);
+    var path = modUtils.uriToPath(uri, userRoot);
 
-    var settings = readSettings(contentRoot);
+    var settings = readSettings(userRoot);
     console.debug("Settings: " + JSON.stringify(settings));
     var viewMode = settings.view || "list";
     var sortMode = settings.sort || "name";
@@ -823,13 +835,13 @@ function makeIndex(prefix, uri, contentRoot, permissions, callback)
                   "View Mode: " + viewMode + "\n" +
                   "Sort Mode: " + sortMode);
 
-    prepareClipboard(contentRoot, function ()
+    prepareClipboard(userRoot, function ()
     {
         readStats(sortMode, path, function (stats)
         {
-            readStats(sortMode, modPath.join(contentRoot, ".pilvini", "clipboard"), function (clipboardStats)
+            readStats(sortMode, modPath.join(userRoot, ".pilvini", "clipboard"), function (clipboardStats)
             {
-                var html = makeHtml(viewMode, sortMode, prefix, contentRoot, uri, stats, clipboardStats, permissions);
+                var html = makeHtml(viewMode, sortMode, prefix, userRoot, uri, stats, clipboardStats, permissions, depthOffset);
                 callback(true, html);
             });
         });
