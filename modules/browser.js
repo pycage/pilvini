@@ -448,6 +448,29 @@ function makeFavorites(userRoot)
     return out;
 }
 
+function makeShares(userHome, shares)
+{
+    var out = "";
+    
+    shares.shares().forEach(function (shareId)
+    {
+        var shareRoot = shares.root(shareId);
+        if (shareRoot.substr(0, userHome.length) === userHome)
+        {
+            // this share is within reach of the user
+            var uri = encodeURI(shareRoot.substr(userHome.length));
+            out += "<li onclick='loadDirectory(\"" + uri + "\");'>" +
+                   "<span class=\"sh-fw-icon sh-icon-share\"></span> " +
+                   shareId +
+                   "</li>";
+        }
+    });
+    
+    out += "<hr/>";
+
+    return out;
+}
+
 function isFavorite(uri, userRoot)
 {
     var favsFile = modPath.join(userRoot, ".pilvini", "favorites.json");
@@ -685,12 +708,14 @@ function makeImagePopup()
     return out;
 }
 
-function makeMainPage(viewMode, sortMode, prefix, userRoot, uri, stats, permissions, depthOffset)
+function makeMainPage(viewMode, sortMode, prefix, contentRoot, userHome, uri, path, stats, permissions, depthOffset, shares)
 {
     var parentUri = modPath.dirname(uri);
     var userUri = offsetUri(uri, depthOffset);
-    var isFav = permissions.mayModify() ? isFavorite(uri, userRoot)
+    var isFav = permissions.mayModify() ? isFavorite(uri, contentRoot + userHome)
                                         : false;
+    // FIXME: URI relative to server root is required
+    var isShare = shares.isShare(path);
 
     var out = "<div id=\"main-page\" class=\"sh-page\">" +
 
@@ -705,7 +730,17 @@ function makeMainPage(viewMode, sortMode, prefix, userRoot, uri, stats, permissi
                (isFav ? "<li onclick='removeFavorite();'>Remove from Favorites</li>"
                       : "<li onclick='addFavorite();'>Add to Favorites</li>") +
                "  <hr/>";
-        out += makeFavorites(userRoot);
+        out += makeFavorites(contentRoot + userHome);
+        out += "</ul>";
+    }
+    if (permissions.mayShare())
+    {
+        out += "<h1 class='sh-submenu' onclick='sh.toggle_submenu(this); event.stopPropagation();'>Public Shares</h1>" +
+               "<ul>" +
+               (isShare ? "<li onclick='unshare();'>Close Share</li>"
+                        : "<li onclick='share();'>Share</li>") +
+               "  <hr/>";
+        out += makeShares(userHome, shares);
         out += "</ul>";
     }
     out += makeBreadcrumbs(userUri) +
@@ -716,8 +751,11 @@ function makeMainPage(viewMode, sortMode, prefix, userRoot, uri, stats, permissi
               (userUri !== "/" ? "<span id='upButton' class='sh-left sh-fw-icon sh-icon-arrow-up' data-url='" + parentUri + "' onclick='loadDirectory(\"" + parentUri + "\");'></span>"
                                : "") +
               "    <h1 onclick='sh.menu(this, \"breadcrumbs\");'>" + 
+              (isShare ? "<span class='sh-fw-icon sh-icon-share'></span> " 
+                     : "" ) +
               (isFav ? "<span class='sh-fw-icon sh-icon-star-circle'></span> " 
                      : "" ) +
+
               escapeHtml(decodeURI(userUri)) +
               "</h1>" +
               "    <span class='sh-right sh-fw-icon sh-icon-menu' onclick='sh.menu(this, \"more-menu\");'></span>" +
@@ -770,7 +808,7 @@ function makeViewerPage()
     return out;
 }
 
-function makeHtml(viewMode, sortMode, prefix, userRoot, uri, stats, clipboardStats, permissions, depthOffset)
+function makeHtml(viewMode, sortMode, prefix, contentRoot, userHome, uri, path, stats, clipboardStats, permissions, depthOffset, shares)
 {
     var out = "<!DOCTYPE html>" +
 
@@ -782,7 +820,7 @@ function makeHtml(viewMode, sortMode, prefix, userRoot, uri, stats, clipboardSta
               "<a id='download' data-ajax='false' href='#' download='name' style='display: none;'></a>" +
               "<audio id='audio' style='display: none;'></audio>" +
 
-              makeMainPage(viewMode, sortMode, prefix, userRoot, uri, stats, permissions, depthOffset) +
+              makeMainPage(viewMode, sortMode, prefix, contentRoot, userHome, uri, path, stats, permissions, depthOffset, shares) +
               makeNewDirDialog() +
               makeNameDialog() +
               makeMessageDialog() +
@@ -800,48 +838,49 @@ function makeHtml(viewMode, sortMode, prefix, userRoot, uri, stats, clipboardSta
     return out;
 }
 
-function createMainPage(prefix, uri, userRoot, permissions, depthOffset, callback)
+function createMainPage(prefix, uri, contentRoot, userHome, permissions, depthOffset, shares, callback)
 {
-    var path = modUtils.uriToPath(uri, userRoot);
+    var fullPath = modUtils.uriToPath(uri, contentRoot + userHome);
+    var userPath = modUtils.uriToPath(uri, userHome);
 
-    var settings = readSettings(userRoot);
+    var settings = readSettings(contentRoot + userHome);
     console.debug("Settings: " + JSON.stringify(settings));
     var viewMode = settings.view || "list";
     var sortMode = settings.sort || "name";
 
-    console.debug("Full Path: " + path + "\n" +
+    console.debug("Full Path: " + fullPath + "\n" +
                   "View Mode: " + viewMode + "\n" +
                   "Sort Mode: " + sortMode);
 
-    readStats(sortMode, path, function (stats)
+    readStats(sortMode, fullPath, function (stats)
     {
-        var html = makeMainPage(viewMode, sortMode, prefix, userRoot, uri, stats, permissions, depthOffset);
+        var html = makeMainPage(viewMode, sortMode, prefix, contentRoot, userHome, uri, userPath, stats, permissions, depthOffset, shares);
         callback(true, html);
     });
 }
 exports.createMainPage = createMainPage;
 
-function makeIndex(prefix, uri, userRoot, permissions, depthOffset, callback)
+function makeIndex(prefix, uri, contentRoot, userHome, permissions, depthOffset, shares, callback)
 {
-    console.log(uri + ", " + userRoot);
-    var path = modUtils.uriToPath(uri, userRoot);
+    var fullPath = modUtils.uriToPath(uri, contentRoot + userHome);
+    var userPath = modUtils.uriToPath(uri, userHome);
 
-    var settings = readSettings(userRoot);
+    var settings = readSettings(contentRoot + userHome);
     console.debug("Settings: " + JSON.stringify(settings));
     var viewMode = settings.view || "list";
     var sortMode = settings.sort || "name";
 
-    console.debug("Full Path: " + path + "\n" +
+    console.debug("Full Path: " + fullPath + "\n" +
                   "View Mode: " + viewMode + "\n" +
                   "Sort Mode: " + sortMode);
 
-    prepareClipboard(userRoot, function ()
+    prepareClipboard(contentRoot + userHome, function ()
     {
-        readStats(sortMode, path, function (stats)
+        readStats(sortMode, fullPath, function (stats)
         {
-            readStats(sortMode, modPath.join(userRoot, ".pilvini", "clipboard"), function (clipboardStats)
+            readStats(sortMode, modPath.join(contentRoot + userHome, ".pilvini", "clipboard"), function (clipboardStats)
             {
-                var html = makeHtml(viewMode, sortMode, prefix, userRoot, uri, stats, clipboardStats, permissions, depthOffset);
+                var html = makeHtml(viewMode, sortMode, prefix, contentRoot, userHome, uri, userPath, stats, clipboardStats, permissions, depthOffset, shares);
                 callback(true, html);
             });
         });

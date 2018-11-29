@@ -174,11 +174,11 @@ function isPublic(method, uri, contentRoot, shares)
     }
     else if (uri.indexOf("/::") === 0)
     {
-        path = modUtils.uriToPath(uri.substr(1 + uriParts[1].length), contentRoot);
+        path = modUtils.uriToPath(uri.substr(1 + uriParts[1].length), "/");
     }
     else
     {
-        path = modUtils.uriToPath(uri, contentRoot);
+        path = modUtils.uriToPath(uri, "/");
     }
 
     return shares.isCovered(path);
@@ -201,6 +201,7 @@ function handleRequest(request, response)
     var urlObj = modUrl.parse(request.url, true);
     var shares = new modShares.Shares(contentRoot);
 
+    // request user authorization if required
     var authUser = httpAuth.authorize(request);
     if (! authUser && ! isPublic(request.method, urlObj.pathname, contentRoot, shares))
     {
@@ -215,6 +216,7 @@ function handleRequest(request, response)
         return;
     }
 
+    // get the user's particular access permissions
     var permissions = new modUserPermissions.UserPermissions(authUser);
 
     // a logging version of response.writeHead
@@ -259,6 +261,7 @@ function handleRequest(request, response)
     } ());
 
 
+    // get the user's home directory (public shares guest has no home directory)
     var userHome = "";
     for (var i = 0; i < config.users.length; ++i)
     {
@@ -322,11 +325,11 @@ function handleRequest(request, response)
 
             if (urlObj.search.indexOf("ajax") !== -1)
             {
-                modBrowser.createMainPage("/::shares/" + shareId, shareUri, userRoot, permissions, shareDepth, callback);
+                modBrowser.createMainPage("/::shares/" + shareId, shareUri, contentRoot, userHome, permissions, shareDepth, shares, callback);
             }
             else
             {
-                modBrowser.makeIndex("/::shares/" + shareId, shareUri, userRoot, permissions, shareDepth, callback);
+                modBrowser.makeIndex("/::shares/" + shareId, shareUri, contentRoot, userHome, permissions, shareDepth, shares, callback);
             }
             return;
 
@@ -352,11 +355,11 @@ function handleRequest(request, response)
             if (urlObj.search.indexOf("ajax") !== -1)
             {
                 var uri = urlObj.pathname.substr(8);
-                modBrowser.createMainPage("/::shell", uri, userRoot, permissions, 0, callback);
+                modBrowser.createMainPage("/::shell", uri, contentRoot, userHome, permissions, 0, shares, callback);
             }
             else
             {
-                modBrowser.makeIndex("/::shell", "/", userRoot, permissions, 0, callback);
+                modBrowser.makeIndex("/::shell", "/", contentRoot, userHome, permissions, 0, shares, callback);
             }
             return;
         }
@@ -364,8 +367,8 @@ function handleRequest(request, response)
         {
             var uri = urlObj.pathname.substr(7);
             console.log("URI: " + uri);
-            var path = modUtils.uriToPath(uri, userRoot);
-            var tagParser = new modId3Tags.Tags(path);
+            var targetFile = modUtils.uriToPath(uri, userRoot);
+            var tagParser = new modId3Tags.Tags(targetFile);
 
             tagParser.read(function (err)
             {
@@ -450,9 +453,9 @@ function handleRequest(request, response)
         {
             // provide file from ressource fork
             var res = urlObj.pathname.substr(7);
-            var path = modPath.join(__dirname, "res", res);
+            var targetFile = modPath.join(__dirname, "res", res);
 
-            getFile(response, path);
+            getFile(response, targetFile);
             return;
         }
 
@@ -564,6 +567,23 @@ function handleRequest(request, response)
     }
     else if (request.method === "POST")
     {
+        if (urlObj.pathname.indexOf("/share/") === 0)
+        {
+            var destinationUrlObj = modUrl.parse(request.headers.destination, true);
+            var targetFile = modUtils.uriToPath(destinationUrlObj.pathname, userHome);
+            shares.share(destinationUrlObj.pathname, targetFile);
+        }
+        else if (urlObj.pathname.indexOf("/unshare/") === 0)
+        {
+            var destinationUrlObj = modUrl.parse(request.headers.destination, true);
+            var targetFile = modUtils.uriToPath(destinationUrlObj.pathname, userHome);
+            var shareId = shares.id(targetFile);
+            console.log("UNSHARE " + targetFile + " " + shareId);
+            if (shareId !== "")
+            {
+                shares.unshare(shareId);
+            }
+        }
         response.end();
     }
     else if (request.method === "PROPFIND")
@@ -603,6 +623,7 @@ function handleRequest(request, response)
     }
     else
     {
+        // unknown method or missing permission
         response.writeHeadLogged(405, "Method Not Allowed");
     	response.end();
     }

@@ -49,6 +49,7 @@ text editor:
      For SSL, you will also have to supply a server certificate.
    * `ssl_certificate` The path to the SSL server certificate if SSL is enabled.
    * `ssl_key` The path to the SSL server private key if SSL is enabled.
+   * `root` The root path served by *pilvini*. Files outside this path cannot be accessed by users.
 
  * `authentication` This is the authentication configuration section.
    * `method` The HTTP authentication method to use. Either `basic` or `digest`.
@@ -61,7 +62,7 @@ text editor:
      You can obtain one easily with `echo -n "<user>:<realm>:<password>" | md5`,
      or use an online MD5 hash generator, such as
      [http://www.adamek.biz/md5-generator.php].
-   * `home` This is the path that *pilvini* makes accessible.
+   * `home` This is the path that *pilvini* confines the user to. This path is relative to the `root` path configured for the server. 
 
  * `global` This is the section for global settings.
    * `debug` Set this value to true to enable verbose debug logging.
@@ -92,10 +93,10 @@ Listening....      | Port 7443 (SSL)
 After the *pilvini* server is started, you can use a WebDAV client to connect
 to the port you configured and login as the user you configured.
 
-To use the HTML5 web interface, open the `/index.html` document in a web browser
+To use the HTML5 shell, open the `/::shell/` document in a web browser
 that supports HTML5.
 ```
-https://<address>:<port>/index.html
+https://<address>:<port>/::shell/
 ```
 
 ## Windows Explorer and WebDAV

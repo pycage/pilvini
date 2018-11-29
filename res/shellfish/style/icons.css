@@ -97,6 +97,10 @@
     font-family: Material; content: "\f31e";
 }
 
+.sh-icon-share:before {
+    font-family: Material; content: "\f228";
+}
+
 .sh-icon-star-circle:before {
     font-family: Material; content: "\f27a";
 }

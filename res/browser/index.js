@@ -159,6 +159,34 @@ function loadNextThumbnail(forLocation, images)
     });
 }
 
+function share()
+{
+    var targetUri = currentUri();
+    $.ajax({
+        type: "POST",
+        url: "/share/",
+        beforeSend: function(xhr) { xhr.setRequestHeader("Destination", targetUri); },
+    })
+    .done(function (data, status, xhr)
+    {
+        loadDirectory(currentUri());
+    });
+}
+
+function unshare()
+{
+    var targetUri = currentUri();
+    $.ajax({
+        type: "POST",
+        url: "/unshare/",
+        beforeSend: function(xhr) { xhr.setRequestHeader("Destination", targetUri); },
+    })
+    .done(function (data, status, xhr)
+    {
+        loadDirectory(currentUri());
+    });
+}
+
 function toggleSelect(item)
 {
     $(item).toggleClass("sh-selected");

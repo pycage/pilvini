@@ -4,7 +4,8 @@
         "port": 7443,
         "use_ssl": true,
         "ssl_certificate": "cert/www.example.com.cert",
-        "ssl_key": "cert/www.example.com.key"
+        "ssl_key": "cert/www.example.com.key",
+        "root": "/data/cloud"
     },
 
     "authentication": {
@@ -17,11 +18,6 @@
             "name": "user",
             "password_hash": "cec87dbff57453376e76e84fa17ab292",
             "home": "/home/user"
-        },
-        {
-            "name": "guest",
-            "password_hash": "",
-            "home": "/home/guest"
         }
     ],
 
