@@ -1,5 +1,13 @@
-const modFs = require("fs"),
+"use strict";
+
+const modCrypto = require("crypto"),
+      modFs = require("fs"),
       modPath = require("path");
+
+function md5(data)
+{
+    return modCrypto.createHash("md5").update(data).digest("hex");
+}
 
 function Shares(contentRoot)
 {
@@ -21,29 +29,10 @@ function Shares(contentRoot)
         return;
     }
 
-    this.root = function (id)
-    {
-        for (var i = 0; i < m_shares.length; ++i)
-        {
-            if (m_shares[i].id === id)
-            {
-                return m_shares[i].root;
-            }
-        }
-        return undefined;
-    }
-
-    this.depth = function (id)
-    {
-        var shareRoot = that.root(id);
-        var parts = shareRoot.split("/")
-            .filter(function (a) { return a !== ""; });
-        return parts.length;
-    }
-
+    /* Returns if the given path is covered by at least one share.
+     */
     this.isCovered = function (path)
     {
-        console.log("isCovered? " + path);
         for (var i = 0; i < m_shares.length; ++i)
         {
             console.log("Share root: " + m_shares[i].root);
@@ -55,6 +44,8 @@ function Shares(contentRoot)
         return false;
     }
 
+    /* Returns the IDs of the available shares.
+     */
     this.shares = function ()
     {
         var result = [];
@@ -65,9 +56,10 @@ function Shares(contentRoot)
         return result;
     }
 
+    /* Returns if the given path is a share.
+     */
     this.isShare = function (path)
     {
-        console.log("IS SHARE? " + path);
         for (var i = 0; i < m_shares.length; ++i)
         {
             if (m_shares[i].root === path)
@@ -78,6 +70,8 @@ function Shares(contentRoot)
         return false;
     }
 
+    /* Returns the ID of the share at the given path.
+     */
     this.id = function (path)
     {
         for (var i = 0; i < m_shares.length; ++i)
@@ -90,11 +84,28 @@ function Shares(contentRoot)
         return "";
     }
 
-    this.share = function (id, path)
+    /* Returns the share info object for the given share, or undefined if
+     * the share does not exist.
+     */
+    this.info = function (shareId)
+    {
+        for (var i = 0; i < m_shares.length; ++i)
+        {
+            var obj = m_shares[i];
+            if (obj.id === shareId)
+            {
+                return obj;
+            }
+        }
+        return undefined;
+    }
+
+    this.share = function (shareId, shareRoot, sharePassword)
     {
         m_shares.push({
-            "id": id,
-            "root": path
+            "id": shareId,
+            "root": shareRoot,
+            "password_hash": md5(shareId + ":pilvini:" + sharePassword)
         });
 
         try

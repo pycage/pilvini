@@ -25,7 +25,7 @@ const VERSION = "0.2.0rc";
 
 console.debug = function(msg)
 {
-    if (config.global && config.global.debug)
+    if (CONFIG.global && CONFIG.global.debug)
     {
         console.log("[" + new Date().toLocaleString() + "] [DEBUG] >>>\n" +
                     msg +
@@ -141,16 +141,11 @@ function readRequest(request, callback)
 
 /* Returns if the given URL is public and may be served without authorization.
  */
-function isPublic(method, uri, contentRoot, shares)
+function isPublic(method, uri)
 {
     if (uri === "/favicon.ico")
     {
         return true;
-    }
-
-    if (shares.shares().length === 0)
-    {
-        return false;
     }
 
     if (method !== "GET" && method !== "HEAD")
@@ -164,24 +159,10 @@ function isPublic(method, uri, contentRoot, shares)
     {
         return true;
     }
-    else if (uri.indexOf("/::shares") === 0)
-    {
-        var shareId = uriParts[2];
-        var shareRoot = contentRoot + shares.root(shareId);
-        path = modUtils.uriToPath(uri.substr(1 + uriParts[1].length + 1 + uriParts[2].length), shareRoot);
-        console.log("Share ID: " + shareId + ", root: " + shareRoot + ", path: " + path);
-        return shareRoot !== undefined && path.indexOf(shareRoot) === 0;
-    }
-    else if (uri.indexOf("/::") === 0)
-    {
-        path = modUtils.uriToPath(uri.substr(1 + uriParts[1].length), "/");
-    }
     else
     {
-        path = modUtils.uriToPath(uri, "/");
+        return false;
     }
-
-    return shares.isCovered(path);
 }
 
 /* Handles HTTP requests and produces a response.
@@ -197,13 +178,42 @@ function handleRequest(request, response)
     }
     */
 
-    var contentRoot = config.server.root;
+    var contentRoot = CONFIG.server.root;
     var urlObj = modUrl.parse(request.url, true);
     var shares = new modShares.Shares(contentRoot);
 
+    // setup users
+    var authUsers = { };
+    for (var i = 0; i < CONFIG.users.length; ++i)
+    {
+        var user = CONFIG.users[i];
+        authUsers[user.name] = user.password_hash;
+    }
+    // mix in share guest users
+    shares.shares().forEach(function (shareId)
+    {
+        var shareInfo = shares.info(shareId);
+        authUsers[shareId] = shareInfo.password_hash;
+    });
+
+    // setup HTTP authenticator
+    var httpAuth;
+    if (CONFIG.authentication.method === "basic")
+    {
+        httpAuth = new modHttpAuth.Authenticator("Basic", CONFIG.authentication.realm, authUsers);
+    }
+    else if (CONFIG.authentication.method === "digest")
+    {
+        httpAuth = new modHttpAuth.Authenticator("Digest", CONFIG.authentication.realm, authUsers);
+    }
+    else
+    {
+        throw "Invalid authentication method '" + CONFIG.authentication.method + "'";
+    }
+
     // request user authorization if required
     var authUser = httpAuth.authorize(request);
-    if (! authUser && ! isPublic(request.method, urlObj.pathname, contentRoot, shares))
+    if (! authUser && ! isPublic(request.method, urlObj.pathname))
     {
         // authorization required
         console.log("[" + new Date().toLocaleString() + "] [Server] " +
@@ -217,7 +227,9 @@ function handleRequest(request, response)
     }
 
     // get the user's particular access permissions
-    var permissions = new modUserPermissions.UserPermissions(authUser);
+    var permissions = shares.shares().indexOf(authUser) === -1
+        ? new modUserPermissions.UserPermissions(authUser)
+        : new modUserPermissions.UserPermissions(null);
 
     // a logging version of response.writeHead
     response.request = request;
@@ -261,22 +273,28 @@ function handleRequest(request, response)
     } ());
 
 
-    // get the user's home directory (public shares guest has no home directory)
+    // get the user's home directory
     var userHome = "";
-    for (var i = 0; i < config.users.length; ++i)
+    shares.shares().forEach(function (shareId)
     {
-        if (config.users[i].name === authUser)
+        if (shareId === authUser)
         {
-            userHome = config.users[i].home;
-            break;
+            userHome = shares.info(shareId).root;
         }
+    });
+    if (userHome === "")
+    {
+        CONFIG.users.forEach(function (u)
+        {
+            if (u.name === authUser)
+            {
+                userHome = u.home;
+            }
+        });
     }
-    var userRoot = contentRoot + userHome;
 
 
-
-
-    var davSession = new modDav.DavSession(userRoot);
+    var davSession = new modDav.DavSession(contentRoot + userHome);
 
     if (request.method === "COPY" && permissions.mayCreate())
     {
@@ -299,42 +317,7 @@ function handleRequest(request, response)
     }
     else if (request.method === "GET")
     {
-        if (urlObj.pathname.indexOf("/::shares/") === 0)
-        {
-            function callback (ok, data)
-            {
-                if (! ok)
-                {
-                    response.writeHeadLogged(404, "Not found");
-                    response.end();
-                }
-                else
-                {
-                    response.setHeader("Content-Length", Buffer.byteLength(data, "utf-8"));
-                    response.writeHeadLogged(200, "OK");
-                    response.write(data);
-                    response.end();
-                }
-            }
-
-            var uri = urlObj.pathname.substr(9);
-            var uriParts = uri.split("/");
-            var shareId = uriParts[1];
-            var shareUri = encodeURI(shares.root(shareId)) + uri.substr(1 + shareId.length);
-            var shareDepth = shares.depth(shareId);
-
-            if (urlObj.search.indexOf("ajax") !== -1)
-            {
-                modBrowser.createMainPage("/::shares/" + shareId, shareUri, contentRoot, userHome, permissions, shareDepth, shares, callback);
-            }
-            else
-            {
-                modBrowser.makeIndex("/::shares/" + shareId, shareUri, contentRoot, userHome, permissions, shareDepth, shares, callback);
-            }
-            return;
-
-        }
-        else if (urlObj.pathname.indexOf("/::shell/") === 0)
+        if (urlObj.pathname.indexOf("/::shell/") === 0)
         {            
             function callback (ok, data)
             {
@@ -355,11 +338,11 @@ function handleRequest(request, response)
             if (urlObj.search.indexOf("ajax") !== -1)
             {
                 var uri = urlObj.pathname.substr(8);
-                modBrowser.createMainPage("/::shell", uri, contentRoot, userHome, permissions, 0, shares, callback);
+                modBrowser.createMainPage("/::shell", uri, contentRoot, userHome, permissions, shares, callback);
             }
             else
             {
-                modBrowser.makeIndex("/::shell", "/", contentRoot, userHome, permissions, 0, shares, callback);
+                modBrowser.makeIndex("/::shell", "/", contentRoot, userHome, permissions, shares, callback);
             }
             return;
         }
@@ -367,7 +350,7 @@ function handleRequest(request, response)
         {
             var uri = urlObj.pathname.substr(7);
             console.log("URI: " + uri);
-            var targetFile = modUtils.uriToPath(uri, userRoot);
+            var targetFile = modUtils.uriToPath(uri, contentRoot + userHome);
             var tagParser = new modId3Tags.Tags(targetFile);
 
             tagParser.read(function (err)
@@ -405,7 +388,9 @@ function handleRequest(request, response)
             var thumbDir = modPath.join(contentRoot, ".pilvini", "thumbnails");
 
             var href = urlObj.pathname.substr(12);
-            var targetFile = modUtils.uriToPath(href, userRoot);
+            var targetFile = modUtils.uriToPath(href, contentRoot + userHome);
+            console.log("HREF: " + href + ", contentRoot: " + contentRoot + ", userHome: " + userHome);
+            console.log("Thumbnail target file: " + targetFile);
 
             var hash = modCrypto.createHash("md5");
             hash.update(targetFile);
@@ -570,15 +555,15 @@ function handleRequest(request, response)
         if (urlObj.pathname.indexOf("/share/") === 0)
         {
             var destinationUrlObj = modUrl.parse(request.headers.destination, true);
-            var targetFile = modUtils.uriToPath(destinationUrlObj.pathname, userHome);
-            shares.share(destinationUrlObj.pathname, targetFile);
+            var shareRoot = modUtils.uriToPath(destinationUrlObj.pathname, userHome);
+            shares.share(destinationUrlObj.pathname.replace(/\//g, ""), shareRoot, "password");
         }
         else if (urlObj.pathname.indexOf("/unshare/") === 0)
         {
             var destinationUrlObj = modUrl.parse(request.headers.destination, true);
-            var targetFile = modUtils.uriToPath(destinationUrlObj.pathname, userHome);
-            var shareId = shares.id(targetFile);
-            console.log("UNSHARE " + targetFile + " " + shareId);
+            var shareRoot = modUtils.uriToPath(destinationUrlObj.pathname, userHome);
+            var shareId = shares.id(shareRoot);
+            console.log("UNSHARE " + shareRoot + " " + shareId);
             if (shareId !== "")
             {
                 shares.unshare(shareId);
@@ -631,47 +616,32 @@ function handleRequest(request, response)
 
 
 // read configuration
-var config;
+//var config;
 var configPath = modPath.join(__dirname, "config.json");
-try
+const CONFIG = function ()
 {
-    config = JSON.parse(modFs.readFileSync(configPath, "utf8"));
-}
-catch (err)
+    try
+    {
+        return JSON.parse(modFs.readFileSync(configPath, "utf8"));
+    }
+    catch (err)
+    {
+        console.error("Failed to read configuration: " + err);
+        return { };
+    }
+} ();
+
+if (! CONFIG.server)
 {
-    console.error("Failed to read configuration: " + err);
     process.exit(1);
-}
-
-// setup users
-var authUsers = { };
-for (var i = 0; i < config.users.length; ++i)
-{
-    var user = config.users[i];
-    authUsers[user.name] = user.password_hash;
-}
-
-// setup HTTP authenticator
-var httpAuth;
-if (config.authentication.method === "basic")
-{
-    httpAuth = new modHttpAuth.Authenticator("Basic", config.authentication.realm, authUsers);
-}
-else if (config.authentication.method === "digest")
-{
-    httpAuth = new modHttpAuth.Authenticator("Digest", config.authentication.realm, authUsers);
-}
-else
-{
-    throw "Invalid authentication method '" + config.authentication.method + "'";
 }
 
 // setup HTTP server
 var server;
-if (config.server.use_ssl)
+if (CONFIG.server.use_ssl)
 {
-    var sslServerKey = modFs.readFileSync(modPath.join(__dirname, config.server.ssl_key), "utf8");
-    var sslServerCert = modFs.readFileSync(modPath.join(__dirname, config.server.ssl_certificate), "utf8");
+    var sslServerKey = modFs.readFileSync(modPath.join(__dirname, CONFIG.server.ssl_key), "utf8");
+    var sslServerCert = modFs.readFileSync(modPath.join(__dirname, CONFIG.server.ssl_certificate), "utf8");
     server = modHttps.createServer({ key: sslServerKey, cert: sslServerCert });
 }
 else
@@ -681,12 +651,12 @@ else
 
 // run HTTP server
 server.on("request", handleRequest);
-server.listen(config.server.port, config.server.listen);
+server.listen(CONFIG.server.port, CONFIG.server.listen);
 
 console.log("                   | Version " + VERSION)
 console.log("   .-------.       |");
 console.log("  ( Pilvini ).--.  | (c) 2017, 2018 Martin Grimme");
 console.log(" (  Cloud Drive  ) | https://github.com/pycage/pilvini");
 console.log("  ```````````````  |");
-console.log("Listening....      | Port " + config.server.port + " " + (config.server.use_ssl ? "(SSL)" : ""));
+console.log("Listening....      | Port " + CONFIG.server.port + " " + (CONFIG.server.use_ssl ? "(SSL)" : ""));
 console.log("");

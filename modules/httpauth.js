@@ -110,7 +110,7 @@ exports.Authenticator = function(authType, realm, users)
         var password = tokenParts[1];
         var passwordHash = md5(userName + ":" + m_realm + ":" + password);
 
-        if (m_users[userName] && (m_users[userName] === "" || m_users[userName] === passwordHash))
+        if (m_users[userName] !== undefined && (m_users[userName] === "" || m_users[userName] === passwordHash))
         {
             return userName;
         }
