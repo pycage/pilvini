@@ -516,14 +516,17 @@ function makeMoreMenu(viewMode, sortMode, permissions)
     var out = "";
     out += "<div id='more-menu' class='sh-menu' onclick='sh.menu_close();'>";
 
-    out += "  <div onclick='event.stopPropagation();'>" +
-           "    <h1 class='sh-submenu' onclick='sh.toggle_submenu(this);'>View</h1>" +
-           "    <ul>" +
-           "      <li id='mi-listview' onclick='changeSettings(\"view\", \"list\");'>As List</li>" +
-           "      <li id='mi-gridview' onclick='changeSettings(\"view\", \"grid\");'>As Grid</li>" +
-           "      <li id='mi-sort-by-name' onclick='changeSettings(\"sort\", \"name\", \"name-desc\");'>By Name" + sortByNameExt + "</li>" +
-           "      <li id='mi-sort-by-date' onclick='changeSettings(\"sort\", \"date\", \"date-desc\");'>By Date" + sortByDateExt + "</li>" +
-           "    </ul>";
+    out += "  <div onclick='event.stopPropagation();'>";
+    if (permissions.mayModify())
+    {
+        out += "    <h1 class='sh-submenu' onclick='sh.toggle_submenu(this);'>View</h1>" +
+               "    <ul>" +
+               "      <li id='mi-listview' onclick='changeSettings(\"view\", \"list\");'>As List</li>" +
+               "      <li id='mi-gridview' onclick='changeSettings(\"view\", \"grid\");'>As Grid</li>" +
+               "      <li id='mi-sort-by-name' onclick='changeSettings(\"sort\", \"name\", \"name-desc\");'>By Name" + sortByNameExt + "</li>" +
+               "      <li id='mi-sort-by-date' onclick='changeSettings(\"sort\", \"date\", \"date-desc\");'>By Date" + sortByDateExt + "</li>" +
+               "    </ul>";
+    }
 
     if (permissions.mayCreate())
     {
@@ -669,6 +672,37 @@ function makeNameDialog()
     return out;
 }
 
+function makeShareDialog()
+{
+    var out = "<div id='share-dialog' class='sh-popup'>" +
+    
+              "  <div class='sh-dropshadow' style='background-color: var(--color-primary-background);'>" +
+              "    <header><h1 class='sh-left'>Setup Share</h1></header>" +
+
+              "    <section>" +
+              "      <form>" +
+              "        <label>Login:</label>" +
+              "        <input type='text'>" +
+              "        <br>" +
+              "        <label>Password:</label>" +
+              "        <input type='text'>" +
+              "      </form>" +
+              "    </section>" +
+
+              "    <footer>" +
+              "      <span class='sh-right'>" +
+              "        <a>Accept</a>" +
+              "        <a onclick='sh.popup_close(\"share-dialog\");'>Cancel</a>" +
+              "      </span>" +
+              "    </footer>" +
+
+              "  </div>" +
+
+              "</div>";
+
+    return out;
+}
+
 function makeBusyPopup()
 {
     var out = "<div id='busy-popup' class='sh-popup'>" +
@@ -727,7 +761,7 @@ function makeMainPage(viewMode, sortMode, prefix, contentRoot, userHome, uri, pa
         out += "<h1 class='sh-submenu' onclick='sh.toggle_submenu(this); event.stopPropagation();'>Public Shares</h1>" +
                "<ul>" +
                (isShare ? "<li onclick='unshare();'>Unshare This</li>"
-                        : "<li onclick='share();'>Share This</li>") +
+                        : "<li onclick='showShareDialog();'>Share This</li>") +
                "  <hr/>";
         out += makeShares(userHome, shares);
         out += "</ul>";
@@ -812,6 +846,7 @@ function makeHtml(viewMode, sortMode, prefix, contentRoot, userHome, uri, path, 
               makeMainPage(viewMode, sortMode, prefix, contentRoot, userHome, uri, path, stats, permissions, shares) +
               makeNewDirDialog() +
               makeNameDialog() +
+              makeShareDialog() +
               makeMessageDialog() +
               makeQuestionDialog() +
               

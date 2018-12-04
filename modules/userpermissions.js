@@ -1,3 +1,5 @@
+"use strict";
+
 function UserPermissions(authUser)
 {
     this.mayCreate = function () { return authUser !== null; }

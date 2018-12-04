@@ -555,8 +555,10 @@ function handleRequest(request, response)
         if (urlObj.pathname.indexOf("/share/") === 0)
         {
             var destinationUrlObj = modUrl.parse(request.headers.destination, true);
+            var shareId = request.headers["x-pilvini-share-id"];
+            var password = request.headers["x-pilvini-share-password"];
             var shareRoot = modUtils.uriToPath(destinationUrlObj.pathname, userHome);
-            shares.share(destinationUrlObj.pathname.replace(/\//g, ""), shareRoot, "password");
+            shares.share(shareId, shareRoot, password);
         }
         else if (urlObj.pathname.indexOf("/unshare/") === 0)
         {

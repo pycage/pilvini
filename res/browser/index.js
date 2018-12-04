@@ -149,13 +149,18 @@ function loadNextThumbnail(forLocation, images)
     });
 }
 
-function share()
+function share(shareId, password)
 {
     var targetUri = currentUri();
     $.ajax({
         type: "POST",
         url: "/share/",
-        beforeSend: function(xhr) { xhr.setRequestHeader("Destination", targetUri); },
+        beforeSend: function(xhr)
+        {
+             xhr.setRequestHeader("Destination", targetUri);
+             xhr.setRequestHeader("x-pilvini-share-id", shareId);
+             xhr.setRequestHeader("x-pilvini-share-password", password);
+        },
     })
     .done(function (data, status, xhr)
     {
@@ -310,6 +315,20 @@ function showNameDialog(item)
     $("#name-dialog form input").val(name);
     $("#name-dialog a:first-child").off("click").on("click", acceptCb);
     sh.popup("name-dialog");
+}
+
+function showShareDialog()
+{
+    function acceptCb()
+    {
+        var shareId = $("#share-dialog form input").first().val();
+        var password = $("#share-dialog form input").last().val();
+        share(shareId, password);
+        sh.popup_close("share-dialog");
+    }
+
+    $("#share-dialog a:first-child").off("click").on("click", acceptCb);
+    sh.popup("share-dialog");
 }
 
 function checkClipboard()
