@@ -4,6 +4,7 @@ const attempt = require("./attempt.js").attempt;
 
 const modFs = require("fs"),
       modPath = require("path"),
+      modHtml = require("./html.js"),
       modMime = require("./mime.js"),
       modThumbnail = attempt(function () { return require("./thumbnail.js"); }),
       modUtils = require("./utils.js");
@@ -177,20 +178,27 @@ function makeInfo(file, stat)
 
 function makeIcon(icon)
 {
-    return "<div class=\"sh-left\"" +
-           " style=\"width: 80px; background-image: url(" + icon + ");" +
-           " background-size: 48px;" +
-           " background-repeat: no-repeat;" +
-           " background-position: 50% 50%;\"></div>";
+    var tag = modHtml.tag;
+
+    return tag("div").class("sh-left")
+           .style("width", "80px")
+           .style("background-image", "url(" + icon + ")")
+           .style("background-size", "48px")
+           .style("background-repeat", "no-repeat")
+           .style("background-position", "50% 50%");
 }
 
 function makeThumbnail(icon, uri)
 {
-    return "<div class=\"thumbnail sh-left\" data-x-thumbnail=\"/::thumbnail" + uri + "\"" +
-           " style=\"width: 80px; background-image: url(" + icon + ");" +
-           " background-size: 48px;" +
-           " background-repeat: no-repeat;" +
-           " background-position: 50% 50%;\"></div>";
+    var tag = modHtml.tag;
+
+    return tag("div").class("thumbnail sh-left")
+           .data("x-thumbnail", "/::thumbnail" + uri)
+           .style("width", "80px")
+           .style("background-image", "url(" + icon + ")")
+           .style("background-size", "48px")
+           .style("background-repeat", "no-repeat")
+           .style("background-position", "50% 50%");
 }
 
 function makeFileItem(pathUri, file, stat, active, callback)
@@ -198,16 +206,15 @@ function makeFileItem(pathUri, file, stat, active, callback)
     var mimeType = modMime.mimeType(file);
     var mimeInfo = MIME_INFO[mimeType];
     var icon = getIcon(mimeType);
-    var href = "";
     var info = "";
     var uri = (pathUri + "/" + encodeURIComponent(file)).replace(/'/g, "%27").replace("//", "/");
-    var action = "onclick=\"window.location.href='" + uri + "';\"";
+    var action = "window.location.href=\"" + uri + "\";";
 
     var iconHtml = "";
 
     if (active && mimeInfo && mimeInfo.viewer)
     {
-        action = "onclick=\"" + mimeInfo.viewer + "('" + uri + "');\"";
+        action = mimeInfo.viewer + "(\"" + uri + "\");";
     }
 
     if (stat.isDirectory())
@@ -215,7 +222,7 @@ function makeFileItem(pathUri, file, stat, active, callback)
         mimeType = "application/x-folder";
         icon = "/::res/file-icons/folder.png";
         iconHtml = makeIcon(icon);
-        action = "onclick=\"loadDirectory('" + uri + "');\"";
+        action = "loadDirectory(\"" + uri + "\");";
     }
     else if (mimeType.startsWith("image/") ||
              mimeType.startsWith("audio/"))
@@ -242,8 +249,9 @@ function makeFileItem(pathUri, file, stat, active, callback)
 
 function makeFiles(uri, stats, active)
 {
-    var out = "";
-    out += "<ul class=\"sh-listview\">";
+    var tag = modHtml.tag;
+    var t = tag("ul").class("sh-listview");
+
     for (var i = 0; i < stats.length; ++i)
     {
         var file = stats[i][0];
@@ -254,34 +262,59 @@ function makeFiles(uri, stats, active)
             continue;
         }
 
-        out += makeFileItem(uri, file, stat, active, function (uri, info, mimeType, action, iconHtml)
+        t.content(makeFileItem(uri, file, stat, active, function (uri, info, mimeType, action, iconHtml)
         {
-            var out = "";
-    
-            out += "<li class=\"fileitem filelink\" style=\"height: 80px;\" data-mimetype=\"" + mimeType + "\" data-url=\"" + uri + "\" " + action + ">";
-            out += iconHtml;
-            out += "<div style=\"position: absolute; left: 80px; right: 42px; top: 1em; padding-left: 0.5em;\">";
-            out += "<h1>" + escapeHtml(file) + "</h1>";
-            out += "<h2 class=\"sh-font-small\">" + info + "</h2>";
-            out += "</div>";
-            
+            var tag = modHtml.tag;
+
+            var t = tag("li").class("fileitem filelink")
+                    .style("height", "80px")
+                    .data("mimetype", mimeType)
+                    .data("url", uri)
+                    .content(iconHtml)
+                    .content(
+                        tag("div")
+                        .style("position", "absolute")
+                        .style("left", "80px")
+                        .style("right", "42px>")
+                        .style("top", "1em")
+                        .style("padding-left", "0.5em")
+                        .content(
+                            tag("h1")
+                            .content(escapeHtml(file))
+                        )
+                        .content(
+                            tag("h2").class("sh-font-small")
+                            .content(info)
+                        )
+                    );
+
+            if (action !== "")
+            {
+                t = t.on("click", action);
+            }
+
             if (active)
             {
-                out += "<div class=\"sh-right\" style=\"width: 42px; text-align: center; border-left: solid 1px var(--color-border);\" " +
-                       "     onclick=\"event.stopPropagation(); toggleSelect(this);\">" +
-                       "  <span class=\"sh-icon-checked-circle\" " +
-                       "        style=\"width: 42px; text-align: center; line-height: 80px;\">" +
-                       "  </span>" +
-                       "</div>";
+                t = t.content(
+                        tag("div").class("sh-right")
+                        .style("width", "42px")
+                        .style("text-align", "center")
+                        .style("border-left", "solid 1px var(--color-border)")
+                        .on("click", "event.stopPropagation(); toggleSelect(this);")
+                        .content(
+                            tag("span").class("sh-icon-checked-circle")
+                            .style("width", "42px")
+                            .style("text-align", "center")
+                            .style("line-height", "80px")
+                        )
+                    );
             }
-            out += "</li>";
-    
-            return out;
-        });
-    }
-    out += "</ul>";
 
-    return out;
+            return t;
+        }));
+    }
+
+    return t.html();
 }
 
 function makeFilesGrid(sortMode, uri, stats, active)
@@ -298,8 +331,12 @@ function makeFilesGrid(sortMode, uri, stats, active)
         }
     }
 
-    var out = "";
-    out += "<p>";
+    var tag = modHtml.tag;
+    var t = tag("div");
+
+    var currentP = tag("p");
+    t.content(currentP);
+
     var currentHeader = "";
     for (var i = 0; i < stats.length; ++i)
     {
@@ -315,60 +352,118 @@ function makeFilesGrid(sortMode, uri, stats, active)
         if (thisHeader !== currentHeader)
         {
             currentHeader = thisHeader;
-            out += "</p>";
-            out += "<h3>" + thisHeader + "</h3>";
-            out += "<p>";
+            t.content(tag("h3").content(thisHeader));
+            currentP = tag("p");
+            t.content(currentP);
         }
         
-        out += makeFileItem(uri, file, stat, active, function (uri, info, mimeType, action, iconHtml)
+        currentP.content(makeFileItem(uri, file, stat, active, function (uri, info, mimeType, action, iconHtml)
         {
-            var out = "";
-            out += "<div class='fileitem' style='position: relative; display: inline-block; width: 80px; height: 80px;' data-mimetype='" + mimeType + "' data-url='" + uri + "'" + action + ">";
-            out += iconHtml;
-            out += "</div>";
+            var tag = modHtml.tag;
+            
+            var t = tag("div").class("fileitem")
+                    .style("position", "relative")
+                    .style("display", "inline-block")
+                    .style("width", "80px")
+                    .style("height", "80px")
+                    .data("mimetype", mimeType)
+                    .data("url", uri)
+                    .content(iconHtml);
 
-            return out;
-        });
-        out += "&nbsp;";
+            if (action !== "")
+            {
+                t = t.on("click", action);
+            }
+
+            return t;
+        }))
+        .content("&nbsp;");
     }
-    out += "</p>"
 
-    return out;
+    return t.html();
 }
 
 function makeHtmlHead()
 {
-    var out = "<head>" +
-              "  <title></title>" +
-              "  <meta http-equiv='Content-Type' content='text/html; charset=utf-8'></meta>" +
-              "  <meta name='viewport' content='width=device-width, initial-scale=1'></meta>" +
+    var tag = modHtml.tag;
+    var t = tag("head")
+            .content(tag("title"))
+            .content(
+                tag("meta")
+                .attr("http-equiv", "Content-Type")
+                .attr("content", "text/html; charset=utf-8")
+            )
+            .content(
+                tag("meta")
+                .attr("name", "viewport")
+                .attr("content", "width=device-width, initial-scale=1")
+            )
+            .content(
+                tag("link")
+                .attr("rel", "icon")
+                .attr("type", "image/png")
+                .attr("sizes", "192x192")
+                .attr("href", "/::res/favicon.png")
+            )
+            .content(
+                tag("link")
+                .attr("rel", "icon")
+                .attr("type", "image/png")
+                .attr("sizes", "32x32")
+                .attr("href", "/::res/favicon-32x32.png")
+            )
+            .content(
+                tag("link")
+                .attr("rel", "apple-touch-icon")
+                .attr("type", "image/png")
+                .attr("sizes", "180x180")
+                .attr("href", "/::res/apple-touch-icon.png")
+            )
+            .content(
+                tag("link")
+                .attr("rel", "stylesheet")
+                .attr("href", "/::res/shellfish/style/shellfish.css")
+            )
+            .content(
+                tag("script").attr("src", "https://code.jquery.com/jquery-2.1.4.min.js")
+            )
+            .content(
+                tag("script").attr("src", "/::res/shellfish/core/shellfish.js")
+            )
+            .content(
+                tag("script").attr("src", "/::res/browser/index.js")
+            )
+            .content(
+                tag("script").attr("src", "/::res/viewer/audio.js")
+            )
+            .content(
+                tag("script").attr("src", "/::res/viewer/image.js")
+            )
+            .content(
+                tag("script").attr("src", "/::res/viewer/markdown.js")
+            )
+            .content(
+                tag("script").attr("src", "/::res/viewer/pdf.js")
+            )
+            .content(
+                tag("script").attr("src", "/::res/viewer/text.js")
+            )
+            .content(
+                tag("script").attr("src", "/::res/viewer/vcard.js")
+            );
 
-              "  <link rel='icon' type='image/png' sizes='192x192' href='/::res/favicon.png'>" +
-              "  <link rel='icon' type='image/png' sizes='32x32' href='/::res/favicon-32x32.png'>" +
-              "  <link rel='apple-touch-icon' sizes='180x180' href='/::res/apple-touch-icon.png'>" +
-              "  <link rel='stylesheet' href='/::res/shellfish/style/shellfish.css'>" +
-
-              "  <script src='https://code.jquery.com/jquery-2.1.4.min.js'></script>" +
-              "  <script src='/::res/shellfish/core/shellfish.js'></script>" +
-              "  <script src='/::res/browser/index.js'></script>" +
-
-              "  <script src='/::res/viewer/audio.js'></script>" +
-              "  <script src='/::res/viewer/image.js'></script>" +
-              "  <script src='/::res/viewer/markdown.js'></script>" +
-              "  <script src='/::res/viewer/pdf.js'></script>" +
-              "  <script src='/::res/viewer/text.js'></script>" +
-              "  <script src='/::res/viewer/vcard.js'></script>" +
-              "</head>";
-
-    return out;
+    return t.html();
 }
 
 function makeBreadcrumbs(uri)
 {
     var uriParts = uri.split("/");
 
-    var out = "<ul>" +
-              "  <li onclick=\"loadDirectory('/');\">/</li>";
+    var tag = modHtml.tag;
+    var t = tag("ul")
+            .content(
+                tag("li").on("click", "loadDirectory(\"/\");").content("/")
+            );
 
     var breadcrumbUri = "";
     for (var i = 0; i < uriParts.length; ++i)
@@ -379,20 +474,24 @@ function makeBreadcrumbs(uri)
         }
 
         breadcrumbUri += "/" + uriParts[i];
-        out += "  <li onclick=\"loadDirectory('" + breadcrumbUri.replace(/'/g, "%27") + "');\">" + escapeHtml(decodeURI(uriParts[i])) + "</li>";
+        t.content(
+            tag("li").on("click", "loadDirectory(\"" + breadcrumbUri.replace(/'/g, "%27") + "\");").content(escapeHtml(decodeURI(uriParts[i])))
+        )
+        //out += "  <li onclick=\"loadDirectory('" + breadcrumbUri.replace(/'/g, "%27") + "');\">" + escapeHtml(decodeURI(uriParts[i])) + "</li>";
     }
 
-    out += "</ul>";
-
-    return out;
+    return t.html();
 }
 
 function makeFavorites(userRoot)
 {
+    var tag = modHtml.tag;
+    var t = tag("");
+
     var favsFile = modPath.join(userRoot, ".pilvini", "favorites.json");
     if (! modFs.existsSync(favsFile))
     {
-        return "";
+        return t.html();
     }
 
     try
@@ -402,7 +501,7 @@ function makeFavorites(userRoot)
     catch (err)
     {
         console.error("Failed to read favorites: " + err);
-        return "";
+        return t.html();
     }
 
     try
@@ -412,35 +511,38 @@ function makeFavorites(userRoot)
     catch (err)
     {
         console.error("Invalid favorites document: " + err);
-        return "";
+        return t.html();
     }
 
     if (doc.length === 0)
     {
-        return;
+        return t.html();
     }
 
-    var out = "";
     for (var i = 0; i < doc.length; ++i)
     {
         var node = doc[i];
         var href = node["href"];
         var name = node["name"];
 
-        out += "<li onclick=\"loadDirectory('" + href.replace(/'/g, "%27") + "');\">" +
-               "<span class=\"sh-fw-icon sh-icon-star-circle\"></span> " +
-               name +
-               "</li>";
+        t.content(
+            tag("li").on("click", "loadDirectory(\"" + href.replace(/'/g, "%27") + "\");")
+            .content(
+                tag("span").class("sh-fw-icon sh-icon-star-circle")
+            )
+            .content(name)
+        );
     }
 
-    out += "  <hr/>";
+    t.content(tag("hr"));
 
-    return out;
+    return t.html();
 }
 
 function makeShares(userHome, shares)
 {
-    var out = "";
+    var tag = modHtml.tag;
+    var t = tag("");
     
     shares.shares().forEach(function (shareId)
     {
@@ -449,16 +551,20 @@ function makeShares(userHome, shares)
         {
             // this share is within reach of the user
             var uri = encodeURI(shareRoot.substr(userHome.length));
-            out += "<li onclick='loadDirectory(\"" + uri + "\");'>" +
-                   "<span class=\"sh-fw-icon sh-icon-share\"></span> " +
-                   shareId +
-                   "</li>";
+
+            t.content(
+                tag("li").on("click", "loadDirectory(\"" + uri + "\");")
+                .content(
+                    tag("span").class("sh-fw-icon sh-icon-share")
+                )
+                .content(shareId)
+            );
         }
     });
     
-    out += "<hr/>";
+    t.content(tag("hr"));
 
-    return out;
+    return t.html();
 }
 
 function isFavorite(uri, userRoot)
