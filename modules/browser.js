@@ -314,7 +314,7 @@ function makeFiles(uri, stats, active)
         }));
     }
 
-    return t.html();
+    return t;
 }
 
 function makeFilesGrid(sortMode, uri, stats, active)
@@ -380,7 +380,7 @@ function makeFilesGrid(sortMode, uri, stats, active)
         .content("&nbsp;");
     }
 
-    return t.html();
+    return t;
 }
 
 function makeHtmlHead()
@@ -452,7 +452,7 @@ function makeHtmlHead()
                 tag("script").attr("src", "/::res/viewer/vcard.js")
             );
 
-    return t.html();
+    return t;
 }
 
 function makeBreadcrumbs(uri)
@@ -477,10 +477,9 @@ function makeBreadcrumbs(uri)
         t.content(
             tag("li").on("click", "loadDirectory(\"" + breadcrumbUri.replace(/'/g, "%27") + "\");").content(escapeHtml(decodeURI(uriParts[i])))
         )
-        //out += "  <li onclick=\"loadDirectory('" + breadcrumbUri.replace(/'/g, "%27") + "');\">" + escapeHtml(decodeURI(uriParts[i])) + "</li>";
     }
 
-    return t.html();
+    return t;
 }
 
 function makeFavorites(userRoot)
@@ -491,7 +490,7 @@ function makeFavorites(userRoot)
     var favsFile = modPath.join(userRoot, ".pilvini", "favorites.json");
     if (! modFs.existsSync(favsFile))
     {
-        return t.html();
+        return t;
     }
 
     try
@@ -501,7 +500,7 @@ function makeFavorites(userRoot)
     catch (err)
     {
         console.error("Failed to read favorites: " + err);
-        return t.html();
+        return t;
     }
 
     try
@@ -511,12 +510,12 @@ function makeFavorites(userRoot)
     catch (err)
     {
         console.error("Invalid favorites document: " + err);
-        return t.html();
+        return t;
     }
 
     if (doc.length === 0)
     {
-        return t.html();
+        return t;
     }
 
     for (var i = 0; i < doc.length; ++i)
@@ -536,7 +535,7 @@ function makeFavorites(userRoot)
 
     t.content(tag("hr"));
 
-    return t.html();
+    return t;
 }
 
 function makeShares(userHome, shares)
@@ -564,7 +563,7 @@ function makeShares(userHome, shares)
     
     t.content(tag("hr"));
 
-    return t.html();
+    return t;
 }
 
 function isFavorite(uri, userRoot)
@@ -619,72 +618,162 @@ function makeMoreMenu(viewMode, sortMode, permissions)
         break;
     }
 
-    var out = "";
-    out += "<div id='more-menu' class='sh-menu' onclick='sh.menu_close();'>";
+    var tag = modHtml.tag;
+    var t = tag("div").id("more-menu").class("sh-menu")
+            .on("click", "sh.menu_close();")
+            .content(
+                tag("div")
+                .on("click", "event.stopPropagation();")
+            );
 
-    out += "  <div onclick='event.stopPropagation();'>";
     if (permissions.mayModify())
     {
-        out += "    <h1 class='sh-submenu' onclick='sh.toggle_submenu(this);'>View</h1>" +
-               "    <ul>" +
-               "      <li id='mi-listview' onclick='changeSettings(\"view\", \"list\");'>As List</li>" +
-               "      <li id='mi-gridview' onclick='changeSettings(\"view\", \"grid\");'>As Grid</li>" +
-               "      <li id='mi-sort-by-name' onclick='changeSettings(\"sort\", \"name\", \"name-desc\");'>By Name" + sortByNameExt + "</li>" +
-               "      <li id='mi-sort-by-date' onclick='changeSettings(\"sort\", \"date\", \"date-desc\");'>By Date" + sortByDateExt + "</li>" +
-               "    </ul>";
+        t.child(0)
+        .content(
+            tag("h1").class("sh-submenu")
+            .on("click", "sh.toggle_submenu(this);")
+            .content("View")
+        )
+        .content(
+            tag("ul")
+            .content(
+                tag("li").id("mi-listview")
+                .on("click", "changeSettings(\"view\", \"list\");")
+                .content("As List")
+            )
+            .content(
+                tag("li").id("mi-gridview")
+                .on("click", "changeSettings(\"view\", \"grid\");")
+                .content("As Grid")
+            )
+            .content(
+                tag("li").id("mi-sort-by-name")
+                .on("click", "changeSettings(\"sort\", \"name\", \"name-desc\");")
+                .content("By Name" + sortByNameExt)
+            )
+            .content(
+                tag("li").id("mi-sort-by-date")
+                .on("click", "changeSettings(\"sort\", \"date\", \"date-desc\");")
+                .content("By Date" + sortByDateExt)
+            )
+        );
     }
 
     if (permissions.mayCreate())
     {
-        out += "    <h1 class='sh-submenu' onclick='sh.toggle_submenu(this);'>New</h1>" +
-               "    <ul>" +
-               "      <li id='mi-newdir' onclick='sh.menu_close(); showNewDirDialog();'>Directory</li>" +
-               "      <li id='mi-newfile' onclick='sh.menu_close(); showNewFileDialog();'>File</li>" +
-               "    </ul>";
+        t.child(0)
+        .content(
+            tag("h1").class("sh-submenu")
+            .on("click", "sh.toggle_submenu(this);")
+            .content("New")
+        )
+        .content(
+            tag("ul")
+            .content(
+                tag("li").id("mi-newdir")
+                .on("click", "sh.menu_close(); showNewDirDialog();")
+                .content("Directory")
+            )
+            .content(
+                tag("li").id("mi-newfile")
+                .on("click", "sh.menu_close(); showNewFileDialog();")
+                .content("File")
+            )
+        );
     }
 
     if (permissions.mayCreate())
     {
-        out += "    <h1 class='sh-submenu' onclick='sh.toggle_submenu(this);'>Clipboard</h1>" +
-               "    <ul>" +
-               "      <li id='mi-cut' onclick='sh.menu_close(); clearClipboard(function () { eachSelected(cutItem); });'>Cut</li>" +
-               "      <li id='mi-copy' onclick='sh.menu_close(); clearClipboard(function () { eachSelected(copyItem); });'>Copy</li>" +
-               "      <li id='mi-paste' onclick='sh.menu_close(); pasteItems();'>Paste</li>" +
-               "      <li id='mi-showclipboard' onclick='sh.menu_close(); sh.push(\"clipboard-page\");'>Show</li>" +
-               "    </ul>";
+        t.child(0)
+        .content(
+            tag("h1").class("sh-submenu")
+            .on("click", "sh.toggle_submenu(this);")
+            .content("Clipboard")
+        )
+        .content(
+            tag("ul")
+            .content(
+                tag("li").id("mi-cut")
+                .on("click", "sh.menu_close(); clearClipboard(function () { eachSelected(cutItem); });")
+                .content("Cut")
+            )
+            .content(
+                tag("li").id("mi-copy")
+                .on("click", "sh.menu_close(); clearClipboard(function () { eachSelected(copyItem); });")
+                .content("Copy")
+            )
+            .content(
+                tag("li").id("mi-paste")
+                .on("click", "sh.menu_close(); pasteItems();")
+                .content("Paste")
+            )
+            .content(
+                tag("li").id("mi-showclipboard")
+                .on("click", "sh.menu_close(); sh.push(\"clipboard-page\");")
+                .content("Show")
+            )
+        );
     }
 
-    out += "    <h1 class='sh-submenu' onclick='sh.toggle_submenu(this);'>Action</h1>" +
-           "    <ul>";
+    t.child(0)
+    .content(
+        tag("h1").class("sh-submenu")
+        .on("click", "sh.toggle_submenu(this);")
+        .content("Action")
+    );
+
+    var ul = tag("ul");
+    t.child(0).content(ul);
 
     if (permissions.mayCreate())
     {
-        out += "<li id='mi-upload' onclick='sh.menu_close(); $(\"#upload\").click();'>Upload</li>";
+        ul.content(
+            tag("li").id("mi-upload")
+            .on("click", "sh.menu_close(); $(\"#upload\").click();")
+            .content("Upload")
+        );
     }
 
-    out += "<li id='mi-download' onclick='sh.menu_close(); eachSelected(downloadItem);'>Download</li>";
+    ul.content(
+        tag("li").id("mi-download")
+        .on("click", "sh.menu_close(); eachSelected(downloadItem);")
+        .content("Download")
+    );
     
     if (permissions.mayModify())
     {
-        out += "<li id='mi-rename' onclick='sh.menu_close(); eachSelected(showNameDialog);'>Rename</li>";
+        ul.content(
+            tag("li").id("mi-rename")
+            .on("click", "sh.menu_close(); eachSelected(showNameDialog);")
+            .content("Rename")
+        );
     }
 
     if (permissions.mayDelete())
     {
-        out += "<li id='mi-delete' onclick='sh.menu_close(); removeSelected();'>Delete</li>";
+        ul.content(
+            tag("li").id("mi-delete")
+            .on("click", "sh.menu_close(); removeSelected();")
+            .content("Delete")
+        );
     }
-    
-    out += "    </ul>";
 
-    out += "    <ul>" +
-           "      <li id='mi-selectall' onclick='sh.menu_close(); selectAll();'>Select All</li>" +
-           "      <li id='mi-unselectall' onclick='sh.menu_close(); unselectAll();'>Unselect All</li>" +
-           "    </ul>";
+    t.child(0)
+    .content(
+        tag("ul")
+        .content(
+            tag("li").id("mi-selectall")
+            .on("click", "sh.menu_close(); selectAll();")
+            .content("Select All")
+        )
+        .content(
+            tag("li").id("mi-unselectall")
+            .on("click", "sh.menu_close(); unselectAll();")
+            .content("Unselect All")
+        )
+    );
 
-    out += "  </div>" +
-           "</div>";
-
-    return out;
+    return t;
 }
 
 function makeMessageDialog()
@@ -704,138 +793,234 @@ function makeMessageDialog()
 
 function makeQuestionDialog()
 {
-    var out = "<div id='question-dialog' class='sh-popup'>" +
+    var tag = modHtml.tag;
 
-              "  <div class='sh-dropshadow' style='background-color: var(--color-primary-background);'>" +
-              "    <header><h1 class='sh-left'></h1></header>" +
-              "    <section><p></p></section>" +
-              "    <footer>" +
-              "      <span class='sh-right'>" +
-              "        <a onclick='sh.popup_close(\"question-dialog\");'>Yes</a>" +
-              "        <a onclick='sh.popup_close(\"question-dialog\");'>No</a>" +
-              "      </span>" +
-              "    </footer>" +
-              "  </div>" +
+    var t = tag("div").id("question-dialog").class("sh-popup")
+            .content(
+                tag("div").class("sh-dropshadow")
+                .style("background-color", "var(--color-primary-background)")
+                .content(
+                    tag("header")
+                    .content(
+                        tag("h1").class("sh-left")
+                    )
+                )
+                .content(
+                    tag("section")
+                    .content(
+                        tag("p")
+                    )
+                )
+                .content(
+                    tag("footer")
+                    .content(
+                        tag("span").class("sh-right")
+                        .content(
+                            tag("a").on("click", "sh.popup_close(\"question-dialog\");").content("Yes")
+                        )
+                        .content(
+                            tag("a").on("click", "sh.popup_close(\"question-dialog\");").content("No")
+                        )
+                    )
+                )
+            );
 
-              "</div>";
-
-    return out;
+    return t;
 }
 
 function makeNewDirDialog()
 {
-    var out = "<div id='newdir-dialog' class='sh-popup'>" +
-    
-              "  <div class='sh-dropshadow' style='background-color: var(--color-primary-background);'>" +
-              "    <header><h1 class='sh-left'>New directory</h1></header>" +
+    var tag = modHtml.tag;
 
-              "    <section>" +
-              "      <form>" +
-              "        <label>Name:</label>" +
-              "        <input type='text'>" +
-              "      </form>" +
-              "    </section>" +
+    var t = tag("div").id("newdir-dialog").class("sh-popup")
+            .content(
+                tag("div").class("sh-dropshadow")
+                .style("background-color", "var(--color-primary-background)")
+                .content(
+                    tag("header")
+                    .content(
+                        tag("h1").class("sh-left").content("New Directory")
+                    )
+                )
+                .content(
+                    tag("section")
+                    .content(
+                        tag("form")
+                        .content(
+                            tag("label").content("Name")
+                        )
+                        .content(
+                            tag("input").attr("type", "text")
+                        )
+                    )
+                )
+                .content(
+                    tag("footer")
+                    .content(
+                        tag("span").class("sh-right")
+                        .content(
+                            tag("a").content("Create")
+                        )
+                        .content(
+                            tag("a").on("click", "sh.popup_close(\"newdir-dialog\");").content("Cancel")
+                        )
+                    )
+                )
+            );
 
-              "    <footer>" +
-              "      <span class='sh-right'>" +
-              "        <a>Create</a>" +
-              "        <a onclick='sh.popup_close(\"newdir-dialog\");'>Cancel</a>" +
-              "      </span>" +
-              "    </footer>" +
-
-              "  </div>" +
-
-              "</div>";
-
-    return out;
+    return t;
 }
 
 function makeNameDialog()
 {
-    var out = "<div id='name-dialog' class='sh-popup'>" +
-    
-              "  <div class='sh-dropshadow' style='background-color: var(--color-primary-background);'>" +
-              "    <header><h1 class='sh-left'>Enter name</h1></header>" +
+    var tag = modHtml.tag;
 
-              "    <section>" +
-              "      <form>" +
-              "        <label>Name:</label>" +
-              "        <input type='text'>" +
-              "      </form>" +
-              "    </section>" +
+    var t = tag("div").id("name-dialog").class("sh-popup")
+            .content(
+                tag("div").class("sh-dropshadow")
+                .style("background-color", "var(--color-primary-background)")
+                .content(
+                    tag("header")
+                    .content(
+                        tag("h1").class("sh-left").content("Enter Name")
+                    )
+                )
+                .content(
+                    tag("section")
+                    .content(
+                        tag("form")
+                        .content(
+                            tag("label").content("Name")
+                        )
+                        .content(
+                            tag("input").attr("type", "text")
+                        )
+                    )
+                )
+                .content(
+                    tag("footer")
+                    .content(
+                        tag("span").class("sh-right")
+                        .content(
+                            tag("a").content("Accept")
+                        )
+                        .content(
+                            tag("a").on("click", "sh.popup_close(\"name-dialog\");").content("Cancel")
+                        )
+                    )
+                )
+            );
 
-              "    <footer>" +
-              "      <span class='sh-right'>" +
-              "        <a>Accept</a>" +
-              "        <a onclick='sh.popup_close(\"name-dialog\");'>Cancel</a>" +
-              "      </span>" +
-              "    </footer>" +
-
-              "  </div>" +
-
-              "</div>";
-
-    return out;
+    return t;
 }
 
 function makeShareDialog()
 {
-    var out = "<div id='share-dialog' class='sh-popup'>" +
-    
-              "  <div class='sh-dropshadow' style='background-color: var(--color-primary-background);'>" +
-              "    <header><h1 class='sh-left'>Setup Share</h1></header>" +
+    var tag = modHtml.tag;
 
-              "    <section>" +
-              "      <form>" +
-              "        <label>Login:</label>" +
-              "        <input type='text'>" +
-              "        <br>" +
-              "        <label>Password:</label>" +
-              "        <input type='text'>" +
-              "      </form>" +
-              "    </section>" +
+    var t = tag("div").id("share-dialog").class("sh-popup")
+            .content(
+                tag("div").class("sh-dropshadow")
+                .style("background-color", "var(--color-primary-background)")
+                .content(
+                    tag("header")
+                    .content(
+                        tag("h1").class("sh-left").content("Setup Share")
+                    )
+                )
+                .content(
+                    tag("section")
+                    .content(
+                        tag("form")
+                        .content(
+                            tag("label").content("Login:")
+                        )
+                        .content(
+                            tag("input").attr("type", "text")
+                        )
+                        .content(tag("br"))
+                        .content(
+                            tag("label").content("Password:")
+                        )
+                        .content(
+                            tag("input").attr("type", "text")
+                        )
+                    )
+                )
+                .content(
+                    tag("footer")
+                    .content(
+                        tag("span").class("sh-right")
+                        .content(
+                            tag("a").content("Accept")
+                        )
+                        .content(
+                            tag("a").on("click", "sh.popup_close(\"share-dialog\");").content("Cancel")
+                        )
+                    )
+                )
+            );
 
-              "    <footer>" +
-              "      <span class='sh-right'>" +
-              "        <a>Accept</a>" +
-              "        <a onclick='sh.popup_close(\"share-dialog\");'>Cancel</a>" +
-              "      </span>" +
-              "    </footer>" +
-
-              "  </div>" +
-
-              "</div>";
-
-    return out;
+    return t;
 }
 
 function makeBusyPopup()
 {
-    var out = "<div id='busy-popup' class='sh-popup'>" +
+    var tag = modHtml.tag;
+    
+    var t = tag("div").id("busy-popup").class("sh-popup")
+            .content(
+                tag("div")
+                .style("color", "var(--color-primary)")
+                .style("text-align", "center")
+                .style("padding", "1em")
+                .content(
+                    tag("span").class("sh-busy-indicator")
+                    .style("font-size", "200%")
+                )
+                .content(tag("br"))
+                .content(tag("br"))
+                .content(
+                    tag("span").content("Loading")
+                )
+            );
 
-              "  <div style='color: var(--color-primary);" +
-              "              text-align: center;" +
-              "              padding: 1em;" +
-              "              '>" +
-              "    <span class='sh-busy-indicator' style='font-size: 200%;'></span><br><br>" +
-              "    <span>Loading</span>" +
-              "  </div>" +
-
-              "</div>";
-
-    return out;
+    return t;
 }
 
 function makeImagePopup()
 {
-    var out = "<div id='image-popup' class='sh-popup' style='background-color: rgba(0, 0, 0, 0.8);' onclick='sh.popup_close(\"image-popup\");'>" +
-              "  <div class='sh-dropshadow' style='position: relative; background-color: black; overflow: hidden;'>" +
-              "    <h1 class='sh-font-small' style='position: absolute; margin: 0; padding: 0; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; text-align: left; left: 0.25em; right: 0.25em; bottom: 0.25em; text-shadow: #000 0px 0px 1px; color: white;'></h1>" +
-              "    <img>" +
-              "  </div>" +
-              "</div>";
+    var tag = modHtml.tag;
 
-    return out;
+    var t = tag("div").id("image-popup").class("sh-popup")
+            .style("background-color", "rgba(0, 0, 0, 0.8)")
+            .on("click", "sh.popup_close(\"image-popup\");")
+            .content(
+                tag("div").class("sh-dropshadow")
+                .style("position", "relative")
+                .style("background-color", "black")
+                .style("overflow", "hidden")
+                .content(
+                    tag("h1").class("sh-font-small")
+                    .style("position", "absolute")
+                    .style("margin", "0")
+                    .style("padding", "0")
+                    .style("white-space", "nowrap")
+                    .style("text-overflow", "ellipsis")
+                    .style("overflow", "hidden")
+                    .style("text-align", "left")
+                    .style("left", "0.25em")
+                    .style("right", "0.25em")
+                    .style("bottom", "0.25em")
+                    .style("text-shadow", "#000 0px 0px 1px")
+                    .style("color", "white")
+                )
+                .content(
+                    tag("img")
+                )
+            );
+
+    return t;
 }
 
 function makeMainPage(viewMode, sortMode, prefix, contentRoot, userHome, uri, path, stats, permissions, shares)
@@ -846,126 +1031,212 @@ function makeMainPage(viewMode, sortMode, prefix, contentRoot, userHome, uri, pa
     // FIXME: URI relative to server root is required
     var isShare = shares.isShare(path);
 
-    var out = "<div id=\"main-page\" class=\"sh-page\">" +
+    var tag = modHtml.tag;
+    var t = tag("div").id("main-page").class("sh-page")
+            .content(
+                makeMoreMenu(viewMode, sortMode, permissions)
+            )
+            .content(
+                tag("div").id("breadcrumbs").class("sh-menu")
+                .on("click", "sh.menu_close();")
+                .content(
+                    tag("div")
+                )
+            );
 
-              makeMoreMenu(viewMode, sortMode, permissions) +
-
-              "  <div id=\"breadcrumbs\" class=\"sh-menu\" onclick=\"sh.menu_close();\">" +
-              "    <div>";
     if (permissions.mayModify())
     {
-        out += "<h1 class='sh-submenu' onclick='sh.toggle_submenu(this); event.stopPropagation();'>Favorites</h1>" +
-               "<ul>" +
-               (isFav ? "<li onclick='removeFavorite();'>Remove from Favorites</li>"
-                      : "<li onclick='addFavorite();'>Add to Favorites</li>") +
-               "  <hr/>";
-        out += makeFavorites(contentRoot + userHome);
-        out += "</ul>";
+        t.child(-1).child(-1)
+        .content(
+            tag("h1").class("sh-submenu")
+            .on("click", "sh.toggle_submenu(this); event.stopPropagation();")
+            .content("Favorites")
+        )
+        .content(
+            tag("ul")
+            .content(
+                isFav ? tag("li").on("click", "removeFavorite();").content("Remove from Favorites")
+                      : tag("li").on("click", "addFavorite();").content("Add to Favorites")
+            )
+            .content(
+                tag("hr")
+            )
+            .content(
+                makeFavorites(contentRoot + userHome)
+            )
+        );
     }
+
     if (permissions.mayShare())
     {
-        out += "<h1 class='sh-submenu' onclick='sh.toggle_submenu(this); event.stopPropagation();'>Public Shares</h1>" +
-               "<ul>" +
-               (isShare ? "<li onclick='unshare();'>Unshare This</li>"
-                        : "<li onclick='showShareDialog();'>Share This</li>") +
-               "  <hr/>";
-        out += makeShares(userHome, shares);
-        out += "</ul>";
+        t.child(-1).child(-1)
+        .content(
+            tag("h1").class("sh-submenu")
+            .on("click", "sh.toggle_submenu(this); event.stopPropagation();")
+            .content("Public Shares")
+        )
+        .content(
+            tag("ul")
+            .content(
+                isShare ? tag("li").on("click", "unshare();").content("Unshare This")
+                        : tag("li").on("click", "showShareDialog();").content("Share This")
+            )
+            .content(
+                tag("hr")
+            )
+            .content(
+                makeShares(userHome, shares)
+            )
+        );
     }
-    out += makeBreadcrumbs(uri) +
-              "    </div>" +
-              "  </div>" +
 
-              "  <header class=\"sh-dropshadow\">" +
-              (uri !== "/" ? "<span id='upButton' class='sh-left sh-fw-icon sh-icon-arrow-up' data-url='" + parentUri + "' onclick='loadDirectory(\"" + parentUri + "\");'></span>"
-                               : "") +
-              "    <h1 onclick='sh.menu(this, \"breadcrumbs\");'>" + 
-              (isShare ? "<span class='sh-fw-icon sh-icon-share'></span> " 
-                     : "" ) +
-              (isFav ? "<span class='sh-fw-icon sh-icon-star-circle'></span> " 
-                     : "" ) +
+    t.child(-1).child(-1)
+    .content(
+        makeBreadcrumbs(uri)
+    );
 
-              escapeHtml(decodeURI(uri)) +
-              "</h1>" +
-              "    <span class='sh-right sh-fw-icon sh-icon-menu' onclick='sh.menu(this, \"more-menu\");'></span>" +
-              "  </header>" +
+    t.content(
+        tag("header").class("sh-dropshadow")
+        .content(
+            uri !== "/" ? tag("span").id("upButton").class("sh-left sh-fw-icon sh-icon-arrow-up")
+                          .data("url", parentUri)
+                          .on("click", "loadDirectory(\"" + parentUri + "\");")
+                        : ""
+        )
+        .content(
+            tag("h1")
+            .on("click", "sh.menu(this, \"breadcrumbs\");")
+            .content(
+                isShare ? tag("span").class("sh-fw-icon sh-icon-share")
+                        : ""
+            )
+            .content(
+                isFav ? tag("span").class("sh-fw-icon sh-icon-star-circle")
+                      : ""
+            )
+            .content(
+                escapeHtml(decodeURI(uri))
+            )
+        )
+        .content(
+            tag("span").class("sh-right sh-fw-icon sh-icon-menu")
+            .on("click", "sh.menu(this, \"more-menu\");")
+        )
+    )
+    .content(
+        tag("section").id("filesbox")
+        .data("prefix", prefix)
+        .data("url", uri)
+        .content(
+            viewMode === "list" ? makeFiles(uri, stats, true)
+                                : makeFilesGrid(sortMode, uri, stats, true)
+        )
+    )
+    .content(
+        tag("footer").class("sh-dropshadow")
+    );
 
-              "  <section id=\"filesbox\" data-prefix=\"" + prefix + "\" data-url=\"" + uri + "\">" +
-              (viewMode === "list" ? makeFiles(uri, stats, true) : makeFilesGrid(sortMode, uri, stats, true)) +
-              "  </section>" +
-
-              "  <footer class=\"sh-dropshadow\">" +
-              "  </footer>" +
-
-              "</div>";
-
-    return out;
+    return t;
 }
 
 function makeClipboardPage(clipboardStats)
 {
-    var out = "<div id=\"clipboard-page\" class=\"sh-page\">" +
+    var tag = modHtml.tag;
 
-              "  <header>" +
-              "    <span class=\"sh-left sh-fw-icon sh-icon-back\" onclick=\"sh.pop();\"></span>" +
-              "    <h1>Clipboard</h1>" +
-              "  </header>" +
+    var t = tag("div").id("clipboard-page").class("sh-page")
+            .content(
+                tag("header")
+                .content(
+                    tag("span").class("sh-left sh-fw-icon sh-icon-back")
+                    .on("click", "sh.pop();")
+                )
+                .content(
+                    tag("h1").content("Clipboard")
+                )
+            )
+            .content(
+                tag("section").id("clipboard")
+                .content(
+                    makeFiles("", clipboardStats, false)
+                )
+            );
 
-              "  <section id=\"clipboard\">" +
-              makeFiles("", clipboardStats, false) +
-              "  </section>" +
-
-              "</div>";
-
-    return out;
+    return t;
 }
 
 function makeViewerPage()
 {
-    var out = "<div id='viewer-page' class='sh-page'>" +
+    var tag = modHtml.tag;
 
-              "  <header>" +
-              "    <span class='sh-left sh-fw-icon sh-icon-back' onclick='sh.pop();'></span>" +
-              "    <h1>Viewer</h1>" +
-              "  </header>" +
+    var t = tag("div").id("viewer-page").class("sh-page")
+            .content(
+                tag("header")
+                .content(
+                    tag("span").class("sh-left sh-fw-icon sh-icon-back")
+                    .on("click", "sh.pop();")
+                )
+                .content(
+                    tag("h1").content("Viewer")
+                )
+            )
+            .content(
+                tag("section")
+            );
 
-              "  <section>" +
-              "  </section>" +
-
-              "</div>";
-
-    return out;
+    return t;
 }
 
 function makeHtml(viewMode, sortMode, prefix, contentRoot, userHome, uri, path, stats, clipboardStats, permissions, shares)
 {
-    var out = "<!DOCTYPE html>" +
+    var tag = modHtml.tag;
+    var t = tag("html")
+            .content(
+                makeHtmlHead()
+            )
+            .content(
+                tag("body").class("sh-theme-default")
+                .content(
+                    tag("input").id("upload").attr("type", "file").attr("multiple", "").style("display", "none")
+                )
+                .content(
+                    tag("a").id("download").data("ajax", "false").attr("href", "#").attr("download", "name").style("display", "none")
+                )
+                .content(
+                    tag("audio").id("audio").style("display", "none")
+                )
+                .content(
+                    makeMainPage(viewMode, sortMode, prefix, contentRoot, userHome, uri, path, stats, permissions, shares)
+                )
+                .content(
+                    makeNewDirDialog()
+                )
+                .content(
+                    makeNameDialog()
+                )
+                .content(
+                    makeShareDialog()
+                )
+                .content(
+                    makeMessageDialog()
+                )
+                .content(
+                    makeQuestionDialog()
+                )
+                .content(
+                    makeBusyPopup()
+                )
+                .content(
+                    makeImagePopup()
+                )
+                .content(
+                    makeViewerPage()
+                )
+                .content(
+                    makeClipboardPage(clipboardStats)
+                )
+            );
 
-              "<html>" +
-              makeHtmlHead() +
-              "<body class='sh-theme-default'>" +
-
-              "<input id='upload' type='file' multiple style='display: none;'/>" +
-              "<a id='download' data-ajax='false' href='#' download='name' style='display: none;'></a>" +
-              "<audio id='audio' style='display: none;'></audio>" +
-
-              makeMainPage(viewMode, sortMode, prefix, contentRoot, userHome, uri, path, stats, permissions, shares) +
-              makeNewDirDialog() +
-              makeNameDialog() +
-              makeShareDialog() +
-              makeMessageDialog() +
-              makeQuestionDialog() +
-              
-              makeBusyPopup() +
-              makeImagePopup() +
-
-              makeViewerPage() +
-              makeClipboardPage(clipboardStats) +
-
-              "</body>" +
-              "</html>";
-
-    return out;
+    return t;
 }
 
 function createMainPage(prefix, uri, contentRoot, userHome, permissions, shares, callback)
@@ -984,7 +1255,7 @@ function createMainPage(prefix, uri, contentRoot, userHome, permissions, shares,
 
     readStats(sortMode, fullPath, function (stats)
     {
-        var html = makeMainPage(viewMode, sortMode, prefix, contentRoot, userHome, uri, userPath, stats, permissions, shares);
+        var html = makeMainPage(viewMode, sortMode, prefix, contentRoot, userHome, uri, userPath, stats, permissions, shares).html();
         callback(true, html);
     });
 }
@@ -1010,7 +1281,7 @@ function makeIndex(prefix, uri, contentRoot, userHome, permissions, shares, call
         {
             readStats(sortMode, modPath.join(contentRoot + userHome, ".pilvini", "clipboard"), function (clipboardStats)
             {
-                var html = makeHtml(viewMode, sortMode, prefix, contentRoot, userHome, uri, userPath, stats, clipboardStats, permissions, shares);
+                var html = "<!DOCTYPE html>\n" + makeHtml(viewMode, sortMode, prefix, contentRoot, userHome, uri, userPath, stats, clipboardStats, permissions, shares).html();
                 callback(true, html);
             });
         });

@@ -5,7 +5,8 @@ const NON_CLOSE_TAGS = [
     "meta",
     "br",
     "hr",
-    "img"
+    "img",
+    "input"
 ];
 
 function escapeHtml(text)
@@ -78,6 +79,18 @@ function Tag(t)
             m_content.push(c);
         }
         return that;
+    };
+
+    this.child = function (n)
+    {
+        if (n >= 0)
+        {
+            return m_content[n];
+        }
+        else
+        {
+            return m_content[m_content.length + n];
+        }
     };
 
     this.html = function ()
