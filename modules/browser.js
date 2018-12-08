@@ -275,7 +275,7 @@ function makeFiles(uri, stats, active)
                         tag("div")
                         .style("position", "absolute")
                         .style("left", "80px")
-                        .style("right", "42px>")
+                        .style("right", "42px")
                         .style("top", "1em")
                         .style("padding-left", "0.5em")
                         .content(
