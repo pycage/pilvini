@@ -15,18 +15,17 @@ function Shares(contentRoot)
     var m_shares = [];
 
     var m_sharesFile = modPath.join(contentRoot, ".pilvini", "shares.json");
-    if (! modFs.existsSync(m_sharesFile))
+    if (modFs.existsSync(m_sharesFile))
     {
-        return;
-    }
-    try
-    {
-        m_shares = JSON.parse(modFs.readFileSync(m_sharesFile, "utf8"));
-    }
-    catch (err)
-    {
-        console.error("Failed to read shares: " + err);
-        return;
+        try
+        {
+            m_shares = JSON.parse(modFs.readFileSync(m_sharesFile, "utf8"));
+        }
+        catch (err)
+        {
+            console.error("Failed to read shares: " + err);
+            return;
+        }
     }
 
     /* Returns if the given path is covered by at least one share.
