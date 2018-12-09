@@ -7,8 +7,7 @@
 > **pilvini** my cloud
 
 *pilvini* is a cloud drive service implementing the WebDAV protoctol running on
-Node.js. But this is not all: *pilvini* also features a fancy HTML5 web
-interface in case you cannot or want not use a WebDAV client.
+Node.js. But this is not all: *pilvini* also features a fancy HTML5 web interface in case you cannot or want not use a WebDAV client.
 
 The purpose of *pilvini* is to make your home filesystem accessible to you worldwide
 in a secure way, SSL-encrypted and guarded by authorization.
@@ -49,20 +48,20 @@ text editor:
      For SSL, you will also have to supply a server certificate.
    * `ssl_certificate` The path to the SSL server certificate if SSL is enabled.
    * `ssl_key` The path to the SSL server private key if SSL is enabled.
-   * `root` The root path served by *pilvini*. Files outside this path cannot be accessed by users.
+   * `root` The root path served by *pilvini*. Files outside this path cannot be accessed by any user.
 
  * `authentication` This is the authentication configuration section.
    * `method` The HTTP authentication method to use. Either `basic` or `digest`.
    * `realm` The name of the HTTP authentication realm.
 
- * `users` This is the users configuration section. You can add as much users
+ * `users` This is the users configuration section. You can add as many users
    as you like.
    * `name` The login name of the user.
    * `password_hash` A MD5 hash of the user's login name, realm, and password.
      You can obtain one easily with `echo -n "<user>:<realm>:<password>" | md5`,
      or use an online MD5 hash generator, such as
      [http://www.adamek.biz/md5-generator.php].
-   * `home` This is the path that *pilvini* confines the user to. This path is relative to the `root` path configured for the server. 
+   * `home` This is the path that *pilvini* confines the user to. This path is relative to the `root` path configured for the server.
 
  * `global` This is the section for global settings.
    * `debug` Set this value to true to enable verbose debug logging.
@@ -93,8 +92,7 @@ Listening....      | Port 7443 (SSL)
 After the *pilvini* server is started, you can use a WebDAV client to connect
 to the port you configured and login as the user you configured.
 
-To use the HTML5 shell, open the `/::shell/` document in a web browser
-that supports HTML5.
+To use the HTML5 shell, open the `/::shell/` document in a web browser supporting HTML5 (which is pretty much any recent browser).
 ```
 https://<address>:<port>/::shell/
 ```
@@ -117,3 +115,111 @@ remote shares, it is in practise very picky.
  * For every request, it has to be reminded to send the authentication header.
    As a consequence of this it sends every request twice. First unauthorized,
    then authorized.
+
+## The Shell
+
+![](apple-touch-icon.png)
+
+The shell is *pilvini*'s snappy HTML5 web interface. Open the `/::shell/` document in a web browser and login with a user name and password.
+```
+https://<address>:<port>/::shell/
+```
+
+### Navigation
+
+Click on a directory item to enter that directory. Click on a file to open it. Some file types (e.g. images) are opened directly without leaving the shell. The other types are opened by the browser's default handler.
+
+#### Back Button and Touch Gesture
+
+If you can go up to the parent directory, a back button appears at the left of the top bar. Click to go to the parent directory.
+
+On a touch screen you can also swipe the page to the right to go to the parent directoy.
+
+#### Path Menu
+
+Click on the path name in the top bar to open the path menu.
+
+There you will find a list of breadcrumbs to quickly jump to any parent directory of the current path.
+
+Click on the **Favorites** sub menu and select **Add to Favorites** to add the current directory to your list of favorites in this sub menu.
+
+To remove an entry from the favorites list, select **Remove from Favorites**.
+
+Directories in the favorite list are marked by a star symbol in the top bar.
+
+Click on the **Shares Places** sub menu and select **Share This** to make the current directory quickly available to other people in read-only mode.
+
+When sharing a directory, you will be asked for a login name and a password. People can the access the share by logging into the shell via these credentials.
+```
+https://<address>:<port>/::shell/
+```
+
+Select **Unshare This** to close the share.
+
+Directories that are shared are marked by a folder symbol in the top bar.
+
+
+### Actions
+
+There is a menu button at the right of the top bar. Click on it to open the actions menu.
+
+Some actions require you to select one or more files before. Click on the right edge checkmark of a file to select. Click again to unselect it. You can also choose **Select All** or **Unselect All** from the actions menu to select or unselect all items at once.
+
+#### View Sub Menu
+
+This sub menu provides options for changing the view mode (list view ord grid view) and the sort order (by name or by date) of the items.
+
+#### New Sub Menu
+
+This sub menu lets you create new directories or empty files in the current directory.
+
+#### Clipboard Sub Menu
+
+The clipboard is used for cutting, copying, and pasting files and directories.
+
+To move a file from one directory to another, first select the file and choose the **Cut** option. Then navigate to the directory where you want to move the file to and choose the **Paste** option.
+
+Choosing **Copy** instead of **Cut** creates a copy of the file instead of moving it.
+
+Select the **Show** option to show the current content of the clipboard. The contents of the clipboard are remembered between sessions. You can even cut files on one device and continue pasting them on another device.
+
+The clipboard's contents are replaced whenever you cut or copy files, and cleared when you paste.
+
+#### Action Sub Menu
+
+This sub menu provides file actions.
+
+* **Upload** Upload a local file.
+* **Download** Download the selected files or directories. Directories are downloaded as ZIP archives.
+* **Rename** Rename the currently selected file or directory.
+* **Delete** Delete the currently selected files or directories.
+
+## Viewers
+
+The shell supports a few file types to be viewed directly in the shell. Some file types can even be edited.
+
+### Images
+
+Clicking on an image file will open the image in a popup. Tap on the popup to dismiss it.
+
+Use the left and right arrow keys on your keyboard or swipe the image to the left or right on a touch screen in order to browse through all images in the current directory.
+
+### Text and Markdown-formatted Text
+
+Text files (\*.txt) and Markdown files (\*.md) have an edit button in the viewer in the right of the top bar. Click on this button to switch between view mode and edit mode. Changes made in edit mode are saved automatically when switching back to the view mode or when leaving the viewer.
+
+### PDF Documents
+
+PDF documents are opened in a PDF viewer.
+
+### VCard Documents
+
+VCard documents containing contacts cards are opened in a VCard viewer. Editing is not supported yet.
+
+### Music Files
+
+When opening a music file, a music player will appear at the bottom of the shell page. Switching to other directories does not stop the music.
+
+While the music player is active, click on other music files to put them in the playing queue.
+
+The music player can be closed anytime by pressing the close button on the right.

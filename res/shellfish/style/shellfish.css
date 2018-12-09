@@ -57,6 +57,10 @@ form {
     padding-bottom: 0.5rem;
 }
 
+label {
+    font-weight: bold;
+}
+
 header {
     height: 2rem;
     line-height: 2rem;

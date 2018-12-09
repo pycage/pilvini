@@ -778,17 +778,36 @@ function makeMoreMenu(viewMode, sortMode, permissions)
 
 function makeMessageDialog()
 {
-    var out = "<div id='message-dialog' class='sh-popup'>" +
+    var tag = modHtml.tag;
 
-              "  <div class='sh-dropshadow' style='background-color: var(--color-primary-background);'>" +
-              "    <header><h1 class='sh-left'></h1></header>" +
-              "    <section><p></p></section>" +
-              "    <footer><span class='sh-right'><a onclick='sh.popup_close(\"message-dialog\");'>OK</a></span></footer>" +
-              "  </div>" +
+    var t = tag("div").id("message-dialog").class("sh-popup")
+            .content(
+                tag("div").class("sh-dropshadow")
+                .style("background-color", "var(--color-primary-background)")
+                .content(
+                    tag("header")
+                    .content(
+                        tag("h1").class("sh-left")
+                    )
+                )
+                .content(
+                    tag("section")
+                    .content(
+                        tag("p")
+                    )
+                )
+                .content(
+                    tag("footer")
+                    .content(
+                        tag("span").class("sh-right")
+                        .content(
+                            tag("a").on("click", "sh.popup_close(\"message-dialog\");").content("OK")
+                        )
+                    )
+                )
+            );
 
-              "</div>";
-
-    return out;
+    return t;
 }
 
 function makeQuestionDialog()
@@ -847,7 +866,7 @@ function makeNewDirDialog()
                     .content(
                         tag("form")
                         .content(
-                            tag("label").content("Name")
+                            tag("label").content("Name:")
                         )
                         .content(
                             tag("input").attr("type", "text")
@@ -890,7 +909,7 @@ function makeNameDialog()
                     .content(
                         tag("form")
                         .content(
-                            tag("label").content("Name")
+                            tag("label").content("Name:")
                         )
                         .content(
                             tag("input").attr("type", "text")
@@ -934,6 +953,8 @@ function makeShareDialog()
                         tag("form")
                         .content(
                             tag("label").content("Login:")
+                            .style("display", "inline-block")
+                            .style("width", "6em")
                         )
                         .content(
                             tag("input").attr("type", "text")
@@ -941,6 +962,8 @@ function makeShareDialog()
                         .content(tag("br"))
                         .content(
                             tag("label").content("Password:")
+                            .style("display", "inline-block")
+                            .style("width", "6em")
                         )
                         .content(
                             tag("input").attr("type", "text")
@@ -1028,7 +1051,6 @@ function makeMainPage(viewMode, sortMode, prefix, contentRoot, userHome, uri, pa
     var parentUri = modPath.dirname(uri);
     var isFav = permissions.mayModify() ? isFavorite(uri, contentRoot + userHome)
                                         : false;
-    // FIXME: URI relative to server root is required
     var isShare = shares.isShare(path);
 
     var tag = modHtml.tag;
@@ -1073,7 +1095,7 @@ function makeMainPage(viewMode, sortMode, prefix, contentRoot, userHome, uri, pa
         .content(
             tag("h1").class("sh-submenu")
             .on("click", "sh.toggle_submenu(this); event.stopPropagation();")
-            .content("Public Shares")
+            .content("Shared Places")
         )
         .content(
             tag("ul")
