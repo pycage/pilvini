@@ -75,8 +75,9 @@ function viewMarkdown(href)
 
     page.find("section").append("<textarea>");
     var editBox = page.find("section textarea");
-    editBox.css("display", "none");
-    editBox.css("width", "100%")
+    editBox.css("display", "none")
+           .css("width", "100%")
+           .css("padding", "1em")
            .css("height", ($(window).height() * 0.8) + "px");
 
     sh.push(page);
