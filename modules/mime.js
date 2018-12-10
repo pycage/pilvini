@@ -4,11 +4,16 @@ const EXTENSIONS = {
     ".apk":   "application/java-archive",
     ".avi":   "video/x-msvideo",
     ".bat":   "application/x-batch",
+    ".c":     "text/plain",
+    ".cc":    "text/plain",
+    ".cpp":   "text/plain",
     ".css":   "text/css",
     ".exe":   "application/x-executable",
     ".flv":   "video/x-flv",
     ".gif":   "image/gif",
     ".gz":    "application/x-gzip",
+    ".h":     "text/plain",
+    ".hpp":   "text/plain",
     ".htm":   "text/html",
     ".html":  "text/html",
     ".ini":   "text/plain",
@@ -16,6 +21,7 @@ const EXTENSIONS = {
     ".jar":   "application/java-archive",
     ".jpeg":  "image/jpeg",
     ".jpg":   "image/jpeg",
+    ".json":  "application/x-json",
     ".m4v":   "video/mp4",
     ".md":    "text/x-markdown",
     ".mp3":   "audio/mp3",
@@ -30,6 +36,7 @@ const EXTENSIONS = {
     ".svg":   "image/svg+xml",
     ".txt":   "text/plain",
     ".vcf":   "text/vcard",
+    ".xml":   "text/xml",
     ".zip":   "application/zip"
 };
 
