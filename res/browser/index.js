@@ -503,12 +503,11 @@ function pasteItems()
 function downloadItem(item)
 {
     var mimeType = $(item).data("mimetype");
-    // TODO: use data-url
+    var targetUri = $(item).data("url");
     var name = unescapeHtml($(item).find("h1").html());
-    var target = encodeURIComponent(name);
 
     var downloader = $("#download");
-    downloader.attr("href", target);
+    downloader.attr("href", targetUri);
     downloader.attr("download", mimeType === "application/x-folder" ? name + ".zip"
                                                                     : name);
     if (downloader.get(0).click)
