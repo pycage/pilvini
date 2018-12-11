@@ -616,7 +616,9 @@ function uploadFiles(files)
     for (i = 0; i < files.length; ++i)
     {
         var file = files[i];
-        var targetUri = currentUri() + "/" + encodeURIComponent(file.name);
+        var targetUri = currentUri() +
+                        (currentUri() !== "/" ? "/" : "") +
+                        encodeURIComponent(file.name);
 
         upload(file, targetUri, function ()
         {
