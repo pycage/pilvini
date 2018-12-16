@@ -599,7 +599,7 @@ function isFavorite(uri, userRoot)
     return doc.find(function (a) { return a.href === uri; }) !== undefined;
 }
 
-function makeMoreMenu(viewMode, sortMode, permissions)
+function makeMoreMenu(viewMode, sortMode, userContext)
 {
     var sortByNameExt = "";
     var sortByDateExt = "";
@@ -628,7 +628,7 @@ function makeMoreMenu(viewMode, sortMode, permissions)
                 .on("click", "event.stopPropagation();")
             );
 
-    if (permissions.mayModify())
+    if (userContext.mayModify())
     {
         t.child(0)
         .content(
@@ -661,7 +661,7 @@ function makeMoreMenu(viewMode, sortMode, permissions)
         );
     }
 
-    if (permissions.mayCreate())
+    if (userContext.mayCreate())
     {
         t.child(0)
         .content(
@@ -684,7 +684,7 @@ function makeMoreMenu(viewMode, sortMode, permissions)
         );
     }
 
-    if (permissions.mayCreate())
+    if (userContext.mayCreate())
     {
         t.child(0)
         .content(
@@ -727,7 +727,7 @@ function makeMoreMenu(viewMode, sortMode, permissions)
     var ul = tag("ul");
     t.child(0).content(ul);
 
-    if (permissions.mayCreate())
+    if (userContext.mayCreate())
     {
         ul.content(
             tag("li").id("mi-upload")
@@ -742,7 +742,7 @@ function makeMoreMenu(viewMode, sortMode, permissions)
         .content("Download")
     );
     
-    if (permissions.mayModify())
+    if (userContext.mayModify())
     {
         ul.content(
             tag("li").id("mi-rename")
@@ -751,7 +751,7 @@ function makeMoreMenu(viewMode, sortMode, permissions)
         );
     }
 
-    if (permissions.mayDelete())
+    if (userContext.mayDelete())
     {
         ul.content(
             tag("li").id("mi-delete")
@@ -1048,17 +1048,17 @@ function makeImagePopup()
     return t;
 }
 
-function makeMainPage(viewMode, sortMode, prefix, contentRoot, userHome, uri, path, stats, permissions, shares)
+function makeMainPage(viewMode, sortMode, prefix, contentRoot, uri, path, stats, userContext, shares)
 {
     var parentUri = modPath.dirname(uri);
-    var isFav = permissions.mayModify() ? isFavorite(uri, contentRoot + userHome)
+    var isFav = userContext.mayModify() ? isFavorite(uri, contentRoot + userContext.home())
                                         : false;
     var isShare = shares.isShare(path);
 
     var tag = modHtml.tag;
     var t = tag("div").id("main-page").class("sh-page")
             .content(
-                makeMoreMenu(viewMode, sortMode, permissions)
+                makeMoreMenu(viewMode, sortMode, userContext)
             )
             .content(
                 tag("div").id("breadcrumbs").class("sh-menu")
@@ -1068,7 +1068,7 @@ function makeMainPage(viewMode, sortMode, prefix, contentRoot, userHome, uri, pa
                 )
             );
 
-    if (permissions.mayModify())
+    if (userContext.mayModify())
     {
         t.child(-1).child(-1)
         .content(
@@ -1086,12 +1086,12 @@ function makeMainPage(viewMode, sortMode, prefix, contentRoot, userHome, uri, pa
                 tag("hr")
             )
             .content(
-                makeFavorites(contentRoot + userHome)
+                makeFavorites(contentRoot + userContext.home())
             )
         );
     }
 
-    if (permissions.mayShare())
+    if (userContext.mayShare())
     {
         t.child(-1).child(-1)
         .content(
@@ -1109,7 +1109,7 @@ function makeMainPage(viewMode, sortMode, prefix, contentRoot, userHome, uri, pa
                 tag("hr")
             )
             .content(
-                makeShares(userHome, shares)
+                makeShares(userContext.home(), shares)
             )
         );
     }
@@ -1210,7 +1210,7 @@ function makeViewerPage()
     return t;
 }
 
-function makeHtml(viewMode, sortMode, prefix, contentRoot, userHome, uri, path, stats, clipboardStats, permissions, shares)
+function makeHtml(viewMode, sortMode, prefix, contentRoot, uri, path, stats, clipboardStats, userContext, shares)
 {
     var tag = modHtml.tag;
     var t = tag("html")
@@ -1229,7 +1229,7 @@ function makeHtml(viewMode, sortMode, prefix, contentRoot, userHome, uri, path, 
                     tag("audio").id("audio").style("display", "none")
                 )
                 .content(
-                    makeMainPage(viewMode, sortMode, prefix, contentRoot, userHome, uri, path, stats, permissions, shares)
+                    makeMainPage(viewMode, sortMode, prefix, contentRoot, uri, path, stats, userContext, shares)
                 )
                 .content(
                     makeNewDirDialog()
@@ -1263,12 +1263,12 @@ function makeHtml(viewMode, sortMode, prefix, contentRoot, userHome, uri, path, 
     return t;
 }
 
-function createMainPage(prefix, uri, contentRoot, userHome, permissions, shares, callback)
+function createMainPage(prefix, uri, contentRoot, userContext, shares, callback)
 {
-    var fullPath = modUtils.uriToPath(uri, contentRoot + userHome);
-    var userPath = modUtils.uriToPath(uri, userHome);
+    var fullPath = modUtils.uriToPath(uri, contentRoot + userContext.home());
+    var userPath = modUtils.uriToPath(uri, userContext.home());
 
-    var settings = readSettings(contentRoot + userHome);
+    var settings = readSettings(contentRoot + userContext.home());
     console.debug("Settings: " + JSON.stringify(settings));
     var viewMode = settings.view || "list";
     var sortMode = settings.sort || "name";
@@ -1279,18 +1279,18 @@ function createMainPage(prefix, uri, contentRoot, userHome, permissions, shares,
 
     readStats(sortMode, fullPath, function (stats)
     {
-        var html = makeMainPage(viewMode, sortMode, prefix, contentRoot, userHome, uri, userPath, stats, permissions, shares).html();
+        var html = makeMainPage(viewMode, sortMode, prefix, contentRoot, uri, userPath, stats, userContext, shares).html();
         callback(true, html);
     });
 }
 exports.createMainPage = createMainPage;
 
-function makeIndex(prefix, uri, contentRoot, userHome, permissions, shares, callback)
+function makeIndex(prefix, uri, contentRoot, userContext, shares, callback)
 {
-    var fullPath = modUtils.uriToPath(uri, contentRoot + userHome);
-    var userPath = modUtils.uriToPath(uri, userHome);
+    var fullPath = modUtils.uriToPath(uri, contentRoot + userContext.home());
+    var userPath = modUtils.uriToPath(uri, userContext.home());
 
-    var settings = readSettings(contentRoot + userHome);
+    var settings = readSettings(contentRoot + userContext.home());
     console.debug("Settings: " + JSON.stringify(settings));
     var viewMode = settings.view || "list";
     var sortMode = settings.sort || "name";
@@ -1299,13 +1299,13 @@ function makeIndex(prefix, uri, contentRoot, userHome, permissions, shares, call
                   "View Mode: " + viewMode + "\n" +
                   "Sort Mode: " + sortMode);
 
-    prepareClipboard(contentRoot + userHome, function ()
+    prepareClipboard(contentRoot + userContext.home(), function ()
     {
         readStats(sortMode, fullPath, function (stats)
         {
-            readStats(sortMode, modPath.join(contentRoot + userHome, ".pilvini", "clipboard"), function (clipboardStats)
+            readStats(sortMode, modPath.join(contentRoot + userContext.home(), ".pilvini", "clipboard"), function (clipboardStats)
             {
-                var html = "<!DOCTYPE html>\n" + makeHtml(viewMode, sortMode, prefix, contentRoot, userHome, uri, userPath, stats, clipboardStats, permissions, shares).html();
+                var html = "<!DOCTYPE html>\n" + makeHtml(viewMode, sortMode, prefix, contentRoot, uri, userPath, stats, clipboardStats, userContext, shares).html();
                 callback(true, html);
             });
         });

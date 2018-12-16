@@ -18,7 +18,7 @@ const modCrypto = require("crypto"),
       modMime = require("./modules/mime.js"),
       modShares = require("./modules/shares.js"),
       modThumbnail = attempt(function () { return require("./modules/thumbnail.js"); }),
-      modUserPermissions = require("./modules/userpermissions.js"),
+      modUserContext = require("./modules/usercontext.js"),
       modUtils = require("./modules/utils.js");
 
 const VERSION = "0.2.0rc";
@@ -226,10 +226,30 @@ function handleRequest(request, response)
         return;
     }
 
+    // get the user's home directory
+    var userHome = "";
+    shares.shares().forEach(function (shareId)
+    {
+        if (shareId === authUser)
+        {
+            userHome = shares.info(shareId).root;
+        }
+    });
+    if (userHome === "")
+    {
+        CONFIG.users.forEach(function (u)
+        {
+            if (u.name === authUser)
+            {
+                userHome = u.home;
+            }
+        });
+    }
+
     // get the user's particular access permissions
-    var permissions = shares.shares().indexOf(authUser) === -1
-        ? new modUserPermissions.UserPermissions(authUser)
-        : new modUserPermissions.UserPermissions(null);
+    var userContext = shares.shares().indexOf(authUser) === -1
+        ? new modUserContext.UserContext(authUser, userHome)
+        : new modUserContext.UserContext(null, userHome);
 
     // a logging version of response.writeHead
     response.request = request;
@@ -273,30 +293,12 @@ function handleRequest(request, response)
     } ());
 
 
-    // get the user's home directory
-    var userHome = "";
-    shares.shares().forEach(function (shareId)
-    {
-        if (shareId === authUser)
-        {
-            userHome = shares.info(shareId).root;
-        }
-    });
-    if (userHome === "")
-    {
-        CONFIG.users.forEach(function (u)
-        {
-            if (u.name === authUser)
-            {
-                userHome = u.home;
-            }
-        });
-    }
+
 
 
     var davSession = new modDav.DavSession(contentRoot + userHome);
 
-    if (request.method === "COPY" && permissions.mayCreate())
+    if (request.method === "COPY" && userContext.mayCreate())
     {
         var destinationUrlObj = modUrl.parse(request.headers.destination, true);
 
@@ -307,7 +309,7 @@ function handleRequest(request, response)
             response.end();
         });
     }
-    else if (request.method === "DELETE" && permissions.mayDelete())
+    else if (request.method === "DELETE" && userContext.mayDelete())
     {
     	davSession.del(urlObj.pathname, function(code, status)
         {
@@ -338,11 +340,11 @@ function handleRequest(request, response)
             if (urlObj.search.indexOf("ajax") !== -1)
             {
                 var uri = urlObj.pathname.substr(8);
-                modBrowser.createMainPage("/::shell", uri, contentRoot, userHome, permissions, shares, callback);
+                modBrowser.createMainPage("/::shell", uri, contentRoot, userContext, shares, callback);
             }
             else
             {
-                modBrowser.makeIndex("/::shell", "/", contentRoot, userHome, permissions, shares, callback);
+                modBrowser.makeIndex("/::shell", "/", contentRoot, userContext, shares, callback);
             }
             return;
         }
@@ -496,7 +498,7 @@ function handleRequest(request, response)
             response.end();
         });
     }
-    else if (request.method === "LOCK" && permissions.mayModify())
+    else if (request.method === "LOCK" && userContext.mayModify())
     {
         /*
         <?xml version="1.0" encoding="utf-8"?>
@@ -522,7 +524,7 @@ function handleRequest(request, response)
             });
         });
     }
-    else if (request.method === "MKCOL" && permissions.mayCreate())
+    else if (request.method === "MKCOL" && userContext.mayCreate())
     {
     	davSession.mkcol(urlObj.pathname, function(code, status)
         {
@@ -530,7 +532,7 @@ function handleRequest(request, response)
             response.end();
         });
     }
-    else if (request.method === "MOVE" && permissions.mayModify())
+    else if (request.method === "MOVE" && userContext.mayModify())
     {
         var destinationUrlObj = modUrl.parse(request.headers.destination, true);
 
@@ -600,7 +602,7 @@ function handleRequest(request, response)
             });
         });
     }
-    else if (request.method === "PUT" && permissions.mayModify())
+    else if (request.method === "PUT" && userContext.mayModify())
     {
         davSession.put(urlObj.pathname, request, function(code, status)
         {
