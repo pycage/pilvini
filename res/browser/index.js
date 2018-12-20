@@ -114,13 +114,18 @@ function loadNextThumbnail(forLocation, images)
     var now = Date.now();
 
     var settings = {
-        beforeSend: function (xhr) { xhr.overrideMimeType("text/plain; charset=x-user-defined"); }
+        beforeSend: function (xhr)
+        {
+             xhr.overrideMimeType("text/plain; charset=x-user-defined");
+             xhr.setRequestHeader("x-pilvini-width", 80);
+             xhr.setRequestHeader("x-pilvini-height", 80);
+        }
     };
 
     $.ajax(url, settings)
     .done(function (data, status, xhr)
     {
-        var contentType = "image/png"; //xhr.getResponseHeader("Content-Type");
+        var contentType = "image/jpeg"; //xhr.getResponseHeader("Content-Type");
         if (url.toLowerCase().endsWith(".svg"))
         {
             contentType = "image/svg+xml";

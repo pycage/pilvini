@@ -22,11 +22,14 @@ var Service = function (contentRoot)
         var href = urlObj.pathname.substr(12);
         var targetFile = modUtils.uriToPath(href, m_contentRoot + userContext.home());
 
+        var maxWidth = request.headers["x-pilvini-width"] || 10;
+        var maxHeight = request.headers["x-pilvini-height"] ||10;
+
         console.log("HREF: " + href + ", contentRoot: " + m_contentRoot + ", userHome: " + userContext.home());
         console.log("Thumbnail target file: " + targetFile);
 
         var hash = modCrypto.createHash("md5");
-        hash.update(targetFile);
+        hash.update(targetFile + "-" + maxWidth + "x" + maxHeight);
         var thumbFile = modPath.join(m_thumbDir, hash.digest("hex"));
 
         modFs.stat(targetFile, function (err, targetStats)
@@ -48,7 +51,7 @@ var Service = function (contentRoot)
                     // generate thumbnail
                     modUtils.mkdirs(m_thumbDir, function (err)
                     {
-                        modThumbnail.makeThumbnail(modMime.mimeType(targetFile), targetFile, thumbFile, function (err)
+                        modThumbnail.makeThumbnail(modMime.mimeType(targetFile), targetFile, thumbFile, maxWidth, maxHeight, function (err)
                         {
                             if (err)
                             {

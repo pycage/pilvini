@@ -2,17 +2,17 @@ const modFs = require("fs"),
       modLwip = require("lwip"),
       modId3Tags = require("./id3tags");
 
-exports.makeThumbnail = function (mimeType, file, thumbFile, callback)
+exports.makeThumbnail = function (mimeType, file, thumbFile, maxWidth, maxHeight, callback)
 {
     try
     {
         if (mimeType.startsWith("image/"))
         {
-            makeImageThumbnail(file, thumbFile, callback);
+            makeImageThumbnail(file, thumbFile, maxWidth, maxHeight, callback);
         }
         else if (mimeType.startsWith("audio/"))
         {
-            makeAudioThumbnail(file, thumbFile, callback);
+            makeAudioThumbnail(file, thumbFile, maxWidth, maxHeight, callback);
         }
         else
         {
@@ -25,7 +25,7 @@ exports.makeThumbnail = function (mimeType, file, thumbFile, callback)
     }
 };
 
-function makeAudioThumbnail(file, thumbFile, callback)
+function makeAudioThumbnail(file, thumbFile, maxWidth, maxHeight, callback)
 {
     var tagParser = new modId3Tags.Tags(file);
     tagParser.read(function (err)
@@ -55,7 +55,7 @@ function makeAudioThumbnail(file, thumbFile, callback)
             {
                 if (! err)
                 {
-                    var scale = Math.max(80 / image.width(), 80 / image.height());
+                    var scale = Math.max(maxWidth / image.width(), maxHeight / image.height());
 
                     var begin = Date.now();
                     image.batch().scale(scale).writeFile(thumbFile, imageType, function (err)
@@ -78,7 +78,7 @@ function makeAudioThumbnail(file, thumbFile, callback)
     });
 }
 
-function makeImageThumbnail(imageFile, thumbFile, callback)
+function makeImageThumbnail(imageFile, thumbFile, maxWidth, maxHeight, callback)
 {
     if (imageFile.toLowerCase().endsWith(".svg"))
     {
@@ -95,10 +95,10 @@ function makeImageThumbnail(imageFile, thumbFile, callback)
         {
             if (! err)
             {
-                var scale = Math.max(80 / image.width(), 80 / image.height());
+                var scale = Math.max(maxWidth / image.width(), maxHeight / image.height());
 
                 var begin = Date.now();
-                image.batch().scale(scale).writeFile(thumbFile, "png", function (err)
+                image.batch().scale(scale).writeFile(thumbFile, "jpg", function (err)
                 {
                     console.debug("Thumbnailing " + imageFile + " -> " + thumbFile +
                                   " took " + (Date.now() - begin) + " ms");

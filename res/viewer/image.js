@@ -23,7 +23,7 @@ function viewImage(href)
     function previousImage()
     {
         var img = $("#image-popup img");
-        var src = img.attr("src");
+        var src = img.data("src");
         var images = getImageFiles();
     
         var idx = images.indexOf(src);
@@ -43,7 +43,7 @@ function viewImage(href)
     function nextImage()
     {
         var img = $("#image-popup img");
-        var src = img.attr("src");
+        var src = img.data("src");
         var images = getImageFiles();
     
         console.log("src: " + src);
@@ -73,9 +73,7 @@ function viewImage(href)
     img.css("maxHeight", h + "px");
 
     img.off("load").one("load", function ()
-    {
-        sh.popup_close("busy-popup");
-        
+    {       
         if (popup.is(".sh-visible"))
         {
             img.parent().animate({
@@ -95,6 +93,8 @@ function viewImage(href)
             $("#image-popup").attr("tabindex", -1).focus();
         }
     });
+
+
     /*
     $("#image-popup-previous").off("click").one("click", previousImage);
     $("#image-popup-next").off("click").one("click", nextImage);
@@ -162,7 +162,6 @@ function viewImage(href)
     });
 
 
-
     $("#image-popup").off("sh-closed").on("sh-closed", function ()
     {
         $(this).off("keydown");
@@ -170,7 +169,41 @@ function viewImage(href)
 
     sh.popup("busy-popup");
     img.css("visibility", "hidden");
-    img.attr("src", href);
+    img.data("src", href);
+
+
+    var settings = {
+        beforeSend: function (xhr)
+        {
+             xhr.overrideMimeType("text/plain; charset=x-user-defined");
+             xhr.setRequestHeader("x-pilvini-width", w);
+             xhr.setRequestHeader("x-pilvini-height", h);
+        }
+    };
+
+    $.ajax("/::thumbnail" + href, settings)
+    .done(function (data, status, xhr)
+    {
+        var contentType = "image/jpeg"; //xhr.getResponseHeader("Content-Type");
+        if (href.toLowerCase().endsWith(".svg"))
+        {
+            contentType = "image/svg+xml";
+        }
+
+        var buffer = "";
+        for (var i = 0; i < data.length; ++i)
+        {
+            buffer += String.fromCharCode(data.charCodeAt(i) & 0xff);
+        }
+        var pic = "data:" + contentType + ";base64," + btoa(buffer);
+
+        img.attr("src", pic);
+    })
+    .always(function ()
+    {
+        sh.popup_close("busy-popup");
+    });
+
 
     var idx = href.lastIndexOf("/");
     var name;
