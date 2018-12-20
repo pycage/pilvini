@@ -1,15 +1,13 @@
 "use strict";
 
-const attempt = require("./modules/attempt.js").attempt;
-
-const modCrypto = require("crypto"),
-      modFs = require("fs"),
+const modFs = require("fs"),
       modHttp = require("http"),
       modHttps = require("https"),
       modPath = require("path"),
       modUrl = require("url"),
-      modZlib = require("zlib"),
-      modCookies = require("./modules/cookies"),
+      modZlib = require("zlib");
+
+const modCookies = require("./modules/cookies"),
       modHttpAuth = require("./modules/httpauth.js"),
       modBrowser = require("./modules/browser.js"),
       modDav = require("./modules/dav.js"),
@@ -17,9 +15,13 @@ const modCrypto = require("crypto"),
       modLockStore = require("./modules/lockstore.js"),
       modMime = require("./modules/mime.js"),
       modShares = require("./modules/shares.js"),
-      modThumbnail = attempt(function () { return require("./modules/thumbnail.js"); }),
       modUserContext = require("./modules/usercontext.js"),
       modUtils = require("./modules/utils.js");
+
+const svcRes = require("./modules/services/res-service.js"),
+      svcShell = require("./modules/services/res-shell.js"),
+      svcTags = require("./modules/services/tags-service.js"),
+      svcThumbnail = require("./modules/services/thumbnail-service.js");
 
 const VERSION = "0.2.0rc";
 
@@ -33,77 +35,9 @@ console.debug = function(msg)
     }
 };
 
-/* Limits the files in the given directory to a certain amount by removing
- * the oldest files.
- */
-function limitFiles(path, amount)
-{
-    modFs.readdir(path, function (err, files)
-    {
-        if (err)
-        {
-            return;
-        }
 
-        var result = [];
-        for (var i = 0; i < files.length; ++i)
-        {
-            var filePath = modPath.join(path, files[i]);
-            modFs.stat(filePath, function (file) { return function (err, stat)
-            {
-                result.push([file, stat]);
-                if (result.length === files.length)
-                {
-                    result.sort(function (a, b)
-                    {
-                        if (! a[1] || ! b[1])
-                        {
-                            return 0;
-                        }
-                        else if (a[1].mtime < b[1].mtime)
-                        {
-                            return -1;
-                        }
-                        else
-                        {
-                            return a[0].toLowerCase() < b[0].toLowerCase() ? -1 : 1;
-                        }
-                    });
 
-                    while (result.length > amount)
-                    {
-                        var path = result[0][0];
-                        console.debug("Clearing old thumbnail: " + path);
-                        result.shift();
-                        modFs.unlink(path, function (err) { });
-                    }
-                }
-            }; } (filePath));
-        }
-    });
-}
 
-/* Retrieves the given file via HTTP.
- */
-function getFile(response, path)
-{
-    modFs.readFile(path, function (err, data)
-    {
-        if (err)
-        {
-            response.writeHeadLogged(404, "Not found");
-            response.end();
-        }
-        else
-        {
-            response.setHeader("Content-Length", Buffer.byteLength(data, "utf-8"));
-            response.setHeader("Content-Type", modMime.mimeType(path));
-            response.writeHeadLogged(200, "OK");
-            response.write(data);
-            response.end();
-        }
-    });
-}
 
 /* Parses a HTTP range attribute and returns a [from, to] tuple.
  * Returns an empty tuple if the range could not be parsed.
@@ -321,128 +255,24 @@ function handleRequest(request, response)
     {
         if (urlObj.pathname.indexOf("/::shell/") === 0)
         {            
-            function callback (ok, data)
-            {
-                if (! ok)
-                {
-                    response.writeHeadLogged(404, "Not found");
-                    response.end();
-                }
-                else
-                {
-                    response.setHeader("Content-Length", Buffer.byteLength(data, "utf-8"));
-                    response.writeHeadLogged(200, "OK");
-                    response.write(data);
-                    response.end();
-                }
-            }
-            
-            if (urlObj.search.indexOf("ajax") !== -1)
-            {
-                var uri = urlObj.pathname.substr(8);
-                modBrowser.createMainPage("/::shell", uri, contentRoot, userContext, shares, callback);
-            }
-            else
-            {
-                modBrowser.makeIndex("/::shell", "/", contentRoot, userContext, shares, callback);
-            }
+            services["shell"].handleRequest(request, response, userContext, shares, function () { });
             return;
         }
         else if (urlObj.pathname.indexOf("/::tags/") === 0)
         {
-            var uri = urlObj.pathname.substr(7);
-            console.log("URI: " + uri);
-            var targetFile = modUtils.uriToPath(uri, contentRoot + userHome);
-            var tagParser = new modId3Tags.Tags(targetFile);
-
-            tagParser.read(function (err)
-            {
-                if (err)
-                {
-                    response.writeHeadLogged(404, "Not found");
-                    response.end();
-                }
-                else
-                {
-                    var json = { };
-                    var keys = tagParser.keys();
-                    for (var i = 0; i < keys.length; ++i)
-                    {
-                        var key = keys[i];
-                        console.debug("Key: " + key);
-                        json[key] = tagParser.get(key);
-                    }
-
-                    var data = Buffer.from(JSON.stringify(json));
-                    response.setHeader("Content-Length", Buffer.byteLength(data, "utf-8"));
-                    response.setHeader("Content-Type", "text/json");
-                    response.writeHeadLogged(200, "OK");
-                    response.write(data);
-                    response.end();
-                }
-            });
+            services["tags"].handleRequest(request, response, userContext, shares, function () { });
             return;
-
         }
         else if (urlObj.pathname.indexOf("/::thumbnail/") === 0)
         {
             // provide thumbnails
-            var thumbDir = modPath.join(contentRoot, ".pilvini", "thumbnails");
-
-            var href = urlObj.pathname.substr(12);
-            var targetFile = modUtils.uriToPath(href, contentRoot + userHome);
-            console.log("HREF: " + href + ", contentRoot: " + contentRoot + ", userHome: " + userHome);
-            console.log("Thumbnail target file: " + targetFile);
-
-            var hash = modCrypto.createHash("md5");
-            hash.update(targetFile);
-            var thumbFile = modPath.join(thumbDir, hash.digest("hex"));
-
-            modFs.stat(targetFile, function (err, targetStats)
-            {
-                modFs.stat(thumbFile, function (err, thumbnailStats)
-                {
-                    console.debug("Thumbnail mtime: " +
-                                  (thumbnailStats ? thumbnailStats.mtime : "<unavailable>") +
-                                  ", target mtime: " +
-                                  (targetStats ? targetStats.mtime : "<unavailable>"));
-                    if (! err && thumbnailStats && targetStats && targetStats.mtime < thumbnailStats.mtime)
-                    {
-                        // thumbnail exists and is not outdated
-                        getFile(response, thumbFile);
-                    }
-                    else
-                    {
-                        // generate thumbnail
-                        modUtils.mkdirs(thumbDir, function (err)
-                        {
-                            modThumbnail.makeThumbnail(modMime.mimeType(targetFile), targetFile, thumbFile, function (err)
-                            {
-                                if (err)
-                                {
-                                    console.error(err);
-                                    response.writeHeadLogged(500, "Internal Server Error");
-                                    response.end();
-                                }
-                                else
-                                {
-                                    getFile(response, thumbFile);
-                                }
-                                limitFiles(thumbDir, 1000);
-                            });
-                        });
-                    }
-                });
-            });
+            services["thumbnail"].handleRequest(request, response, userContext, shares, function () { });
             return;
         }
         else if (urlObj.pathname.indexOf("/::res/") === 0)
         {
             // provide file from ressource fork
-            var res = urlObj.pathname.substr(7);
-            var targetFile = modPath.join(__dirname, "res", res);
-
-            getFile(response, targetFile);
+            services["res"].handleRequest(request, response, userContext, shares, function () { });
             return;
         }
 
@@ -639,6 +469,14 @@ if (! CONFIG.server)
 {
     process.exit(1);
 }
+
+// setup services
+var services = {
+    "res": new svcRes.Service(CONFIG.server.root, modPath.join(__dirname, "res")),
+    "shell": new svcShell.Service(CONFIG.server.root),
+    "tags": new svcTags.Service(CONFIG.server.root),
+    "thumbnail": new svcThumbnail.Service(CONFIG.server.root)
+};
 
 // setup HTTP server
 var server;
