@@ -2,15 +2,24 @@
 
 exports.getCookie = function(request, name)
 {
-    // TODO: proper parsing
     var cookieString = request.headers.cookie;
+    console.log(cookieString);
     var cookie = new Cookie();
     if (cookieString)
     {
-        var parts = cookieString.split("=");
-        //console.log("Parsing cookie: " + parts[0] + " = " + parts[1]);
-        cookie.setName(parts[0]);
-        cookie.setValue(parts[1]);
+        var parts = cookieString.split(";");
+        for (var i = 0; i < parts.length; ++i)
+        {
+            var cookieData = parts[i];
+            var cookieParts = cookieData.split("=");
+
+            if (cookieParts[0].replace(/^ /g, "") === name)
+            {
+                cookie.setName(name);
+                cookie.setValue(cookieParts[1]);
+                break;
+            }
+        }
     }
     return cookie;
 };

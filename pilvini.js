@@ -18,8 +18,9 @@ const modCookies = require("./modules/cookies"),
       modUserContext = require("./modules/usercontext.js"),
       modUtils = require("./modules/utils.js");
 
-const svcRes = require("./modules/services/res-service.js"),
-      svcShell = require("./modules/services/res-shell.js"),
+const svcLogin = require("./modules/services/login-service.js"),
+      svcRes = require("./modules/services/res-service.js"),
+      svcShell = require("./modules/services/shell-service.js"),
       svcTags = require("./modules/services/tags-service.js"),
       svcThumbnail = require("./modules/services/thumbnail-service.js");
 
@@ -82,7 +83,7 @@ function isPublic(method, uri)
         return true;
     }
 
-    if (method !== "GET" && method !== "HEAD")
+    if (method !== "GET" && method !== "HEAD" && method !== "POST")
     {
         return false;
     }
@@ -93,9 +94,30 @@ function isPublic(method, uri)
     {
         return true;
     }
+    else if (uri.indexOf("/::login/") === 0)
+    {
+        return true;
+    }
     else
     {
         return false;
+    }
+}
+
+/* Returns the service name of a request.
+ * Returns empty string if this is no service request.
+ */
+function serviceOf(path)
+{
+    var parts = path.split("/");
+    var p = parts[1] || "";
+    if (p.indexOf("::") === 0)
+    {
+        return p.substr(2);
+    }
+    else
+    {
+        return "";
     }
 }
 
@@ -103,15 +125,6 @@ function isPublic(method, uri)
  */
 function handleRequest(request, response)
 {
-    /*
-    // obtain or create session
-    var cookie = modCookies.getCookie(request, "SessionId");
-    if (! cookie.name())
-    {
-        modCookies.setCookie(response, new modCookies.Cookie("SessionId", "42"));
-    }
-    */
-
     var contentRoot = CONFIG.server.root;
     var urlObj = modUrl.parse(request.url, true);
     var shares = new modShares.Shares(contentRoot);
@@ -146,18 +159,39 @@ function handleRequest(request, response)
     }
 
     // request user authorization if required
-    var authUser = httpAuth.authorize(request);
+
+    var authCookie = modCookies.getCookie(request, "AuthCode");
+    console.debug("COOKIE: " + authCookie.name() + " = " + authCookie.value());
+
+    var authUser;
+    if (authCookie.name() === "AuthCode" && authCookie.value() === "42")
+    {
+        authUser = "pycage";
+    }
+    else
+    {
+        authUser = httpAuth.authorize(request);
+    }
+
     if (! authUser && ! isPublic(request.method, urlObj.pathname))
     {
         // authorization required
-        console.log("[" + new Date().toLocaleString() + "] [Server] " +
-                    "[" + request.connection.remoteAddress + ":" + request.connection.remotePort + "] " +
-                    "> " + "UNAUTHORIZED " + request.method + " " + request.url);
-
-        httpAuth.requestAuthorization(response, "Users");
-        response.write("Authorization required.");
-        response.end();
-        return;
+        if (urlObj.pathname.indexOf("/::shell/") === 0)
+        {
+            services["shell"].requestLogin(response, function () { });
+            return;
+        }
+        else
+        {
+            console.log("[" + new Date().toLocaleString() + "] [Server] " +
+                        "[" + request.connection.remoteAddress + ":" + request.connection.remotePort + "] " +
+                        "> " + "UNAUTHORIZED " + request.method + " " + request.url);
+    
+            httpAuth.requestAuthorization(response, "Users");
+            response.write("Authorization required.");
+            response.end();
+            return;
+        }
     }
 
     // get the user's home directory
@@ -227,7 +261,13 @@ function handleRequest(request, response)
     } ());
 
 
-
+    var serviceName = serviceOf(urlObj.pathname);
+    if (serviceName !== "")
+    {
+        // service
+        services[serviceName].handleRequest(request, response, userContext, shares, function () { });
+        return;
+    }
 
 
     var davSession = new modDav.DavSession(contentRoot + userHome);
@@ -253,29 +293,6 @@ function handleRequest(request, response)
     }
     else if (request.method === "GET")
     {
-        if (urlObj.pathname.indexOf("/::shell/") === 0)
-        {            
-            services["shell"].handleRequest(request, response, userContext, shares, function () { });
-            return;
-        }
-        else if (urlObj.pathname.indexOf("/::tags/") === 0)
-        {
-            services["tags"].handleRequest(request, response, userContext, shares, function () { });
-            return;
-        }
-        else if (urlObj.pathname.indexOf("/::thumbnail/") === 0)
-        {
-            // provide thumbnails
-            services["thumbnail"].handleRequest(request, response, userContext, shares, function () { });
-            return;
-        }
-        else if (urlObj.pathname.indexOf("/::res/") === 0)
-        {
-            // provide file from ressource fork
-            services["res"].handleRequest(request, response, userContext, shares, function () { });
-            return;
-        }
-
         // retrieve file
 
         /* Header: range = bytes=248426-252521 */
@@ -472,6 +489,7 @@ if (! CONFIG.server)
 
 // setup services
 var services = {
+    "login": new svcLogin.Service(CONFIG.server.root),
     "res": new svcRes.Service(CONFIG.server.root, modPath.join(__dirname, "res")),
     "shell": new svcShell.Service(CONFIG.server.root),
     "tags": new svcTags.Service(CONFIG.server.root),

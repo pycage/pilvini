@@ -973,6 +973,30 @@ function loadDirectory(href)
     });
 }
 
+function login()
+{
+    var user = $("form input").first().val();
+    var password = $("form input").last().val();
+
+    $.ajax({
+        type: "POST",
+        url: "/::login/",
+        beforeSend: function(xhr)
+        {
+             xhr.setRequestHeader("x-pilvini-user", user);
+             xhr.setRequestHeader("x-pilvini-password", password);
+        },
+    })
+    .done(function (data, status, xhr)
+    {
+        // server returns the auth code on successful login
+        var authCode = xhr.getResponseHeader("X-Pilvini-Auth");
+        alert(authCode);
+        document.cookie = "AuthCode=" + authCode;
+        window.location.href = "/::shell/";
+    });
+}
+
 function init()
 {
     $("#upload").on("change", onFilesSelected);

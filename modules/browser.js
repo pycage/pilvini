@@ -1312,3 +1312,44 @@ function makeIndex(prefix, uri, contentRoot, userContext, shares, callback)
     });
 }
 exports.makeIndex = makeIndex;
+
+function makeLoginPage(callback)
+{
+    var tag = modHtml.tag;
+    var t = tag("html")
+            .content(
+                makeHtmlHead()
+            )
+            .content(
+                tag("body").class("sh-theme-default")
+                .content(
+                    tag("form")
+                    .content(
+                        tag("label").content("Login:")
+                        .style("display", "inline-block")
+                        .style("width", "6em")
+                    )
+                    .content(
+                        tag("input").attr("type", "text")
+                    )
+                    .content(tag("br"))
+                    .content(
+                        tag("label").content("Password:")
+                        .style("display", "inline-block")
+                        .style("width", "6em")
+                    )
+                    .content(
+                        tag("input").attr("type", "text")
+                    )
+                )
+                .content(
+                    tag("a")
+                    .on("click", "login();")
+                    .content("Enter")
+                )
+            );
+
+    var html = "<!DOCTYPE html>\n" + t.html();
+    callback(html);
+}
+exports.makeLoginPage = makeLoginPage;
