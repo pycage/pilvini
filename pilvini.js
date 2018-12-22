@@ -7,7 +7,8 @@ const modFs = require("fs"),
       modUrl = require("url"),
       modZlib = require("zlib");
 
-const modCookies = require("./modules/cookies"),
+const modCodeAuth = require("./modules/codeauth.js"),
+      modCookies = require("./modules/cookies"),
       modHttpAuth = require("./modules/httpauth.js"),
       modBrowser = require("./modules/browser.js"),
       modDav = require("./modules/dav.js"),
@@ -143,39 +144,24 @@ function handleRequest(request, response)
         authUsers[shareId] = shareInfo.password_hash;
     });
 
-    // setup HTTP authenticator
-    var httpAuth;
-    if (CONFIG.authentication.method === "basic")
-    {
-        httpAuth = new modHttpAuth.Authenticator("Basic", CONFIG.authentication.realm, authUsers);
-    }
-    else if (CONFIG.authentication.method === "digest")
-    {
-        httpAuth = new modHttpAuth.Authenticator("Digest", CONFIG.authentication.realm, authUsers);
-    }
-    else
-    {
-        throw "Invalid authentication method '" + CONFIG.authentication.method + "'";
-    }
-
-    // request user authorization if required
-
+    // setup authenticator
     var authCookie = modCookies.getCookie(request, "AuthCode");
-    console.debug("COOKIE: " + authCookie.name() + " = " + authCookie.value());
-
-    var authUser;
-    if (authCookie.name() === "AuthCode" && authCookie.value() === "42")
+    console.debug("Auth Cookie: " + authCookie.name() + " = " + authCookie.value());
+    var authenticator;
+    if (authCookie.name() === "AuthCode")
     {
-        authUser = "pycage";
+        authenticator = codeAuthenticator;
     }
     else
     {
-        authUser = httpAuth.authorize(request);
+        authenticator = httpAuthenticator;
     }
 
+    // try to authorize user, or request login
+    var authUser = authenticator.authorize(request, authUsers);
     if (! authUser && ! isPublic(request.method, urlObj.pathname))
     {
-        // authorization required
+        // login required
         if (urlObj.pathname.indexOf("/::shell/") === 0)
         {
             services["shell"].requestLogin(response, function () { });
@@ -187,7 +173,7 @@ function handleRequest(request, response)
                         "[" + request.connection.remoteAddress + ":" + request.connection.remotePort + "] " +
                         "> " + "UNAUTHORIZED " + request.method + " " + request.url);
     
-            httpAuth.requestAuthorization(response, "Users");
+            authenticator.requestAuthorization(response, "Users");
             response.write("Authorization required.");
             response.end();
             return;
@@ -262,7 +248,12 @@ function handleRequest(request, response)
 
 
     var serviceName = serviceOf(urlObj.pathname);
-    if (serviceName !== "")
+    if (serviceName === "login")
+    {
+        services[serviceName].handleRequest(request, response, authUsers, authCookie.value());
+        return;
+    }
+    else if (serviceName !== "")
     {
         // service
         services[serviceName].handleRequest(request, response, userContext, shares, function () { });
@@ -487,9 +478,25 @@ if (! CONFIG.server)
     process.exit(1);
 }
 
+// setup authenticators
+var codeAuthenticator = new modCodeAuth.Authenticator(CONFIG.authentication.realm);
+var httpAuthenticator;
+if (CONFIG.authentication.method === "basic")
+{
+    httpAuthenticator = new modHttpAuth.Authenticator("Basic", CONFIG.authentication.realm);
+}
+else if (CONFIG.authentication.method === "digest")
+{
+    httpAuthenticator = new modHttpAuth.Authenticator("Digest", CONFIG.authentication.realm);
+}
+else
+{
+    throw "Invalid authentication method '" + CONFIG.authentication.method + "'";
+}
+
 // setup services
 var services = {
-    "login": new svcLogin.Service(CONFIG.server.root),
+    "login": new svcLogin.Service(codeAuthenticator),
     "res": new svcRes.Service(CONFIG.server.root, modPath.join(__dirname, "res")),
     "shell": new svcShell.Service(CONFIG.server.root),
     "tags": new svcTags.Service(CONFIG.server.root),

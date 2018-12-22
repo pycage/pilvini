@@ -991,9 +991,25 @@ function login()
     {
         // server returns the auth code on successful login
         var authCode = xhr.getResponseHeader("X-Pilvini-Auth");
-        alert(authCode);
-        document.cookie = "AuthCode=" + authCode;
-        window.location.href = "/::shell/";
+        document.cookie = "AuthCode=" + authCode + "; path=/";
+        window.location.reload();
+    });
+}
+
+function logout()
+{
+    $.ajax({
+        type: "POST",
+        url: "/::login/",
+        beforeSend: function(xhr)
+        {
+             xhr.setRequestHeader("x-pilvini-user", "");
+             xhr.setRequestHeader("x-pilvini-password", "");
+        },
+    })
+    .done(function (data, status, xhr)
+    {
+        window.location.reload();
     });
 }
 

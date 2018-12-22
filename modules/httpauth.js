@@ -30,17 +30,16 @@ function parseDigestParameters(s)
     return result;
 }
 
-exports.Authenticator = function(authType, realm, users)
+exports.Authenticator = function(authType, realm)
 {
     var that = this;
     var m_authType = authType;
     var m_realm = realm;
-    var m_users = users;
 
     /* Authorizes the given request and returns the user name if the
      * authorization was successful. Returns null otherwise.
      */
-    that.authorize = function(request)
+    that.authorize = function(request, users)
     {
         var authHeader = request.headers["authorization"];
         if (authHeader === undefined)
@@ -49,11 +48,11 @@ exports.Authenticator = function(authType, realm, users)
         }
         else if (m_authType === "Basic")
         {
-            return basicAuth(authHeader);
+            return basicAuth(authHeader, users);
         }
         else if (m_authType === "Digest")
         {
-            return digestAuth(request, authHeader);
+            return digestAuth(request, authHeader, users);
         }
         else
         {
@@ -91,7 +90,7 @@ exports.Authenticator = function(authType, realm, users)
         }
     };
 
-    var basicAuth = function(authHeader)
+    var basicAuth = function(authHeader, users)
     {
         if (authHeader.indexOf("Basic ") !== 0)
         {
@@ -110,7 +109,7 @@ exports.Authenticator = function(authType, realm, users)
         var password = tokenParts[1];
         var passwordHash = md5(userName + ":" + m_realm + ":" + password);
 
-        if (m_users[userName] !== undefined && (m_users[userName] === "" || m_users[userName] === passwordHash))
+        if (users[userName] !== undefined && (users[userName] === "" || users[userName] === passwordHash))
         {
             return userName;
         }
@@ -122,7 +121,7 @@ exports.Authenticator = function(authType, realm, users)
         }
     };
 
-    var digestAuth = function(request, authHeader)
+    var digestAuth = function(request, authHeader, users)
     {
         if (authHeader.indexOf("Digest ") != 0)
         {
@@ -131,7 +130,7 @@ exports.Authenticator = function(authType, realm, users)
 
         var params = parseDigestParameters(authHeader.replace(/^Digest /, ""));
 
-        if (! m_users[params.username])
+        if (! users[params.username])
         {
             // unknown user
             console.log("[" + new Date().toLocaleString() + "] [HttpDigestAuth] " +
@@ -139,7 +138,7 @@ exports.Authenticator = function(authType, realm, users)
             return null;
         }
 
-        var ha1 = m_users[params.username];
+        var ha1 = users[params.username];
         var ha2 = md5(request.method + ":" + params.uri);
         var expected = md5([ha1, params.nonce, params.nc, params.cnonce, params.qop, ha2].join(":"));
 

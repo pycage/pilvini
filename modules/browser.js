@@ -773,6 +773,14 @@ function makeMoreMenu(viewMode, sortMode, userContext)
             .on("click", "sh.menu_close(); unselectAll();")
             .content("Unselect All")
         )
+        .content(
+            tag("hr")
+        )
+        .content(
+            tag("li")
+            .on("click", "logout();")
+            .content("Logout")
+        )
     );
 
     return t;
