@@ -19,7 +19,8 @@ const modCodeAuth = require("./modules/codeauth.js"),
       modUserContext = require("./modules/usercontext.js"),
       modUtils = require("./modules/utils.js");
 
-const svcLogin = require("./modules/services/login-service.js"),
+const svcImageOfTheDay = require("./modules/services/image-of-the-day-service.js"),
+      svcLogin = require("./modules/services/login-service.js"),
       svcRes = require("./modules/services/res-service.js"),
       svcShell = require("./modules/services/shell-service.js"),
       svcTags = require("./modules/services/tags-service.js"),
@@ -99,6 +100,10 @@ function isPublic(method, uri)
     {
         return true;
     }
+    else if (uri.indexOf("/::image-of-the-day/") === 0)
+    {
+        return true;
+    }
     else
     {
         return false;
@@ -162,20 +167,20 @@ function handleRequest(request, response)
     if (! authUser && ! isPublic(request.method, urlObj.pathname))
     {
         // login required
-        if (urlObj.pathname.indexOf("/::shell/") === 0)
-        {
-            services["shell"].requestLogin(response, function () { });
+        console.log("[" + new Date().toLocaleString() + "] [Server] " +
+        "[" + request.connection.remoteAddress + ":" + request.connection.remotePort + "] " +
+        "> " + "UNAUTHORIZED " + request.method + " " + request.url);
+
+        if (authenticator.requestAuthorization)
+        {            
+            authenticator.requestAuthorization(response, "Users");
+            response.write("Authorization required.");
+            response.end();
             return;
         }
         else
         {
-            console.log("[" + new Date().toLocaleString() + "] [Server] " +
-                        "[" + request.connection.remoteAddress + ":" + request.connection.remotePort + "] " +
-                        "> " + "UNAUTHORIZED " + request.method + " " + request.url);
-    
-            authenticator.requestAuthorization(response, "Users");
-            response.write("Authorization required.");
-            response.end();
+            services["shell"].requestLogin(response, function () { });
             return;
         }
     }
@@ -496,6 +501,7 @@ else
 
 // setup services
 var services = {
+    "image-of-the-day": new svcImageOfTheDay.Service(CONFIG.server.root),
     "login": new svcLogin.Service(codeAuthenticator),
     "res": new svcRes.Service(CONFIG.server.root, modPath.join(__dirname, "res")),
     "shell": new svcShell.Service(CONFIG.server.root),

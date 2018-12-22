@@ -1,12 +1,13 @@
 @font-face {
     font-family: Material;
-    /*src: url("../assets/Material-Design-Iconic-Font.ttf") format("truetype");*/
-    src: url("https://cdnjs.cloudflare.com/ajax/libs/material-design-iconic-font/2.2.0/fonts/Material-Design-Iconic-Font.ttf?v=2.2.0") format("truetype");
+    src: url("../assets/Material-Design-Iconic-Font.ttf") format("truetype");
+    /*src: url("https://cdnjs.cloudflare.com/ajax/libs/material-design-iconic-font/2.2.0/fonts/Material-Design-Iconic-Font.ttf?v=2.2.0") format("truetype");*/
 }
 
 .sh-fw-icon {
     width: 1.5em;
     text-align: center;
+    font-weight: 100;
 }
 
 .sh-icon-arrow-up:before {
@@ -35,6 +36,10 @@
 
 .sh-icon-close:before {
     font-family: Material; content: "\f136";
+}
+
+.sh-icon-cloud:before {
+    font-family: Material; content: "\f21d";
 }
 
 .sh-icon-gear:before {

@@ -993,6 +993,10 @@ function login()
         var authCode = xhr.getResponseHeader("X-Pilvini-Auth");
         document.cookie = "AuthCode=" + authCode + "; path=/";
         window.location.reload();
+    })
+    .fail(function (xhr, status, err)
+    {
+        showError("Invalid login credentials.");
     });
 }
 
@@ -1039,4 +1043,31 @@ function init()
     checkClipboard();
 }
 
-$(document).ready(init);
+function initLogin()
+{
+    sh.push("main-page", function () { }, true);
+
+    $("#login-dialog a:first-child").off("click").on("click", login);
+    sh.popup("login-dialog");
+
+    /*
+    // get background of the day from BING
+    $.getJSON("http://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=1", function (data)
+    {
+        alert("got json " + JSON.stringify(data));
+        var images = data["images"];
+        if (images)
+        {
+            var firstImage = images[0];
+            if (firstImage)
+            {
+                var imageUrl = firstImage["url"];
+                if (imageUrl)
+                {
+                    $("#main-page").css("backgroundImage", "url(\"http://bing.com" + imageUrl + "\")");
+                }
+            }
+        }
+    });
+    */
+}

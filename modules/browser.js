@@ -385,7 +385,7 @@ function makeFilesGrid(sortMode, uri, stats, active)
     return t;
 }
 
-function makeHtmlHead()
+function makeHtmlHead(initFunction)
 {
     var tag = modHtml.tag;
     var t = tag("head")
@@ -452,6 +452,10 @@ function makeHtmlHead()
             )
             .content(
                 tag("script").attr("src", "/::res/viewer/vcard.js")
+            )
+            .content(
+                tag("script")
+                .content("$(document).ready(" + initFunction + ");")
             );
 
     return t;
@@ -997,6 +1001,57 @@ function makeShareDialog()
     return t;
 }
 
+function makeLoginDialog()
+{
+    var tag = modHtml.tag;
+
+    var t = tag("div").id("login-dialog").class("sh-popup")
+            .content(
+                tag("div").class("sh-dropshadow")
+                .style("background-color", "var(--color-primary-background)")
+                .content(
+                    tag("header")
+                    .content(
+                        tag("h1").class("sh-left").content("Welcome")
+                    )
+                )
+                .content(
+                    tag("section")
+                    .content(
+                        tag("form")
+                        .content(
+                            tag("label").content("Login:")
+                            .style("display", "inline-block")
+                            .style("width", "6em")
+                        )
+                        .content(
+                            tag("input").attr("type", "text")
+                        )
+                        .content(tag("br"))
+                        .content(
+                            tag("label").content("Password:")
+                            .style("display", "inline-block")
+                            .style("width", "6em")
+                        )
+                        .content(
+                            tag("input").attr("type", "password")
+                        )
+                    )
+                )
+                .content(
+                    tag("footer")
+                    .content(
+                        tag("span").class("sh-right")
+                        .content(
+                            tag("a").content("Login")
+                        )
+                    )
+                )
+            );
+
+    return t;
+}
+
 function makeBusyPopup()
 {
     var tag = modHtml.tag;
@@ -1223,7 +1278,7 @@ function makeHtml(viewMode, sortMode, prefix, contentRoot, uri, path, stats, cli
     var tag = modHtml.tag;
     var t = tag("html")
             .content(
-                makeHtmlHead()
+                makeHtmlHead("init")
             )
             .content(
                 tag("body").class("sh-theme-default")
@@ -1326,34 +1381,43 @@ function makeLoginPage(callback)
     var tag = modHtml.tag;
     var t = tag("html")
             .content(
-                makeHtmlHead()
+                makeHtmlHead("initLogin")
             )
             .content(
                 tag("body").class("sh-theme-default")
                 .content(
-                    tag("form")
-                    .content(
-                        tag("label").content("Login:")
-                        .style("display", "inline-block")
-                        .style("width", "6em")
-                    )
-                    .content(
-                        tag("input").attr("type", "text")
-                    )
-                    .content(tag("br"))
-                    .content(
-                        tag("label").content("Password:")
-                        .style("display", "inline-block")
-                        .style("width", "6em")
-                    )
-                    .content(
-                        tag("input").attr("type", "text")
-                    )
+                    makeLoginDialog()
                 )
                 .content(
-                    tag("a")
-                    .on("click", "login();")
-                    .content("Enter")
+                    makeMessageDialog()
+                )
+                .content(
+                    tag("div").id("main-page").class("sh-page")
+                    .style("background-image", "url('/::image-of-the-day/')")
+                    .style("background-size", "cover")
+                    .style("background-repeat", "no-repeat")
+                    .content(
+                        tag("header").class("sh-dropshadow")
+                        .content(
+                            tag("h1")
+                            .content("Pilvini Secure Cloud Drive")
+                        )
+                    )
+                    .content(
+                        tag("footer")
+                        .class("sh-font-small")
+                        .style("visibility", "visible")
+                        .content("&copy; 2017, 2018 Martin Grimme - Want your own cloud? Get pilvini at https://github.com/pycage/pilvini")
+                    )
+                    .content(
+                        tag("p").class("sh-font-small")
+                        .style("position", "absolute")
+                        .style("bottom", "3em")
+                        .style("right", "1em")
+                        .style("color", "#fff")
+                        .style("text-shadow", "#000 0px 0px 1px")
+                        .content("Background powered by bing.com")
+                        )
                 )
             );
 
