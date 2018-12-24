@@ -32,9 +32,9 @@ const MIME_INFO = {
     "text/vcard": { "icon": "contacts.png", "viewer": "viewVCard" },
     "text/xml": { "icon": "text.png", "viewer": "viewText" },
     "text/x-markdown": { "icon": "document.png", "viewer": "viewMarkdown" },
-    "video/mp4": { "icon": "video.png" },
-    "video/x-flv": { "icon": "video.png" },
-    "video/x-msvideo": { "icon": "video.png" }
+    "video/mp4": { "icon": "video.png", "viewer": "viewVideo" },
+    "video/x-flv": { "icon": "video.png", "viewer": "viewVideo" },
+    "video/x-msvideo": { "icon": "video.png", "viewer": "viewVideo" }
 };
 
 function readSettings(userRoot)
@@ -433,6 +433,9 @@ function makeHtmlHead(initFunction)
                 tag("script").attr("src", "/::res/shellfish/core/shellfish.js")
             )
             .content(
+                tag("script").attr("src", "/::res/browser/html.js")
+            )
+            .content(
                 tag("script").attr("src", "/::res/browser/index.js")
             )
             .content(
@@ -452,6 +455,9 @@ function makeHtmlHead(initFunction)
             )
             .content(
                 tag("script").attr("src", "/::res/viewer/vcard.js")
+            )
+            .content(
+                tag("script").attr("src", "/::res/viewer/video.js")
             )
             .content(
                 tag("script")
@@ -1076,36 +1082,18 @@ function makeBusyPopup()
     return t;
 }
 
-function makeImagePopup()
+function makePreviewPopup()
 {
     var tag = modHtml.tag;
 
-    var t = tag("div").id("image-popup").class("sh-popup")
+    var t = tag("div").id("preview-popup").class("sh-popup")
             .style("background-color", "rgba(0, 0, 0, 0.8)")
-            .on("click", "sh.popup_close(\"image-popup\");")
+            .on("click", "sh.popup_close(\"preview-popup\");")
             .content(
                 tag("div").class("sh-dropshadow")
                 .style("position", "relative")
                 .style("background-color", "black")
                 .style("overflow", "hidden")
-                .content(
-                    tag("h1").class("sh-font-small")
-                    .style("position", "absolute")
-                    .style("margin", "0")
-                    .style("padding", "0")
-                    .style("white-space", "nowrap")
-                    .style("text-overflow", "ellipsis")
-                    .style("overflow", "hidden")
-                    .style("text-align", "left")
-                    .style("left", "0.25em")
-                    .style("right", "0.25em")
-                    .style("bottom", "0.25em")
-                    .style("text-shadow", "#000 0px 0px 1px")
-                    .style("color", "white")
-                )
-                .content(
-                    tag("img")
-                )
             );
 
     return t;
@@ -1313,7 +1301,7 @@ function makeHtml(viewMode, sortMode, prefix, contentRoot, uri, path, stats, cli
                     makeBusyPopup()
                 )
                 .content(
-                    makeImagePopup()
+                    makePreviewPopup()
                 )
                 .content(
                     makeViewerPage()
