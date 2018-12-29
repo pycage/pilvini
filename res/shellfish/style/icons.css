@@ -42,6 +42,10 @@
     font-family: Material; content: "\f21d";
 }
 
+.sh-icon-fullscreen:before {
+    font-family: Material; content: "\f16d";
+}
+
 .sh-icon-gear:before {
     font-family: Material; content: "\f1c6";
 }
@@ -52,6 +56,10 @@
 
 .sh-icon-media-fwd:before {
     font-family: Material; content: "\f39f";
+}
+
+.sh-icon-media-fwd30:before {
+    font-family: Material; content: "\f3a2";
 }
 
 .sh-icon-media-loop:before {
@@ -90,6 +98,10 @@
     font-family: Material; content: "\f3a0";
 }
 
+.sh-icon-media-rwd10:before {
+    font-family: Material; content: "\f3af";
+}
+
 .sh-icon-media-shuffle:before {
     font-family: Material; content: "\f3b3";
 }
@@ -112,4 +124,8 @@
 
 .sh-icon-trashcan:before {
     font-family: Material; content: "\f154";
+}
+
+.sh-icon-unfullscreen:before {
+    font-family: Material; content: "\f16c";
 }

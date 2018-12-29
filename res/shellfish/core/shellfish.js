@@ -356,6 +356,55 @@ sh.topmost = function (filter)
     }
 }
 
+sh.isFullscreen = function ()
+{
+    var state = document.fullScreen ||
+                document.mozFullScreen ||
+                document.webkitIsFullScreen;
+
+    return (state === true);
+}
+
+sh.requestFullscreen = function (target)
+{
+    var e = $(target).get(0);
+    if (e.requestFullscreen)
+    {
+        e.requestFullscreen();
+    }
+    else if (e.msRequestFullscreen)
+    {
+        e.msRequestFullscreen();
+    }
+    else if (e.mozRequestFullScreen)
+    {
+        e.mozRequestFullScreen();
+    }
+    else if (e.webkitRequestFullscreen)
+    {
+        e.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
+    }
+}
+
+sh.exitFullscreen = function ()
+{
+    if (document.exitFullscreen)
+    {
+        document.exitFullscreen();
+    }
+    else if (document.webkitExitFullscreen)
+    {
+        document.webkitExitFullscreen();
+    }
+    else if (document.mozCancelFullScreen)
+    {
+        document.mozCancelFullScreen();
+    }
+    else if (document.msExitFullscreen)
+    {
+        document.msExitFullscreen();
+    }
+}
 
 /*
 $(function ()
