@@ -11,7 +11,7 @@ const modFs = require("fs"),
 
 const MIME_INFO = {
     "application/java-archive": { "icon": "package.png" },
-    "application/ogg": { "icon": "audio.png", "viewer": "viewAudio" },
+    "application/ogg": { "icon": "audio.png", "viewer": "audio.add" },
     "application/pdf": { "icon": "pdf.png", "viewer": "viewPdf" },
     "application/vnd.oasis.opendocument.text": { "icon": "document.png" },
     "application/x-batch": { "icon": "text.png", "viewer": "viewText" },
@@ -21,7 +21,7 @@ const MIME_INFO = {
     "application/x-gzip": { "icon": "package.png" },
     "application/x-iso9660-image": { "icon": "optical.png" },
     "application/zip": { "icon": "package.png" },
-    "audio/mp3": { "icon": "audio.png", "viewer": "viewAudio" },
+    "audio/mp3": { "icon": "audio.png", "viewer": "audio.add" },
     "image/gif": { "icon": "image.png", "viewer": "viewImage" },
     "image/jpeg": { "icon": "image.png", "viewer": "viewImage" },
     "image/png": { "icon": "image.png", "viewer": "viewImage" },
@@ -734,7 +734,7 @@ function makeMoreMenu(viewMode, sortMode, userContext)
         .content("Action")
     );
 
-    var ul = tag("ul");
+    var ul = tag("ul").id("actions-submenu");
     t.child(0).content(ul);
 
     if (userContext.mayCreate())

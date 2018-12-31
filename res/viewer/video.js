@@ -258,6 +258,10 @@ function viewVideo(href)
 
     popup.one("sh-closed", function ()
     {
+        // force-stop buffering
+        video.attr("src", "");
+        video.trigger("load");
+
         popup.find("> div").html("");
     });
 
