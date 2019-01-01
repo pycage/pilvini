@@ -114,6 +114,14 @@
     font-family: Material; content: "\f31e";
 }
 
+.sh-icon-move-down:before {
+    font-family: Material; content: "\f2f9";
+}
+
+.sh-icon-move-up:before {
+    font-family: Material; content: "\f2fc";
+}
+
 .sh-icon-share:before {
     font-family: Material; content: "\f228";
 }

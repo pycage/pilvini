@@ -105,6 +105,23 @@ var Audio = function ()
         };
     };
 
+    function mayUseFixedBackground()
+    {
+        var ua = navigator.userAgent;
+        if (! ua)
+        {
+            return false;
+        }
+        else if (ua.indexOf("SailfishBrowser") !== -1)
+        {
+            return false;
+        }
+        else
+        {
+            return true;
+        }
+    }
+
     function formatTime(seconds)
     {
         var t = seconds;
@@ -251,10 +268,28 @@ var Audio = function ()
      */
     function updateBackgroundDim()
     {
-        if (m_playlist.size() > 0)
+        if (m_playlist.size() > 0 && mayUseFixedBackground())
         {
             var p = $(window).scrollTop() / ($(document).height() - $(window).height());
             $(".audio-background-dim").css("background-color", "rgba(0, 0, 0, " + (0.4 + p * 0.5) + ")");
+        }
+    }
+
+    /* Updates the playlist puller state.
+     */
+    function updatePullerState()
+    {
+        var puller = $(".audio-playlist-puller");
+        if (puller.length)
+        {
+            if ($(document).scrollTop() > 0)
+            {
+                puller.removeClass("sh-icon-move-up").addClass("sh-icon-move-down");
+            }
+            else
+            {
+                puller.removeClass("sh-icon-move-down").addClass("sh-icon-move-up");
+            }
         }
     }
 
@@ -371,6 +406,7 @@ var Audio = function ()
     function makePlaylistUi()
     {
         var t = tag("ul").class("sh-listview")
+                .style("padding-top", "3rem")
                 .style("text-align", "left")
         for (var i = 0; i < m_playlist.size(); ++i)
         {
@@ -443,15 +479,21 @@ var Audio = function ()
                     tag("section").class("audio-cover audio-background-dim")
                     .style("background-size", "cover")
                     .style("background-position", "50% 0%")
-                    .style("background-attachment", "fixed")
+                    .style("background-attachment", mayUseFixedBackground() ? "fixed" : "scroll")
                     .style("background-blend-mode", "darken")
                     .style("background-color", "rgba(0, 0, 0, .80)")
                     .style("text-align", "center")
                     .style("text-shadow", "#000 0px 0px 1px")
                     .content(
                         tag("div").class("audio-scroll-gap")
-                        .style("display", "block")
-                        .style("height", "0") //"80vh") //($(window).height() / 3) + "px")
+                        .style("display", "flex")
+                        .style("align-items", "center")
+                        .style("justify-content", "center")
+                        .style("height", "0")
+                        .content(
+                            tag("span").class("sh-fw-icon sh-icon-media-play-circle audio-play-button")
+                            .style("font-size", "16vw")
+                        )
                     )
                     /*
                     .content(
@@ -463,19 +505,46 @@ var Audio = function ()
                     )
                     */
                     .content(
-                        tag("h1").class("audio-title").content("-")
-                        .style("font-size", "6vw")
+                        tag("span").class("sh-fw-icon sh-icon-move-up audio-playlist-puller")
+                        .style("font-size", "200%")
                     )
                     .content(
-                        tag("h2").class("audio-artist").content("-")
-                        .style("font-size", "4vw")
+                        tag("div")
+                        .style("position", "relative")
+                        .style("margin-bottom", "3rem")
+                        .content(
+                            tag("span").class("sh-left sh-fw-icon sh-icon-media-previous audio-previous-button")
+                            .style("font-size", "12vw")
+                        )
+                        .content(
+                            tag("h1").class("audio-title").content("-")
+                            .style("font-size", "6vw")
+                            .style("margin-left", "12vw")
+                            .style("margin-right", "12vw")
+                            .style("line-height", "1.2em")
+                        )
+                        .content(
+                            tag("h2").class("audio-artist").content("-")
+                            .style("font-size", "4vw")
+                            .style("margin-left", "12vw")
+                            .style("margin-right", "12vw")
+                            .style("line-height", "1.2em")
+                        )
+                        .content(
+                            tag("span").class("sh-right sh-fw-icon sh-icon-media-next audio-next-button")
+                            .style("font-size", "12vw")
+                        )
+                    )
+                    .content(
+                        tag("span").class("audio-progress-label")
+                        .style("line-height", "1.2em")
+                        .content("00:00 / 00:00")
                     )
                     .content(
                         tag("div").class("audio-progress-bar")
                         .style("position", "relative")
                         .style("height", "1rem")
-                        .style("margin", "5vw")
-                        .style("margin-bottom", "0")
+                        .style("margin", "0")
                         .content(
                             tag("div")
                             .style("position", "absolute")
@@ -484,27 +553,6 @@ var Audio = function ()
                             .style("width", "0%")
                             .style("height", "100%")
                             .style("background-color", "var(--color-primary)")
-                        )
-                    )
-                    .content(
-                        tag("span").class("audio-progress-label")
-                        .content("--:-- / --:--")
-                    )
-                    .content(
-                        tag("div")
-                        .style("font-size", "10vw") //400%")
-                        .style("margin", "0.5em")
-                        .content(
-                            tag("span").class("sh-fw-icon sh-icon-media-previous audio-previous-button")
-                        )
-                        .content(
-                            tag("span").class("sh-fw-icon sh-icon-media-play-circle audio-play-button")
-                            .style("font-size", "150%")
-                            .style("padding-left", "0.5em")
-                            .style("padding-right", "0.5em")
-                        )
-                        .content(
-                            tag("span").class("sh-fw-icon sh-icon-media-next audio-next-button")
                         )
                     )
                     .content(
@@ -557,7 +605,7 @@ var Audio = function ()
         });
 
         pageSection.find(".audio-play-button").on("click", function ()
-        {
+        {   
             var audio = $("#audio");
             if (audio.prop("paused"))
             {
@@ -609,13 +657,75 @@ var Audio = function ()
             m_isSeeking = false;
         });
 
+        pageSection.find(".audio-progress-bar").on("touchstart", function (event)
+        {
+            event.preventDefault();
+            m_isSeeking = true;
+            var p = event.originalEvent.touches[0].clientX / $(this).width();
+            this.lastTouchPos = p;
+        });
+
+        pageSection.find(".audio-progress-bar").on("touchmove", function (event)
+        {
+            event.preventDefault();
+            if (m_isSeeking)
+            {
+                var p = event.originalEvent.touches[0].clientX / $(this).width();
+                var total = audio.prop("duration") || 0;
+                if (total > 0)
+                {
+                    $(".audio-progress-label").html(formatTime(Math.floor(p * total)) + " / " + formatTime(total));
+                    $(".audio-progress-bar > div").css("width", (p * 100.0) + "%");
+                }
+                this.lastTouchPos = p;
+            }
+        });
+
+        pageSection.find(".audio-progress-bar").on("touchend", function (event)
+        {
+            event.preventDefault();
+            if (m_isSeeking)
+            {
+                m_isSeeking = false;
+                audio.prop("currentTime", this.lastTouchPos * audio.prop("duration"));
+            }
+        });
+
+        pageSection.find(".audio-progress-bar").on("touchcancel", function (event)
+        {
+            event.preventDefault();
+            m_isSeeking = false;
+        });
+
+
+        // setup playlist puller button
+
+        pageSection.find(".audio-playlist-puller").on("click", function ()
+        {
+            var scrollTarget = 0;
+            if ($(document).scrollTop() === 0)
+            {
+                scrollTarget = $(this).offset().top;
+                //$(document).scrollTop($(this).offset().top);
+            }
+            else
+            {
+                scrollTarget = 0;
+                //$(document).scrollTop(0);
+            }
+
+            $("html, body").animate({
+                scrollTop: scrollTarget
+            }, "slow", function () { });
+        });
+
 
         page.on("sh-closed", function ()
         {
             page.remove();
         });
 
-        var pos = pageSection.find(".audio-progress-bar").offset().top;
+        var pos = pageSection.find("ul").offset().top;
         $(".audio-scroll-gap").height($(window).height() - pos);
 
         updatePlayStatus();
@@ -678,6 +788,7 @@ var Audio = function ()
     };
 
     this.updateBackgroundDim = updateBackgroundDim;
+    this.updatePullerState = updatePullerState;
 
     var audio = $("#audio");
     audio.on("pause", updatePlayStatus);
@@ -756,6 +867,7 @@ $(document).ready(function ()
 
     $(window).scroll(function ()
     {
+        audio.updatePullerState();
         audio.updateBackgroundDim();
     });
 });
