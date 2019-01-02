@@ -1277,9 +1277,6 @@ function makeHtml(viewMode, sortMode, prefix, contentRoot, uri, path, stats, cli
                     tag("a").id("download").data("ajax", "false").attr("href", "#").attr("download", "name").style("display", "none")
                 )
                 .content(
-                    tag("audio").id("audio").style("display", "none")
-                )
-                .content(
                     makeMainPage(viewMode, sortMode, prefix, contentRoot, uri, path, stats, userContext, shares)
                 )
                 .content(

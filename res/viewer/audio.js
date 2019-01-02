@@ -4,6 +4,8 @@ var Audio = function ()
     var m_haveFooter = false;
     var m_isSeeking = false;
 
+    var m_metaDataCache = { };
+
     var Playlist = function (playCallback)
     {
         var m_keyCounter = 0;
@@ -110,7 +112,7 @@ var Audio = function ()
         var ua = navigator.userAgent;
         if (! ua)
         {
-            return false;
+            return true;
         }
         else if (ua.indexOf("SailfishBrowser") !== -1)
         {
@@ -146,6 +148,12 @@ var Audio = function ()
      */
     function fetchMetadata(uri, callback)
     {
+        if (m_metaDataCache[uri])
+        {
+            callback(uri, m_metaDataCache[uri]);
+            return;
+        }
+
         $.ajax({
             url: "/::tags" + uri,
             type: "GET",
@@ -154,6 +162,7 @@ var Audio = function ()
         .done(function (data, status, xhr)
         {
             //console.log(JSON.stringify(data));
+            m_metaDataCache[uri] = data;
             callback(uri, data);
         })
         .fail(function (xhr, status, err)
@@ -374,7 +383,6 @@ var Audio = function ()
 
         footer.find(".audio-play-button").on("click", function ()
         {
-            var audio = $("#audio");
             if (audio.prop("paused"))
             {
                 audio.trigger("play");
@@ -606,7 +614,6 @@ var Audio = function ()
 
         pageSection.find(".audio-play-button").on("click", function ()
         {   
-            var audio = $("#audio");
             if (audio.prop("paused"))
             {
                 audio.trigger("play");
@@ -740,8 +747,8 @@ var Audio = function ()
      */
     function play(uri)
     {
-        var audio = $("#audio");
         audio.prop("src", uri);
+        audio.trigger("load");
         audio.trigger("play");
         updateMetadata();
     }
@@ -790,7 +797,8 @@ var Audio = function ()
     this.updateBackgroundDim = updateBackgroundDim;
     this.updatePullerState = updatePullerState;
 
-    var audio = $("#audio");
+    $("body").append("<audio id='audio-player' style='display: none;'></audio>");
+    var audio = $("#audio-player");
     audio.on("pause", updatePlayStatus);
     audio.on("play", updatePlayStatus);
     audio.on("durationchange", updatePosition);

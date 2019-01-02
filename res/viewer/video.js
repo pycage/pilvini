@@ -183,7 +183,7 @@ function viewVideo(href)
     var btnFullscreen = videoDiv.find("footer > span:nth-child(5)");
 
     video.prop("autoplay", true);
-    video.prop("controls", false);
+    video.removeProp("controls");
 
     videoDiv.on("click", function (event) { event.stopPropagation(); });
 
@@ -253,6 +253,7 @@ function viewVideo(href)
 
 
     video.attr("src", href);
+    video.trigger("load");
     sh.popup("preview-popup");
     //sh.popup("busy-popup");
 
