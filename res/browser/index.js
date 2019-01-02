@@ -54,28 +54,30 @@ function showQuestion(title, msg, yesCb, noCb)
     sh.popup("question-dialog");
 }
 
+/* Initiates loading the thumbnails of the items on the page.
+ */
 function loadThumbnails(page)
 {
     console.log("Location: " + currentUri());
 
-    var images = [];
-    $(page).find(".fileitem .thumbnail").each(function (idx)
+    var items = [];
+    $(page).find(".fileitem").each(function (idx)
     {
-        var url = $(this).attr("data-x-thumbnail");
-        if (url)
+        if ($(this).find(".thumbnail").length)
         {
-            console.log("- Thumbnail: " + url);
-            images.push(this);
+            items.push(this);
         }
     });
 
-    console.log("loadThumbnails: " + images.length + " images");
-    loadNextThumbnail(currentUri(), images);
+    console.log("loadThumbnails: " + items.length + " images");
+    loadNextThumbnail(currentUri(), items);
 }
 
-function loadNextThumbnail(forLocation, images)
+/* Loads the next thumbnail.
+ */
+function loadNextThumbnail(forLocation, items)
 {
-    if (images.length === 0)
+    if (items.length === 0)
     {
         return;
     }
@@ -84,7 +86,7 @@ function loadNextThumbnail(forLocation, images)
     var topPos = $(document).scrollTop();
     var bottomPos = topPos + $(window).height();
 
-    images.sort(function (a, b)
+    items.sort(function (a, b)
     {
         var aPos = $(a).offset().top;
         var bPos = $(b).offset().top;
@@ -107,8 +109,11 @@ function loadNextThumbnail(forLocation, images)
         }
     });
 
-    var img = images.shift();
-    var url = $(img).attr("data-x-thumbnail");
+    var item = items.shift();
+    var img = $(item).find(".thumbnail");
+    var url = img.data("x-thumbnail");
+    //var img = images.shift();
+    //var url = img.attr("data-x-thumbnail");
     console.log("GET: " + url);
 
     var now = Date.now();
@@ -125,32 +130,173 @@ function loadNextThumbnail(forLocation, images)
     $.ajax(url, settings)
     .done(function (data, status, xhr)
     {
-        var contentType = "image/jpeg"; //xhr.getResponseHeader("Content-Type");
-        if (url.toLowerCase().endsWith(".svg"))
+        if (xhr.status === 200)
         {
-            contentType = "image/svg+xml";
-        }
+            var contentType = "image/jpeg"; //xhr.getResponseHeader("Content-Type");
+            if (url.toLowerCase().endsWith(".svg"))
+            {
+                contentType = "image/svg+xml";
+            }
+    
+            var buffer = "";
+            for (var i = 0; i < data.length; ++i)
+            {
+                buffer += String.fromCharCode(data.charCodeAt(i) & 0xff);
+            }
+            var pic = "data:" + contentType + ";base64," + btoa(buffer);
+    
+            var then = Date.now();
+            $(img).css("background-image", "url(" + pic + ")");
+            $(img).css("background-size", "cover");
+    
+            var speed = Math.ceil((data.length / 1024) / ((then - now) / 1000.0));
+            console.log("Loading took " + (then - now) + " ms, size: " + data.length + " B (" + speed + " kB/s).");
 
-        var buffer = "";
-        for (var i = 0; i < data.length; ++i)
+            if (currentUri() === forLocation)
+            {
+                loadNextThumbnail(forLocation, items);
+            }
+        }
+        else if (xhr.status === 204)
         {
-            buffer += String.fromCharCode(data.charCodeAt(i) & 0xff);
+            // create thumbnail client-side, send to server, and retry           
+            generateThumbnail(item, function (data)
+            {
+                var thumbnailUrl = $(item).find(".thumbnail").data("x-thumbnail");
+                submitThumbnail("image/jpeg", data, thumbnailUrl, function (ok)
+                {
+                    if (ok)
+                    {
+                        items.unshift(item);
+                    }
+                    if (currentUri() === forLocation)
+                    {
+                        loadNextThumbnail(forLocation, items);
+                    }
+                });
+            });
         }
-        var pic = "data:" + contentType + ";base64," + btoa(buffer);
-
-        var then = Date.now();
-        $(img).css("background-image", "url(" + pic + ")");
-        $(img).css("background-size", "cover");
-
-        var speed = Math.ceil((data.length / 1024) / ((then - now) / 1000.0));
-        console.log("Loading took " + (then - now) + " ms, size: " + data.length + " B (" + speed + " kB/s).");
     })
-    .always(function ()
+    .fail(function ()
     {
         if (currentUri() === forLocation)
         {
-            loadNextThumbnail(forLocation, images);
+            loadNextThumbnail(forLocation, items);
         }
+    });
+}
+
+/* Generates a client-side thumbnail.
+ */
+function generateThumbnail(item, callback)
+{
+    var mimeType = $(item).data("mimetype");
+    if (mimeType.indexOf("video/") === 0)
+    {
+        var sourceUrl = $(item).data("url");
+        generateVideoThumbnail(sourceUrl, callback);
+    }
+    else
+    {
+        callback(false);
+    }
+}
+
+/* Generates a video thumbnail.
+ */
+function generateVideoThumbnail(url, callback)
+{
+    function extractImage(data)
+    {
+        var pos = data.indexOf(",");
+        var b64 = data.substr(pos + 1);
+        return atob(b64);
+    }
+
+
+    var videoPlayer = document.createElement("video");
+    videoPlayer.autoplay = true;
+    videoPlayer.muted = true;
+
+    var canvas = document.createElement("canvas");
+    canvas.width = 80;
+    canvas.height = 80;
+
+    var ctx = canvas.getContext("2d");
+    
+    $(videoPlayer).on("canplay", function ()
+    {
+        videoPlayer.currentTime = videoPlayer.duration * 0.2;
+        videoPlayer.play();
+    });
+
+    $(videoPlayer).on("seeked", function ()
+    {
+        var w = videoPlayer.videoWidth;
+        var h = videoPlayer.videoHeight;
+
+        // crop viewport
+        var cw = Math.min(w, h);
+        var ch = cw;
+        var cx = (w - cw) / 2;
+        var cy = (h - ch) / 2;
+
+        ctx.drawImage(videoPlayer, cx, cy, cw, ch, 0, 0, 80, 80);
+        $(videoPlayer).off("error");
+        videoPlayer.src = "";
+        videoPlayer.load();
+
+        var data = canvas.toDataURL("image/jpeg");
+        callback(extractImage(data));
+    });
+
+    $(videoPlayer).on("error", function ()
+    {
+        console.log("failed to thumbnail video " + url);
+        callback("");
+    });
+
+    videoPlayer.src = url;
+    videoPlayer.load();
+}
+
+/* Submits a client-side-generated thumbnail to the server.
+ */
+function submitThumbnail(mimeType, data, url, callback)
+{
+    if (data === "")
+    {
+        callback(false);
+        return;
+    }
+
+    // fill binary buffer
+    var buffer = new ArrayBuffer(data.length);
+    var writer = new Uint8Array(buffer);
+    for (var i = 0; i < data.length; ++i)
+    {
+        writer[i] = data.charCodeAt(i);
+    }
+
+    $.ajax({
+        url: url,
+        type: "PUT",
+        data: buffer,
+        processData: false,
+        beforeSend: function (xhr)
+        {
+             xhr.overrideMimeType(mimeType);
+             xhr.setRequestHeader("x-pilvini-width", 80);
+             xhr.setRequestHeader("x-pilvini-height", 80);
+        }
+    })
+    .done(function ()
+    {
+        callback(true);
+    })
+    .fail(function (xhr, status, err)
+    {
+        callback(false);
     });
 }
 

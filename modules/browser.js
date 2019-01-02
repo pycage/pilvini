@@ -33,6 +33,7 @@ const MIME_INFO = {
     "text/xml": { "icon": "text.png", "viewer": "viewText" },
     "text/x-markdown": { "icon": "document.png", "viewer": "viewMarkdown" },
     "video/mp4": { "icon": "video.png", "viewer": "viewVideo" },
+    "video/webm": { "icon": "video.png", "viewer": "viewVideo" },
     "video/x-flv": { "icon": "video.png", "viewer": "viewVideo" },
     "video/x-msvideo": { "icon": "video.png", "viewer": "viewVideo" }
 };
@@ -227,7 +228,9 @@ function makeFileItem(pathUri, file, stat, active, callback)
         action = "loadDirectory(\"" + uri + "\");";
     }
     else if (mimeType.startsWith("image/") ||
-             mimeType.startsWith("audio/"))
+             mimeType.startsWith("audio/") ||
+             mimeType === "video/mp4" ||
+             mimeType === "video/webm")
     {
         if (! modThumbnail)
         {

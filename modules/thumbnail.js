@@ -14,6 +14,10 @@ exports.makeThumbnail = function (mimeType, file, thumbFile, maxWidth, maxHeight
         {
             makeAudioThumbnail(file, thumbFile, maxWidth, maxHeight, callback);
         }
+        else if (mimeType.startsWith("video/"))
+        {
+            makeVideoThumbnail(file, thumbFile, maxWidth, maxHeight, callback);
+        }
         else
         {
             callback(null);
@@ -111,4 +115,10 @@ function makeImageThumbnail(imageFile, thumbFile, maxWidth, maxHeight, callback)
             }
         });
     }
+}
+
+function makeVideoThumbnail(videoFile, thumbFile, maxWidth, maxHeight, callback)
+{
+    // I cannot create video thumbnails, but the client can do and send me
+    callback("<clientside>");
 }
