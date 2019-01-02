@@ -355,7 +355,7 @@ function parseId3v2(fd, rev, tags, resultCallback)
             {
                 if (isStringKey(key))
                 {
-                    console.debug("Tag " + key + " = " + value);
+                    console.debug("Tag " + key + " = " + value + " <" + value.length + " bytes>");
                 }
                 else if (key === "PICTURE")
                 {
@@ -431,7 +431,7 @@ function parseId3v2(fd, rev, tags, resultCallback)
             var valueBuffer = buffer.slice(pos, pos + valueSize);
             if (key === "PICTURE")
             {
-                value = parseApic(valueBuffer);
+                value = parseApic(valueBuffer, params);
             }
             else if (params.encodings.length > 0 && valueBuffer[0] < 5 && isStringKey(key))
             {
@@ -448,7 +448,12 @@ function parseId3v2(fd, rev, tags, resultCallback)
                     }
                     encoding = "utf16le";
                 }
+
                 value = valueBuffer.slice(1).toString(encoding);
+                if (value.charCodeAt(value.length - 1) === 0)
+                {
+                    value = value.substr(0, value.length - 1);
+                }
             }
             else
             {
@@ -462,29 +467,44 @@ function parseId3v2(fd, rev, tags, resultCallback)
 
     /* Parses APIC data.
      */
-    function parseApic(buffer)
+    function parseApic(buffer, params)
     {
-        var idx = buffer.indexOf(0, 1);
-        var mimeType = buffer.slice(1, 1 + idx - 1);
-        var pictureType = buffer[idx + 1];
-        console.debug("Found APIC Picture Type " + pictureType + ", Mime Type " + mimeType);
-        idx = buffer.indexOf(0, idx + 2);
-        if (idx !== -1)
+        var idx = 0;
+        var textEncoding = buffer[idx];
+        ++idx;
+        var imageFormat = "";
+        if (params.fullMimeType)
         {
-            while (idx < buffer.length - 1 && buffer[idx] === 0)
-            {
-                ++idx;
-            }
+            var end = buffer.indexOf(0, idx);
+            imageFormat = buffer.slice(idx, end);
+            idx = end + 1;
+        }
+        else
+        {
+            imageFormat = buffer.slice(idx, idx + 3);
+            idx += 3;
+        }
+        var pictureType = buffer[idx];
+        ++idx;
+        var idx = buffer.indexOf(0, idx);
 
-            var picBuffer = buffer.slice(idx);
-            if (isPictureValid(picBuffer))
-            {
-                return { "mimeType": mimeType, "data": picBuffer.toString("binary") };
-            }
-            else
-            {
-                return null;
-            }
+        if (idx === -1)
+        {
+            return null;
+        }
+
+        if (buffer[idx] === 0)
+        {
+            ++idx;
+        }
+        
+        //console.log(buffer);
+        var picBuffer = buffer.slice(idx);
+        //console.log("pic: " + idx + ", " + picBuffer[0]);
+        //console.log("format: " + imageFormat);
+        if (isPictureValid(picBuffer))
+        {
+            return { "mimeType": imageFormat, "data": picBuffer.toString("binary") };
         }
         else
         {
@@ -504,14 +524,19 @@ function parseId3v2(fd, rev, tags, resultCallback)
         {
             return false;
         }
-        else if (buffer.slice(1, 4) === "PNG")
+        else if (buffer.slice(1, 4).indexOf("PNG") !== -1)
         {
             // PNG
             return true;
         }
         else if (buffer.slice(0, 16).indexOf("JFIF") !== -1)
         {
-            // JPG
+            // JPEG/JFIF
+            return true;
+        }
+        else if (buffer.slice(0, 16).indexOf("Exif") !== -1)
+        {
+            // JPEG/Exif
             return true;
         }
         else
@@ -531,7 +556,8 @@ function parseId3v2(fd, rev, tags, resultCallback)
         params.flagCompressed = 0;
         params.flagEncrypted = 0;
         params.flagInGroup = 0;
-        params.encodings = [];
+        params.encodings = ["binary" /*latin1*/, "utf16le"];
+        params.fullMimeType = false;
         break;
     case 3:
         params.keyLength = 4;
@@ -542,6 +568,7 @@ function parseId3v2(fd, rev, tags, resultCallback)
         params.flagEncrypted = 0x0040;
         params.flagInGroup = 0x0020;
         params.encodings = ["binary" /*latin1*/, "utf16le", "utf16be", "utf8"];
+        params.fullMimeType = true;
         break;
     case 4:
         params.keyLength = 4;
@@ -552,6 +579,7 @@ function parseId3v2(fd, rev, tags, resultCallback)
         params.flagEncrypted = 0x0004;
         params.flagInGroup = 0x0002;
         params.encodings = ["binary" /*latin1*/, "utf16le", "utf16be", "utf8"];
+        params.fullMimeType = true;
         break;
     default:
         callback("Unknown revision");

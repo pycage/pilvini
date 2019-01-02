@@ -528,7 +528,7 @@ server.listen(CONFIG.server.port, CONFIG.server.listen);
 
 console.log("                   | Version " + VERSION)
 console.log("   .-------.       |");
-console.log("  ( Pilvini ).--.  | (c) 2017, 2018 Martin Grimme");
+console.log("  ( Pilvini ).--.  | (c) 2017 - 2019 Martin Grimme");
 console.log(" (  Cloud Drive  ) | https://github.com/pycage/pilvini");
 console.log("  ```````````````  |");
 console.log("Listening....      | Port " + CONFIG.server.port + " " + (CONFIG.server.use_ssl ? "(SSL)" : ""));

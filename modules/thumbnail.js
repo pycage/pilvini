@@ -49,31 +49,41 @@ function makeAudioThumbnail(file, thumbFile, maxWidth, maxHeight, callback)
                 return;
             }
 
+            console.log("mimetype: " + apic.mimeType);
             var imageData = new Buffer(apic.data, "binary");
             var imageType = {
                 "image/png": "png",
-                "image/jpeg": "jpg"
+                "image/jpeg": "jpg",
+                "PNG": "png",
+                "JPG": "jpg"
             }[apic.mimeType];
 
-            modLwip.open(imageData, "jpg", function (err, image)
+            try
             {
-                if (! err)
+                modLwip.open(imageData, imageType, function (err, image)
                 {
-                    var scale = Math.max(maxWidth / image.width(), maxHeight / image.height());
-
-                    var begin = Date.now();
-                    image.batch().scale(scale).writeFile(thumbFile, imageType, function (err)
+                    if (! err)
                     {
-                        console.debug("Thumbnailing " + file + " -> " + thumbFile +
-                                      " took " + (Date.now() - begin) + " ms");
+                        var scale = Math.max(maxWidth / image.width(), maxHeight / image.height());
+    
+                        var begin = Date.now();
+                        image.batch().scale(scale).writeFile(thumbFile, imageType, function (err)
+                        {
+                            console.debug("Thumbnailing " + file + " -> " + thumbFile +
+                                          " took " + (Date.now() - begin) + " ms");
+                            callback(err);
+                        });
+                    }
+                    else
+                    {
                         callback(err);
-                    });
-                }
-                else
-                {
-                    callback(err);
-                }
-            });
+                    }
+                });
+            }
+            catch (err)
+            {
+                callback(err);
+            }
         }
         else
         {
