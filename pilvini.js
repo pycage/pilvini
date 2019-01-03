@@ -1,6 +1,7 @@
 "use strict";
 
-const modFs = require("fs"),
+const modCrypto = require("crypto"),
+      modFs = require("fs"),
       modHttp = require("http"),
       modHttps = require("https"),
       modPath = require("path"),
@@ -127,6 +128,40 @@ function serviceOf(path)
     }
 }
 
+/* Creates a fingerprint of the given client request.
+ * This may be used to indentify a certain client.
+ * If `forRoaming` is true, the fingerprint is not bound to the IP address.
+ */
+function clientFingerprint(request, forRoaming)
+{
+    function toHex(s)
+    {
+        var out = "";
+        for (var i = 0; i < s.length; ++i)
+        {
+            out += s[i].charCodeAt(0).toString(16);
+        }
+        return out;
+    }
+
+    var remoteHost = request.connection.remoteAddress;
+    var remoteFamily = request.connection.remoteFamily;
+    var userAgent = request.headers["user-agent"] || "";
+    var acceptLanguage = request.headers["accept-language"] || "";
+    var dnt = request.headers["dnt"] || "0";
+
+    if (forRoaming)
+    {
+        remoteHost = "255.255.255.255";
+    }
+
+    var hash = modCrypto.createHash("md5");
+    hash.update(remoteHost + ":" + remoteFamily + ":" + userAgent + ":" + acceptLanguage + ":" + dnt);
+    var fingerprint = hash.digest("hex");
+
+    return toHex(Buffer.from(remoteHost + ":" + remoteFamily, "ascii").toString("base64")) + fingerprint;
+}
+
 /* Handles HTTP requests and produces a response.
  */
 function handleRequest(request, response)
@@ -162,8 +197,21 @@ function handleRequest(request, response)
         authenticator = httpAuthenticator;
     }
 
-    // try to authorize user, or request login
+    // try to authorize user
     var authUser = authenticator.authorize(request, authUsers);
+    
+    // try to identify user by registered fingerprint
+    var fingerprint = clientFingerprint(request, false);
+    var roamingFingerprint = clientFingerprint(request, true);
+    if (! authUser)
+    {
+        var u = fingerprints[fingerprint] || fingerprints[roamingFingerprint];
+        if (u)
+        {
+            authUser = u;
+        }
+    }
+
     if (! authUser && ! isPublic(request.method, urlObj.pathname))
     {
         // login required
@@ -183,6 +231,13 @@ function handleRequest(request, response)
             services["shell"].requestLogin(response, function () { });
             return;
         }
+    }
+
+    if (authUser)
+    {
+        console.log("[" + new Date().toLocaleString() + "] [Server] " +
+                    "[client " + authUser + "@" + request.connection.remoteAddress + ":" + request.connection.remotePort + "] " +
+                    "Fingerprints: " + fingerprint + ", " + roamingFingerprint + " (roaming)");
     }
 
     // get the user's home directory
@@ -498,6 +553,19 @@ else
 {
     throw "Invalid authentication method '" + CONFIG.authentication.method + "'";
 }
+
+// setup fingerprints registry
+var fingerprints = { };
+CONFIG.users.forEach(function (u)
+{
+    if (u.fingerprints)
+    {
+        u.fingerprints.forEach(function (p)
+        {
+            fingerprints[p] = u.name;
+        });
+    }
+});
 
 // setup services
 var services = {
