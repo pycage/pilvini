@@ -226,12 +226,16 @@ function generateVideoThumbnail(url, callback)
     
     $(videoPlayer).on("canplay", function ()
     {
+        //alert("canplay");
+        $(videoPlayer).off("canplay");
         videoPlayer.currentTime = videoPlayer.duration * 0.2;
-        videoPlayer.play();
+        //videoPlayer.play();
     });
 
     $(videoPlayer).on("seeked", function ()
     {
+        //alert("seeked");
+        $(videoPlayer).off("seeked");
         var w = videoPlayer.videoWidth;
         var h = videoPlayer.videoHeight;
 
@@ -241,13 +245,51 @@ function generateVideoThumbnail(url, callback)
         var cx = (w - cw) / 2;
         var cy = (h - ch) / 2;
 
-        ctx.drawImage(videoPlayer, cx, cy, cw, ch, 0, 0, 80, 80);
+        ctx.fillStyle = "#000";
+        ctx.fillRect(0, 0, 80, 80);
+
+        // capturing the image can go wrong and we don't want to upload a
+        // broken thumbnail in these cases
+        //  - Mobile Firefox does not allow capturing at all
+        //  - Silk on Fire TV treats mp4 as copy-protected and captures all black
+        //    (webm is fine, though)
+        try
+        {
+            ctx.drawImage(videoPlayer, cx, cy, cw, ch, 0, 0, 80, 80);
+
+            // check if we got a valid image, as some browsers silently give us a black screen
+            // for copy-protection
+            var buffer = ctx.getImageData(0, 0, 80, 1);    
+            var allBlack = true;
+            for (var i = 0; i < buffer.data.length; i += 4)
+            {
+                if (buffer.data[i] !== 0 || buffer.data[i + 1] !== 0 || buffer.data[i + 2] !== 0)
+                {
+                    allBlack = false;
+                    break;
+                }
+            }
+            if (allBlack)
+            {
+                throw "No content";
+            }
+        }
+        catch (err)
+        {
+            //alert(err);
+            callback("");
+            return;
+        }
+
         $(videoPlayer).off("error");
         videoPlayer.src = "";
         videoPlayer.load();
 
+        $(videoPlayer).remove();
+
         var data = canvas.toDataURL("image/jpeg");
         callback(extractImage(data));
+
     });
 
     $(videoPlayer).on("error", function ()

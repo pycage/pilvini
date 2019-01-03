@@ -79,8 +79,8 @@ function viewVideo(href)
     }
 
     var popup = $("#preview-popup");
-    var w = popup.width() - 32;
-    var h = popup.height() - 32;
+    var w = popup.width() - 80;
+    var h = popup.height() - 80;
 
     popup.find("> div").html(
         tag("div")
@@ -169,9 +169,31 @@ function viewVideo(href)
             .content(
                 tag("span").class("sh-right sh-fw-icon sh-icon-fullscreen")
             )
+            /*
+            .content(
+                tag("img").class("sh-right")
+                .style("width: 100px")
+                .style("height: 80px")
+                )
+            */
         )
         .html()
     );
+
+    /*
+    // test video capturing capability
+    function hack()
+    {
+        var canvas = document.createElement("canvas");
+        canvas.width = 100;
+        canvas.height = 80;
+        var ctx = canvas.getContext("2d");
+        ctx.drawImage(video.get(0), 0, 0, 80, 80);
+        videoDiv.find("footer > img").attr("src", canvas.toDataURL());
+        setTimeout(hack, 1000);
+    }
+    setTimeout(hack, 500);
+    */
 
     var videoDiv = popup.find("> div > div");
     var video = popup.find("video");
@@ -183,6 +205,7 @@ function viewVideo(href)
     var btnFullscreen = videoDiv.find("footer > span:nth-child(5)");
 
     video.prop("autoplay", true);
+    //video.prop("muted", true);
     video.removeProp("controls");
 
     videoDiv.on("click", function (event) { event.stopPropagation(); });
