@@ -62,6 +62,7 @@ text editor:
      or use an online MD5 hash generator, such as
      [http://www.adamek.biz/md5-generator.php].
    * `home` This is the path that *pilvini* confines the user to. This path is relative to the `root` path configured for the server.
+   * `fingerprints` An optional list of fingerprints that may be used to identify the user. See **Login via Fingerprint** for details.
 
  * `global` This is the section for global settings.
    * `debug` Set this value to true to enable verbose debug logging.
@@ -115,6 +116,28 @@ remote shares, it is in practise very picky.
  * For every request, it has to be reminded to send the authentication header.
    As a consequence of this it sends every request twice. First unauthorized,
    then authorized.
+
+## Login via Fingerprint
+
+Client fingerprints may be used as an alternative authentication method for password-less
+user login. *pilvini* determines a unique fingerprint of the client and if the fingerprint
+matches one in its registry of fingerprints, the user is authenticated automatically.
+Users are allowed to have multiple fingerprints in the registry in order to give them access
+from different clients.
+
+There are two types of fingerprints. Address-bound fingerprints are tied to a certain IP address,
+while roaming fingerprints are not tied to an IP address. Roaming fingerprints are useful for
+mobile users which get new IP address often.
+
+Watch the server log to find the normal and roaming fingerprints of a client connection.
+
+**Note:** Clients identified by fingerprint cannot log out or log in to another user account.
+
+**Note:** Fingerprint-based authentication may pose a security risk as it is not ruled out that
+fingerprints (especially roaming fingerprints) can be spoofed with some effort. Do not configure
+fingerprint login if you believe this could be a security issue.
+
+
 
 ## The Shell
 
