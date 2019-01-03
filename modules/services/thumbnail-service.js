@@ -53,7 +53,6 @@ function loadOrCreateThumbnail(targetFile, thumbDir, thumbFile, maxWidth, maxHei
                         {
                             modUtils.getFile(response, thumbFile);
                         }
-                        modUtils.limitFiles(thumbDir, 1000);
                         callback();
                     });
                 });
@@ -62,35 +61,38 @@ function loadOrCreateThumbnail(targetFile, thumbDir, thumbFile, maxWidth, maxHei
     });
 }
 
-function writeThumbnail(thumbFile, stream, response, callback)
+function writeThumbnail(thumbDir, thumbFile, stream, response, callback)
 {
-    modFs.open(thumbFile, "w", function(err, fd)
+    modUtils.mkdirs(thumbDir, function (err)
     {
-        if (err)
+        modFs.open(thumbFile, "w", function(err, fd)
         {
-            console.error(err);
-            response.writeHeadLogged(409, "Conflict");
-            callback();
-            return;
-        }
-       
-        var writeStream = modFs.createWriteStream("", { "fd": fd });
-        
-        stream.on("data", function(data)
-        {
-            writeStream.write(data);
-        });
-        
-        stream.on("end", function()
-        {
-            writeStream.end();
-        });
-        
-        writeStream.on("finish", function()
-        {
-            response.writeHeadLogged(200, "OK");
-            response.end();
-            callback();
+            if (err)
+            {
+                console.error(err);
+                response.writeHeadLogged(409, "Conflict");
+                callback();
+                return;
+            }
+           
+            var writeStream = modFs.createWriteStream("", { "fd": fd });
+            
+            stream.on("data", function(data)
+            {
+                writeStream.write(data);
+            });
+            
+            stream.on("end", function()
+            {
+                writeStream.end();
+            });
+            
+            writeStream.on("finish", function()
+            {
+                response.writeHeadLogged(200, "OK");
+                response.end();
+                callback();
+            });
         });
     });
 }
@@ -120,11 +122,19 @@ var Service = function (contentRoot)
         if (request.method === "GET")
         {
             console.log("thumbfile: " + thumbFile);
-            loadOrCreateThumbnail(targetFile, m_thumbDir, thumbFile, maxWidth, maxHeight, response, callback);
+            loadOrCreateThumbnail(targetFile, m_thumbDir, thumbFile, maxWidth, maxHeight, response, function ()
+            {
+                modUtils.limitFiles(m_thumbDir, 1000);
+                callback();
+            });
         }
         else if (request.method === "PUT")
         {
-            writeThumbnail(thumbFile, request, response, callback);
+            writeThumbnail(m_thumbDir, thumbFile, request, response, function ()
+            {
+                modUtils.limitFiles(m_thumbDir, 1000);
+                callback();
+            });
         }
     };
 };

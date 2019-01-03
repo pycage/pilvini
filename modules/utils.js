@@ -67,20 +67,16 @@ function limitFiles(path, amount)
                         {
                             return 0;
                         }
-                        else if (a[1].mtime < b[1].mtime)
-                        {
-                            return -1;
-                        }
                         else
                         {
-                            return a[0].toLowerCase() < b[0].toLowerCase() ? -1 : 1;
-                        }
+                            return a[1].mtimeMs - b[1].mtimeMs;
+                        } 
                     });
 
                     while (result.length > amount)
                     {
                         var path = result[0][0];
-                        console.debug("Clearing old file: " + path);
+                        console.debug("Clearing old file: " + path + " (" + result[0][1].mtime + ")");
                         result.shift();
                         modFs.unlink(path, function (err) { });
                     }
