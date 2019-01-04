@@ -1,5 +1,7 @@
 function viewVideo(href)
 {
+    var isSeeking = false;
+
     function formatTime(seconds)
     {
         var t = seconds;
@@ -20,14 +22,90 @@ function viewVideo(href)
         return (hours > 0 ? h + ":" : "") + m + ":" + s;
     }
 
+    /* Sets up the progress bar behavior.
+     */
+    function setupProgressBar(progressBar, draggingCallback, seekCallback)
+    {
+        var isDragging = false;
+
+        progressBar.on("mousedown", function (event)
+        {
+            isDragging = true;
+            var p = event.offsetX / $(this).width();
+            progressBar.find("> div").css("width", (p * 100.0) + "%");
+            draggingCallback(p, true);
+        });
+        progressBar.on("mousemove", function (event)
+        {
+            if (isDragging)
+            {
+                var p = event.offsetX / $(this).width();
+                progressBar.find("> div").css("width", (p * 100.0) + "%");
+                draggingCallback(p, true);
+            }
+        });
+        progressBar.on("mouseup", function (event)
+        {
+            if (isDragging)
+            {
+                isDragging = false;
+                var p = event.offsetX / $(this).width();
+                seekCallback(p);
+            }
+        });
+        progressBar.on("mouseleave", function (event)
+        {
+            isDragging = false;
+            draggingCallback(0, false);
+        });
+
+        progressBar.on("touchstart", function (event)
+        {
+            event.preventDefault();
+            isDragging = true;
+            var p = event.originalEvent.touches[0].clientX / $(this).width();
+            this.lastTouchPos = p;
+            draggingCallback(p);
+        });
+        progressBar.on("touchmove", function (event)
+        {
+            event.preventDefault();
+            if (isDragging)
+            {
+                var p = event.originalEvent.touches[0].clientX / $(this).width();
+                progressBar.find("> div").css("width", (p * 100.0) + "%");
+                this.lastTouchPos = p;
+                draggingCallback(p);
+            }
+        });
+        progressBar.on("touchend", function (event)
+        {
+            event.preventDefault();
+            if (isDragging)
+            {
+                isDragging = false;
+                seekCallback(this.lastTouchPos);
+            }
+        });
+        progressBar.on("touchcancel", function (event)
+        {
+            event.preventDefault();
+            isDragging = false;
+            draggingCallback(0, false);
+        });
+    }
+
     /* Updates the current player position.
      */
     function updatePosition()
     {
-        var total = video.prop("duration");
-        var pos = video.prop("currentTime");
-        progressBar.css("width", (pos / total * 100.0) + "%");
-        progressLabel.html(formatTime(pos) + " / " + formatTime(total));
+        if (! isSeeking)
+        {
+            var total = video.prop("duration");
+            var pos = video.prop("currentTime");
+            $(".video-progress-bar > div").css("width", (pos / total * 100.0) + "%");
+            $(".video-progress-label").html(formatTime(pos) + " / " + formatTime(total));
+        }
     }
 
     function slideIn()
@@ -69,12 +147,12 @@ function viewVideo(href)
         if (sh.isFullscreen())
         {
             sh.exitFullscreen();
-            btnFullscreen.removeClass("sh-icon-unfullscreen").addClass("sh-icon-fullscreen");
+            $(this).removeClass("sh-icon-unfullscreen").addClass("sh-icon-fullscreen");
         }
         else
         {
             sh.requestFullscreen(videoDiv);
-            btnFullscreen.removeClass("sh-icon-fullscreen").addClass("sh-icon-unfullscreen");
+            $(this).removeClass("sh-icon-fullscreen").addClass("sh-icon-unfullscreen");
         }
     }
 
@@ -106,24 +184,7 @@ function viewVideo(href)
             .style("line-height", "80px")
             .style("visibility", "hidden")
             .content(
-                tag("div").class("progressBar")
-                .style("position", "absolute")
-                .style("top", "0")
-                .style("left", "0")
-                .style("right", "0")
-                .style("height", "4px")
-                .content(
-                    tag("div")
-                    .style("position", "absolute")
-                    .style("top", "0")
-                    .style("left", "0")
-                    .style("width", "0%")
-                    .style("height", "4px")
-                    .style("background-color", "var(--color-primary-background)")
-                )
-            )
-            .content(
-                tag("div")
+                tag("div").class("video-progress-label")
                 .style("position", "absolute")
                 .style("top", "6px")
                 .style("left", "0")
@@ -136,16 +197,16 @@ function viewVideo(href)
             .content(
                 tag("span").class("sh-left")
                 .content(
-                    tag("span").class("sh-fw-icon sh-icon-media-rwd10")
+                    tag("span").class("sh-fw-icon sh-icon-media-rwd10 video-rewind-button")
                     .style("padding-left", "0.5em")
                     .style("font-size", "80%")
                 )
                 .content(
-                    tag("span").class("sh-fw-icon")
+                    tag("span").class("sh-fw-icon video-play-button")
                     .style("padding-left", "0.25em")
                 )
                 .content(
-                    tag("span").class("sh-fw-icon sh-icon-media-fwd30")
+                    tag("span").class("sh-fw-icon sh-icon-media-fwd30 video-forward-button")
                     .style("padding-left", "0.25em")
                     .style("font-size", "80%")
                 )
@@ -167,7 +228,24 @@ function viewVideo(href)
                 .style("color", "#fff")
             )
             .content(
-                tag("span").class("sh-right sh-fw-icon sh-icon-fullscreen")
+                tag("span").class("sh-right sh-fw-icon sh-icon-fullscreen video-fullscreen-button")
+            )
+            .content(
+                tag("div").class("video-progress-bar")
+                .style("position", "absolute")
+                .style("top", "0")
+                .style("left", "0")
+                .style("right", "0")
+                .style("height", "1rem")
+                .content(
+                    tag("div")
+                    .style("position", "absolute")
+                    .style("top", "0")
+                    .style("left", "0")
+                    .style("width", "0%")
+                    .style("height", "4px")
+                    .style("background-color", "var(--color-primary-background)")
+                )
             )
             /*
             .content(
@@ -197,15 +275,9 @@ function viewVideo(href)
 
     var videoDiv = popup.find("> div > div");
     var video = popup.find("video");
-    var progressBar = videoDiv.find("footer > div:nth-child(1) > div");
-    var progressLabel = videoDiv.find("footer > div:nth-child(2)")
-    var btnPlay = videoDiv.find("footer > span > span:nth-child(2)");
-    var btnRwd = videoDiv.find("footer > span > span:nth-child(1)");
-    var btnFwd = videoDiv.find("footer > span > span:nth-child(3)");
-    var btnFullscreen = videoDiv.find("footer > span:nth-child(5)");
+    var btnPlay = $(".video-play-button");
 
     video.prop("autoplay", true);
-    //video.prop("muted", true);
     video.removeProp("controls");
 
     videoDiv.on("click", function (event) { event.stopPropagation(); });
@@ -215,7 +287,7 @@ function viewVideo(href)
 
     btnPlay.on("click", togglePlay);
 
-    btnRwd.on("click", function (event)
+    videoDiv.find(".video-rewind-button").on("click", function (event)
     {
         var currentTime = video.prop("currentTime");
         if (currentTime - 10 > 0)
@@ -228,7 +300,7 @@ function viewVideo(href)
         }
     });
 
-    btnFwd.on("click", function (event)
+    videoDiv.find(".video-forward-button").on("click", function (event)
     {
         var duration = video.prop("duration");
         var currentTime = video.prop("currentTime");
@@ -242,7 +314,7 @@ function viewVideo(href)
         }
     });
 
-    btnFullscreen.on("click", toggleFullscreen);
+    videoDiv.find(".video-fullscreen-button").on("click", toggleFullscreen);
 
     video.on("click", function (event)
     {     
@@ -272,6 +344,24 @@ function viewVideo(href)
     video.on("waiting", function ()
     {
         sh.popup("busy-popup");
+    });
+
+    setupProgressBar($(".video-progress-bar"), function (p, dragging)
+    {
+        isSeeking = dragging;
+        if (dragging)
+        {
+            var total = video.prop("duration") || 0;
+            if (total > 0)
+            {
+                $(".video-progress-label").html(formatTime(Math.floor(p * total)) + " / " + formatTime(total));
+            }
+        }
+    },
+    function (p)
+    {
+        isSeeking = false;
+        video.prop("currentTime", p * video.prop("duration"));
     });
 
 
