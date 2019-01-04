@@ -676,6 +676,7 @@ function pasteItems()
         .done(function ()
         {
             console.log("File pasted: " + name);
+            $(item).remove();
         })
         .fail(function ()
         {
