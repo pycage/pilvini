@@ -253,6 +253,7 @@ function generateVideoThumbnail(url, callback)
         //  - Mobile Firefox does not allow capturing at all
         //  - Silk on Fire TV treats mp4 as copy-protected and captures all black
         //    (webm is fine, though)
+        var data = "";
         try
         {
             ctx.drawImage(videoPlayer, cx, cy, cw, ch, 0, 0, 80, 80);
@@ -273,28 +274,26 @@ function generateVideoThumbnail(url, callback)
             {
                 throw "No content";
             }
+
+            data = extractImage(canvas.toDataURL("image/jpeg"));
         }
         catch (err)
         {
             //alert(err);
-            callback("");
-            return;
+            console.error("Failed to thumbnail video " + url + ": " + err);
         }
 
         $(videoPlayer).off("error");
         videoPlayer.src = "";
         videoPlayer.load();
-
         $(videoPlayer).remove();
 
-        var data = canvas.toDataURL("image/jpeg");
-        callback(extractImage(data));
-
+        callback(data);
     });
 
     $(videoPlayer).on("error", function ()
     {
-        console.log("failed to thumbnail video " + url);
+        console.error("Failed to thumbnail video " + url + ": read error");
         callback("");
     });
 

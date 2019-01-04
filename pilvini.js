@@ -40,7 +40,27 @@ console.debug = function(msg)
 };
 
 
+var TransferTracker = function (url)
+{
+    var m_bytes = 0;
 
+    this.transfer = function (bytes)
+    {
+        m_bytes += bytes;
+    }
+
+    this.end = function ()
+    {
+        console.log("Transfer finished: " + url + " (" + m_bytes + " bytes transfered)");
+    }
+
+    this.abort = function ()
+    {
+        console.log("Transfer aborted: " + url + " (" + m_bytes + " bytes transfered)");
+    }
+
+    console.log("Transfer started: " + url);
+};
 
 
 /* Parses a HTTP range attribute and returns a [from, to] tuple.
@@ -353,6 +373,8 @@ function handleRequest(request, response)
             range = parseRange(request.headers.range);
         }
 
+        var tracker = new TransferTracker(urlObj.pathname);
+
         var callback = function (code, status, from, to, totalSize, stream, dataSize)
         {
             if (code === 206)
@@ -375,11 +397,15 @@ function handleRequest(request, response)
             response.writeHeadLogged(code, status);
             if (stream)
             {
+                response.on("error", tracker.abort);
+                response.on("unpipe", function () { stream.destroy(); tracker.end(); });
+                stream.on("data", function (chunk) { tracker.transfer(chunk.length); });
                 stream.pipe(response);
             }
             else
             {
                 response.end();
+                tracker.end();
             }
         };
 
