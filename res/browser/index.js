@@ -755,6 +755,7 @@ function removeItem(item)
     .done(function () {
         console.log("File removed: " + name);
         $(item).remove();
+        updateNavBar();
     })
     .fail(function () {
         showError("Failed to remove: " + name);
@@ -1135,6 +1136,105 @@ function onItemTouchEnd(ev)
     }
 }
 
+function updateNavBar()
+{
+    $("#navbar").html("");
+    var items = $("#filesbox .fileitem");
+    var currentLetter = "";
+    for (var i = 0; i < items.length; ++i)
+    {
+        var item = $(items[i]);
+        var letter = item.find("h1").html()[0].toUpperCase();
+
+        if (letter !== currentLetter)
+        {
+            $("#navbar").append(
+                tag("span")
+                .style("position", "absolute")
+                .style("top", (item.offset().top - $("#main-page > header").height()) + "px")
+                .style("left", "0")
+                .style("right", "0")
+                .content(letter)
+                .html()
+            )
+            currentLetter = letter;
+        }
+    }
+
+    $("#navbar").off("mousedown").on("mousedown", function (event)
+    {
+        this.pressed = true;
+
+        var percents = (event.clientY - $(this).offset().top) /
+                       ($(window).height() - $(this).offset().top);
+        $(document).scrollTop(($(document).height() - $(window).height()) * percents);
+    });
+
+    $("#navbar").off("mouseup").on("mouseup", function (event)
+    {
+        this.pressed = false;
+    });
+
+    $("#navbar").off("mouseleave").on("mouseleave", function (event)
+    {
+        this.pressed = false;
+    });
+
+    $("#navbar").off("mousemove").on("mousemove", function (event)
+    {
+        if (this.pressed)
+        {
+            var percents = (event.clientY - $(this).offset().top) /
+                           ($(window).height() - $(this).offset().top);
+            $(document).scrollTop(($(document).height() - $(window).height()) * percents);
+        }
+    });
+
+    // quite an effort to work around quirks in certain touch browsers
+
+    $("#navbar").off("touchstart").on("touchstart", function (event)
+    {
+        var scrollBegin = $(document).scrollTop();
+        $("#main-page").addClass("sh-page-transitioning");
+        $("#main-page > section").scrollTop(scrollBegin);
+        this.touchContext = {
+            top: $(this).offset().top,
+            scrollBegin: scrollBegin,
+            scrollTarget: 0
+        };
+    });
+
+    $("#navbar").off("touchend").on("touchend", function (event)
+    {
+        $("#main-page > section").css("margin-top", 0);
+        $("#main-page").removeClass("sh-page-transitioning");
+        if (this.touchContext.scrollTarget > 0)
+        {
+            $(document).scrollTop(this.touchContext.scrollTarget);
+        }    
+    });
+
+    $("#navbar").off("touchmove").on("touchmove", function (event)
+    {
+        event.preventDefault();
+        
+        var percents = (event.originalEvent.touches[0].clientY - this.touchContext.top) /
+                       ($(window).height() - this.touchContext.top);
+        percents = Math.max(0, Math.min(1, percents));
+
+        var scrollTop = ($("#navbar").height() + $("#main-page > header").height() - $(window).height()) * percents;
+
+        $("#main-page > section").css("margin-top", (-scrollTop) + "px");
+        this.touchContext.scrollTarget = scrollTop;        
+    });
+
+    var h1 = $(window).height() - $("#main-page > header").height() - 1;
+    if ($("#navbar").height() < h1)
+    {
+        $("#navbar").height(h1);
+    }
+}
+
 function loadDirectory(href)
 {
     console.log("Load: " + href);
@@ -1153,6 +1253,7 @@ function loadDirectory(href)
         
             unselectAll();
             checkClipboard();
+            updateNavBar();
     
             sh.popup_close("busy-popup");
 
@@ -1229,6 +1330,7 @@ function init()
 
     unselectAll();
     checkClipboard();
+    updateNavBar();
 }
 
 function initLogin()

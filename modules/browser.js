@@ -255,7 +255,8 @@ function makeFileItem(pathUri, file, stat, active, callback)
 function makeFiles(uri, stats, active)
 {
     var tag = modHtml.tag;
-    var t = tag("ul").class("sh-listview");
+    var t = tag("ul").class("sh-listview")
+            .style("margin-left", "32px");
 
     for (var i = 0; i < stats.length; ++i)
     {
@@ -384,6 +385,23 @@ function makeFilesGrid(sortMode, uri, stats, active)
         }))
         .content("&nbsp;");
     }
+
+    return t;
+}
+
+function makeNavBar()
+{
+    var tag = modHtml.tag;
+    var t = tag("div").id("navbar")
+            .style("position", "absolute")
+            .style("top", "0")
+            .style("left", "0")
+            .style("width", "32px")
+            .style("height", "100%")
+            .style("background-color", "var(--color-primary)")
+            .style("color", "var(--color-primary-background)")
+            .style("text-align", "center")
+            .style("font-weight", "bold")
 
     return t;
 }
@@ -1203,8 +1221,12 @@ function makeMainPage(viewMode, sortMode, prefix, contentRoot, uri, path, stats,
     )
     .content(
         tag("section").id("filesbox")
+        .style("position", "relative")
         .data("prefix", prefix)
         .data("url", uri)
+        .content(
+            makeNavBar()
+        )
         .content(
             viewMode === "list" ? makeFiles(uri, stats, true)
                                 : makeFilesGrid(sortMode, uri, stats, true)
