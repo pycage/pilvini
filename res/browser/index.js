@@ -537,7 +537,6 @@ function checkClipboard()
     }
 }
 
-
 function clearClipboard(callback)
 {
     console.log("Clear clipboard");

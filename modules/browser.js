@@ -255,8 +255,11 @@ function makeFileItem(pathUri, file, stat, active, callback)
 function makeFiles(uri, stats, active)
 {
     var tag = modHtml.tag;
-    var t = tag("ul").class("sh-listview")
-            .style("margin-left", "32px");
+    var t = tag("ul").class("sh-listview");
+    if (active)
+    {
+        t.style("margin-left", "32px");
+    }
 
     for (var i = 0; i < stats.length; ++i)
     {
@@ -294,7 +297,7 @@ function makeFiles(uri, stats, active)
                         )
                     );
 
-            if (action !== "")
+            if (action !== "" && active)
             {
                 t = t.on("click", action);
             }

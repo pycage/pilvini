@@ -1,5 +1,6 @@
 .sh-page {
     visibility: hidden;
+    display: none;
     position: absolute;
     color: var(--color-primary);
     background-color: var(--color-content-background);
@@ -8,6 +9,10 @@
     width: 100%;
     min-height: 100%;
     padding-top: 2rem;
+}
+
+.sh-page.sh-visible {
+    display: block;
 }
 
 .sh-page > header {
