@@ -1293,11 +1293,16 @@ function loadDirectory(href)
     sh.popup("busy-popup");
     
     var prefix = $("#filesbox").data("prefix");
-    var userUri = href;
 
     $("#main-page").load(prefix + href + "?ajax #main-page > *", function (data, status, xhr)
     {
-        console.log(status);
+        if (xhr.status !== 200)
+        {
+            sh.popup_close("busy-popup");
+            showError("Failed to load directory.");
+            return;
+        }
+
         sh.push("main-page", function ()
         {
             var page = $("#main-page");
