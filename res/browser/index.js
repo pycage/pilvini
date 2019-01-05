@@ -605,8 +605,6 @@ function cutItem(item)
     var name = unescapeHtml($(item).find("h1").html());
     var sourceUri = $(item).data("url");
     var targetUri = "/.pilvini/clipboard/" + encodeURIComponent(name);
-    //var target = encodeURIComponent(name);
-    //var newTarget = "/.pilvini/clipboard/" + encodeURIComponent(name);
 
     $.ajax({
                url: sourceUri,
@@ -617,6 +615,7 @@ function cutItem(item)
         console.log("File cut: " + name);
         copyItemToClipboard(item);
         $(item).remove();
+        updateNavBar();
     })
     .fail(function () {
         showError("Failed to cut: " + name);
@@ -627,11 +626,22 @@ function copyItem(item)
 {
     console.log("Copy item");
 
+    
     var name = unescapeHtml($(item).find("h1").html());
     var sourceUri = $(item).data("url");
     var targetUri = "/.pilvini/clipboard/" + encodeURIComponent(name);
     //var target = encodeURIComponent(name);
     //var newTarget = "/.pilvini/clipboard/" + encodeURIComponent(name);
+    
+    var statusEntry = $(
+        tag("h1")
+        .content(
+            tag("span").class("sh-fw-icon sh-icon-clipboard")
+        )
+        .content("Copying " + name)
+        .html()
+    );
+    $("#statusbox").append(statusEntry);
 
     $.ajax({
                url: sourceUri,
@@ -644,6 +654,10 @@ function copyItem(item)
     })
     .fail(function () {
         showError("Failed to copy: " + name);
+    })
+    .always(function ()
+    {
+        statusEntry.remove();
     });
 }
 
@@ -661,12 +675,9 @@ function pasteItems()
     {
         var item = this;
 
-        //var path = currentPath();
         var name = unescapeHtml($(item).find("h1").html());
         var sourceUri = $(item).data("url");
         var targetUri = currentUri() + "/" + name;
-        //var target = "/.pilvini/clipboard/" + encodeURIComponent(name);
-        //var newTarget = encodeURI(path !== "/" ? path : "") + "/" + encodeURIComponent(name);
 
         $.ajax({
                    url: sourceUri,
@@ -764,6 +775,47 @@ function removeItem(item)
 
 function upload(file, target, callback)
 {
+    var statusEntry = $(
+        tag("div")
+        .style("position", "relative")
+        .content(
+            tag("div")
+            .style("position", "absolute")
+            .style("background-color", "var(--color-highlight-background)")
+            .style("width", "0%")
+            .style("height", "100%")
+        )
+        .content(
+            tag("h1")
+            .style("position", "relative")
+            .content(
+                tag("span").class("sh-fw-icon sh-icon-cloud-upload")
+            )
+            .content(file.name)
+        )
+        .html()
+    );
+
+    $("#statusbox").append(statusEntry);
+
+    function createMonitoringXhr()
+    {
+        var xhr = $.ajaxSettings.xhr();
+        if (xhr.upload)
+        {
+            xhr.upload.addEventListener("progress", function (status)
+            {
+                if (status.lengthComputable && status.total > 0)
+                {
+                    var p = status.loaded / status.total;
+                    statusEntry.find("> div").css("width", (p * 100) + "%");
+                }
+            }, false);
+        }
+
+        return xhr;
+    }
+
     console.log("Upload: " + file.name + " -> " + target);
 
     var reader = new FileReader();
@@ -777,7 +829,8 @@ function upload(file, target, callback)
                    type: "PUT",
                    contentType: "application/octet-stream",
                    processData: false,
-                   data: data
+                   data: data,
+                   xhr: createMonitoringXhr
                })
         .done(function () {
             console.log("File uploaded: " + file.name + ", size: " + data.length);
@@ -786,6 +839,7 @@ function upload(file, target, callback)
             showError("Failed to upload: " + file.name);
         })
         .always(function () {
+            statusEntry.remove();
             callback();
         });
     }
@@ -799,7 +853,7 @@ function uploadFiles(files)
         return;
     }
 
-    sh.popup("busy-popup");
+    //sh.popup("busy-popup");
 
     var tokens = [];
     for (var i = 0; i < files.length; ++i)
@@ -1237,7 +1291,6 @@ function updateNavBar()
 
 function loadDirectory(href)
 {
-    console.log("Load: " + href);
     sh.popup("busy-popup");
     
     var prefix = $("#filesbox").data("prefix");
@@ -1339,25 +1392,4 @@ function initLogin()
 
     $("#login-dialog a:first-child").off("click").on("click", login);
     sh.popup("login-dialog");
-
-    /*
-    // get background of the day from BING
-    $.getJSON("http://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=1", function (data)
-    {
-        alert("got json " + JSON.stringify(data));
-        var images = data["images"];
-        if (images)
-        {
-            var firstImage = images[0];
-            if (firstImage)
-            {
-                var imageUrl = firstImage["url"];
-                if (imageUrl)
-                {
-                    $("#main-page").css("backgroundImage", "url(\"http://bing.com" + imageUrl + "\")");
-                }
-            }
-        }
-    });
-    */
 }

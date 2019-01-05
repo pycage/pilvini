@@ -888,6 +888,23 @@ function makeQuestionDialog()
     return t;
 }
 
+function makeStatusBox()
+{
+    var tag = modHtml.tag;
+
+    var t = tag("div").id("statusbox").class("sh-dropshadow")
+            .style("position", "fixed")
+            .style("bottom", "0")
+            .style("right", "0")
+            .style("max-width", "60vw")
+            .style("width", "auto")
+            .style("height", "auto")
+            .style("border", "solid 1px var(--color-border)")
+            .style("background-color", "var(--color-primary-background)");
+
+    return t;
+}
+
 function makeNewDirDialog()
 {
     var tag = modHtml.tag;
@@ -1085,7 +1102,7 @@ function makeBusyPopup()
     
     var t = tag("div").id("busy-popup").class("sh-popup")
             .content(
-                tag("div")
+                tag("div").class("sh-dropshadow")
                 .style("color", "var(--color-primary)")
                 .style("text-align", "center")
                 .style("padding", "1em")
@@ -1303,6 +1320,9 @@ function makeHtml(viewMode, sortMode, prefix, contentRoot, uri, path, stats, cli
                 )
                 .content(
                     makeMainPage(viewMode, sortMode, prefix, contentRoot, uri, path, stats, userContext, shares)
+                )
+                .content(
+                    makeStatusBox()
                 )
                 .content(
                     makeNewDirDialog()

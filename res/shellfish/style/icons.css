@@ -22,6 +22,14 @@
     font-family: Material; content: "\f120";
 }
 
+.sh-icon-clipboard:before {
+    font-family: Material; content: "\f109";
+}
+
+.sh-icon-cloud-upload:before {
+    font-family: Material; content: "\f21e";
+}
+
 .sh-icon-edit:before {
     font-family: Material; content: "\f158";
 }
