@@ -171,6 +171,7 @@ function loadNextThumbnail(forLocation, items)
 
             if (currentUri() === forLocation)
             {
+                statusEntry.remove();
                 loadNextThumbnail(forLocation, items);
             }
         }
@@ -182,6 +183,7 @@ function loadNextThumbnail(forLocation, items)
                 var thumbnailUrl = $(item).find(".thumbnail").data("x-thumbnail");
                 submitThumbnail("image/jpeg", data, thumbnailUrl, function (ok)
                 {
+                    statusEntry.remove();
                     if (ok)
                     {
                         items.unshift(item);
@@ -198,12 +200,9 @@ function loadNextThumbnail(forLocation, items)
     {
         if (currentUri() === forLocation)
         {
+            statusEntry.remove();
             loadNextThumbnail(forLocation, items);
         }
-    })
-    .always(function ()
-    {
-        statusEntry.remove();
     });
 }
 
