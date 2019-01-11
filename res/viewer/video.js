@@ -159,103 +159,109 @@ function viewVideo(href)
     }
 
     var popup = $("#preview-popup");
-    var w = popup.width() - 80;
-    var h = popup.height() - 80;
+    var maxWidth = popup.width() - 80;
+    var maxHeight = popup.height() - 80;
 
     popup.find("> div").html(
         tag("div")
         .style("position", "relative")
-        .style("max-width", w + "px")
-        .style("max-height", h + "px")
+        .style("max-width", maxWidth + "px")
+        .style("max-height", maxHeight + "px")
         .content(
-            tag("video")
+            tag("div")
             .style("width", "100%")
             .style("height", "100%")
-        )
-        .content(
-            tag("footer")
-            .style("background-color", "rgba(1, 1, 1, 0.6)")
-            .style("color", "#fff")
-            .style("font-size", "200%")
-            .style("position", "absolute")
-            .style("margin", "0")
-            .style("left", "0")
-            .style("right", "0")
-            .style("bottom", "-80px")
-            .style("min-height", "80px")
-            .style("line-height", "80px")
-            .style("visibility", "hidden")
+            .style("background-color", "black")
             .content(
-                tag("div").class("video-progress-label")
-                .style("position", "absolute")
-                .style("top", "6px")
-                .style("left", "0")
-                .style("right", "0")
-                .style("text-align", "center")
-                .style("line-height", "1rem")
-                .style("font-size", "1rem")
-                .content("0:00 | 1:23")
+                tag("video")
+                .style("width", "100%")
+                .style("height", "100%")
             )
             .content(
-                tag("span").class("sh-left")
-                .content(
-                    tag("span").class("sh-fw-icon sh-icon-media-rwd10 video-rewind-button")
-                    .style("padding-left", "0.5em")
-                    .style("font-size", "80%")
-                )
-                .content(
-                    tag("span").class("sh-fw-icon video-play-button")
-                    .style("padding-left", "0.25em")
-                )
-                .content(
-                    tag("span").class("sh-fw-icon sh-icon-media-fwd30 video-forward-button")
-                    .style("padding-left", "0.25em")
-                    .style("font-size", "80%")
-                )
-            )
-            .content(
-                tag("h1")
-                .style("font-size", "1rem")
+                tag("footer")
+                .style("background-color", "rgba(1, 1, 1, 0.6)")
+                .style("color", "#fff")
+                .style("font-size", "200%")
                 .style("position", "absolute")
                 .style("margin", "0")
-                .style("padding", "0")
-                .style("padding-top", "1em")
-                .style("margin-left", "8em")
-                .style("margin-right", "8em")
-                .style("white-space", "nowrap")
-                .style("text-overflow", "ellipsis")
-                .style("overflow", "hidden")
-                .style("left", "0.25em")
-                .style("right", "0.25em")
-                .style("color", "#fff")
-            )
-            .content(
-                tag("span").class("sh-right sh-fw-icon sh-icon-fullscreen video-fullscreen-button")
-            )
-            .content(
-                tag("div").class("video-progress-bar")
-                .style("position", "absolute")
-                .style("top", "0")
                 .style("left", "0")
                 .style("right", "0")
-                .style("height", "1rem")
+                .style("bottom", "-80px")
+                .style("min-height", "80px")
+                .style("line-height", "80px")
+                .style("visibility", "hidden")
                 .content(
-                    tag("div")
+                    tag("div").class("video-progress-label")
+                    .style("position", "absolute")
+                    .style("top", "6px")
+                    .style("left", "0")
+                    .style("right", "0")
+                    .style("text-align", "center")
+                    .style("line-height", "1rem")
+                    .style("font-size", "1rem")
+                    .content("0:00 | 1:23")
+                )
+                .content(
+                    tag("span").class("sh-left")
+                    .content(
+                        tag("span").class("sh-fw-icon sh-icon-media-rwd10 video-rewind-button")
+                        .style("padding-left", "0.5em")
+                        .style("font-size", "80%")
+                    )
+                    .content(
+                        tag("span").class("sh-fw-icon video-play-button")
+                        .style("padding-left", "0.25em")
+                    )
+                    .content(
+                        tag("span").class("sh-fw-icon sh-icon-media-fwd30 video-forward-button")
+                        .style("padding-left", "0.25em")
+                        .style("font-size", "80%")
+                    )
+                )
+                .content(
+                    tag("h1")
+                    .style("font-size", "1rem")
+                    .style("position", "absolute")
+                    .style("margin", "0")
+                    .style("padding", "0")
+                    .style("padding-top", "1em")
+                    .style("margin-left", "8em")
+                    .style("margin-right", "8em")
+                    .style("white-space", "nowrap")
+                    .style("text-overflow", "ellipsis")
+                    .style("overflow", "hidden")
+                    .style("left", "0.25em")
+                    .style("right", "0.25em")
+                    .style("color", "#fff")
+                )
+                .content(
+                    tag("span").class("sh-right sh-fw-icon sh-icon-fullscreen video-fullscreen-button")
+                )
+                .content(
+                    tag("div").class("video-progress-bar")
                     .style("position", "absolute")
                     .style("top", "0")
                     .style("left", "0")
-                    .style("width", "0%")
-                    .style("height", "4px")
-                    .style("background-color", "var(--color-primary-background)")
+                    .style("right", "0")
+                    .style("height", "1rem")
+                    .content(
+                        tag("div")
+                        .style("position", "absolute")
+                        .style("top", "0")
+                        .style("left", "0")
+                        .style("width", "0%")
+                        .style("height", "4px")
+                        .style("background-color", "var(--color-primary-background)")
+                    )
                 )
+                /*
+                .content(
+                    tag("img").class("sh-right")
+                    .style("width: 100px")
+                    .style("height: 80px")
+                    )
+                */
             )
-            /*
-            .content(
-                tag("img").class("sh-right")
-                .style("width: 100px")
-                .style("height: 80px")
-                )
-            */
         )
         .html()
     );
@@ -275,7 +281,7 @@ function viewVideo(href)
     setTimeout(hack, 500);
     */
 
-    var videoDiv = popup.find("> div > div");
+    var videoDiv = popup.find("> div > div > div");
     var video = popup.find("video");
     var btnPlay = $(".video-play-button");
 
