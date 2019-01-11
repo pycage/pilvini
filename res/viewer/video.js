@@ -31,7 +31,7 @@ function viewVideo(href)
         progressBar.on("mousedown", function (event)
         {
             isDragging = true;
-            var p = event.offsetX / $(this).width();
+            var p = Math.max(0, Math.min(1, event.offsetX / $(this).width()));
             progressBar.find("> div").css("width", (p * 100.0) + "%");
             draggingCallback(p, true);
         });
@@ -39,7 +39,7 @@ function viewVideo(href)
         {
             if (isDragging)
             {
-                var p = event.offsetX / $(this).width();
+                var p = Math.max(0, Math.min(1, event.offsetX / $(this).width()));
                 progressBar.find("> div").css("width", (p * 100.0) + "%");
                 draggingCallback(p, true);
             }
@@ -63,19 +63,21 @@ function viewVideo(href)
         {
             event.preventDefault();
             isDragging = true;
-            var p = event.originalEvent.touches[0].clientX / $(this).width();
+            var x = event.originalEvent.touches[0].clientX - $(this).offset().left;
+            var p = Math.max(0, Math.min(1, x / $(this).width()));
             this.lastTouchPos = p;
-            draggingCallback(p);
+            draggingCallback(p, true);
         });
         progressBar.on("touchmove", function (event)
         {
             event.preventDefault();
             if (isDragging)
             {
-                var p = event.originalEvent.touches[0].clientX / $(this).width();
+                var x = event.originalEvent.touches[0].clientX - $(this).offset().left;
+                var p = Math.max(0, Math.min(1, x / $(this).width()));
                 progressBar.find("> div").css("width", (p * 100.0) + "%");
                 this.lastTouchPos = p;
-                draggingCallback(p);
+                draggingCallback(p, true);
             }
         });
         progressBar.on("touchend", function (event)
