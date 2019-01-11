@@ -318,48 +318,60 @@ var DavSession = function(home)
 
         // TODO: compression and chunked
         
-        modFs.stat(path, function (err, stats)
+        // try to open first to work around crash with EACCES while streaming
+        modFs.open(path, "r", function (err, fd)
         {
             if (err)
             {
                 resultCallback(403, "Forbidden", 0, -1, 0, null, 0);
                 return;
             }
+            modFs.closeSync(fd);
 
-            if (stats.isDirectory())
+            modFs.stat(path, function (err, stats)
             {
-                modZip.makeZip(path, function (err, stream)
+                if (err)
                 {
-                    if (err)
+                    resultCallback(403, "Forbidden", 0, -1, 0, null, 0);
+                    return;
+                }
+    
+                if (stats.isDirectory())
+                {
+                    modZip.makeZip(path, function (err, stream)
                     {
-                        resultCallback(500, "Internal Server Error", 0, -1, 0, null, 0);
-                    }
-                    else
-                    {
-                        resultCallback(200, "OK", 0, -1, 0, stream, -1);
-                    }
-                });
-                return;
-            }
-
-            var stream = null;
-            if (range.length == 0)
-            {
-                stream = modFs.createReadStream(path);
-                resultCallback(200, "OK", 0, -1, stats.size, stream, stats.size);
-            }
-            else
-            {
-                var from = Math.min(range[0],
-                                    stats.size - 1);
-                var to = Math.min(range[1] !== -1 ? range[1] : stats.size - 1,
-                                  stats.size - 1);
-
-                console.debug("Bytes Range: " + from + "-" + to + "/" + stats.size);
-                stream = modFs.createReadStream(path, { start: from, end: to });
-                resultCallback(206, "Partial Content", from, to, stats.size, stream, to - from + 1);
-            }
+                        if (err)
+                        {
+                            resultCallback(500, "Internal Server Error", 0, -1, 0, null, 0);
+                        }
+                        else
+                        {
+                            resultCallback(200, "OK", 0, -1, 0, stream, -1);
+                        }
+                    });
+                    return;
+                }
+    
+                var stream = null;
+                if (range.length == 0)
+                {
+                    stream = modFs.createReadStream(path);
+                    resultCallback(200, "OK", 0, -1, stats.size, stream, stats.size);
+                }
+                else
+                {
+                    var from = Math.min(range[0],
+                                        stats.size - 1);
+                    var to = Math.min(range[1] !== -1 ? range[1] : stats.size - 1,
+                                      stats.size - 1);
+    
+                    console.debug("Bytes Range: " + from + "-" + to + "/" + stats.size);
+                    stream = modFs.createReadStream(path, { start: from, end: to });
+                    resultCallback(206, "Partial Content", from, to, stats.size, stream, to - from + 1);
+                }
+            });
         });
+
     };
 
     that.head = function(href, resultCallback)

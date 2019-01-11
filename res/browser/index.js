@@ -110,6 +110,7 @@ function loadNextThumbnail(forLocation, items)
     });
 
     var item = items.shift();
+    var name = $(item).find("h1").html();
     var img = $(item).find(".thumbnail");
     var url = img.data("x-thumbnail");
     //var img = images.shift();
@@ -117,6 +118,22 @@ function loadNextThumbnail(forLocation, items)
     console.log("GET: " + url);
 
     var now = Date.now();
+
+    var statusEntry = $(
+        tag("div")
+        .style("position", "relative")
+        .content(
+            tag("h1")
+            .style("position", "relative")
+            .content(
+                tag("span").class("sh-fw-icon sh-icon-wait")
+            )
+            .content(name)
+        )
+        .html()
+    );
+
+    $("#statusbox").append(statusEntry);
 
     var settings = {
         beforeSend: function (xhr)
@@ -183,6 +200,10 @@ function loadNextThumbnail(forLocation, items)
         {
             loadNextThumbnail(forLocation, items);
         }
+    })
+    .always(function ()
+    {
+        statusEntry.remove();
     });
 }
 

@@ -69,7 +69,7 @@ function limitFiles(path, amount)
                         }
                         else
                         {
-                            return a[1].mtimeMs - b[1].mtimeMs;
+                            return a[1].mtime - b[1].mtime;
                         } 
                     });
 

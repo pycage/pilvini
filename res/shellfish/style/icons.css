@@ -145,3 +145,7 @@
 .sh-icon-unfullscreen:before {
     font-family: Material; content: "\f16c";
 }
+
+.sh-icon-wait:before {
+    font-family: Material; content: "\f179";
+}
