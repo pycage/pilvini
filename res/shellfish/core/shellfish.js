@@ -159,6 +159,132 @@ sh.pop = function (callback, reverse)
     }
 }
 
+/* Sets up swipe-back touch gesture for the given page.
+ * Invokes the given callback on swiping back.
+ */
+sh.onSwipeBack = function (which, callback)
+{
+    var page = sh.item(which);
+
+    if (! page.length)
+    {
+        return;
+    }
+
+    page.on("touchstart", function (ev)
+    {
+        ev.preventDefault();
+
+        this.swipeContext = {
+            beginX: ev.originalEvent.touches[0].screenX,
+            beginY: ev.originalEvent.touches[0].screenY,
+            status: 0,
+            scrollTop: 0
+        };
+    });
+    page.on("touchmove", function (ev)
+    {
+        ev.preventDefault();
+
+        var dx = ev.originalEvent.touches[0].screenX - this.swipeContext.beginX;
+        var dy = ev.originalEvent.touches[0].screenY - this.swipeContext.beginY;
+        var pos = dx - 16;
+        
+        var fullWidth = $(this).width();
+        var swipeThreshold = fullWidth * 0.20;
+    
+        switch (this.swipeContext.status)
+        {
+        case 0: // initiated
+            if (pos > 0)
+            {
+                var angle = Math.atan(dy / dx);
+                if (Math.abs(angle) > Math.PI / 4)
+                {
+                    this.swipeContext.status = 3;
+                }
+                else
+                {
+                    var scrollTop = $(document).scrollTop();
+                    console.log("scrollTop: " + scrollTop);
+                    page.addClass("sh-page-transitioning");
+                    page.find("> section").css("margin-top", (-scrollTop) + "px");
+                    this.swipeContext.scrollTop = scrollTop;
+                    this.swipeContext.status = 1;
+                }
+            }
+            break;
+    
+        case 1: // swiping
+            page.css("left", Math.max(0, Math.min(fullWidth, pos)) + "px")
+                .css("right", -Math.max(0, Math.min(fullWidth, pos)) + "px");
+            page.find("> header").css("left", Math.max(0, Math.min(fullWidth, pos)) + "px")
+                                 .css("right", -Math.max(0, Math.min(fullWidth, pos)) + "px");
+           
+            if (dx > swipeThreshold)
+            {
+                $("body").css("background-color", "#a0a0a0");
+                this.swipeContext.status = 2;
+            }
+            break;
+    
+        case 2: // activated
+            page.css("left", Math.max(0, Math.min(fullWidth, pos)) + "px")
+                .css("right", -Math.max(0, Math.min(fullWidth, pos)) + "px");
+            page.find("> header").css("left", Math.max(0, Math.min(fullWidth, pos)) + "px")
+                                 .css("right", -Math.max(0, Math.min(fullWidth, pos)) + "px");
+    
+            if (dx < swipeThreshold)
+            {
+                $("body").css("background-color", "");
+                this.swipeContext.status = 1;
+            }
+            break;
+    
+        case 3: // aborted
+            break;
+        }
+    });
+    page.on("touchend", function (ev)
+    {
+        ev.preventDefault();
+
+        $("body").css("background-color", "");
+        page.find("> section").css("margin-top", 0);
+        page.removeClass("sh-page-transitioning");
+        
+        if (this.swipeContext.scrollTop > 0)
+        {
+            $(document).scrollTop(this.swipeContext.scrollTop);
+        }
+        
+        if (this.swipeContext.status === 2)
+        {
+            callback();
+        }
+        
+        var left = page.css("left");
+        setTimeout(function ()
+        {
+            // slide back if needed
+            if (left === page.css("left"))
+            {
+                page.animate({
+                    left: 0,
+                    right: 0
+                }, 300);
+                page.find("header").animate({
+                    left: 0,
+                    right: 0
+                }, 300);
+
+                //page.css("left", 0).css("right", 0);
+                //page.find("> header").css("left", 0).css("right", 0);
+            }
+        }, 300);
+    });
+}
+
 /* Pops the topmost page off the page stack. Invokes callback afterwards.
  * The page slides in a way that signalizes acceptance.
  */
@@ -172,7 +298,7 @@ sh.accept = function (callback)
  */
 sh.dialog = function (which, callbacks)
 {
-    var dlg = sh.which(which);
+    var dlg = sh.item(which);
     if (dlg.length)
     {
         $(".sh-page").css("z-index", 0);

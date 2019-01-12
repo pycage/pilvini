@@ -38,6 +38,8 @@ function loadVCard(href)
 {
     var page = $("#viewer-page");
 
+    sh.onSwipeBack(page, function () { sh.pop(); });
+
     var parts = href.split("/");
     var name = decodeURI(parts[parts.length - 1]);
     page.find("header h1").html(name);

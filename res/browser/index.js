@@ -1104,105 +1104,6 @@ function onDrop(ev)
     uploadFiles(ev.dataTransfer.files);
 }
 
-function onItemTouchStart(ev)
-{
-    this.swipeContext = {
-        beginX: ev.originalEvent.touches[0].screenX,
-        beginY: ev.originalEvent.touches[0].screenY,
-        status: 0,
-        scrollTop: 0
-    };
-}
-
-function onItemTouchMove(ev)
-{
-    if ($(sh.topmost(".sh-visible")).attr("id") !== "main-page")
-    {
-        return;
-    }
-
-    var upButton = $(sh.topmost(".sh-page.sh-visible")).find("#upButton");
-    if (! upButton.length)
-    {
-        return;
-    }
-
-    var dx = ev.originalEvent.touches[0].screenX - this.swipeContext.beginX;
-    var dy = ev.originalEvent.touches[0].screenY - this.swipeContext.beginY;
-    var pos = dx - 16;
-    
-    var fullWidth = $(this).width();
-    var swipeThreshold = fullWidth * 0.20;
-
-    switch (this.swipeContext.status)
-    {
-    case 0: // initiated
-        if (pos > 0)
-        {
-            var angle = Math.atan(dy / dx);
-            if (Math.abs(angle) > Math.PI / 4)
-            {
-                this.swipeContext.status = 3;
-            }
-            else
-            {
-                var scrollTop = $(document).scrollTop();
-                console.log("scrollTop: " + scrollTop);
-                $("#main-page").addClass("sh-page-transitioning");
-                $("#main-page > section").css("margin-top", (-scrollTop) + "px");
-                this.swipeContext.scrollTop = scrollTop;
-                this.swipeContext.status = 1;
-            }
-        }
-        break;
-
-    case 1: // swiping
-        $("#main-page, #main-page > header").css("left", Math.max(0, Math.min(fullWidth, pos)) + "px")
-                                            .css("right", -Math.max(0, Math.min(fullWidth, pos)) + "px");
-        
-        if (dx > swipeThreshold)
-        {
-            $("body").css("background-color", "#a0a0a0");
-            this.swipeContext.status = 2;
-        }
-        break;
-
-    case 2: // activated
-    $("#main-page, #main-page > header").css("left", Math.max(0, Math.min(fullWidth, pos)) + "px")
-                                        .css("right", -Math.max(0, Math.min(fullWidth, pos)) + "px");
-
-        if (dx < swipeThreshold)
-        {
-            $("body").css("background-color", "");
-            this.swipeContext.status = 1;
-        }
-        break;
-
-    case 3: // aborted
-        break;
-    }
-
-    //ev.preventDefault();
-}
-
-function onItemTouchEnd(ev)
-{
-    $("body").css("background-color", "");
-    $("#main-page, #main-page > header").css("left", 0).css("right", 0);
-    $("#main-page > section").css("margin-top", 0);
-    $("#main-page").removeClass("sh-page-transitioning");
-    if (this.swipeContext.scrollTop > 0)
-    {
-        $(document).scrollTop(this.swipeContext.scrollTop);
-    }
-
-    var upButton = $("#upButton");
-    if (upButton.length && this.swipeContext.status === 2)
-    {
-        loadDirectory(upButton.data("url"));
-    }
-}
-
 function updateNavBar()
 {
     $("#navbar").html("");
@@ -1391,9 +1292,15 @@ function init()
     });
 
     /* setup swipe suppport */
-    $("body").on("touchstart", onItemTouchStart);
-    $("body").on("touchmove", onItemTouchMove);
-    $("body").on("touchend", onItemTouchEnd);
+    sh.onSwipeBack(page, function ()
+    {
+
+        var upButton = $("#upButton");
+        if (upButton.length)
+        {
+            loadDirectory(upButton.data("url"));
+        }
+    });
 
     /* setup drag and drop for external files */
     $("body").on("dragover", onDragOver);

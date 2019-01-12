@@ -572,6 +572,9 @@ var Audio = function ()
         var page = $(".sh-page").last();
         var pageHeader = page.find("header h1");
         var pageSection = page.find("section");
+
+        sh.onSwipeBack(page, function () { sh.pop(); });
+
         //page.find(".audio-cover").css("background-image", getCoverImage().css("background-image"));
 
         //pageSection.css("height", ($(window).height() - pageHeader.height()) + "px");

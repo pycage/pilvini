@@ -46,6 +46,8 @@ function viewText(href)
     var page = $("#viewer-page");
     var originalContent = "";
 
+    sh.onSwipeBack(page, function () { sh.pop(); });
+
     var parts = href.split("/");
     var name = decodeURI(parts[parts.length - 1]);
     page.find("header h1").html(name);
