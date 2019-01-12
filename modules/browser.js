@@ -912,7 +912,8 @@ function makeNewDirDialog()
 {
     var tag = modHtml.tag;
 
-    var t = tag("div").id("newdir-dialog").class("sh-popup")
+    var t = tag("form").id("newdir-dialog").class("sh-popup")
+            .attr("action", "#")
             .content(
                 tag("div").class("sh-dropshadow")
                 .style("background-color", "var(--color-primary-background)")
@@ -925,7 +926,7 @@ function makeNewDirDialog()
                 .content(
                     tag("section")
                     .content(
-                        tag("form")
+                        tag("p")
                         .content(
                             tag("label").content("Name:")
                         )
@@ -939,7 +940,9 @@ function makeNewDirDialog()
                     .content(
                         tag("span").class("sh-right")
                         .content(
-                            tag("a").content("Create")
+                            tag("input")
+                            .attr("type", "submit")
+                            .attr("value", "Create")
                         )
                         .content(
                             tag("a").on("click", "sh.popup_close(\"newdir-dialog\");").content("Cancel")
@@ -955,7 +958,8 @@ function makeNameDialog()
 {
     var tag = modHtml.tag;
 
-    var t = tag("div").id("name-dialog").class("sh-popup")
+    var t = tag("form").id("name-dialog").class("sh-popup")
+            .attr("action", "#")
             .content(
                 tag("div").class("sh-dropshadow")
                 .style("background-color", "var(--color-primary-background)")
@@ -968,7 +972,7 @@ function makeNameDialog()
                 .content(
                     tag("section")
                     .content(
-                        tag("form")
+                        tag("p")
                         .content(
                             tag("label").content("Name:")
                         )
@@ -982,7 +986,9 @@ function makeNameDialog()
                     .content(
                         tag("span").class("sh-right")
                         .content(
-                            tag("a").content("Accept")
+                            tag("input")
+                            .attr("type", "submit")
+                            .attr("value", "Accept")
                         )
                         .content(
                             tag("a").on("click", "sh.popup_close(\"name-dialog\");").content("Cancel")
@@ -998,7 +1004,8 @@ function makeShareDialog()
 {
     var tag = modHtml.tag;
 
-    var t = tag("div").id("share-dialog").class("sh-popup")
+    var t = tag("form").id("share-dialog").class("sh-popup")
+            .attr("action", "#")
             .content(
                 tag("div").class("sh-dropshadow")
                 .style("background-color", "var(--color-primary-background)")
@@ -1011,7 +1018,7 @@ function makeShareDialog()
                 .content(
                     tag("section")
                     .content(
-                        tag("form")
+                        tag("p")
                         .content(
                             tag("label").content("Login:")
                             .style("display", "inline-block")
@@ -1036,7 +1043,9 @@ function makeShareDialog()
                     .content(
                         tag("span").class("sh-right")
                         .content(
-                            tag("a").content("Accept")
+                            tag("input")
+                            .attr("type", "submit")
+                            .attr("value", "Accept")
                         )
                         .content(
                             tag("a").on("click", "sh.popup_close(\"share-dialog\");").content("Cancel")
@@ -1052,7 +1061,8 @@ function makeLoginDialog()
 {
     var tag = modHtml.tag;
 
-    var t = tag("div").id("login-dialog").class("sh-popup")
+    var t = tag("form").id("login-dialog").class("sh-popup")
+            .attr("action", "#")
             .content(
                 tag("div").class("sh-dropshadow")
                 .style("background-color", "var(--color-primary-background)")
@@ -1065,7 +1075,7 @@ function makeLoginDialog()
                 .content(
                     tag("section")
                     .content(
-                        tag("form")
+                        tag("p")
                         .content(
                             tag("label").content("Login:")
                             .style("display", "inline-block")
@@ -1090,7 +1100,9 @@ function makeLoginDialog()
                     .content(
                         tag("span").class("sh-right")
                         .content(
-                            tag("a").content("Login")
+                            tag("input").class("sh-right")
+                            .attr("type", "submit")
+                            .attr("value", "Login")    
                         )
                     )
                 )
@@ -1440,7 +1452,7 @@ function makeLoginPage(callback)
                         tag("footer")
                         .class("sh-font-small")
                         .style("visibility", "visible")
-                        .content("&copy; 2017, 2018 Martin Grimme - Want your own cloud? Get pilvini at https://github.com/pycage/pilvini")
+                        .content("&copy; 2017, 2018 Martin Grimme - https://github.com/pycage/pilvini")
                     )
                     .content(
                         tag("p").class("sh-font-small")
@@ -1449,8 +1461,8 @@ function makeLoginPage(callback)
                         .style("right", "1em")
                         .style("color", "#fff")
                         .style("text-shadow", "#000 0px 0px 1px")
-                        .content("Background powered by bing.com")
-                        )
+                        .content("Background image by bing.com")
+                    )
                 )
             );
 

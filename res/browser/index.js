@@ -497,7 +497,7 @@ function showNewDirDialog()
     function acceptCb()
     {
         sh.popup_close("newdir-dialog");
-        var name = $("#newdir-dialog form input").val();
+        var name = $("#newdir-dialog input[type=text]").val();
 
         if (name !== "")
         {
@@ -509,8 +509,8 @@ function showNewDirDialog()
         }
     }
 
-    $("#newdir-dialog form input").val("");
-    $("#newdir-dialog a:first-child").off("click").on("click", acceptCb);
+    $("#newdir-dialog input[type=text]").val("");
+    $("#newdir-dialog input[type=submit]").off("click").on("click", acceptCb);
     sh.popup("newdir-dialog");
 }
 
@@ -519,7 +519,7 @@ function showNewFileDialog()
     function acceptCb()
     {
         sh.popup_close("name-dialog");
-        var name = $("#name-dialog form input").val();
+        var name = $("#name-dialog input[type=text]").val();
 
         if (name !== "")
         {
@@ -531,8 +531,8 @@ function showNewFileDialog()
         }
     }
 
-    $("#name-dialog form input").val("");
-    $("#name-dialog a:first-child").off("click").on("click", acceptCb);
+    $("#name-dialog input[type=text]").val("");
+    $("#name-dialog input[type=submit]").off("click").on("click", acceptCb);
     sh.popup("name-dialog");
 }
 
@@ -540,15 +540,15 @@ function showNameDialog(item)
 {
     function acceptCb()
     {
-        var newName = $("#name-dialog form input").val();
+        var newName = $("#name-dialog input[type=text]").val();
         renameItem(item, newName);
         sh.popup_close("name-dialog");
     }
 
     item = $(item);
     var name = unescapeHtml(item.find("h1:first-child").html());
-    $("#name-dialog form input").val(name);
-    $("#name-dialog a:first-child").off("click").on("click", acceptCb);
+    $("#name-dialog input[type=text]").val(name);
+    $("#name-dialog input[type=submit]").off("click").on("click", acceptCb);
     sh.popup("name-dialog");
 }
 
@@ -556,13 +556,13 @@ function showShareDialog()
 {
     function acceptCb()
     {
-        var shareId = $("#share-dialog form input").first().val();
-        var password = $("#share-dialog form input").last().val();
+        var shareId = $("#share-dialog input[type=text]").first().val();
+        var password = $("#share-dialog input[type=text]").last().val();
         share(shareId, password);
         sh.popup_close("share-dialog");
     }
 
-    $("#share-dialog a:first-child").off("click").on("click", acceptCb);
+    $("#share-dialog input[type=submit]").off("click").on("click", acceptCb);
     sh.popup("share-dialog");
 }
 
@@ -1335,8 +1335,8 @@ function loadDirectory(href)
 
 function login()
 {
-    var user = $("form input").first().val();
-    var password = $("form input").last().val();
+    var user = $("form input[type=text]").val();
+    var password = $("form input[type=password]").val();
 
     $.ajax({
         type: "POST",
@@ -1408,6 +1408,6 @@ function initLogin()
 {
     sh.push("main-page", function () { }, true);
 
-    $("#login-dialog a:first-child").off("click").on("click", login);
+    $("#login-dialog input[type=submit]").on("click", login);
     sh.popup("login-dialog");
 }
