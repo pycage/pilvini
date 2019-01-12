@@ -54,6 +54,43 @@ function showQuestion(title, msg, yesCb, noCb)
     sh.popup("question-dialog");
 }
 
+/* Pushes a status message to the status area and returns its node.
+ * Invoke remove() on the node to remove.
+ */
+function pushStatus(icon, message)
+{
+    var statusEntry = $(
+        tag("div")
+        .style("position", "relative")
+        .content(
+            tag("div")
+            .style("position", "absolute")
+            .style("background-color", "var(--color-highlight-background)")
+            .style("width", "0%")
+            .style("height", "100%")
+        )
+        .content(
+            tag("h1")
+            .style("position", "relative")
+            .content(
+                tag("span").class("sh-fw-icon " + icon)
+            )
+            .content(message)
+        )
+        .html()
+    );
+
+    statusEntry.setProgress = function (p)
+    {
+        statusEntry.find("> div").css("width", p + "%");
+    };
+
+    $("#statusbox").append(statusEntry);
+
+    return statusEntry;
+}
+
+
 /* Initiates loading the thumbnails of the items on the page.
  */
 function loadThumbnails(page)
@@ -119,21 +156,7 @@ function loadNextThumbnail(forLocation, items)
 
     var now = Date.now();
 
-    var statusEntry = $(
-        tag("div")
-        .style("position", "relative")
-        .content(
-            tag("h1")
-            .style("position", "relative")
-            .content(
-                tag("span").class("sh-fw-icon sh-icon-wait")
-            )
-            .content(name)
-        )
-        .html()
-    );
-
-    $("#statusbox").append(statusEntry);
+    var statusEntry = pushStatus("sh-icon-wait", name);
 
     var settings = {
         beforeSend: function (xhr)
@@ -171,9 +194,9 @@ function loadNextThumbnail(forLocation, items)
 
             if (currentUri() === forLocation)
             {
-                statusEntry.remove();
                 loadNextThumbnail(forLocation, items);
             }
+            statusEntry.remove();
         }
         else if (xhr.status === 204)
         {
@@ -200,9 +223,9 @@ function loadNextThumbnail(forLocation, items)
     {
         if (currentUri() === forLocation)
         {
-            statusEntry.remove();
             loadNextThumbnail(forLocation, items);
         }
+        statusEntry.remove();
     });
 }
 
@@ -652,15 +675,7 @@ function copyItem(item)
     //var target = encodeURIComponent(name);
     //var newTarget = "/.pilvini/clipboard/" + encodeURIComponent(name);
     
-    var statusEntry = $(
-        tag("h1")
-        .content(
-            tag("span").class("sh-fw-icon sh-icon-clipboard")
-        )
-        .content("Copying " + name)
-        .html()
-    );
-    $("#statusbox").append(statusEntry);
+    var statusEntry = pushStatus("sh-icon-clipboard", "Copying " + name);
 
     $.ajax({
                url: sourceUri,
@@ -794,28 +809,7 @@ function removeItem(item)
 
 function upload(file, target, callback)
 {
-    var statusEntry = $(
-        tag("div")
-        .style("position", "relative")
-        .content(
-            tag("div")
-            .style("position", "absolute")
-            .style("background-color", "var(--color-highlight-background)")
-            .style("width", "0%")
-            .style("height", "100%")
-        )
-        .content(
-            tag("h1")
-            .style("position", "relative")
-            .content(
-                tag("span").class("sh-fw-icon sh-icon-cloud-upload")
-            )
-            .content(file.name)
-        )
-        .html()
-    );
-
-    $("#statusbox").append(statusEntry);
+    var statusEntry = pushStatus("sh-icon-cloud-upload", file.name);
 
     function createMonitoringXhr()
     {
@@ -827,7 +821,7 @@ function upload(file, target, callback)
                 if (status.lengthComputable && status.total > 0)
                 {
                     var p = status.loaded / status.total;
-                    statusEntry.find("> div").css("width", (p * 100) + "%");
+                    statusEntry.setProgress(p * 100);
                 }
             }, false);
         }
