@@ -115,7 +115,7 @@ sh.push = function (which, callback, immediate)
 
 /* Pops the topmost page off the page stack. Invokes callback afterwards.
  */
-sh.pop = function (callback, reverse)
+sh.pop = function (callback, reverse, immediate)
 {
     var pages = $(".sh-page.sh-visible");
 
@@ -124,38 +124,52 @@ sh.pop = function (callback, reverse)
         var page = $(pages[pages.length - 1]);
         var prevPage = $(pages[pages.length - 2]);
 
-        page.addClass("sh-page-transitioning");
-
+        
         prevPage.css("display", "block");
         $(document).scrollTop(prevPage.prop("rememberedScrollTop") || 0);
         
-        // slide out
-        var width = $(window).width();
-        page.animate({
-            left: (reverse ? -width : width) + "px",
-            right: (reverse ? width : -width) + "px"
-        }, 350, function ()
+        if (! immediate)
+        {
+            // slide out
+            page.addClass("sh-page-transitioning");
+            var width = $(window).width();
+            page.animate({
+                left: (reverse ? -width : width) + "px",
+                right: (reverse ? width : -width) + "px"
+            }, 350, function ()
+            {
+                page.removeClass("sh-visible");
+                page.removeClass("sh-page-transitioning");
+                page.css("left", "0").css("right", "0");
+                page.trigger("sh-closed");
+    
+                if (callback)
+                {
+                    callback();
+                }
+            });
+    
+            page.find("> header").animate({
+                left: (reverse ? -width : width) + "px",
+                right: (reverse ? width : -width) + "px"
+            }, 350, function ()
+            {
+                page.find("> header").css("left", "0").css("right", "0");
+            });
+        }
+        else
         {
             page.removeClass("sh-visible");
             page.removeClass("sh-page-transitioning");
-            page.css("left", 0)
-                .css("right", 0);
+            page.css("left", "0").css("right", "0");
+            page.find("> header").css("left", "0").css("right", "0");
             page.trigger("sh-closed");
 
             if (callback)
             {
                 callback();
             }
-        });
-
-        page.find("> header").animate({
-            left: (reverse ? -width : width) + "px",
-            right: (reverse ? width : -width) + "px"
-        }, 350, function ()
-        {
-            page.find("> header").css("left", 0)
-                                 .css("right", 0);
-        });
+        }
     }
 }
 
@@ -173,19 +187,30 @@ sh.onSwipeBack = function (which, callback)
 
     page.on("touchstart", function (ev)
     {
-        ev.preventDefault();
+        var backIndicator = $(
+            tag("div")
+            .style("position", "fixed")
+            .style("top", "0")
+            .style("bottom", "0")
+            .style("left", "8px")
+            .style("font-size", "10vh")
+            .content(
+                tag("span").class("sh-fw-icon sh-icon-back")
+                .style("line-height", "100vh")
+            )
+            .html()
+        );
 
         this.swipeContext = {
             beginX: ev.originalEvent.touches[0].screenX,
             beginY: ev.originalEvent.touches[0].screenY,
             status: 0,
-            scrollTop: 0
+            scrollTop: 0,
+            backIndicator: backIndicator
         };
     });
     page.on("touchmove", function (ev)
     {
-        ev.preventDefault();
-
         var dx = ev.originalEvent.touches[0].screenX - this.swipeContext.beginX;
         var dy = ev.originalEvent.touches[0].screenY - this.swipeContext.beginY;
         var pos = dx - 16;
@@ -223,7 +248,7 @@ sh.onSwipeBack = function (which, callback)
            
             if (dx > swipeThreshold)
             {
-                $("body").css("background-color", "#a0a0a0");
+                $("body").append(this.swipeContext.backIndicator);
                 this.swipeContext.status = 2;
             }
             break;
@@ -236,7 +261,7 @@ sh.onSwipeBack = function (which, callback)
     
             if (dx < swipeThreshold)
             {
-                $("body").css("background-color", "");
+                this.swipeContext.backIndicator.remove();
                 this.swipeContext.status = 1;
             }
             break;
@@ -247,41 +272,66 @@ sh.onSwipeBack = function (which, callback)
     });
     page.on("touchend", function (ev)
     {
-        ev.preventDefault();
-
-        $("body").css("background-color", "");
-        page.find("> section").css("margin-top", 0);
-        page.removeClass("sh-page-transitioning");
-        
-        if (this.swipeContext.scrollTop > 0)
+        function resetPage()
         {
-            $(document).scrollTop(this.swipeContext.scrollTop);
-        }
-        
-        if (this.swipeContext.status === 2)
-        {
-            callback();
-        }
-        
-        var left = page.css("left");
-        setTimeout(function ()
-        {
-            // slide back if needed
-            if (left === page.css("left"))
+            page.removeClass("sh-page-transitioning");
+            page.find("> section").css("margin-top", "0");
+            if (swipeContext.scrollTop > 0)
             {
-                page.animate({
-                    left: 0,
-                    right: 0
-                }, 300);
-                page.find("header").animate({
-                    left: 0,
-                    right: 0
-                }, 300);
-
-                //page.css("left", 0).css("right", 0);
-                //page.find("> header").css("left", 0).css("right", 0);
+                $(document).scrollTop(swipeContext.scrollTop);
             }
-        }, 300);
+            page.css("left", "0").css("right", "0")
+        }
+
+        function resetHeader()
+        {
+            page.find("> header").css("left", "0").css("right", "0")
+        }
+
+        function finish()
+        {
+            if (swipeContext.status === 2)
+            {
+                callback();
+            }
+
+            var left = page.css("left");
+            setTimeout(function ()
+            {
+                if (page.css("left") === left)
+                {
+                    resetPage();
+                    resetHeader();
+                }
+            }, 100);
+        }
+
+        var swipeContext = this.swipeContext;
+        var fullWidth = $(this).width();
+        this.swipeContext.backIndicator.remove();
+        
+        if (swipeContext.status === 1)
+        {
+            page.animate({
+                left: "0",
+                right: "0"
+            }, 300, resetPage);
+            page.find("> header").animate({
+                left: "0",
+                right: "0"
+            }, 300, resetHeader);
+        }
+        else if (swipeContext.status === 2)
+        {
+            page.animate({
+                left: fullWidth + "px",
+                right: -fullWidth + "px"
+            }, 300, finish);
+            page.find("> header").animate({
+                left: fullWidth + "px",
+                right: -fullWidth + "px"
+            }, 300);
+        }
     });
 }
 

@@ -273,17 +273,6 @@ var Audio = function ()
         })
     }
 
-    /* Updates the background dim.
-     */
-    function updateBackgroundDim()
-    {
-        if (m_playlist.size() > 0 && mayUseFixedBackground())
-        {
-            var p = $(window).scrollTop() / ($(document).height() - $(window).height());
-            $(".audio-background-dim").css("background-color", "rgba(0, 0, 0, " + (0.4 + p * 0.5) + ")");
-        }
-    }
-
     /* Updates the playlist puller state.
      */
     function updatePullerState()
@@ -355,7 +344,7 @@ var Audio = function ()
                         .content("-")
                     )
                     .content(
-                        tag("h2").class("sh-font-small audio-title")
+                        tag("h2").class("sh-font-small audio-artist")
                         .style("line-height", "1.2em")
                         .content("-")
                     )
@@ -414,15 +403,15 @@ var Audio = function ()
     function makePlaylistUi()
     {
         var t = tag("ul").class("sh-listview")
-                .style("padding-top", "3rem")
                 .style("text-align", "left")
+                .style("background-color", "var(--color-primary-background-translucent)")
         for (var i = 0; i < m_playlist.size(); ++i)
         {
             t.content(
                 tag("li").class("audio-playlist-item")
                 .data("playlist-key", m_playlist.itemAt(i)[0])
                 .style("height", "80px")
-                .style("background-color", "transparent")
+                .style("background-color", "var(--color-primary-background-translucent)")
                 //.style("color", "#fff")
                 .on("click", "")
                 .content(
@@ -478,94 +467,106 @@ var Audio = function ()
     {
         var t = tag("div").class("sh-page sh-page-fullscreen sh-theme-dark")
                 .content(
-                    tag("span").class("sh-left sh-fw-icon sh-icon-back")
-                    .style("position", "fixed")
-                    .style("height", "1em")
-                    .on("click", "sh.pop();")
-                )
-                .content(
-                    tag("section").class("audio-cover audio-background-dim")
+                    tag("section").class("audio-cover")
                     .style("background-size", "cover")
                     .style("background-position", "50% 0%")
                     .style("background-attachment", mayUseFixedBackground() ? "fixed" : "scroll")
-                    .style("background-blend-mode", "darken")
-                    .style("background-color", "rgba(0, 0, 0, .80)")
-                    .style("text-align", "center")
-                    .style("text-shadow", "#000 0px 0px 1px")
                     .content(
-                        tag("div").class("audio-scroll-gap")
-                        .style("display", "flex")
-                        .style("align-items", "center")
-                        .style("justify-content", "center")
-                        .style("height", "0")
-                        .content(
-                            tag("span").class("sh-fw-icon sh-icon-media-play-circle audio-play-button")
-                            .style("font-size", "16vw")
-                        )
-                    )
-                    /*
-                    .content(
-                        tag("div").class("audio-cover")
-                        .style("display", "inline-block")
-                        .style("background-size", "cover")
-                        .style("width", "16rem")
-                        .style("height", "16rem")
-                    )
-                    */
-                    .content(
-                        tag("span").class("sh-fw-icon sh-icon-move-up audio-playlist-puller")
-                        .style("font-size", "200%")
-                    )
-                    .content(
-                        tag("div")
+                        tag("div").class("audio-scroll-gap audio-cover")
                         .style("position", "relative")
-                        .style("margin-bottom", "3rem")
-                        .content(
-                            tag("span").class("sh-left sh-fw-icon sh-icon-media-previous audio-previous-button")
-                            .style("font-size", "12vw")
-                        )
-                        .content(
-                            tag("h1").class("audio-title").content("-")
-                            .style("font-size", "6vw")
-                            .style("margin-left", "12vw")
-                            .style("margin-right", "12vw")
-                            .style("line-height", "1.2em")
-                        )
-                        .content(
-                            tag("h2").class("audio-artist").content("-")
-                            .style("font-size", "4vw")
-                            .style("margin-left", "12vw")
-                            .style("margin-right", "12vw")
-                            .style("line-height", "1.2em")
-                        )
-                        .content(
-                            tag("span").class("sh-right sh-fw-icon sh-icon-media-next audio-next-button")
-                            .style("font-size", "12vw")
-                        )
-                    )
-                    .content(
-                        tag("span").class("audio-progress-label")
-                        .style("line-height", "1.2em")
-                        .content("00:00 / 00:00")
-                    )
-                    .content(
-                        tag("div").class("audio-progress-bar")
-                        .style("position", "relative")
-                        .style("height", "1rem")
-                        .style("margin", "0")
+                        .style("background-size", "contain")
+                        .style("background-position", "50% 0%")
+                        .style("background-repeat", "no-repeat")
+                        .style("background-color", "var(--color-primary-background-translucent)")
+                        .style("height", "100vh")
                         .content(
                             tag("div")
                             .style("position", "absolute")
-                            .style("top", "0")
                             .style("left", "0")
-                            .style("width", "0%")
-                            .style("height", "100%")
-                            .style("background-color", "var(--color-primary)")
+                            .style("right", "0")
+                            .style("bottom", "0")
+                            .style("padding-top", "1rem")
+                            .style("text-align", "center")
+                            .style("text-shadow", "var(--color-primary-background) 0px 0px 1px")
+                            .style("background-color", "var(--color-primary-background-translucent)")
+                            .content(
+                                tag("span").class("sh-fw-icon sh-icon-media-play-circle audio-play-button")
+                                .style("font-size", "4rem")
+                            )
+                            .content(
+                                tag("span").class("sh-left sh-fw-icon sh-icon-media-previous audio-previous-button")
+                                .style("font-size", "4rem")
+                                .style("margin-top", "1rem")
+                            )
+                            .content(
+                                tag("span").class("sh-right sh-fw-icon sh-icon-media-next audio-next-button")
+                                .style("font-size", "4rem")
+                                .style("margin-top", "1rem")
+                            )
+                            .content(
+                                tag("h1").class("audio-title").content("-")
+                                .style("font-size", "1.5rem")
+                                .style("margin-top", "1rem")
+                                .style("margin-left", "1rem")
+                                .style("margin-right", "1rem")
+                                .style("line-height", "1.2em")
+                            )
+                            .content(
+                                tag("h2").class("audio-artist").content("-")
+                                .style("font-size", "1.2rem")
+                                .style("margin-left", "1rem")
+                                .style("margin-right", "1rem")
+                                .style("margin-bottom", "1rem")
+                                .style("line-height", "1.2em")
+                            )
+                            .content(
+                                tag("span").class("sh-fw-icon sh-icon-move-up audio-playlist-puller")
+                                .style("font-size", "2rem")
+                            )
+                            .content(
+                                tag("div").class("audio-progress-bar")
+                                .style("position", "relative")
+                                .style("height", "3rem")
+                                .style("margin", "0")
+                                .content(
+                                    tag("span").class("audio-progress-label")
+                                    .style("line-height", "1.2em")
+                                    .content("00:00 / 00:00")
+                                )
+                                .content(
+                                    tag("div")
+                                    .style("position", "absolute")
+                                    .style("bottom", "0")
+                                    .style("left", "0")
+                                    .style("width", "0%")
+                                    .style("height", "1rem")
+                                    .style("background-color", "var(--color-primary)")
+                                )
+                            )
+                        )
+                    )
+                    .content(
+                        tag("div")
+                        .style("background-color", "var(--color-primary-background-translucent)")
+                        .content(
+                            tag("div")
+                            .style("background-color", "var(--color-primary-background-translucent)")
+                            .style("padding", "1rem")
+                            .style("text-align", "center")
+                            .content(
+                                "&nbsp;"
+                            )
                         )
                     )
                     .content(
                         makePlaylistUi()
                     )
+                )
+                .content(
+                    tag("span").class("sh-left sh-fw-icon sh-icon-back")
+                    .style("position", "fixed")
+                    .style("height", "1em")
+                    .on("click", "sh.pop();")
                 );
 
         $("body").append(t.html());
@@ -574,10 +575,6 @@ var Audio = function ()
         var pageSection = page.find("section");
 
         sh.onSwipeBack(page, function () { sh.pop(); });
-
-        //page.find(".audio-cover").css("background-image", getCoverImage().css("background-image"));
-
-        //pageSection.css("height", ($(window).height() - pageHeader.height()) + "px");
 
         // load metadata in playlist
         pageSection.find(".audio-playlist-item").each(function (i, item)
@@ -627,7 +624,17 @@ var Audio = function ()
             }
         });
 
-        pageSection.find(".audio-previous-button").on("click", m_playlist.previous);
+        pageSection.find(".audio-previous-button").on("click", function ()
+        {
+            if (audio.prop("currentTime") > 3 || m_playlist.position() === 0)
+            {
+                audio.prop("currentTime", 0);
+            }
+            else
+            {
+                m_playlist.previous();
+            }
+        });
         pageSection.find(".audio-next-button").on("click", m_playlist.next);
 
 
@@ -670,6 +677,7 @@ var Audio = function ()
         pageSection.find(".audio-progress-bar").on("touchstart", function (event)
         {
             event.preventDefault();
+            event.stopPropagation();
             m_isSeeking = true;
             var p = event.originalEvent.touches[0].clientX / $(this).width();
             this.lastTouchPos = p;
@@ -678,6 +686,7 @@ var Audio = function ()
         pageSection.find(".audio-progress-bar").on("touchmove", function (event)
         {
             event.preventDefault();
+            event.stopPropagation();
             if (m_isSeeking)
             {
                 var p = event.originalEvent.touches[0].clientX / $(this).width();
@@ -694,6 +703,7 @@ var Audio = function ()
         pageSection.find(".audio-progress-bar").on("touchend", function (event)
         {
             event.preventDefault();
+            event.stopPropagation();
             if (m_isSeeking)
             {
                 m_isSeeking = false;
@@ -704,6 +714,7 @@ var Audio = function ()
         pageSection.find(".audio-progress-bar").on("touchcancel", function (event)
         {
             event.preventDefault();
+            event.stopPropagation();
             m_isSeeking = false;
         });
 
@@ -716,12 +727,10 @@ var Audio = function ()
             if ($(document).scrollTop() === 0)
             {
                 scrollTarget = $(this).offset().top;
-                //$(document).scrollTop($(this).offset().top);
             }
             else
             {
                 scrollTarget = 0;
-                //$(document).scrollTop(0);
             }
 
             $("html, body").animate({
@@ -736,14 +745,16 @@ var Audio = function ()
         });
 
         var pos = pageSection.find("ul").offset().top;
-        $(".audio-scroll-gap").height($(window).height() - pos);
+        console.log("ul offset " + pos);
+        console.log("window height: " + $(window).height());
+        //$(".audio-scroll-gap").height($(window).height());
 
-        updatePlayStatus();
-        updatePosition();
-        updateMetadata();
-        updateBackgroundDim();                
-        
-        sh.push(page);
+        sh.push(page, function ()
+        {
+            updatePlayStatus();
+            updatePosition();
+            updateMetadata();
+        });
     }
 
     /* Plays the given URI.
@@ -797,7 +808,6 @@ var Audio = function ()
         }
     };
 
-    this.updateBackgroundDim = updateBackgroundDim;
     this.updatePullerState = updatePullerState;
 
     $("body").append("<audio id='audio-player' style='display: none;'></audio>");
@@ -879,6 +889,5 @@ $(document).ready(function ()
     $(window).scroll(function ()
     {
         audio.updatePullerState();
-        audio.updateBackgroundDim();
     });
 });
