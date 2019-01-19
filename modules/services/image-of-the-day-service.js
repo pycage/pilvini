@@ -6,6 +6,7 @@ var modHttp = require("http"),
 var Service = function (contentRoot)
 {
     var m_currentBackground = null;
+    var m_timestamp = 0;
 
     function sendBackground(response)
     {
@@ -48,9 +49,11 @@ var Service = function (contentRoot)
 
     this.handleRequest = function (request, response, userContext, shares, callback)
     {
-        if (m_currentBackground)
+        var now = Date.now();
+        if (m_currentBackground && now < m_timestamp + 24 * 3600 * 1000)
         {
             sendBackground(response);
+            m_timestamp = now;
             return;
         }
 
