@@ -22,7 +22,7 @@ function viewImage(href)
     
     function previousImage()
     {
-        var img = $("#preview-popup img");
+        var img = popup.find("img");
         var src = img.data("src");
         var images = getImageFiles();
     
@@ -42,7 +42,7 @@ function viewImage(href)
     
     function nextImage()
     {
-        var img = $("#preview-popup img");
+        var img = popup.find("img");
         var src = img.data("src");
         var images = getImageFiles();
     
@@ -64,7 +64,7 @@ function viewImage(href)
 
     function loadImage(href)
     {
-        sh.popup("busy-popup");
+        var busyIndicator = showBusyIndicator();
         img.css("visibility", "hidden");
         img.data("src", href);
 
@@ -97,7 +97,7 @@ function viewImage(href)
         })
         .always(function ()
         {
-            sh.popup_close("busy-popup");
+            busyIndicator.remove();
         });
     
     
@@ -115,7 +115,7 @@ function viewImage(href)
     }
     
 
-    var popup = $("#preview-popup");
+    var popup = showPreviewPopup();
     var w = popup.width() - 32;
     var h = popup.height() - 32;
 
@@ -163,17 +163,12 @@ function viewImage(href)
             img.parent().width(img.width());
             img.parent().height(img.height());
             img.css("visibility", "inherit");
-            sh.popup("preview-popup");
             popup.attr("tabindex", -1).focus();
         }
     });
 
-
-    /*
-    $("#preview-popup-previous").off("click").one("click", previousImage);
-    $("#preview-popup-next").off("click").one("click", nextImage);
-    */
-    popup.off("keydown").on("keydown", function (ev)
+    popup.attr("tabindex", -1).focus();
+    popup.on("keydown", function (ev)
     {
         if (! $(this).hasClass("sh-visible"))
         {
@@ -201,7 +196,7 @@ function viewImage(href)
             dx: 0
         };
 
-        $("#preview-popup h1").css("display", "none");
+        popup.find("h1").css("display", "none");
     });
 
     img.on("touchmove", function (ev)
@@ -232,14 +227,16 @@ function viewImage(href)
 
         $(this).css("margin-left", 0)
                .css("opacity", 1);
-        $("#preview-popup h1").css("display", "block");
+        popup.find("h1").css("display", "block");
     });
 
+    /*
     popup.one("sh-closed", function ()
     {
         popup.off("keydown");
         popup.find("> div").html("");
     });
+    */
 
     loadImage(href);
 }

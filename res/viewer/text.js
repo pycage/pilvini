@@ -45,20 +45,16 @@ function viewText(href)
     }
 
     var edited = false;
-
-    var page = $("#viewer-page");
-    var originalContent = "";
-
-    sh.onSwipeBack(page, function () { sh.pop(); });
-
+    
     var parts = href.split("/");
     var name = decodeURI(parts[parts.length - 1]);
-    page.find("header h1").html(name);
 
-    page.find("header").append("<span class='sh-right sh-fw-icon sh-icon-edit' onclick=''></span>");
-    var toggleButton = page.find("header span:last-child");
+    var page = showPage(name);
+    var originalContent = "";
 
-    toggleButton.on("click", toggleMode);
+    sh.onSwipeBack(page, function () { page.pop(); });
+
+    var toggleButton = page.addIconButton("sh-icon-edit", toggleMode);
 
     page.find("section").append("<pre></pre>");
     var viewBox = page.find("section pre");
@@ -79,12 +75,11 @@ function viewText(href)
         {
             upload(href, editBox.val());
         }
-        toggleButton.remove();
     });
 
 
+    var busyIndicator = showBusyIndicator();
 
-    sh.popup("busy-popup");
     $.ajax(href, {
         beforeSend: function (xhr) {xhr.overrideMimeType("text/plain"); }
     })
@@ -106,6 +101,6 @@ function viewText(href)
     })
     .complete(function ()
     {
-        sh.popup_close("busy-popup");
+        busyIndicator.remove();
     });
 }

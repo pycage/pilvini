@@ -58,19 +58,15 @@ function viewMarkdown(href)
 
     var edited = false;
 
-    var page = $("#viewer-page");
-    var originalContent = "";
-
-    sh.onSwipeBack(page, function () { sh.pop(); });
-
     var parts = href.split("/");
     var name = decodeURI(parts[parts.length - 1]);
-    page.find("header h1").html(name);
 
-    page.find("header").append("<span class='sh-right sh-fw-icon sh-icon-edit' onclick=''></span>");
-    var toggleButton = page.find("header span:last-child");
+    var page = showPage(name);
+    var originalContent = "";
 
-    toggleButton.on("click", toggleMode);
+    sh.onSwipeBack(page, function () { page.pop(); });
+
+    var toggleButton = page.addIconButton("sh-icon-edit", toggleMode);
 
     page.find("section").html("<script src='/::res/viewer/markdown/showdown.js'></script>");
 
@@ -93,12 +89,11 @@ function viewMarkdown(href)
         {
             upload(href, data, function () { });
         }
-        toggleButton.remove();
     });
 
 
+    var busyIndicator = showBusyIndicator();
 
-    sh.popup("busy-popup");
     $.ajax(href, {
         beforeSend: function (xhr) {xhr.overrideMimeType("text/x-markdown"); }
     })
@@ -120,6 +115,6 @@ function viewMarkdown(href)
     })
     .complete(function ()
     {
-        sh.popup_close("busy-popup");
+        busyIndicator.remove();
     });
 }

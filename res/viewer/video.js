@@ -158,7 +158,7 @@ function viewVideo(href)
         }
     }
 
-    var popup = $("#preview-popup");
+    var popup = showPreviewPopup();
     var maxWidth = popup.width() - 80;
     var maxHeight = popup.height() - 80;
 
@@ -340,7 +340,6 @@ function viewVideo(href)
 
     video.on("playing", function ()
     {
-        sh.popup_close("busy-popup");
         btnPlay.removeClass("sh-icon-media-play-circle").addClass("sh-icon-media-pause-circle");
     });
 
@@ -351,7 +350,7 @@ function viewVideo(href)
 
     video.on("waiting", function ()
     {
-        sh.popup("busy-popup");
+        
     });
 
     setupProgressBar($(".video-progress-bar"), function (p, dragging)
@@ -375,8 +374,6 @@ function viewVideo(href)
 
     video.attr("src", href);
     video.trigger("load");
-    sh.popup("preview-popup");
-    //sh.popup("busy-popup");
 
     popup.one("sh-closed", function ()
     {
@@ -384,7 +381,7 @@ function viewVideo(href)
         video.attr("src", "");
         video.trigger("load");
 
-        popup.find("> div").html("");
+        //popup.find("> div").html("");
     });
 
     var idx = href.lastIndexOf("/");

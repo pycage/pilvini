@@ -460,6 +460,9 @@ function makeHtmlHead(initFunction)
                 tag("script").attr("src", "/::res/browser/html.js")
             )
             .content(
+                tag("script").attr("src", "/::res/browser/ui.js")
+            )
+            .content(
                 tag("script").attr("src", "/::res/browser/index.js")
             )
             .content(
@@ -820,77 +823,6 @@ function makeMoreMenu(viewMode, sortMode, userContext)
     return t;
 }
 
-function makeMessageDialog()
-{
-    var tag = modHtml.tag;
-
-    var t = tag("div").id("message-dialog").class("sh-popup")
-            .content(
-                tag("div").class("sh-dropshadow")
-                .style("background-color", "var(--color-primary-background)")
-                .content(
-                    tag("header")
-                    .content(
-                        tag("h1").class("sh-left")
-                    )
-                )
-                .content(
-                    tag("section")
-                    .content(
-                        tag("p")
-                    )
-                )
-                .content(
-                    tag("footer")
-                    .content(
-                        tag("span").class("sh-right")
-                        .content(
-                            tag("a").on("click", "sh.popup_close(\"message-dialog\");").content("OK")
-                        )
-                    )
-                )
-            );
-
-    return t;
-}
-
-function makeQuestionDialog()
-{
-    var tag = modHtml.tag;
-
-    var t = tag("div").id("question-dialog").class("sh-popup")
-            .content(
-                tag("div").class("sh-dropshadow")
-                .style("background-color", "var(--color-primary-background)")
-                .content(
-                    tag("header")
-                    .content(
-                        tag("h1").class("sh-left")
-                    )
-                )
-                .content(
-                    tag("section")
-                    .content(
-                        tag("p")
-                    )
-                )
-                .content(
-                    tag("footer")
-                    .content(
-                        tag("span").class("sh-right")
-                        .content(
-                            tag("a").on("click", "sh.popup_close(\"question-dialog\");").content("Yes")
-                        )
-                        .content(
-                            tag("a").on("click", "sh.popup_close(\"question-dialog\");").content("No")
-                        )
-                    )
-                )
-            );
-
-    return t;
-}
-
 function makeStatusBox()
 {
     var tag = modHtml.tag;
@@ -904,250 +836,6 @@ function makeStatusBox()
             .style("height", "auto")
             .style("border", "solid 1px var(--color-border)")
             .style("background-color", "var(--color-primary-background)");
-
-    return t;
-}
-
-function makeNewDirDialog()
-{
-    var tag = modHtml.tag;
-
-    var t = tag("form").id("newdir-dialog").class("sh-popup")
-            .attr("action", "#")
-            .content(
-                tag("div").class("sh-dropshadow")
-                .style("background-color", "var(--color-primary-background)")
-                .content(
-                    tag("header")
-                    .content(
-                        tag("h1").class("sh-left").content("New Directory")
-                    )
-                )
-                .content(
-                    tag("section")
-                    .content(
-                        tag("p")
-                        .content(
-                            tag("label").content("Name:")
-                        )
-                        .content(
-                            tag("input").attr("type", "text")
-                        )
-                    )
-                )
-                .content(
-                    tag("footer")
-                    .content(
-                        tag("span").class("sh-right")
-                        .content(
-                            tag("input")
-                            .attr("type", "submit")
-                            .attr("value", "Create")
-                        )
-                        .content(
-                            tag("a").on("click", "sh.popup_close(\"newdir-dialog\");").content("Cancel")
-                        )
-                    )
-                )
-            );
-
-    return t;
-}
-
-function makeNameDialog()
-{
-    var tag = modHtml.tag;
-
-    var t = tag("form").id("name-dialog").class("sh-popup")
-            .attr("action", "#")
-            .content(
-                tag("div").class("sh-dropshadow")
-                .style("background-color", "var(--color-primary-background)")
-                .content(
-                    tag("header")
-                    .content(
-                        tag("h1").class("sh-left").content("Enter Name")
-                    )
-                )
-                .content(
-                    tag("section")
-                    .content(
-                        tag("p")
-                        .content(
-                            tag("label").content("Name:")
-                        )
-                        .content(
-                            tag("input").attr("type", "text")
-                        )
-                    )
-                )
-                .content(
-                    tag("footer")
-                    .content(
-                        tag("span").class("sh-right")
-                        .content(
-                            tag("input")
-                            .attr("type", "submit")
-                            .attr("value", "Accept")
-                        )
-                        .content(
-                            tag("a").on("click", "sh.popup_close(\"name-dialog\");").content("Cancel")
-                        )
-                    )
-                )
-            );
-
-    return t;
-}
-
-function makeShareDialog()
-{
-    var tag = modHtml.tag;
-
-    var t = tag("form").id("share-dialog").class("sh-popup")
-            .attr("action", "#")
-            .content(
-                tag("div").class("sh-dropshadow")
-                .style("background-color", "var(--color-primary-background)")
-                .content(
-                    tag("header")
-                    .content(
-                        tag("h1").class("sh-left").content("Setup Share")
-                    )
-                )
-                .content(
-                    tag("section")
-                    .content(
-                        tag("p")
-                        .content(
-                            tag("label").content("Login:")
-                            .style("display", "inline-block")
-                            .style("width", "6em")
-                        )
-                        .content(
-                            tag("input").attr("type", "text")
-                        )
-                        .content(tag("br"))
-                        .content(
-                            tag("label").content("Password:")
-                            .style("display", "inline-block")
-                            .style("width", "6em")
-                        )
-                        .content(
-                            tag("input").attr("type", "text")
-                        )
-                    )
-                )
-                .content(
-                    tag("footer")
-                    .content(
-                        tag("span").class("sh-right")
-                        .content(
-                            tag("input")
-                            .attr("type", "submit")
-                            .attr("value", "Accept")
-                        )
-                        .content(
-                            tag("a").on("click", "sh.popup_close(\"share-dialog\");").content("Cancel")
-                        )
-                    )
-                )
-            );
-
-    return t;
-}
-
-function makeLoginDialog()
-{
-    var tag = modHtml.tag;
-
-    var t = tag("form").id("login-dialog").class("sh-popup")
-            .attr("action", "#")
-            .content(
-                tag("div").class("sh-dropshadow")
-                .style("background-color", "var(--color-primary-background)")
-                .content(
-                    tag("header")
-                    .content(
-                        tag("h1").class("sh-left").content("Welcome")
-                    )
-                )
-                .content(
-                    tag("section")
-                    .content(
-                        tag("p")
-                        .content(
-                            tag("label").content("Login:")
-                            .style("display", "inline-block")
-                            .style("width", "6em")
-                        )
-                        .content(
-                            tag("input").attr("type", "text")
-                        )
-                        .content(tag("br"))
-                        .content(
-                            tag("label").content("Password:")
-                            .style("display", "inline-block")
-                            .style("width", "6em")
-                        )
-                        .content(
-                            tag("input").attr("type", "password")
-                        )
-                    )
-                )
-                .content(
-                    tag("footer")
-                    .content(
-                        tag("span").class("sh-right")
-                        .content(
-                            tag("input").class("sh-right")
-                            .attr("type", "submit")
-                            .attr("value", "Login")    
-                        )
-                    )
-                )
-            );
-
-    return t;
-}
-
-function makeBusyPopup()
-{
-    var tag = modHtml.tag;
-    
-    var t = tag("div").id("busy-popup").class("sh-popup")
-            .content(
-                tag("div").class("sh-dropshadow")
-                .style("color", "var(--color-primary)")
-                .style("text-align", "center")
-                .style("padding", "1em")
-                .content(
-                    tag("span").class("sh-busy-indicator")
-                    .style("font-size", "200%")
-                )
-                .content(tag("br"))
-                .content(tag("br"))
-                .content(
-                    tag("span").content("Loading")
-                )
-            );
-
-    return t;
-}
-
-function makePreviewPopup()
-{
-    var tag = modHtml.tag;
-
-    var t = tag("div").id("preview-popup").class("sh-popup")
-            .style("background-color", "rgba(0, 0, 0, 0.8)")
-            .on("click", "sh.popup_close(\"preview-popup\");")
-            .content(
-                tag("div").class("sh-dropshadow")
-                .style("position", "relative")
-                .style("background-color", "black")
-                .style("overflow", "hidden")
-            );
 
     return t;
 }
@@ -1296,28 +984,6 @@ function makeClipboardPage(clipboardStats)
     return t;
 }
 
-function makeViewerPage()
-{
-    var tag = modHtml.tag;
-
-    var t = tag("div").id("viewer-page").class("sh-page")
-            .content(
-                tag("header")
-                .content(
-                    tag("span").class("sh-left sh-fw-icon sh-icon-back")
-                    .on("click", "sh.pop();")
-                )
-                .content(
-                    tag("h1").content("Viewer")
-                )
-            )
-            .content(
-                tag("section")
-            );
-
-    return t;
-}
-
 function makeHtml(viewMode, sortMode, prefix, contentRoot, uri, path, stats, clipboardStats, userContext, shares)
 {
     var tag = modHtml.tag;
@@ -1338,30 +1004,6 @@ function makeHtml(viewMode, sortMode, prefix, contentRoot, uri, path, stats, cli
                 )
                 .content(
                     makeStatusBox()
-                )
-                .content(
-                    makeNewDirDialog()
-                )
-                .content(
-                    makeNameDialog()
-                )
-                .content(
-                    makeShareDialog()
-                )
-                .content(
-                    makeMessageDialog()
-                )
-                .content(
-                    makeQuestionDialog()
-                )
-                .content(
-                    makeBusyPopup()
-                )
-                .content(
-                    makePreviewPopup()
-                )
-                .content(
-                    makeViewerPage()
                 )
                 .content(
                     makeClipboardPage(clipboardStats)
@@ -1431,12 +1073,6 @@ function makeLoginPage(callback)
             .content(
                 tag("body").class("sh-theme-default")
                 .content(
-                    makeLoginDialog()
-                )
-                .content(
-                    makeMessageDialog()
-                )
-                .content(
                     tag("div").id("main-page").class("sh-page")
                     .style("background-image", "url('/::image-of-the-day/')")
                     .style("background-size", "cover")
@@ -1452,7 +1088,7 @@ function makeLoginPage(callback)
                         tag("footer")
                         .class("sh-font-small")
                         .style("visibility", "visible")
-                        .content("&copy; 2017, 2018 Martin Grimme - https://github.com/pycage/pilvini")
+                        .content("&copy; 2017 - 2019 Martin Grimme - https://github.com/pycage/pilvini")
                     )
                     .content(
                         tag("p").class("sh-font-small")

@@ -5,92 +5,6 @@ function currentUri()
     return $("#main-page > section").data("url");
 }
 
-function escapeHtml(text)
-{
-    return text.replace(/[\"'&<>]/g, function (a)
-    {
-        return {
-            '"': '&quot;',
-            '\'': '&apos;',
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;'
-        }[a];
-    });
-}
-
-function unescapeHtml(text)
-{
-    return text.replace(/&quot;|&apos;|&amp;|&lt;|&gt;/g, function (a)
-    {
-        return {
-            "&quot;": "\"",
-            "&apos;": "'",
-            "&amp;": "&",
-            "&lt;": "<",
-            "&gt;": ">"
-        }[a];
-    });
-}
-
-function showError(msg)
-{
-    $("#message-dialog h1").html("Error");
-    $("#message-dialog p").html(escapeHtml(msg));
-    sh.popup("message-dialog");
-}
-
-function showQuestion(title, msg, yesCb, noCb)
-{
-    $("#question-dialog h1").html(escapeHtml(title));
-    $("#question-dialog p").html(escapeHtml(msg));
-    
-    $("#question-dialog footer span a:first-child")
-    .off("click.showQuestion").on("click.showQuestion", yesCb);
-
-    $("#question-dialog footer span a:last-child")
-    .off("click.showQuestion").on("click.showQuestion", noCb);
-    
-    sh.popup("question-dialog");
-}
-
-/* Pushes a status message to the status area and returns its node.
- * Invoke remove() on the node to remove.
- */
-function pushStatus(icon, message)
-{
-    var statusEntry = $(
-        tag("div")
-        .style("position", "relative")
-        .content(
-            tag("div")
-            .style("position", "absolute")
-            .style("background-color", "var(--color-highlight-background)")
-            .style("width", "0%")
-            .style("height", "100%")
-        )
-        .content(
-            tag("h1")
-            .style("position", "relative")
-            .content(
-                tag("span").class("sh-fw-icon " + icon)
-            )
-            .content(message)
-        )
-        .html()
-    );
-
-    statusEntry.setProgress = function (p)
-    {
-        statusEntry.find("> div").css("width", p + "%");
-    };
-
-    $("#statusbox").append(statusEntry);
-
-    return statusEntry;
-}
-
-
 /* Initiates loading the thumbnails of the items on the page.
  */
 function loadThumbnails(page)
@@ -492,13 +406,24 @@ function removeSelected()
     showQuestion("Delete", "Delete these entries?", yesCb, noCb);
 }
 
+function showLoginDialog()
+{
+    var dlg = showDialog("Login", "Welcome to pilvini.");
+    var loginEntry = dlg.addTextEntry("Login:", "");
+    var passwordEntry = dlg.addPasswordEntry("Password:", "");
+    dlg.addButton("Login", function ()
+    {
+        login(loginEntry.val(), passwordEntry.val());
+    }, true);
+}
+
 function showNewDirDialog()
 {
-    function acceptCb()
+    var dlg = showDialog("New Directory", "Create a new directory.");
+    var entry = dlg.addTextEntry("Name:", "");
+    dlg.addButton("Create", function ()
     {
-        sh.popup_close("newdir-dialog");
-        var name = $("#newdir-dialog input[type=text]").val();
-
+        var name = entry.val();
         if (name !== "")
         {
             makeDirectory(name);
@@ -507,20 +432,17 @@ function showNewDirDialog()
         {
             showError("Invalid name.");
         }
-    }
-
-    $("#newdir-dialog input[type=text]").val("");
-    $("#newdir-dialog input[type=submit]").off("click").on("click", acceptCb);
-    sh.popup("newdir-dialog");
+    }, true);
+    dlg.addButton("Cancel");
 }
 
 function showNewFileDialog()
 {
-    function acceptCb()
+    var dlg = showDialog("New File", "Create a new file.");
+    var entry = dlg.addTextEntry("Name:", "");
+    dlg.addButton("Create", function ()
     {
-        sh.popup_close("name-dialog");
-        var name = $("#name-dialog input[type=text]").val();
-
+        var name = entry.val();
         if (name !== "")
         {
             makeFile(name);
@@ -529,41 +451,42 @@ function showNewFileDialog()
         {
             showError("Invalid name.");
         }
-    }
-
-    $("#name-dialog input[type=text]").val("");
-    $("#name-dialog input[type=submit]").off("click").on("click", acceptCb);
-    sh.popup("name-dialog");
+    }, true);
+    dlg.addButton("Cancel");
 }
 
 function showNameDialog(item)
 {
-    function acceptCb()
-    {
-        var newName = $("#name-dialog input[type=text]").val();
-        renameItem(item, newName);
-        sh.popup_close("name-dialog");
-    }
-
     item = $(item);
     var name = unescapeHtml(item.find("h1:first-child").html());
-    $("#name-dialog input[type=text]").val(name);
-    $("#name-dialog input[type=submit]").off("click").on("click", acceptCb);
-    sh.popup("name-dialog");
+
+    var dlg = showDialog("Rename File", "Rename the file.");
+    var entry = dlg.addTextEntry("Name:", name);
+    dlg.addButton("Rename", function ()
+    {
+        var newName = entry.val();
+        if (newName !== "")
+        {
+            renameItem(item, newName);
+        }
+        else
+        {
+            showError("Invalid name.");
+        }
+    }, true);
+    dlg.addButton("Cancel");
 }
 
 function showShareDialog()
 {
-    function acceptCb()
+    var dlg = showDialog("Setup Share", "Share this directory.");
+    var loginEntry = dlg.addTextEntry("Share Login:", "");
+    var passwordEntry = dlg.addTextEntry("Share Password:", "");
+    dlg.addButton("Share", function ()
     {
-        var shareId = $("#share-dialog input[type=text]").first().val();
-        var password = $("#share-dialog input[type=text]").last().val();
-        share(shareId, password);
-        sh.popup_close("share-dialog");
-    }
-
-    $("#share-dialog input[type=submit]").off("click").on("click", acceptCb);
-    sh.popup("share-dialog");
+        share(loginEntry.val(), passwordEntry.val());
+    }, true);
+    dlg.addButton("Cancel");
 }
 
 function checkClipboard()
@@ -865,8 +788,6 @@ function uploadFiles(files)
     {
         return;
     }
-
-    //sh.popup("busy-popup");
 
     var tokens = [];
     for (var i = 0; i < files.length; ++i)
@@ -1205,7 +1126,7 @@ function updateNavBar()
 
 function loadDirectory(href)
 {
-    sh.popup("busy-popup");
+    var busyIndicator = showBusyIndicator();
     
     var prefix = $("#filesbox").data("prefix");
 
@@ -1213,7 +1134,7 @@ function loadDirectory(href)
     {
         if (xhr.status !== 200)
         {
-            sh.popup_close("busy-popup");
+            busyIndicator.remove();
             showError("Failed to load directory.");
             return;
         }
@@ -1227,18 +1148,15 @@ function loadDirectory(href)
             checkClipboard();
             updateNavBar();
     
-            sh.popup_close("busy-popup");
+            busyIndicator.remove();
 
             page.trigger("pilvini-page-replaced");
         }, true);
     });
 }
 
-function login()
+function login(user, password)
 {
-    var user = $("form input[type=text]").val();
-    var password = $("form input[type=password]").val();
-
     $.ajax({
         type: "POST",
         url: "/::login/",
@@ -1257,7 +1175,10 @@ function login()
     })
     .fail(function (xhr, status, err)
     {
-        showError("Invalid login credentials.");
+        showError("Invalid login credentials.", function ()
+        {
+            showLoginDialog();
+        });
     });
 }
 
@@ -1287,15 +1208,9 @@ function init()
     var clipboardPage = $("#clipboard-page");
     setTimeout(function () { loadThumbnails(page); }, 500);
 
-    $("#viewer-page").on("sh-closed", function ()
-    {
-        $(this).find("section").html("");
-    });
-
     /* setup swipe suppport */
     sh.onSwipeBack(page, function ()
     {
-
         var upButton = $("#upButton");
         if (upButton.length)
         {
@@ -1320,7 +1235,5 @@ function init()
 function initLogin()
 {
     sh.push("main-page", function () { }, true);
-
-    $("#login-dialog input[type=submit]").on("click", login);
-    sh.popup("login-dialog");
+    showLoginDialog();
 }

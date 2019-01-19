@@ -34,17 +34,22 @@ var VC_PROPERTIES = ["SOURCE",
                      "CALURI",
                      "XML"];
 
-function loadVCard(href)
+function viewVCard(href)
 {
-    var page = $("#viewer-page");
-
-    sh.onSwipeBack(page, function () { sh.pop(); });
-
     var parts = href.split("/");
     var name = decodeURI(parts[parts.length - 1]);
-    page.find("header h1").html(name);
+    
+    var page = showPage(name);
+    sh.onSwipeBack(page, function () { page.pop(); });
+    
+    page.find("section").html("<ul class='sh-listview'></ul>");
 
-    sh.popup("busy-popup");
+    loadVCard(page, href);
+}
+                 
+function loadVCard(page, href)
+{
+    var busyIndicator = showBusyIndicator();
   
     $.ajax(href, {
         beforeSend: function (xhr) { xhr.overrideMimeType("text/vcard"); }
@@ -110,17 +115,8 @@ function loadVCard(href)
     })
     .complete(function ()
     {
-        sh.popup_close("busy-popup");
+        busyIndicator.remove();
     });
-}
-
-function viewVCard(href)
-{
-    var page = $("#viewer-page");
-    page.find("section").html("<ul class='sh-listview'></ul>");
-
-    loadVCard(href);
-    sh.push("viewer-page");
 }
 
 function VCProperty(group, name, parameters, value)

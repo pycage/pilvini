@@ -3,11 +3,9 @@ function viewPdf(href)
     var parts = href.split("/");
     var name = decodeURI(parts[parts.length - 1]);
 
-    var page = $("#viewer-page");
-    
-    sh.onSwipeBack(page, function () { sh.pop(); });
+    var page = showPage(name);
+    sh.onSwipeBack(page, function () { page.pop(); });
 
-    page.find("header h1").html(name);
     page.find("section").html("<iframe>");
     var iframe = page.find("iframe");
     iframe.css("position", "absolute");
