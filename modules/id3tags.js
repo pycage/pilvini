@@ -198,6 +198,268 @@ function readBytes(fd, offset, size, callback)
     });
 }
 
+function parseVorbis(fd, tags, resultCallback)
+{
+    /* Checks the type of tags, Ogg Vorbis or FLAC, and invokes the callback
+     * with type and tags offset.
+     */
+    function checkType(fd, callback)
+    {
+        readBytes(fd, 0, 4, function (err, buffer)
+        {
+            if (err)
+            {
+                callback("", 0);
+                return;
+            }
+
+            if (buffer.indexOf("fLaC") !== -1)
+            {
+                // it's FLAC
+                callback("flac", 4);
+            }
+            else
+            {
+                readBytes(fd, 0, 1024, function (err, buffer)
+                {
+                        var marker = new Uint8Array(
+                            [3]
+                            .concat(['v', 'o', 'r', 'b', 'i', 's'].map(function (c) {return c.charCodeAt(0); }))
+                        );
+
+                        var pos = buffer.indexOf(marker);
+                        if (pos !== -1)
+                        {
+                            // it's Ogg Vorbis
+                            callback("vorbis", pos + 7);
+                        }
+                        else
+                        {
+                            // nothing found
+                            callback("", 0);
+                        }
+                });
+            }
+        });
+    }
+
+    /* Reads the tag soup of the given type and invokes the callback with
+     * the data block.
+     */
+    function readTagSoup(fd, type, offset, callback)
+    {
+        if (type === "flac")
+        {
+            readFlacTagSoup(fd, offset, callback);
+        }
+        else if (type === "vorbis")
+        {
+            readVorbisTagSoup(fd, offset, callback);
+        }
+        else
+        {
+            callback(null);
+        }
+    }
+
+    /* Reads the Ogg Vorbis tag soup and invokes the callback with the
+     * data block.
+     */
+    function readVorbisTagSoup(fd, offset, callback)
+    {
+        var soup = Buffer.from("");
+        var marker = new Uint8Array(
+            [5]
+            .concat(['v', 'o', 'r', 'b', 'i', 's'].map(function (c) {return c.charCodeAt(0); }))
+        );
+
+        function fillSoup(offset)
+        {
+            readBytes(fd, offset, 512, function (err, buffer)
+            {
+                if (err)
+                {
+                    callback(null);
+                    return;
+                }
+    
+                soup = Buffer.concat([soup, buffer]);
+
+                var pos = soup.indexOf(marker, 0, "binary");
+                if (pos !== -1)
+                {
+                    callback(soup.slice(0, pos));
+                }
+                else if (soup.length < 5120)
+                {
+                    fillSoup(offset + 512);
+                }
+                else
+                {
+                    callback(null);
+                }
+            });
+        }
+
+        fillSoup(offset);
+    }
+
+    /* Reads the FLAC tag soup and invokes the callback with the
+     * data block.
+     */
+    function readFlacTagSoup(fd, offset, callback)
+    {
+        function readBlock(offset, callback)
+        {
+            readBytes(fd, offset, 4, function (err, buffer)
+            {
+                if (err)
+                {
+                    callback(0, null);
+                    return;
+                }
+
+                var blockType = buffer[0];
+                var size = (buffer[1] << 16) +
+                           (buffer[2] << 8) +
+                           buffer[3];
+
+                readBytes(fd, offset + 4, size, function (err, buffer)
+                {
+                    if (err)
+                    {
+                        callback(0, null);
+                        return;
+                    }
+                    
+                    callback(blockType, buffer);
+                });
+            });
+        }
+
+        function findCommentBlock(offset, callback)
+        {
+            if (count > 5)
+            {
+                callback(null);
+            }
+            ++count;
+
+            readBlock(offset, function (blockType, buffer)
+            {
+                console.log("FLAC BLOCK TYPE " + blockType);
+                if (! buffer)
+                {
+                    callback(null);
+                }
+                else if (blockType & 0x04)
+                {
+                    // VORBIS_COMMENT
+                    callback(buffer);
+                }
+                else
+                {
+                    // look further
+                    findCommentBlock(offset + buffer.length, callback);
+                }
+            });
+        }
+
+        var count = 0;
+        findCommentBlock(offset, callback);
+    }
+
+    /* Parses the given tag soup.
+     */
+    function parseTagSoup(soup, tags, callback)
+    {
+        /*
+        1) [vendor_length] = read an unsigned integer of 32 bits
+        2) [vendor_string] = read a UTF-8 vector as [vendor_length] octets
+        3) [user_comment_list_length] = read an unsigned integer of 32 bits
+        4) iterate [user_comment_list_length] times {
+            5) [length] = read an unsigned integer of 32 bits
+            6) this iteration's user comment = read a UTF-8 vector as [length] octets
+           }
+        7) [framing_bit] = read a single bit as boolean
+        8) if ( [framing_bit] unset or end of packet ) then ERROR
+        9) done.
+
+        [http://www.xiph.org/vorbis/doc/v-comment.html]
+        */
+
+        if (! soup)
+        {
+            callback("no data");
+            return;
+        }
+        //console.log("Soup: " + soup.toString("binary"));
+        //console.log(soup);
+
+        // iterate over entries
+        var offset = 0;
+        var vendorLength = soup[offset] +
+                           (soup[offset + 1] << 8) +
+                           (soup[offset + 2] << 16) +
+                           (soup[offset + 3] << 24);
+        //console.log("vendor length: " + vendorLength);
+        offset += 4 + vendorLength;
+
+        var commentsCount = soup[offset] + 
+                            (soup[offset + 1] << 8) +
+                            (soup[offset + 2] << 16) +
+                            (soup[offset + 3] << 24);
+        //console.log("number of comments: " + commentsCount);
+        offset += 4;
+
+
+        var count = 0;
+        while (count < commentsCount && offset < soup.length)
+        {
+            var entrySize = soup[offset] +
+                            (soup[offset + 1] << 8) +
+                            (soup[offset + 2] << 16) +
+                            (soup[offset + 3] << 24);
+            offset += 4;
+            //console.log("size: " + entrySize + ", offset: " + offset + ", total: " + soup.length);
+            //console.log(soup.slice(offset, offset + entrySize).toString("binary"));
+
+            var entry = soup.slice(offset, offset + entrySize);
+            var equalsPos = entry.indexOf("=");
+            if (equalsPos !== -1)
+            {
+                var keySize = equalsPos;
+                var valueSize = entrySize - keySize - 1;
+
+                var key = entry.slice(0, keySize).toString("ascii");
+                key = TAGS_MAP[key] || key;
+                var value = entry.slice(keySize + 1, keySize + 1 + valueSize).toString("binary");
+                tags[key] = value;
+                //console.log(key + " = " + value);
+            }
+
+            offset += entrySize;
+            ++count;
+        }
+
+        callback(null);
+    }
+
+
+    checkType(fd, function (type, offset)
+    {
+        console.log("type: " + type + " offset: " + offset);
+        readTagSoup(fd, type, offset, function (buffer)
+        {
+            console.log("got tag soup: " + (buffer ? buffer.length : "null"));
+            parseTagSoup(buffer, tags, function (err)
+            {
+                resultCallback(err);
+            })
+        });
+    });
+}
+
 function parseId3v1(fd, tags, resultCallback)
 {
     /* Reads the ID3v1 tag soup.
@@ -655,7 +917,6 @@ exports.Tags = function (file)
                 var major = buffer[3];
                 var minor = buffer[4];
 
-                /*
                 if (tagType === "Ogg")
                 {
                     console.debug("Detected Ogg");
@@ -666,8 +927,7 @@ exports.Tags = function (file)
                     console.debug("Detected FLAC");
                     parseVorbis(fd, m_tags, closeCallback);
                 }
-                */
-                if (tagType === "ID3")
+                else if (tagType === "ID3")
                 {
                     console.debug("Detected ID3");
                     parseId3v2(fd, major, m_tags, closeCallback);
