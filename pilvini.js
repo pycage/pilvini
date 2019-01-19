@@ -333,10 +333,18 @@ function handleRequest(request, response)
         services[serviceName].handleRequest(request, response, authUsers, authCookie.value());
         return;
     }
-    else if (serviceName !== "")
+    else if (serviceName !== "" && services[serviceName])
     {
         // service
         services[serviceName].handleRequest(request, response, userContext, shares, function () { });
+        return;
+    }
+    else if (serviceName !== "")
+    {
+        // invalid service name
+        response.writeHeadLogged(403, "Forbidden");
+        response.write("Access denied.");
+        response.end();
         return;
     }
 
