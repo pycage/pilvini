@@ -8,8 +8,8 @@ var Service = function (authenticator)
     {
         if (request.method === "POST")
         {
-            var user = request.headers["x-pilvini-user"];
-            var password = request.headers["x-pilvini-password"];
+            var user = request.headers["x-pilvini-user"] || "";
+            var password = request.headers["x-pilvini-password"] || "";
          
             if (user === "")
             {

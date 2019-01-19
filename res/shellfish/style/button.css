@@ -4,12 +4,14 @@ a, input[type=submit], input[type=button] {
     padding: 0.2rem;
     margin: 0.1rem;
     min-width: 4rem;
+    background: #000;
     background-color: var(--color-primary-background);
     color: var(--color-primary);
     text-align: center;
     cursor: pointer;
     font-family: inherit;
     font-size: inherit;
+    display: inline;
 }
 
 a:hover, input[type=submit]:hover, input[type=button]:hover {

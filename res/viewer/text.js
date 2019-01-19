@@ -12,6 +12,7 @@ function viewText(href)
             toggleButton.removeClass("sh-icon-edit").addClass("sh-icon-checked");
             viewBox.css("display", "none");
             editBox.css("display", "block");
+            edited = true;
         }
         else
         {
@@ -43,6 +44,8 @@ function viewText(href)
         });
     }
 
+    var edited = false;
+
     var page = $("#viewer-page");
     var originalContent = "";
 
@@ -72,7 +75,7 @@ function viewText(href)
     page.one("sh-closed", function ()
     {
         var data = editBox.val();
-        if (data !== originalContent)
+        if (edited && data !== originalContent)
         {
             upload(href, editBox.val());
         }
@@ -90,6 +93,16 @@ function viewText(href)
         originalContent = data;
         setText(data);
         editBox.val(data);
+    })
+    .fail(function (xhr, status, err)
+    {
+        var message = status;
+        if (xhr.status === 0)
+        {
+            // no response from server
+            message = "Connection failed.";
+        }
+        showError("Failed to load: " + message);
     })
     .complete(function ()
     {

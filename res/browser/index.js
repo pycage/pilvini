@@ -1284,6 +1284,7 @@ function init()
     sh.push("main-page", function () { }, true);
 
     var page = $("#main-page");
+    var clipboardPage = $("#clipboard-page");
     setTimeout(function () { loadThumbnails(page); }, 500);
 
     $("#viewer-page").on("sh-closed", function ()
@@ -1300,6 +1301,11 @@ function init()
         {
             loadDirectory(upButton.data("url"));
         }
+    });
+
+    sh.onSwipeBack(clipboardPage, function ()
+    {
+        sh.pop();
     });
 
     /* setup drag and drop for external files */
