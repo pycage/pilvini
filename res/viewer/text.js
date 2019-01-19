@@ -19,7 +19,7 @@ function viewText(href)
             toggleButton.removeClass("sh-icon-checked").addClass("sh-icon-edit");
             viewBox.css("display", "block");
             editBox.css("display", "none");
-            setMarkdown(editBox.val());
+            setText(editBox.val());
         }
     }
 
