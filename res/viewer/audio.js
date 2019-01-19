@@ -895,6 +895,7 @@ $(document).ready(function ()
         audio.updatePullerState();
     });
 
-    mimeRegistry.register("application/ogg", audio.add);
+    mimeRegistry.register("audio/flac", audio.add);
     mimeRegistry.register("audio/mp3", audio.add);
+    mimeRegistry.register("audio/ogg", audio.add);
 });
