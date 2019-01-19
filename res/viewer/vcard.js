@@ -455,3 +455,9 @@ function VCardCollection(data)
         console.error(err);
     }
 }
+
+$(document).ready(function ()
+{
+    mimeRegistry.register("text/vcard", viewVCard);
+});
+

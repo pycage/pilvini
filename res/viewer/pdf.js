@@ -16,3 +16,8 @@ function viewPdf(href)
     iframe.prop("src", "/::res/viewer/pdfjs/web/viewer.html?file=" + encodeURI(href));
     sh.push(page);
 }
+
+$(document).ready(function ()
+{
+    mimeRegistry.register("application/pdf", viewPdf);
+});

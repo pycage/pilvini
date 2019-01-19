@@ -1,8 +1,46 @@
 "use strict";
 
+var MimeRegistry = function ()
+{
+    var m_mapping = { };
+
+    this.register = function (mimeType, viewer)
+    {
+        if (! m_mapping[mimeType])
+        {
+            m_mapping[mimeType] = [];
+        }
+
+        var viewers = m_mapping[mimeType];
+        viewers.push(viewer);
+    };
+
+    this.viewers = function (mimeType)
+    {
+        return m_mapping[mimeType] || [];
+    }
+};
+var mimeRegistry = new MimeRegistry();
+
 function currentUri()
 {
     return $("#main-page > section").data("url");
+}
+
+function viewFile(item)
+{
+    var mimeType = $(item).data("mimetype");
+    var url = $(item).data("url");
+
+    var viewers = mimeRegistry.viewers(mimeType);
+    if (viewers.length === 0)
+    {
+        showError("There is no viewer available for this type: " + mimeType);
+    }
+    else
+    {
+        viewers[0](url);
+    }
 }
 
 /* Initiates loading the thumbnails of the items on the page.
@@ -1230,6 +1268,11 @@ function init()
     unselectAll();
     checkClipboard();
     updateNavBar();
+
+    mimeRegistry.register("application/x-folder", function (url)
+    {
+        loadDirectory(url);
+    });
 }
 
 function initLogin()

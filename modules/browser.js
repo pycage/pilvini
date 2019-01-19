@@ -11,31 +11,31 @@ const modFs = require("fs"),
 
 const MIME_INFO = {
     "application/java-archive": { "icon": "package.png" },
-    "application/ogg": { "icon": "audio.png", "viewer": "audio.add" },
-    "application/pdf": { "icon": "pdf.png", "viewer": "viewPdf" },
+    "application/ogg": { "icon": "audio.png" },
+    "application/pdf": { "icon": "pdf.png" },
     "application/vnd.oasis.opendocument.text": { "icon": "document.png" },
-    "application/x-batch": { "icon": "text.png", "viewer": "viewText" },
-    "application/x-json": { "icon": "text.png", "viewer": "viewText" },
-    "application/x-python": { "icon": "text.png", "viewer": "viewText" },
-    "application/x-shellscript": { "icon": "text.png", "viewer": "viewText" },
+    "application/x-batch": { "icon": "text.png" },
+    "application/x-json": { "icon": "text.png" },
+    "application/x-python": { "icon": "text.png" },
+    "application/x-shellscript": { "icon": "text.png" },
     "application/x-gzip": { "icon": "package.png" },
     "application/x-iso9660-image": { "icon": "optical.png" },
     "application/zip": { "icon": "package.png" },
-    "audio/mp3": { "icon": "audio.png", "viewer": "audio.add" },
-    "image/gif": { "icon": "image.png", "viewer": "viewImage" },
-    "image/jpeg": { "icon": "image.png", "viewer": "viewImage" },
-    "image/png": { "icon": "image.png", "viewer": "viewImage" },
-    "image/svg+xml": { "icon": "image.png", "viewer": "viewImage" },
+    "audio/mp3": { "icon": "audio.png" },
+    "image/gif": { "icon": "image.png" },
+    "image/jpeg": { "icon": "image.png" },
+    "image/png": { "icon": "image.png" },
+    "image/svg+xml": { "icon": "image.png" },
     "text/html": { "icon": "html.png" },
-    "text/plain": { "icon": "text.png", "viewer": "viewText" },
+    "text/plain": { "icon": "text.png" },
     "text/rtf": { "icon": "document.png" },
-    "text/vcard": { "icon": "contacts.png", "viewer": "viewVCard" },
-    "text/xml": { "icon": "text.png", "viewer": "viewText" },
-    "text/x-markdown": { "icon": "document.png", "viewer": "viewMarkdown" },
-    "video/mp4": { "icon": "video.png", "viewer": "viewVideo" },
-    "video/webm": { "icon": "video.png", "viewer": "viewVideo" },
-    "video/x-flv": { "icon": "video.png", "viewer": "viewVideo" },
-    "video/x-msvideo": { "icon": "video.png", "viewer": "viewVideo" }
+    "text/vcard": { "icon": "contacts.png" },
+    "text/xml": { "icon": "text.png" },
+    "text/x-markdown": { "icon": "document.png" },
+    "video/mp4": { "icon": "video.png" },
+    "video/webm": { "icon": "video.png" },
+    "video/x-flv": { "icon": "video.png" },
+    "video/x-msvideo": { "icon": "video.png" }
 };
 
 function readSettings(userRoot)
@@ -207,25 +207,17 @@ function makeThumbnail(icon, uri)
 function makeFileItem(pathUri, file, stat, active, callback)
 {
     var mimeType = modMime.mimeType(file);
-    var mimeInfo = MIME_INFO[mimeType];
     var icon = getIcon(mimeType);
     var info = "";
     var uri = (pathUri + "/" + encodeURIComponent(file)).replace(/'/g, "%27").replace("//", "/");
-    var action = "window.location.href=\"" + uri + "\";";
 
     var iconHtml = "";
-
-    if (active && mimeInfo && mimeInfo.viewer)
-    {
-        action = mimeInfo.viewer + "(\"" + uri + "\");";
-    }
 
     if (stat.isDirectory())
     {
         mimeType = "application/x-folder";
         icon = "/::res/file-icons/folder.png";
         iconHtml = makeIcon(icon);
-        action = "loadDirectory(\"" + uri + "\");";
     }
     else if (mimeType.startsWith("image/") ||
              mimeType.startsWith("audio/") ||
@@ -249,7 +241,7 @@ function makeFileItem(pathUri, file, stat, active, callback)
         iconHtml = makeIcon(icon);
     }
 
-    return callback(uri, info, mimeType, action, iconHtml);
+    return callback(uri, info, mimeType, iconHtml);
 }
 
 function makeFiles(uri, stats, active)
@@ -271,7 +263,7 @@ function makeFiles(uri, stats, active)
             continue;
         }
 
-        t.content(makeFileItem(uri, file, stat, active, function (uri, info, mimeType, action, iconHtml)
+        t.content(makeFileItem(uri, file, stat, active, function (uri, info, mimeType, iconHtml)
         {
             var tag = modHtml.tag;
 
@@ -297,9 +289,9 @@ function makeFiles(uri, stats, active)
                         )
                     );
 
-            if (action !== "" && active)
+            if (active)
             {
-                t = t.on("click", action);
+                t = t.on("click", "viewFile(this);");
             }
 
             if (active)
@@ -366,7 +358,7 @@ function makeFilesGrid(sortMode, uri, stats, active)
             t.content(currentP);
         }
         
-        currentP.content(makeFileItem(uri, file, stat, active, function (uri, info, mimeType, action, iconHtml)
+        currentP.content(makeFileItem(uri, file, stat, active, function (uri, info, mimeType, iconHtml)
         {
             var tag = modHtml.tag;
             
@@ -379,9 +371,9 @@ function makeFilesGrid(sortMode, uri, stats, active)
                     .data("url", uri)
                     .content(iconHtml);
 
-            if (action !== "")
+            if (active)
             {
-                t = t.on("click", action);
+                t = t.on("click", "viewFile(this);");
             }
 
             return t;

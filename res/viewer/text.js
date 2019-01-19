@@ -104,3 +104,13 @@ function viewText(href)
         busyIndicator.remove();
     });
 }
+
+$(document).ready(function ()
+{
+    mimeRegistry.register("application/x-batch", viewText);
+    mimeRegistry.register("application/x-json", viewText);
+    mimeRegistry.register("application/x-python", viewText);
+    mimeRegistry.register("application/x-shellscript", viewText);
+    mimeRegistry.register("text/plain", viewText);
+    mimeRegistry.register("text/xml", viewText);
+});

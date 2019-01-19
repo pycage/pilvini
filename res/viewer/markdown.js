@@ -118,3 +118,8 @@ function viewMarkdown(href)
         busyIndicator.remove();
     });
 }
+
+$(document).ready(function ()
+{
+    mimeRegistry.register("text/x-markdown", viewMarkdown);
+});
