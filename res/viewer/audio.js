@@ -225,8 +225,26 @@ var Audio = function ()
             var total = audio.prop("duration") || 0;
             var pos = audio.prop("currentTime") || 0;
             $(".audio-progress-label").html(formatTime(pos) + " / " + formatTime(total));
-            $(".audio-progress-bar > div").css("width", (pos / total * 100.0) + "%");
+            $(".audio-progress-bar > div:nth-child(2)").css("width", (pos / total * 100.0) + "%");
         }
+        updateBuffering();
+    }
+
+    /* Updates the current buffering progress.
+     */
+    function updateBuffering()
+    {
+        var buffered = audio.prop("buffered");
+        var total = audio.prop("duration");
+
+        var maxEnd = 0;
+        for (var i = 0; i < buffered.length; ++i)
+        {
+            console.log("buffered[" + i + "]: " + buffered.start(i) + " - " + buffered.end(i));
+            maxEnd = Math.max(buffered.end(i), maxEnd);
+        }
+
+        $(".audio-progress-bar > div:nth-child(1)").css("width", (maxEnd / total * 100) + "%");
     }
 
     /* Updates the play status.
@@ -320,6 +338,15 @@ var Audio = function ()
                     .style("left", "80px")
                     .style("right", "42px")
                     .style("height", "4px")
+                    .content(
+                        tag("div")
+                        .style("position", "absolute")
+                        .style("top", "0")
+                        .style("left", "0")
+                        .style("width", "0%")
+                        .style("height", "2px")
+                        .style("background-color", "red")
+                    )
                     .content(
                         tag("div")
                         .style("position", "absolute")
@@ -493,6 +520,15 @@ var Audio = function ()
                                 .style("position", "relative")
                                 .style("height", "1rem")
                                 .style("margin", "0")
+                                .content(
+                                    tag("div")
+                                    .style("position", "absolute")
+                                    .style("top", "0")
+                                    .style("left", "0")
+                                    .style("width", "0%")
+                                    .style("height", "2px")
+                                    .style("background-color", "red")
+                                )
                                 .content(
                                     tag("div")
                                     .style("position", "absolute")
@@ -820,6 +856,7 @@ var Audio = function ()
     audio.on("play", updatePlayStatus);
     audio.on("durationchange", updatePosition);
     audio.on("timeupdate", updatePosition);
+    audio.on("progress", updateBuffering);
     audio.on("ended", m_playlist.next);
 };
 
