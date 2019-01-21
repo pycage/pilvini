@@ -224,7 +224,8 @@ function parseVorbis(fd, tags, resultCallback)
                 {
                         var marker = Buffer.from(new Uint8Array(
                             [3]
-                            .concat(['v', 'o', 'r', 'b', 'i', 's'].map(function (c) { return c.charCodeAt(0); }))
+                            .concat(['v', 'o', 'r', 'b', 'i', 's']
+                                    .map(function (c) { return c.charCodeAt(0); }))
                         ));
 
                         var pos = buffer.indexOf(marker);
@@ -270,7 +271,8 @@ function parseVorbis(fd, tags, resultCallback)
         var soup = Buffer.from("");
         var marker = Buffer.from(new Uint8Array(
             [5]
-            .concat(['v', 'o', 'r', 'b', 'i', 's'].map(function (c) {return c.charCodeAt(0); }))
+            .concat(['v', 'o', 'r', 'b', 'i', 's']
+                    .map(function (c) {return c.charCodeAt(0); }))
         ));
 
         function fillSoup(offset)
