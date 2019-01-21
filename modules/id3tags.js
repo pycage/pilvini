@@ -222,10 +222,10 @@ function parseVorbis(fd, tags, resultCallback)
             {
                 readBytes(fd, 0, 1024, function (err, buffer)
                 {
-                        var marker = new Uint8Array(
+                        var marker = Buffer.from(new Uint8Array(
                             [3]
-                            .concat(['v', 'o', 'r', 'b', 'i', 's'].map(function (c) {return c.charCodeAt(0); }))
-                        );
+                            .concat(['v', 'o', 'r', 'b', 'i', 's'].map(function (c) { return c.charCodeAt(0); }))
+                        ));
 
                         var pos = buffer.indexOf(marker);
                         if (pos !== -1)
@@ -268,10 +268,10 @@ function parseVorbis(fd, tags, resultCallback)
     function readVorbisTagSoup(fd, offset, callback)
     {
         var soup = Buffer.from("");
-        var marker = new Uint8Array(
+        var marker = Buffer.from(new Uint8Array(
             [5]
             .concat(['v', 'o', 'r', 'b', 'i', 's'].map(function (c) {return c.charCodeAt(0); }))
-        );
+        ));
 
         function fillSoup(offset)
         {

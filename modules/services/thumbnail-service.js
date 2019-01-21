@@ -124,7 +124,7 @@ var Service = function (contentRoot)
             console.log("thumbfile: " + thumbFile);
             loadOrCreateThumbnail(targetFile, m_thumbDir, thumbFile, maxWidth, maxHeight, response, function ()
             {
-                modUtils.limitFiles(m_thumbDir, 1000);
+                modUtils.limitFiles(m_thumbDir, 10000);
                 callback();
             });
         }
@@ -132,7 +132,7 @@ var Service = function (contentRoot)
         {
             writeThumbnail(m_thumbDir, thumbFile, request, response, function ()
             {
-                modUtils.limitFiles(m_thumbDir, 1000);
+                modUtils.limitFiles(m_thumbDir, 10000);
                 callback();
             });
         }
