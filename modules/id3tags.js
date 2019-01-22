@@ -539,6 +539,7 @@ function parseId3v1(fd, tags, resultCallback)
         if (buffer.slice(0, 3).toString("ascii") !== "TAG")
         {
             resultCallback();
+            return;
         }
 
         tags["TITLE"] = buffer.slice(3, 33).toString("binary");
@@ -560,6 +561,7 @@ function parseId3v1(fd, tags, resultCallback)
         var genre = buffer[127];
         tags["GENRE"] = genre < GENRES.length ? GENRES[genre]
                                               : "<Unknown>";
+        resultCallback();
     });
 }
 
