@@ -105,7 +105,7 @@ function viewVideo(href)
         {
             var total = video.prop("duration");
             var pos = video.prop("currentTime");
-            $(".video-progress-bar > div").css("width", (pos / total * 100.0) + "%");
+            $(".video-progress-bar > div").last().css("width", (pos / total * 100.0) + "%");
             $(".video-progress-label").html(formatTime(pos) + " / " + formatTime(total));
         }
     }
@@ -250,6 +250,15 @@ function viewVideo(href)
                         .style("top", "0")
                         .style("left", "0")
                         .style("width", "0%")
+                        .style("height", "2px")
+                        .style("background-color", "red")
+                    )
+                    .content(
+                        tag("div")
+                        .style("position", "absolute")
+                        .style("top", "0")
+                        .style("left", "0")
+                        .style("width", "0%")
                         .style("height", "4px")
                         .style("background-color", "var(--color-primary-background)")
                     )
@@ -353,6 +362,21 @@ function viewVideo(href)
         
     });
 
+    video.on("progress", function ()
+    {
+        var buffered = video.prop("buffered");
+        var total = video.prop("duration");
+
+        var maxEnd = 0;
+        for (var i = 0; i < buffered.length; ++i)
+        {
+            //console.log("buffered[" + i + "]: " + buffered.end(i));
+            maxEnd = Math.max(buffered.end(i), maxEnd);
+        }
+
+        $(".video-progress-bar > div").first().css("width", (maxEnd / total * 100) + "%");
+    });
+
     setupProgressBar($(".video-progress-bar"), function (p, dragging)
     {
         isSeeking = dragging;
@@ -400,5 +424,6 @@ function viewVideo(href)
 $(document).ready(function ()
 {
     mimeRegistry.register("video/mp4", viewVideo);
+    mimeRegistry.register("video/mpeg", viewVideo);
     mimeRegistry.register("video/webm", viewVideo);
 });

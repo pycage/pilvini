@@ -21,6 +21,7 @@ const MIME_INFO = {
     "application/x-gzip": { "icon": "package.png" },
     "application/x-iso9660-image": { "icon": "optical.png" },
     "application/zip": { "icon": "package.png" },
+    "audio/flac": { "icon": "audio.png" },
     "audio/mp3": { "icon": "audio.png" },
     "image/gif": { "icon": "image.png" },
     "image/jpeg": { "icon": "image.png" },

@@ -22,16 +22,21 @@ const EXTENSIONS = {
     ".jar":   "application/java-archive",
     ".jpeg":  "image/jpeg",
     ".jpg":   "image/jpeg",
+    ".js":    "text/javascript",
     ".json":  "application/x-json",
     ".m4v":   "video/mp4",
     ".md":    "text/x-markdown",
     ".mp3":   "audio/mp3",
     ".mp4":   "video/mp4",
+    ".mpeg":  "video/mpeg",
+    ".mpg":   "video/mpeg",
     ".odt":   "application/vnd.oasis.opendocument.text",
     ".ogg":   "audio/ogg",
     ".pdf":   "application/pdf",
     ".png":   "image/png",
+    ".pro":   "text/plain",
     ".py":    "application/x-python",
+    ".qml":   "application/x-qml",
     ".rtf":   "text/rtf",
     ".sh":    "application/x-shellscript",
     ".svg":   "image/svg+xml",
@@ -42,14 +47,26 @@ const EXTENSIONS = {
     ".zip":   "application/zip"
 };
 
+const NAMES = {
+    "ChangeLog": "text/plain",
+    "INSTALL": "text/plain",
+    "LICENSE": "text/plain",
+    "Makefile": "text/plain",
+    "NEWS": "text/plain",
+    "README": "text/plain"
+};
+
 exports.mimeType = function (path)
 {
-    var ext = "";
-    var idx = path.lastIndexOf(".");
-    if (idx != -1)
-    {
-        ext = path.substr(idx);
-    }
+    var idx = path.lastIndexOf("/");
+    var name = idx !== -1 ? path.substr(idx + 1)
+                          : path; 
 
-    return EXTENSIONS[ext.toLowerCase()] || "application/octet-stream";
+    idx = path.lastIndexOf(".");
+    var ext = idx !== -1 ? path.substr(idx)
+                         : "";
+
+    return EXTENSIONS[ext.toLowerCase()] ||
+           NAMES[name] ||
+           "application/octet-stream";
 };
