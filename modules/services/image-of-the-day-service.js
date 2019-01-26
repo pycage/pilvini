@@ -53,10 +53,9 @@ var Service = function (contentRoot)
         if (m_currentBackground && now < m_timestamp + 24 * 3600 * 1000)
         {
             sendBackground(response);
-            m_timestamp = now;
             return;
         }
-
+              
         var options = {
             hostname: "bing.com",
             port: 80,
@@ -75,9 +74,12 @@ var Service = function (contentRoot)
                     var url = json["images"][0].url;
                     console.log("url " + url);
                     serve("http://bing.com" + url, response);
+                    m_timestamp = now;
                 }
                 catch (err)
                 {
+                    console.log(err);
+                    console.log(data);
                     response.writeHeadLogged(500, "Internal Server Error");
                     response.end();
                 }
