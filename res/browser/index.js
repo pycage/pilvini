@@ -351,7 +351,7 @@ function share(shareId, password)
     })
     .done(function (data, status, xhr)
     {
-        loadDirectory(currentUri());
+        loadDirectory(currentUri(), false);
     });
 }
 
@@ -365,7 +365,7 @@ function unshare()
     })
     .done(function (data, status, xhr)
     {
-        loadDirectory(currentUri());
+        loadDirectory(currentUri(), false);
     });
 }
 
@@ -693,7 +693,7 @@ function pasteItems()
             tokens.pop();
             if (tokens.length === 0)
             {
-                loadDirectory(currentUri());
+                loadDirectory(currentUri(), false);
             }
         });
     });
@@ -740,7 +740,7 @@ function renameItem(item, newName)
     .done(function () {
         console.log("File renamed: " + name + " -> " + newName);
         $(item).find("h1").html(newName);
-        loadDirectory(currentUri());
+        loadDirectory(currentUri(), false);
     })
     .fail(function () {
         showError("Failed to rename: " + name + " -> " + newName);
@@ -846,7 +846,7 @@ function uploadFiles(files)
 
             if (tokens.length === 0)
             {
-                loadDirectory(currentUri());
+                loadDirectory(currentUri(), false);
             }
         });
     }
@@ -863,7 +863,7 @@ function makeDirectory(name)
     .done(function ()
     {
         console.log("Directory created: " + name);
-        loadDirectory(currentUri());
+        loadDirectory(currentUri(), false);
     })
     .fail(function ()
     {
@@ -885,7 +885,7 @@ function makeFile(name)
     .done(function ()
     {
         console.log("File created: " + name);
-        loadDirectory(currentUri());
+        loadDirectory(currentUri(), false);
     })
     .fail(function ()
     {
@@ -919,7 +919,7 @@ function changeSettings(key, value, altValue)
         .done(function ()
         {
             console.log("Settings changed: " + key + " = " + value);
-            loadDirectory(currentUri());
+            loadDirectory(currentUri(), false);
         })
         .fail(function (xhr, status, err)
         {
@@ -973,7 +973,7 @@ function addFavorite()
         })
         .done(function ()
         {
-            loadDirectory(currentUri());
+            loadDirectory(currentUri(), false);
         })
         .fail(function (xhr, status, err)
         {
@@ -1018,7 +1018,7 @@ function removeFavorite()
         })
         .done(function ()
         {
-            loadDirectory(currentUri());
+            loadDirectory(currentUri(), false);
         })
         .fail(function (xhr, status, err)
         {
@@ -1162,19 +1162,22 @@ function updateNavBar()
     }
 }
 
-function loadDirectory(href)
+function loadDirectory(href, pushToHistory)
 {
     var busyIndicator = showBusyIndicator();
-    
-    var prefix = $("#filesbox").data("prefix");
 
-    $("#main-page").load(prefix + href + "?ajax #main-page > *", function (data, status, xhr)
+    $("#main-page").load("/::shell" + href + "?ajax #main-page > *", function (data, status, xhr)
     {
         if (xhr.status !== 200)
         {
             busyIndicator.remove();
             showError("Failed to load directory.");
             return;
+        }
+
+        if (pushToHistory)
+        {
+            window.history.pushState({ "uri": href }, href, "/::shell" + href);
         }
 
         sh.push("main-page", function ()
@@ -1246,13 +1249,22 @@ function init()
     var clipboardPage = $("#clipboard-page");
     setTimeout(function () { loadThumbnails(page); }, 500);
 
+    /* setup history navigation */
+    window.addEventListener("popstate", function (ev)
+    {
+        if (ev.state && ev.state.uri)
+        {
+            loadDirectory(ev.state.uri, false);
+        }
+    }, false);
+
     /* setup swipe suppport */
     sh.onSwipeBack(page, function ()
     {
         var upButton = $("#upButton");
         if (upButton.length)
         {
-            loadDirectory(upButton.data("url"));
+            loadDirectory(upButton.data("url"), true);
         }
     });
 
@@ -1271,7 +1283,7 @@ function init()
 
     mimeRegistry.register("application/x-folder", function (url)
     {
-        loadDirectory(url);
+        loadDirectory(url, true);
     });
 }
 

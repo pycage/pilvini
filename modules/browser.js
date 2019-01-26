@@ -495,7 +495,7 @@ function makeBreadcrumbs(uri)
     var tag = modHtml.tag;
     var t = tag("ul")
             .content(
-                tag("li").on("click", "loadDirectory(\"/\");").content("/")
+                tag("li").on("click", "loadDirectory(\"/\", true);").content("/")
             );
 
     var breadcrumbUri = "";
@@ -508,7 +508,7 @@ function makeBreadcrumbs(uri)
 
         breadcrumbUri += "/" + uriParts[i];
         t.content(
-            tag("li").on("click", "loadDirectory(\"" + breadcrumbUri.replace(/'/g, "%27") + "\");").content(escapeHtml(decodeURI(uriParts[i])))
+            tag("li").on("click", "loadDirectory(\"" + breadcrumbUri.replace(/'/g, "%27") + "\", true);").content(escapeHtml(decodeURI(uriParts[i])))
         )
     }
 
@@ -558,7 +558,7 @@ function makeFavorites(userRoot)
         var name = node["name"];
 
         t.content(
-            tag("li").on("click", "loadDirectory(\"" + href.replace(/'/g, "%27") + "\");")
+            tag("li").on("click", "loadDirectory(\"" + href.replace(/'/g, "%27") + "\", true);")
             .content(
                 tag("span").class("sh-fw-icon sh-icon-star-circle")
             )
@@ -585,7 +585,7 @@ function makeShares(userHome, shares)
             var uri = encodeURI(shareRoot.substr(userHome.length));
 
             t.content(
-                tag("li").on("click", "loadDirectory(\"" + uri + "\");")
+                tag("li").on("click", "loadDirectory(\"" + uri + "\", true);")
                 .content(
                     tag("span").class("sh-fw-icon sh-icon-share")
                 )
@@ -834,7 +834,7 @@ function makeStatusBox()
     return t;
 }
 
-function makeMainPage(viewMode, sortMode, prefix, contentRoot, uri, path, stats, userContext, shares)
+function makeMainPage(viewMode, sortMode, contentRoot, uri, path, stats, userContext, shares)
 {
     var parentUri = modPath.dirname(uri);
     var isFav = userContext.mayModify() ? isFavorite(uri, contentRoot + userContext.home())
@@ -910,7 +910,7 @@ function makeMainPage(viewMode, sortMode, prefix, contentRoot, uri, path, stats,
         .content(
             uri !== "/" ? tag("span").id("upButton").class("sh-left sh-fw-icon sh-icon-arrow-up")
                           .data("url", parentUri)
-                          .on("click", "loadDirectory(\"" + parentUri + "\");")
+                          .on("click", "loadDirectory(\"" + parentUri + "\", true);")
                         : ""
         )
         .content(
@@ -936,7 +936,6 @@ function makeMainPage(viewMode, sortMode, prefix, contentRoot, uri, path, stats,
     .content(
         tag("section").id("filesbox")
         .style("position", "relative")
-        .data("prefix", prefix)
         .data("url", uri)
         .content(
             makeNavBar()
@@ -978,7 +977,7 @@ function makeClipboardPage(clipboardStats)
     return t;
 }
 
-function makeHtml(viewMode, sortMode, prefix, contentRoot, uri, path, stats, clipboardStats, userContext, shares)
+function makeHtml(viewMode, sortMode, contentRoot, uri, path, stats, clipboardStats, userContext, shares)
 {
     var tag = modHtml.tag;
     var t = tag("html")
@@ -994,7 +993,7 @@ function makeHtml(viewMode, sortMode, prefix, contentRoot, uri, path, stats, cli
                     tag("a").id("download").data("ajax", "false").attr("href", "#").attr("download", "name").style("display", "none")
                 )
                 .content(
-                    makeMainPage(viewMode, sortMode, prefix, contentRoot, uri, path, stats, userContext, shares)
+                    makeMainPage(viewMode, sortMode, contentRoot, uri, path, stats, userContext, shares)
                 )
                 .content(
                     makeStatusBox()
@@ -1007,7 +1006,7 @@ function makeHtml(viewMode, sortMode, prefix, contentRoot, uri, path, stats, cli
     return t;
 }
 
-function createMainPage(prefix, uri, contentRoot, userContext, shares, callback)
+function createMainPage(uri, contentRoot, userContext, shares, callback)
 {
     var fullPath = modUtils.uriToPath(uri, contentRoot + userContext.home());
     var userPath = modUtils.uriToPath(uri, userContext.home());
@@ -1023,13 +1022,13 @@ function createMainPage(prefix, uri, contentRoot, userContext, shares, callback)
 
     readStats(sortMode, fullPath, function (stats)
     {
-        var html = makeMainPage(viewMode, sortMode, prefix, contentRoot, uri, userPath, stats, userContext, shares).html();
+        var html = makeMainPage(viewMode, sortMode, contentRoot, uri, userPath, stats, userContext, shares).html();
         callback(true, html);
     });
 }
 exports.createMainPage = createMainPage;
 
-function makeIndex(prefix, uri, contentRoot, userContext, shares, callback)
+function makeIndex(uri, contentRoot, userContext, shares, callback)
 {
     var fullPath = modUtils.uriToPath(uri, contentRoot + userContext.home());
     var userPath = modUtils.uriToPath(uri, userContext.home());
@@ -1049,7 +1048,7 @@ function makeIndex(prefix, uri, contentRoot, userContext, shares, callback)
         {
             readStats(sortMode, modPath.join(contentRoot + userContext.home(), ".pilvini", "clipboard"), function (clipboardStats)
             {
-                var html = "<!DOCTYPE html>\n" + makeHtml(viewMode, sortMode, prefix, contentRoot, uri, userPath, stats, clipboardStats, userContext, shares).html();
+                var html = "<!DOCTYPE html>\n" + makeHtml(viewMode, sortMode, contentRoot, uri, userPath, stats, clipboardStats, userContext, shares).html();
                 callback(true, html);
             });
         });

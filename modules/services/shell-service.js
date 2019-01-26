@@ -32,14 +32,19 @@ var Service = function (contentRoot)
                 }
             }
             
+            var uri = urlObj.pathname.substr(8);
+            if (uri === "")
+            {
+                uri = "/";
+            }
+            
             if (urlObj.search.indexOf("ajax") !== -1)
             {
-                var uri = urlObj.pathname.substr(8);
-                modBrowser.createMainPage("/::shell", uri, m_contentRoot, userContext, shares, cb);
+                modBrowser.createMainPage(uri, m_contentRoot, userContext, shares, cb);
             }
             else
             {
-                modBrowser.makeIndex("/::shell", "/", m_contentRoot, userContext, shares, cb);
+                modBrowser.makeIndex(uri, m_contentRoot, userContext, shares, cb);
             }
         }
         else if (request.method === "POST")
