@@ -34,6 +34,7 @@ const MIME_INFO = {
     "text/xml": { "icon": "text.png" },
     "text/x-markdown": { "icon": "document.png" },
     "video/mp4": { "icon": "video.png" },
+    "video/mpeg": { "icon": "video.png" },
     "video/webm": { "icon": "video.png" },
     "video/x-flv": { "icon": "video.png" },
     "video/x-msvideo": { "icon": "video.png" }

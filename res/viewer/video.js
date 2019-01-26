@@ -424,6 +424,5 @@ function viewVideo(href)
 $(document).ready(function ()
 {
     mimeRegistry.register("video/mp4", viewVideo);
-    mimeRegistry.register("video/mpeg", viewVideo);
     mimeRegistry.register("video/webm", viewVideo);
 });
