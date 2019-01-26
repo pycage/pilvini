@@ -150,7 +150,10 @@ var Audio = function ()
     {
         if (m_metaDataCache[uri])
         {
-            callback(uri, m_metaDataCache[uri]);
+            setTimeout(function ()
+            {
+                callback(uri, m_metaDataCache[uri]);
+            }, 300);
             return;
         }
 
@@ -611,46 +614,9 @@ var Audio = function ()
 
         $("body").append(t.html());
         var page = $(".sh-page").last();
-        var pageHeader = page.find("header h1");
         var pageSection = page.find("section");
 
         sh.onSwipeBack(page, function () { sh.pop(); });
-
-        // load metadata in playlist
-        pageSection.find(".audio-playlist-item").each(function (i, item)
-        {
-            var playlistKey = $(item).data("playlist-key");
-            var playlistIndex = m_playlist.indexOf(playlistKey);
-            var playlistUri = m_playlist.itemAt(playlistIndex)[1];
-
-            fetchMetadata(playlistUri, function (uri, data)
-            {
-                parseMetadata(uri, data, function (title, artist, pic)
-                {
-                    $(item).find("h1").html(escapeHtml(title));
-                    $(item).find("h2").html(escapeHtml(artist));
-                    if (pic !== "")
-                    {
-                        $(item).find("div:nth-child(1)").css("background-image", "url(" + pic + ")");
-                    }
-                });
-            });
-
-            var playlistKey = $(item).data("playlist-key");
-
-            $(item).on("click", function ()
-            {
-                var idx = m_playlist.indexOf(playlistKey);
-                m_playlist.goto(idx);
-            });
-
-            $(item).find(".audio-playlist-delete-button").on("click", function ()
-            {
-                var idx = m_playlist.indexOf(playlistKey);
-                $(item).remove();
-                m_playlist.removeAt(idx);
-            });
-        });
 
         pageSection.find(".audio-play-button").on("click", function ()
         {   
@@ -794,6 +760,42 @@ var Audio = function ()
             updatePlayStatus();
             updatePosition();
             updateMetadata();
+
+            // load metadata in playlist
+            pageSection.find(".audio-playlist-item").each(function (i, item)
+            {
+                var playlistKey = $(item).data("playlist-key");
+                var playlistIndex = m_playlist.indexOf(playlistKey);
+                var playlistUri = m_playlist.itemAt(playlistIndex)[1];
+
+                fetchMetadata(playlistUri, function (uri, data)
+                {
+                    parseMetadata(uri, data, function (title, artist, pic)
+                    {
+                        $(item).find("h1").html(escapeHtml(title));
+                        $(item).find("h2").html(escapeHtml(artist));
+                        if (pic !== "")
+                        {
+                            $(item).find("div:nth-child(1)").css("background-image", "url(" + pic + ")");
+                        }
+                    });
+                });
+
+                var playlistKey = $(item).data("playlist-key");
+
+                $(item).on("click", function ()
+                {
+                    var idx = m_playlist.indexOf(playlistKey);
+                    m_playlist.goto(idx);
+                });
+
+                $(item).find(".audio-playlist-delete-button").on("click", function ()
+                {
+                    var idx = m_playlist.indexOf(playlistKey);
+                    $(item).remove();
+                    m_playlist.removeAt(idx);
+                });
+            });
         });
     }
 
