@@ -256,15 +256,31 @@ var Audio = function ()
     {
         if (audio.prop("paused"))
         {
-            $(".audio-play-button").removeClass("sh-icon-media-pause-circle").addClass("sh-icon-media-play-circle");
+            $(".audio-play-button")
+            .removeClass("sh-busy-indicator")
+            .removeClass("sh-icon-media-pause-circle")
+            .addClass("sh-icon-media-play-circle");
         }
         else
         {
-            $(".audio-play-button").removeClass("sh-icon-media-play-circle").addClass("sh-icon-media-pause-circle");
+            $(".audio-play-button")
+            .removeClass("sh-busy-indicator")
+            .removeClass("sh-icon-media-play-circle")
+            .addClass("sh-icon-media-pause-circle");
         }
 
         $(".audio-playlist-indicator").css("visibility", "hidden");
         $(".audio-playlist-indicator").eq(m_playlist.position()).css("visibility", "visible");
+    }
+
+    /* Updates the wait status.
+     */
+    function updateWaitStatus()
+    {
+        $(".audio-play-button")
+        .removeClass("sh-icon-media-pause-circle")
+        .removeClass("sh-icon-media-play-circle")
+        .addClass("sh-busy-indicator");
     }
 
     /* Updates the meta data.
@@ -846,6 +862,8 @@ var Audio = function ()
         if (m_haveFooter)
         {
             openFooter();
+            updatePlayStatus();
+            updatePosition();
             updateMetadata();
         }
     };
@@ -856,9 +874,11 @@ var Audio = function ()
     var audio = $("#audio-player");
     audio.on("pause", updatePlayStatus);
     audio.on("play", updatePlayStatus);
+    audio.on("playing", updatePlayStatus);
     audio.on("durationchange", updatePosition);
     audio.on("timeupdate", updatePosition);
     audio.on("progress", updateBuffering);
+    audio.on("waiting", updateWaitStatus);
     audio.on("ended", m_playlist.next);
 };
 
