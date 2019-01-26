@@ -22,6 +22,9 @@ var MimeRegistry = function ()
 };
 var mimeRegistry = new MimeRegistry();
 
+var scrollPositionsMap = { };
+
+
 function currentUri()
 {
     return $("#main-page > section").data("url");
@@ -1166,6 +1169,8 @@ function loadDirectory(href, pushToHistory)
 {
     var busyIndicator = showBusyIndicator("Loading");
 
+    scrollPositionsMap[currentUri()] = $(document).scrollTop();
+
     $("#main-page").load("/::shell" + href + "?ajax #main-page > *", function (data, status, xhr)
     {
         if (xhr.status !== 200)
@@ -1180,17 +1185,23 @@ function loadDirectory(href, pushToHistory)
             window.history.pushState({ "uri": href }, href, "/::shell" + href);
         }
 
-        sh.push("main-page", function ()
+        var page = $("#main-page");
+        
+        sh.push(page, function ()
         {
-            var page = $("#main-page");
             setTimeout(function () { loadThumbnails(page); }, 500);
         
             unselectAll();
             checkClipboard();
             updateNavBar();
-    
+            
             busyIndicator.remove();
-
+            
+            console.log("@ " + scrollPositionsMap[href]);
+            $(document).scrollTop(scrollPositionsMap[href] || 0);
+            // FIXME: this is quite a hack
+            page.prop("rememberedScrollTop",  scrollPositionsMap[href] || 0);
+            
             page.trigger("pilvini-page-replaced");
         }, true);
     });

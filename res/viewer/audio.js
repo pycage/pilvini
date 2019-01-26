@@ -880,6 +880,11 @@ var Audio = function ()
     audio.on("progress", updateBuffering);
     audio.on("waiting", updateWaitStatus);
     audio.on("ended", m_playlist.next);
+
+    audio.on("stalled", function ()
+    {
+        showError("Media data is not available.");
+    });
 };
 
 
