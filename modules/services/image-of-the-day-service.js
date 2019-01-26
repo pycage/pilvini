@@ -65,8 +65,13 @@ var Service = function (contentRoot)
         };
         var req = modHttp.request(options, function(res)
         {
+            var data = "";
             res.setEncoding("utf8");
-            res.on("data", function (data)
+            res.on("data", function (d)
+            {
+                data += d;
+            });
+            res.on("end", function ()
             {
                 try
                 {
