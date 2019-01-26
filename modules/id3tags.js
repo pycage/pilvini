@@ -701,6 +701,7 @@ function parseId3v2(fd, rev, tags, resultCallback)
         }
 
         var key = buffer.slice(pos, pos + params.keyLength).toString("ascii");
+        console.log("Mapping tag " + key + " -> " + TAGS_MAP[key]);
         key = TAGS_MAP[key] || key;
         pos += params.keyLength;
 
@@ -898,7 +899,7 @@ function parseId3v2(fd, rev, tags, resultCallback)
         params.fullMimeType = true;
         break;
     default:
-        callback("Unknown revision");
+        resultCallback("Unknown revision");
         return;
     }
 

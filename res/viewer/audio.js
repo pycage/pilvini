@@ -190,7 +190,7 @@ var Audio = function ()
         //getTitleLabel().html(escapeHtml(title));
         //getArtistLabel().html(escapeHtml(artist));
         var pic = "";
-        if (cover)
+        if (cover && cover.mimeType && cover.data)
         {
             var buffer = "";
             var contentType = "";
