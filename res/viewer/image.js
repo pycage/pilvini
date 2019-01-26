@@ -64,7 +64,7 @@ function viewImage(href)
 
     function loadImage(href)
     {
-        var busyIndicator = showBusyIndicator();
+        var busyIndicator = showBusyIndicator("Loading");
         img.css("visibility", "hidden");
         img.data("src", href);
 

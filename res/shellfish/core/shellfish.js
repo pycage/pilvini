@@ -219,6 +219,9 @@ sh.onSwipeBack = function (which, callback)
             .content(
                 tag("span").class("sh-fw-icon sh-icon-back")
                 .style("line-height", "100vh")
+                .style("padding", "0.10em")
+                .style("background-color", "var(--color-primary)")
+                .style("color", "var(--color-primary-background)")
             )
             .html()
         );

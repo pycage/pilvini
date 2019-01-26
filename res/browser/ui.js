@@ -28,7 +28,7 @@ function unescapeHtml(text)
     });
 }
 
-function showBusyIndicator()
+function showBusyIndicator(title)
 {
     var indicator = $(
         tag("div").class("sh-popup")
@@ -44,7 +44,7 @@ function showBusyIndicator()
             .content(tag("br"))
             .content(tag("br"))
             .content(
-                tag("span").content("Loading")
+                tag("span").content(escapeHtml(title))
             )
         )
         .html()

@@ -36,6 +36,8 @@ function viewMarkdown(href)
 
     function upload(href, md, successCb)
     {
+        var busyIndicator = showBusyIndicator("Saving");
+
         $.ajax({
             url: href,
             type: "PUT",
@@ -53,6 +55,7 @@ function viewMarkdown(href)
         })
         .always(function ()
         {
+            busyIndicator.remove();
         });
     }
 
@@ -92,7 +95,7 @@ function viewMarkdown(href)
     });
 
 
-    var busyIndicator = showBusyIndicator();
+    var busyIndicator = showBusyIndicator("Loading");
 
     $.ajax(href, {
         beforeSend: function (xhr) {xhr.overrideMimeType("text/x-markdown"); }

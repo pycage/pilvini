@@ -1164,7 +1164,7 @@ function updateNavBar()
 
 function loadDirectory(href, pushToHistory)
 {
-    var busyIndicator = showBusyIndicator();
+    var busyIndicator = showBusyIndicator("Loading");
 
     $("#main-page").load("/::shell" + href + "?ajax #main-page > *", function (data, status, xhr)
     {

@@ -25,6 +25,8 @@ function viewText(href)
 
     function upload(href, text)
     {
+        var busyIndicator = showBusyIndicator("Saving");
+
         $.ajax({
             url: href,
             type: "PUT",
@@ -41,6 +43,7 @@ function viewText(href)
         })
         .always(function ()
         {
+            busyIndicator.remove();
         });
     }
 
@@ -78,7 +81,7 @@ function viewText(href)
     });
 
 
-    var busyIndicator = showBusyIndicator();
+    var busyIndicator = showBusyIndicator("Loading");
 
     $.ajax(href, {
         beforeSend: function (xhr) {xhr.overrideMimeType("text/plain"); }

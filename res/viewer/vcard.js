@@ -49,7 +49,7 @@ function viewVCard(href)
                  
 function loadVCard(page, href)
 {
-    var busyIndicator = showBusyIndicator();
+    var busyIndicator = showBusyIndicator("Loading");
   
     $.ajax(href, {
         beforeSend: function (xhr) { xhr.overrideMimeType("text/vcard"); }
