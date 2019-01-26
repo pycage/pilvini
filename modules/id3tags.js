@@ -1,6 +1,7 @@
 "use strict";
 
-const modFs = require("fs");
+const modFs = require("fs"),
+      modZlib = require("zlib");
 
 const TAGS_MAP = {
     "APIC": "PICTURE",
@@ -738,45 +739,45 @@ function parseId3v2(fd, rev, tags, resultCallback)
         }
 
         var value = "";
+        var valueBuffer = buffer.slice(pos, pos + valueSize);
+        
+        // support compressed tags
         if (flags & params.flagCompressed)
         {
-            console.debug("Compressed ID3 tag data is currently not supported.");
-            value = "<compressed>";
+            valueBuffer = modZlib.inflateSync(valueBuffer.slice(4));
+        }
+
+        if (key === "PICTURE")
+        {
+            value = parseApic(valueBuffer, params);
+        }
+        else if (params.encodings.length > 0 && valueBuffer[0] < 5 && isStringKey(key))
+        {
+            // try to decode string
+            var encoding = params.encodings[valueBuffer[0]];
+            if (encoding === "utf16be")
+            {
+                // swap bytes
+                for (i = 0; i < valueBuffer.length; i += 2)
+                {
+                    var b = valueBuffer[i];
+                    valueBuffer[i] = valueBuffer[i + 1];
+                    valueBuffer[i + 1] = b;
+                }
+                encoding = "utf16le";
+            }
+
+            value = valueBuffer.slice(1).toString(encoding);
+            if (value.charCodeAt(value.length - 1) === 0)
+            {
+                value = value.substr(0, value.length - 1);
+            }
         }
         else
         {
-            var valueBuffer = buffer.slice(pos, pos + valueSize);
-            if (key === "PICTURE")
-            {
-                value = parseApic(valueBuffer, params);
-            }
-            else if (params.encodings.length > 0 && valueBuffer[0] < 5 && isStringKey(key))
-            {
-                // try to decode string
-                var encoding = params.encodings[valueBuffer[0]];
-                if (encoding === "utf16be")
-                {
-                    // swap bytes
-                    for (i = 0; i < valueBuffer.length; i += 2)
-                    {
-                        var b = valueBuffer[i];
-                        valueBuffer[i] = valueBuffer[i + 1];
-                        valueBuffer[i + 1] = b;
-                    }
-                    encoding = "utf16le";
-                }
-
-                value = valueBuffer.slice(1).toString(encoding);
-                if (value.charCodeAt(value.length - 1) === 0)
-                {
-                    value = value.substr(0, value.length - 1);
-                }
-            }
-            else
-            {
-                value = valueBuffer.toString("binary");
-            }
+            value = valueBuffer.toString("binary");
         }
+
         pos += valueSize;
 
         callback(key, value, pos);
