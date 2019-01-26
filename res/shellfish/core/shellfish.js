@@ -1,5 +1,24 @@
 var sh = { };
 
+sh.pageFreeze = function(which, where)
+{
+    var page = sh.item(which);
+
+    var scrollTop = where;
+    page.prop("rememberedScrollTop",  scrollTop);
+    page.addClass("sh-page-transitioning");
+    page.find("> section").css("margin-top", (-scrollTop) + "px");
+}
+
+sh.pageUnfreeze = function(which)
+{
+    var page = sh.item(which);
+
+    page.removeClass("sh-page-transitioning");
+    page.find("> section").css("margin-top", "0");
+    $(document).scrollTop(page.prop("rememberedScrollTop") || 0);
+}
+
 /* Pushes the given page onto the page stack. Invokes callback afterwards.
  */
 sh.push = function (which, callback, immediate)
@@ -10,6 +29,8 @@ sh.push = function (which, callback, immediate)
         return;
     }
 
+    sh.pageFreeze(page, 0);
+    
     var prevPage = $(".sh-page.sh-visible").last();
     if (prevPage.length)
     {
@@ -17,14 +38,13 @@ sh.push = function (which, callback, immediate)
         if (prevPage[0] === page[0])
         {
             prevPage = [];
+            page.prop("rememberedScrollTop",  0);
         }
         else
         {
-            prevPage.prop("rememberedScrollTop",  $(document).scrollTop());
+            sh.pageFreeze(prevPage, $(document).scrollTop());
         }
     }
-
-    page.addClass("sh-page-transitioning");
 
     if (! immediate)
     {
@@ -81,12 +101,11 @@ sh.push = function (which, callback, immediate)
             right: 0
         }, 350, function ()
         {
-            $(document).scrollTop(0);
             if (prevPage.length)
             {
                 prevPage.css("display", "none");
             }
-            page.removeClass("sh-page-transitioning");
+            sh.pageUnfreeze(page);
             if (callback)
             {
                 callback();
@@ -100,12 +119,11 @@ sh.push = function (which, callback, immediate)
     }
     else
     {
-        $(document).scrollTop(0);
         if (prevPage.length)
         {
             prevPage.css("display", "none");
         }
-        page.removeClass("sh-page-transitioning");
+        sh.pageUnfreeze(page);
         if (callback)
         {
             callback();
@@ -126,12 +144,12 @@ sh.pop = function (callback, reverse, immediate)
 
         
         prevPage.css("display", "block");
-        $(document).scrollTop(prevPage.prop("rememberedScrollTop") || 0);
         
         if (! immediate)
         {
             // slide out
-            page.addClass("sh-page-transitioning");
+            sh.pageFreeze(page, $(document).scrollTop());
+
             var width = $(window).width();
             page.animate({
                 left: (reverse ? -width : width) + "px",
@@ -139,7 +157,9 @@ sh.pop = function (callback, reverse, immediate)
             }, 350, function ()
             {
                 page.removeClass("sh-visible");
-                page.removeClass("sh-page-transitioning");
+                sh.pageUnfreeze(page);
+                sh.pageUnfreeze(prevPage);
+
                 page.css("left", "0").css("right", "0");
                 page.trigger("sh-closed");
     
@@ -160,7 +180,9 @@ sh.pop = function (callback, reverse, immediate)
         else
         {
             page.removeClass("sh-visible");
-            page.removeClass("sh-page-transitioning");
+            sh.pageUnfreeze(page);
+            sh.pageUnfreeze(prevPage);
+
             page.css("left", "0").css("right", "0");
             page.find("> header").css("left", "0").css("right", "0");
             page.trigger("sh-closed");
@@ -231,9 +253,15 @@ sh.onSwipeBack = function (which, callback)
                 else
                 {
                     var scrollTop = $(document).scrollTop();
-                    console.log("scrollTop: " + scrollTop);
-                    page.addClass("sh-page-transitioning");
-                    page.find("> section").css("margin-top", (-scrollTop) + "px");
+                    sh.pageFreeze(page, scrollTop);
+
+                    var pages = $(".sh-page.sh-visible");
+                    if (pages.length > 1)
+                    {
+                        var prevPage = $(pages[pages.length - 2]);
+                        prevPage.css("display", "block");
+                    }
+
                     this.swipeContext.scrollTop = scrollTop;
                     this.swipeContext.status = 1;
                 }
@@ -274,12 +302,7 @@ sh.onSwipeBack = function (which, callback)
     {
         function resetPage()
         {
-            page.removeClass("sh-page-transitioning");
-            page.find("> section").css("margin-top", "0");
-            if (swipeContext.scrollTop > 0)
-            {
-                $(document).scrollTop(swipeContext.scrollTop);
-            }
+            sh.pageUnfreeze(page);
             page.css("left", "0").css("right", "0")
         }
 
