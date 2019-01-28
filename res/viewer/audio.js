@@ -238,16 +238,36 @@ var Audio = function ()
     function updateBuffering()
     {
         var buffered = audio.prop("buffered");
-        var total = audio.prop("duration");
+        var total = audio.prop("seekable").end(0);
 
-        var maxEnd = 0;
-        for (var i = 0; i < buffered.length; ++i)
+        $(".audio-progress-bar > div:nth-child(1)").each(function (i)
         {
-            console.log("buffered[" + i + "]: " + buffered.start(i) + " - " + buffered.end(i));
-            maxEnd = Math.max(buffered.end(i), maxEnd);
-        }
+            var box = $(this);
+            while (box.find("> div").length > buffered.length)
+            {
+                box.find("> div").last().remove();
+            }
+            while (box.find("> div").length < buffered.length)
+            {
+                box.append(
+                    tag("div")
+                    .style("position", "absolute")
+                    .style("background-color", "red")
+                    .style("top", "0")
+                    .style("bottom", "0")
+                    .html()
+                );
+            }
 
-        $(".audio-progress-bar > div:nth-child(1)").css("width", (maxEnd / total * 100) + "%");
+            var gauges = box.find("> div");
+            for (var i = 0; i < buffered.length; ++i)
+            {
+                console.log("buffered " + i + ": " + buffered.start(i) + " - " + buffered.end(i));
+                gauges.eq(i)
+                .css("left", (buffered.start(i) / total * 100) + "%")
+                .css("right", (100 - buffered.end(i) / total * 100) + "%");
+            }
+        });
     }
 
     /* Updates the play status.
@@ -362,9 +382,8 @@ var Audio = function ()
                         .style("position", "absolute")
                         .style("top", "0")
                         .style("left", "0")
-                        .style("width", "0%")
-                        .style("height", "2px")
-                        .style("background-color", "red")
+                        .style("width", "100%")
+                        .style("height", "1px")
                     )
                     .content(
                         tag("div")
@@ -372,7 +391,7 @@ var Audio = function ()
                         .style("top", "0")
                         .style("left", "0")
                         .style("width", "0%")
-                        .style("height", "4px")
+                        .style("height", "3px")
                         .style("background-color", "var(--color-primary)")
                     )
                 )
@@ -544,17 +563,16 @@ var Audio = function ()
                                     .style("position", "absolute")
                                     .style("top", "0")
                                     .style("left", "0")
-                                    .style("width", "0%")
-                                    .style("height", "2px")
-                                    .style("background-color", "red")
+                                    .style("width", "100%")
+                                    .style("height", "1px")
                                 )
                                 .content(
                                     tag("div")
                                     .style("position", "absolute")
-                                    .style("top", "0")
+                                    .style("top", "1px")
                                     .style("left", "0")
                                     .style("width", "0%")
-                                    .style("height", "100%")
+                                    .style("height", "calc(1rem - 1px)")
                                     .style("background-color", "var(--color-primary)")
                                 )
                             )
@@ -676,7 +694,7 @@ var Audio = function ()
                 if (total > 0)
                 {
                     $(".audio-progress-label").html(formatTime(Math.floor(p * total)) + " / " + formatTime(total));
-                    $(".audio-progress-bar > div").css("width", (p * 100.0) + "%");
+                    $(".audio-progress-bar > div:nth-child(2)").css("width", (p * 100.0) + "%");
                 }
             }
         });
@@ -716,7 +734,7 @@ var Audio = function ()
                 if (total > 0)
                 {
                     $(".audio-progress-label").html(formatTime(Math.floor(p * total)) + " / " + formatTime(total));
-                    $(".audio-progress-bar > div").css("width", (p * 100.0) + "%");
+                    $(".audio-progress-bar > div:nth-child(2)").css("width", (p * 100.0) + "%");
                 }
                 this.lastTouchPos = p;
             }
