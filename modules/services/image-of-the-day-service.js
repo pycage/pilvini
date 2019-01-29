@@ -73,6 +73,7 @@ var Service = function (contentRoot)
             });
             res.on("end", function ()
             {
+                console.debug(data);
                 try
                 {
                     var json = JSON.parse(data);

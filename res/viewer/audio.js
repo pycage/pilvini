@@ -238,7 +238,7 @@ var Audio = function ()
     function updateBuffering()
     {
         var buffered = audio.prop("buffered");
-        var total = audio.prop("seekable").end(0);
+        var total = audio.prop("duration"); //.end(0);
 
         $(".audio-progress-bar > div:nth-child(1)").each(function (i)
         {
@@ -391,7 +391,7 @@ var Audio = function ()
                         .style("top", "0")
                         .style("left", "0")
                         .style("width", "0%")
-                        .style("height", "3px")
+                        .style("height", "100%")
                         .style("background-color", "var(--color-primary)")
                     )
                 )
@@ -569,10 +569,10 @@ var Audio = function ()
                                 .content(
                                     tag("div")
                                     .style("position", "absolute")
-                                    .style("top", "1px")
+                                    .style("top", "0")
                                     .style("left", "0")
                                     .style("width", "0%")
-                                    .style("height", "calc(1rem - 1px)")
+                                    .style("height", "100%")
                                     .style("background-color", "var(--color-primary)")
                                 )
                             )

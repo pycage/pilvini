@@ -32,7 +32,7 @@ function viewVideo(href)
         {
             isDragging = true;
             var p = Math.max(0, Math.min(1, event.offsetX / $(this).width()));
-            progressBar.find("> div").css("width", (p * 100.0) + "%");
+            progressBar.find("> div:nth-child(2)").css("width", (p * 100.0) + "%");
             draggingCallback(p, true);
         });
         progressBar.on("mousemove", function (event)
@@ -40,7 +40,7 @@ function viewVideo(href)
             if (isDragging)
             {
                 var p = Math.max(0, Math.min(1, event.offsetX / $(this).width()));
-                progressBar.find("> div").css("width", (p * 100.0) + "%");
+                progressBar.find("> div:nth-child(2)").css("width", (p * 100.0) + "%");
                 draggingCallback(p, true);
             }
         });
@@ -65,6 +65,7 @@ function viewVideo(href)
             isDragging = true;
             var x = event.originalEvent.touches[0].clientX - $(this).offset().left;
             var p = Math.max(0, Math.min(1, x / $(this).width()));
+            progressBar.find("> div:nth-child(2)").css("width", (p * 100.0) + "%");
             this.lastTouchPos = p;
             draggingCallback(p, true);
         });
@@ -75,7 +76,7 @@ function viewVideo(href)
             {
                 var x = event.originalEvent.touches[0].clientX - $(this).offset().left;
                 var p = Math.max(0, Math.min(1, x / $(this).width()));
-                progressBar.find("> div").css("width", (p * 100.0) + "%");
+                progressBar.find("> div:nth-child(2)").css("width", (p * 100.0) + "%");
                 this.lastTouchPos = p;
                 draggingCallback(p, true);
             }
@@ -103,11 +104,49 @@ function viewVideo(href)
     {
         if (! isSeeking)
         {
-            var total = video.prop("duration");
-            var pos = video.prop("currentTime");
-            $(".video-progress-bar > div").last().css("width", (pos / total * 100.0) + "%");
+            var total = video.prop("duration") || 0;
+            var pos = video.prop("currentTime") || 0;
             $(".video-progress-label").html(formatTime(pos) + " / " + formatTime(total));
+            $(".video-progress-bar > div:nth-child(2)").last().css("width", (pos / total * 100.0) + "%");
         }
+        updateBuffering();
+    }
+
+        /* Updates the current buffering progress.
+     */
+    function updateBuffering()
+    {
+        var buffered = video.prop("buffered");
+        var total = video.prop("duration"); //.end(0);
+
+        $(".video-progress-bar > div:nth-child(1)").each(function (i)
+        {
+            var box = $(this);
+            while (box.find("> div").length > buffered.length)
+            {
+                box.find("> div").last().remove();
+            }
+            while (box.find("> div").length < buffered.length)
+            {
+                box.append(
+                    tag("div")
+                    .style("position", "absolute")
+                    .style("background-color", "red")
+                    .style("top", "0")
+                    .style("bottom", "0")
+                    .html()
+                );
+            }
+
+            var gauges = box.find("> div");
+            for (var i = 0; i < buffered.length; ++i)
+            {
+                console.log("buffered " + i + ": " + buffered.start(i) + " - " + buffered.end(i));
+                gauges.eq(i)
+                .css("left", (buffered.start(i) / total * 100) + "%")
+                .css("right", (100 - buffered.end(i) / total * 100) + "%");
+            }
+        });
     }
 
     function slideIn()
@@ -249,9 +288,8 @@ function viewVideo(href)
                         .style("position", "absolute")
                         .style("top", "0")
                         .style("left", "0")
-                        .style("width", "0%")
-                        .style("height", "2px")
-                        .style("background-color", "red")
+                        .style("width", "100%")
+                        .style("height", "1px")
                     )
                     .content(
                         tag("div")
@@ -362,20 +400,7 @@ function viewVideo(href)
         
     });
 
-    video.on("progress", function ()
-    {
-        var buffered = video.prop("buffered");
-        var total = video.prop("duration");
-
-        var maxEnd = 0;
-        for (var i = 0; i < buffered.length; ++i)
-        {
-            //console.log("buffered[" + i + "]: " + buffered.end(i));
-            maxEnd = Math.max(buffered.end(i), maxEnd);
-        }
-
-        $(".video-progress-bar > div").first().css("width", (maxEnd / total * 100) + "%");
-    });
+    video.on("progress", updateBuffering);
 
     setupProgressBar($(".video-progress-bar"), function (p, dragging)
     {
