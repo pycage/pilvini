@@ -794,6 +794,10 @@ function upload(file, target, callback)
     }
 
     console.log("Upload: " + file.name + " -> " + target);
+    for (var key in file)
+    {
+        console.log(" - " + key + ": " + file[key]);
+    }
 
     var reader = new FileReader();
     reader.onload = function (ev)
@@ -853,6 +857,123 @@ function uploadFiles(files)
             }
         });
     }
+}
+
+function uploadHierarchy(item)
+{
+    var rootUri = currentUri();
+
+    function listDirectory(reader, items, callback)
+    {
+        reader.readEntries(function (entries)
+        {
+            var count = entries.length;
+            entries.forEach(function (entry)
+            {
+                items.push(entry);
+                --count;
+                if (count === 0)
+                {
+                    listDirectory(reader, items, callback);
+                }
+            });
+            if (entries.length === 0)
+            {
+                callback(items);
+            }
+        });
+    }
+
+    function walk(item, items, callback)
+    {
+        console.log("walk " + item.fullPath);
+        if (item.isDirectory)
+        {
+            items.push(item);
+            listDirectory(item.createReader(), [], function (dirItems)
+            {
+                var count = dirItems.length;
+                dirItems.forEach(function (dirItem)
+                {
+                    //alert("will walk " + dirItem.fullPath);
+                    walk(dirItem, items, function (subItems)
+                    {
+                        --count;
+                        if (count === 0)
+                        {
+                            callback(items);
+                        }
+                    });
+                });
+                if (dirItems.length === 0)
+                {
+                    callback(items);
+                }
+            });
+        }
+        else
+        {
+            items.push(item);
+            callback(items);
+        }
+    }
+
+    function processItems(items, callback)
+    {
+        if (items.length === 0)
+        {
+            callback();
+            return;
+        }
+
+        var item = items.shift();
+
+        var targetUri = rootUri +
+                        (rootUri !== "/" ? "/" : "") +
+                        item.fullPath.substr(1).split("/").map(function (a) { return encodeURIComponent(a); }).join("/");
+
+        if (item.isDirectory)
+        {
+            console.log("mkdir " + targetUri);
+            $.ajax({
+                url: targetUri,
+                type: "MKCOL"
+            })
+            .done(function ()
+            {
+                console.log("Directory created: " + name);
+                processItems(items, callback);
+            })
+            .fail(function ()
+            {
+                showError("Failed to create directory: " + name);
+            });
+        }
+        else
+        {
+            console.log("put " + targetUri);
+
+            item.file(function (file)
+            {
+                upload(file, targetUri, function ()
+                {
+                    processItems(items, callback);
+                });
+            });
+        }
+    }
+
+    walk(item, [], function (items)
+    {
+        processItems(items, function ()
+        {
+            console.log("all done");
+            if (currentUri() === rootUri)
+            {
+                loadDirectory(currentUri(), false);
+            }
+        })
+    });
 }
 
 function makeDirectory(name)
@@ -1063,7 +1184,26 @@ function onDrop(ev)
     ev.dataTransfer = ev.originalEvent.dataTransfer;
     ev.stopPropagation();
     ev.preventDefault();
-    uploadFiles(ev.dataTransfer.files);
+
+    var items = ev.dataTransfer.items;
+    for (var i = 0; i < items.length; ++i)
+    {
+        var item = items[i];
+        if (item.webkitGetAsEntry)
+        {
+            uploadHierarchy(item.webkitGetAsEntry());
+        }
+        else if (ev.dataTransfer.getAsEntry)
+        {
+            uploadHierarchy(item.getAsEntry());
+        }
+        else
+        {
+            uploadFiles(ev.dataTransfer.files);
+            break;
+        }
+    }
+
 }
 
 function updateNavBar()
