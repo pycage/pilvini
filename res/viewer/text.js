@@ -1,3 +1,5 @@
+"use strict";
+
 function viewText(href)
 {
     function setText(text)
@@ -25,7 +27,7 @@ function viewText(href)
 
     function upload(href, text)
     {
-        var busyIndicator = showBusyIndicator("Saving");
+        var busyIndicator = ui.showBusyIndicator("Saving");
 
         $.ajax({
             url: href,
@@ -39,7 +41,7 @@ function viewText(href)
         })
         .fail(function ()
         {
-            showError("Failed to upload.");
+            ui.showError("Failed to upload.");
         })
         .always(function ()
         {
@@ -52,7 +54,7 @@ function viewText(href)
     var parts = href.split("/");
     var name = decodeURI(parts[parts.length - 1]);
 
-    var page = showPage(name);
+    var page = ui.showPage(name);
     var originalContent = "";
 
     sh.onSwipeBack(page, function () { page.pop(); });
@@ -81,7 +83,7 @@ function viewText(href)
     });
 
 
-    var busyIndicator = showBusyIndicator("Loading");
+    var busyIndicator = ui.showBusyIndicator("Loading");
 
     $.ajax(href, {
         beforeSend: function (xhr) {xhr.overrideMimeType("text/plain"); }
@@ -100,7 +102,7 @@ function viewText(href)
             // no response from server
             message = "Connection failed.";
         }
-        showError("Failed to load: " + message);
+        ui.showError("Failed to load: " + message);
     })
     .complete(function ()
     {

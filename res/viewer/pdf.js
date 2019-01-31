@@ -1,9 +1,11 @@
+"use strict";
+
 function viewPdf(href)
 {
     var parts = href.split("/");
     var name = decodeURI(parts[parts.length - 1]);
 
-    var page = showPage(name);
+    var page = ui.showPage(name);
     sh.onSwipeBack(page, function () { page.pop(); });
 
     page.find("section").html("<iframe>");

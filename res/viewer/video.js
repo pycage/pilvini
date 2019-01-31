@@ -1,3 +1,5 @@
+"use strict";
+
 function viewVideo(href)
 {
     var isSeeking = false;
@@ -117,7 +119,7 @@ function viewVideo(href)
     function updateBuffering()
     {
         var buffered = video.prop("buffered");
-        var total = video.prop("duration"); //.end(0);
+        var total = video.prop("duration");
 
         $(".video-progress-bar > div:nth-child(1)").each(function (i)
         {
@@ -197,7 +199,7 @@ function viewVideo(href)
         }
     }
 
-    var popup = showPreviewPopup();
+    var popup = ui.showPreviewPopup();
     var maxWidth = popup.width() - 80;
     var maxHeight = popup.height() - 80;
 

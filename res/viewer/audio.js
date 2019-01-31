@@ -1,3 +1,5 @@
+"use strict";
+
 var Audio = function ()
 {
     var that = this;
@@ -170,7 +172,7 @@ var Audio = function ()
         })
         .fail(function (xhr, status, err)
         {
-            showError("Failed to retrieve tags: " + err);
+            ui.showError("Failed to retrieve tags: " + err);
             callback(uri, { });
         });
     }
@@ -238,7 +240,7 @@ var Audio = function ()
     function updateBuffering()
     {
         var buffered = audio.prop("buffered");
-        var total = audio.prop("duration"); //.end(0);
+        var total = audio.prop("duration");
 
         $(".audio-progress-bar > div:nth-child(1)").each(function (i)
         {
@@ -870,8 +872,9 @@ var Audio = function ()
         m_playlist.add(uri, m_playlist.size() === 0);
     };
 
-    this.enqueue = function (uri)
+    this.enqueue = function (item)
     {
+        var uri = $(item).data("url");
         m_playlist.add(uri, false);
     };
 
@@ -901,7 +904,7 @@ var Audio = function ()
 
     audio.on("stalled", function ()
     {
-        showError("Media data is not available.");
+        ui.showError("Media data is not available.");
     });
 };
 
@@ -965,7 +968,7 @@ $(document).ready(function ()
     var item = tag("li")
                .on("click", "sh.menu_close(); eachSelected(audio.enqueue)")
                .content("Add to Playlist");
-    $("#actions-submenu").append(item.html());
+    $("#more-menu > div > ul").last().prepend(item.html());
 
     $("#main-page").on("pilvini-page-replaced", function ()
     {

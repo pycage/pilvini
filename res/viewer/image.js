@@ -1,3 +1,5 @@
+"use strict";
+
 function viewImage(href)
 {
     function getImageFiles()
@@ -64,7 +66,7 @@ function viewImage(href)
 
     function loadImage(href)
     {
-        var busyIndicator = showBusyIndicator("Loading");
+        var busyIndicator = ui.showBusyIndicator("Loading");
         img.css("visibility", "hidden");
         img.data("src", href);
 
@@ -115,7 +117,7 @@ function viewImage(href)
     }
     
 
-    var popup = showPreviewPopup();
+    var popup = ui.showPreviewPopup();
     var w = popup.width() - 32;
     var h = popup.height() - 32;
 

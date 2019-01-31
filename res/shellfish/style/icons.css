@@ -50,6 +50,10 @@
     font-family: Material; content: "\f21d";
 }
 
+.sh-icon-folder:before {
+    font-family: Material; content: "\f228";
+}
+
 .sh-icon-fullscreen:before {
     font-family: Material; content: "\f16d";
 }

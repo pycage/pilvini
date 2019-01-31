@@ -1,5 +1,7 @@
 "use strict";
 
+var ui = { };
+
 function escapeHtml(text)
 {
     return text.replace(/[\"'&<>]/g, function (a)
@@ -28,7 +30,7 @@ function unescapeHtml(text)
     });
 }
 
-function showBusyIndicator(title)
+ui.showBusyIndicator = function (title)
 {
     var indicator = $(
         tag("div").class("sh-popup")
@@ -52,9 +54,9 @@ function showBusyIndicator(title)
     $("body").append(indicator);
     sh.popup(indicator);
     return indicator;
-}
+};
 
-function showDialog(title, msg)
+ui.showDialog = function (title, msg)
 {
     var dlg = $(
         tag("form").class("sh-popup")
@@ -150,24 +152,24 @@ function showDialog(title, msg)
     $("body").append(dlg);
     sh.popup(dlg);
     return dlg;
-}
+};
 
-function showError(msg, callback)
+ui.showError = function (msg, callback)
 {
-    var dlg = showDialog("Error", msg);
+    var dlg = ui.showDialog("Error", msg);
     dlg.addButton("OK", function () { if (callback) callback(); });
     return dlg;
-}
+};
 
-function showQuestion(title, msg, yesCb, noCb)
+ui.showQuestion = function (title, msg, yesCb, noCb)
 {
-    var dlg = showDialog(title, msg);
+    var dlg = ui.showDialog(title, msg);
     dlg.addButton("Yes", yesCb);
     dlg.addButton("No", noCb);
     return dlg;
-}
+};
 
-function showPreviewPopup()
+ui.showPreviewPopup = function ()
 {
     var popup = $(
         tag("div").class("sh-popup")
@@ -191,9 +193,9 @@ function showPreviewPopup()
     sh.popup(popup);
 
     return popup;
-}
+};
 
-function showPage(title)
+ui.showPage = function (title)
 {
     var page = $(
         tag("div").class("sh-page")
@@ -242,12 +244,12 @@ function showPage(title)
     sh.push(page);
 
     return page;
-}
+};
 
 /* Pushes a status message to the status area and returns its node.
  * Invoke remove() on the node to remove.
  */
-function pushStatus(icon, message)
+ui.pushStatus = function (icon, message)
 {
     var statusEntry = $(
         tag("div")
@@ -278,4 +280,4 @@ function pushStatus(icon, message)
     $("#statusbox").append(statusEntry);
 
     return statusEntry;
-}
+};

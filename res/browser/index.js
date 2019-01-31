@@ -38,7 +38,7 @@ function viewFile(item)
     var viewers = mimeRegistry.viewers(mimeType);
     if (viewers.length === 0)
     {
-        showError("There is no viewer available for this type: " + mimeType);
+        ui.showError("There is no viewer available for this type: " + mimeType);
     }
     else
     {
@@ -111,7 +111,7 @@ function loadNextThumbnail(forLocation, items)
 
     var now = Date.now();
 
-    var statusEntry = pushStatus("sh-icon-wait", name);
+    var statusEntry = ui.pushStatus("sh-icon-wait", name);
 
     var settings = {
         beforeSend: function (xhr)
@@ -444,12 +444,12 @@ function removeSelected()
 
     }
 
-    showQuestion("Delete", "Delete these entries?", yesCb, noCb);
+    ui.showQuestion("Delete", "Delete these entries?", yesCb, noCb);
 }
 
 function showLoginDialog()
 {
-    var dlg = showDialog("Login", "Welcome to pilvini.");
+    var dlg = ui.showDialog("Login", "Welcome to pilvini.");
     var loginEntry = dlg.addTextEntry("Login:", "");
     var passwordEntry = dlg.addPasswordEntry("Password:", "");
     dlg.addButton("Login", function ()
@@ -460,7 +460,7 @@ function showLoginDialog()
 
 function showNewDirDialog()
 {
-    var dlg = showDialog("New Directory", "Create a new directory.");
+    var dlg = ui.showDialog("New Directory", "Create a new directory.");
     var entry = dlg.addTextEntry("Name:", "");
     dlg.addButton("Create", function ()
     {
@@ -471,7 +471,7 @@ function showNewDirDialog()
         }
         else
         {
-            showError("Invalid name.");
+            ui.showError("Invalid name.");
         }
     }, true);
     dlg.addButton("Cancel");
@@ -479,7 +479,7 @@ function showNewDirDialog()
 
 function showNewFileDialog()
 {
-    var dlg = showDialog("New File", "Create a new file.");
+    var dlg = ui.showDialog("New File", "Create a new file.");
     var entry = dlg.addTextEntry("Name:", "");
     dlg.addButton("Create", function ()
     {
@@ -490,7 +490,7 @@ function showNewFileDialog()
         }
         else
         {
-            showError("Invalid name.");
+            ui.showError("Invalid name.");
         }
     }, true);
     dlg.addButton("Cancel");
@@ -501,7 +501,7 @@ function showNameDialog(item)
     item = $(item);
     var name = unescapeHtml(item.find("h1:first-child").html());
 
-    var dlg = showDialog("Rename File", "Rename the file.");
+    var dlg = ui.showDialog("Rename File", "Rename the file.");
     var entry = dlg.addTextEntry("Name:", name);
     dlg.addButton("Rename", function ()
     {
@@ -512,7 +512,7 @@ function showNameDialog(item)
         }
         else
         {
-            showError("Invalid name.");
+            ui.showError("Invalid name.");
         }
     }, true);
     dlg.addButton("Cancel");
@@ -520,7 +520,7 @@ function showNameDialog(item)
 
 function showShareDialog()
 {
-    var dlg = showDialog("Setup Share", "Share this directory.");
+    var dlg = ui.showDialog("Setup Share", "Share this directory.");
     var loginEntry = dlg.addTextEntry("Share Login:", "");
     var passwordEntry = dlg.addTextEntry("Share Password:", "");
     dlg.addButton("Share", function ()
@@ -548,13 +548,13 @@ function clearClipboard(callback)
 {
     console.log("Clear clipboard");
 
-    var tokens = [];
+    var count = 0;
     $("#clipboard ul li").each(function ()
     {
-        tokens.push(1);
+        ++count;
     });
 
-    if (tokens.length === 0)
+    if (count === 0)
     {
         callback();
         return;
@@ -567,23 +567,19 @@ function clearClipboard(callback)
         var name = unescapeHtml($(item).find("h1").html());
         var target = "/.pilvini/clipboard/" + encodeURIComponent(name);
 
-        $.ajax({
-                   url: target,
-                   type: "DELETE"
-               })
-        .done(function ()
+        file.remove(target, function (ok)
         {
-            console.log("File removed: " + name);
-            $(item).remove();
-        })
-        .fail(function ()
-        {
-            showError("Failed to remove: " + name);
-        })
-        .always(function ()
-        {
-            tokens.pop();
-            if (tokens.length === 0)
+            if (ok)
+            {
+                console.log("File removed: " + name);
+                $(item).remove();
+            }
+            else
+            {
+                ui.showError("Failed to remove: " + name);
+            }
+            --count;
+            if (count === 0)
             {
                 checkClipboard();
                 callback();
@@ -612,49 +608,43 @@ function cutItem(item)
     var sourceUri = $(item).data("url");
     var targetUri = "/.pilvini/clipboard/" + encodeURIComponent(name);
 
-    $.ajax({
-               url: sourceUri,
-               type: "MOVE",
-               beforeSend: function(xhr) { xhr.setRequestHeader("Destination", targetUri); },
-           })
-    .done(function () {
-        console.log("File cut: " + name);
-        copyItemToClipboard(item);
-        $(item).remove();
-        updateNavBar();
-    })
-    .fail(function () {
-        showError("Failed to cut: " + name);
+    file.move(sourceUri, targetUri, function (ok)
+    {
+        if (ok)
+        {
+            console.log("File cut: " + name);
+            copyItemToClipboard(item);
+            $(item).remove();
+            updateNavBar();
+        }
+        else
+        {
+            ui.showError("Failed to cut: " + name);
+        }
     });
 }
 
 function copyItem(item)
 {
     console.log("Copy item");
-
     
     var name = unescapeHtml($(item).find("h1").html());
     var sourceUri = $(item).data("url");
     var targetUri = "/.pilvini/clipboard/" + encodeURIComponent(name);
-    //var target = encodeURIComponent(name);
-    //var newTarget = "/.pilvini/clipboard/" + encodeURIComponent(name);
     
-    var statusEntry = pushStatus("sh-icon-clipboard", "Copying " + name);
+    var statusEntry = ui.pushStatus("sh-icon-clipboard", "Copying " + name);
 
-    $.ajax({
-               url: sourceUri,
-               type: "COPY",
-               beforeSend: function(xhr) { xhr.setRequestHeader("Destination", targetUri); },
-           })
-    .done(function () {
-        console.log("File copied: " + name);
-        copyItemToClipboard(item);
-    })
-    .fail(function () {
-        showError("Failed to copy: " + name);
-    })
-    .always(function ()
+    file.copy(sourceUri, targetUri, function (ok)
     {
+        if (ok)
+        {
+            console.log("File copied: " + name);
+            copyItemToClipboard(item);
+        }
+        else
+        {
+            ui.showError("Failed to copy: " + name);
+        }
         statusEntry.remove();
     });
 }
@@ -663,10 +653,10 @@ function pasteItems()
 {
     console.log("Paste items");
 
-    var tokens = [];
+    var count = 0;
     $("#clipboard ul li").each(function ()
     {
-       tokens.push(1);
+        ++count;
     });
 
     $("#clipboard ul li").each(function ()
@@ -677,24 +667,20 @@ function pasteItems()
         var sourceUri = $(item).data("url");
         var targetUri = currentUri() + "/" + name;
 
-        $.ajax({
-                   url: sourceUri,
-                   type: "MOVE",
-                   beforeSend: function(xhr) { xhr.setRequestHeader("Destination", targetUri); },
-               })
-        .done(function ()
+        file.move(sourceUri, targetUri, function (ok)
         {
-            console.log("File pasted: " + name);
-            $(item).remove();
-        })
-        .fail(function ()
-        {
-            showError("Failed to paste: " + name);
-        })
-        .always(function ()
-        {
-            tokens.pop();
-            if (tokens.length === 0)
+            if (ok)
+            {
+                console.log("File pasted: " + name);
+                $(item).remove();
+            }
+            else
+            {
+                ui.showError("Failed to paste: " + name);
+            }
+
+            --count;
+            if (count === 0)
             {
                 loadDirectory(currentUri(), false);
             }
@@ -728,25 +714,23 @@ function renameItem(item, newName)
 {
     console.log("Rename item");
 
-    //var path = currentPath();
-    var name = unescapeHtml($(item).find("h1:first-child").html());
+    var name = unescapeHtml($(item).find("h1").html());
     var sourceUri = $(item).data("url");
     var targetUri = currentUri() + "/" + encodeURIComponent(newName);
-    //var target = encodeURIComponent(name);
-    //var newTarget = encodeURI(path !== "/" ? path : "") + "/" + encodeURIComponent(newName);
 
-    $.ajax({
-               url: sourceUri,
-               type: "MOVE",
-               beforeSend: function(xhr) { xhr.setRequestHeader("Destination", targetUri); },
-           })
-    .done(function () {
-        console.log("File renamed: " + name + " -> " + newName);
-        $(item).find("h1").html(newName);
-        loadDirectory(currentUri(), false);
-    })
-    .fail(function () {
-        showError("Failed to rename: " + name + " -> " + newName);
+    file.move(sourceUri, targetUri, function (ok)
+    {
+        if (ok)
+        {
+            console.log("File moved: " + name + " -> " + newName);
+            $(item).find("h1").html(newName);
+            loadDirectory(currentUri(), false);    
+
+        }
+        else
+        {
+            ui.showError("Failed to move: " + name + " -> " + newName);
+        }
     });
 }
 
@@ -757,23 +741,25 @@ function removeItem(item)
     var name = unescapeHtml($(item).find("h1").html());
     var targetUri = $(item).data("url");
 
-    $.ajax({
-               url: targetUri,
-               type: "DELETE"
-           })
-    .done(function () {
-        console.log("File removed: " + name);
-        $(item).remove();
-        updateNavBar();
-    })
-    .fail(function () {
-        showError("Failed to remove: " + name);
+    file.remove(targetUri, function (ok)
+    {
+        if (ok)
+        {
+            console.log("File removed: " + name);
+            $(item).remove();
+            updateNavBar();
+        }
+        else
+        {
+            ui.showError("Failed to remove: " + name);
+        }
     });
 }
 
-function upload(file, target, callback)
+function upload(file, target, amount, totalAmount, callback)
 {
-    var statusEntry = pushStatus("sh-icon-cloud-upload", file.name);
+    var statusEntry = ui.pushStatus("sh-icon-cloud-upload", 
+                                 amount + "/" + totalAmount + " " + file.name);
 
     function createMonitoringXhr()
     {
@@ -782,6 +768,7 @@ function upload(file, target, callback)
         {
             xhr.upload.addEventListener("progress", function (status)
             {
+                console.log("progress " + status.loaded + " / " + status.total);
                 if (status.lengthComputable && status.total > 0)
                 {
                     var p = status.loaded / status.total;
@@ -817,13 +804,21 @@ function upload(file, target, callback)
             console.log("File uploaded: " + file.name + ", size: " + data.length);
         })
         .fail(function () {
-            showError("Failed to upload: " + file.name);
+            ui.showError("Failed to upload: " + file.name);
         })
         .always(function () {
             statusEntry.remove();
             callback();
         });
-    }
+    };
+    reader.onerror = function (event)
+    {
+        reader.abort();
+        console.log(reader.error);
+        ui.showError("Failed to upload: " + file.name);
+        statusEntry.remove();
+        callback();
+    };
     reader.readAsArrayBuffer(file);
 }
 
@@ -834,10 +829,10 @@ function uploadFiles(files)
         return;
     }
 
-    var tokens = [];
+    var count = 0;
     for (var i = 0; i < files.length; ++i)
     {
-        tokens.push(1);
+        ++count;
     }
 
     for (i = 0; i < files.length; ++i)
@@ -847,11 +842,11 @@ function uploadFiles(files)
                         (currentUri() !== "/" ? "/" : "") +
                         encodeURIComponent(file.name);
 
-        upload(file, targetUri, function ()
+        upload(file, targetUri, i, files.length, function ()
         {
-            tokens.pop();
+            --count;
 
-            if (tokens.length === 0)
+            if (count === 0)
             {
                 loadDirectory(currentUri(), false);
             }
@@ -927,6 +922,7 @@ function uploadHierarchy(item)
         }
 
         var item = items.shift();
+        ++currentCount;
 
         var targetUri = rootUri +
                         (rootUri !== "/" ? "/" : "") +
@@ -935,27 +931,27 @@ function uploadHierarchy(item)
         if (item.isDirectory)
         {
             console.log("mkdir " + targetUri);
-            $.ajax({
-                url: targetUri,
-                type: "MKCOL"
-            })
-            .done(function ()
+            var statusEntry = ui.pushStatus("sh-icon-folder", item.name);
+            file.mkdir(targetUri, function (ok)
             {
-                console.log("Directory created: " + name);
-                processItems(items, callback);
-            })
-            .fail(function ()
-            {
-                showError("Failed to create directory: " + name);
+                if (ok)
+                {
+                    console.log("Directory created: " + name);
+                    processItems(items, callback);
+                }
+                else
+                {
+                    ui.showError("Failed to create directory: " + name);
+                }
+                statusEntry.remove();
             });
         }
         else
         {
             console.log("put " + targetUri);
-
             item.file(function (file)
             {
-                upload(file, targetUri, function ()
+                upload(file, targetUri, currentCount, totalCount, function ()
                 {
                     processItems(items, callback);
                 });
@@ -963,8 +959,13 @@ function uploadHierarchy(item)
         }
     }
 
+    var totalCount = 0;
+    var currentCount = 0;
+
     walk(item, [], function (items)
     {
+        totalCount = items.length;
+
         processItems(items, function ()
         {
             console.log("all done");
@@ -980,18 +981,17 @@ function makeDirectory(name)
 {
     var targetUri = currentUri() + "/" + encodeURIComponent(name);
 
-    $.ajax({
-               url: targetUri,
-               type: "MKCOL"
-           })
-    .done(function ()
+    file.mkdir(targetUri, function (ok)
     {
-        console.log("Directory created: " + name);
-        loadDirectory(currentUri(), false);
-    })
-    .fail(function ()
-    {
-        showError("Failed to create directory: " + name);
+        if (ok)
+        {
+            console.log("Directory created: " + name);
+            loadDirectory(currentUri(), false);    
+        }
+        else
+        {
+            ui.showError("Failed to create directory: " + name);
+        }
     });
 }
 
@@ -999,21 +999,17 @@ function makeFile(name)
 {
     var targetUri = currentUri() + "/" + encodeURIComponent(name);
 
-    $.ajax({
-               url: targetUri,
-               type: "PUT",
-               contentType: "application/x-octet-stream",
-               processData: false,
-               data: ""
-           })
-    .done(function ()
+    file.create(targetUri, function (ok)
     {
-        console.log("File created: " + name);
-        loadDirectory(currentUri(), false);
-    })
-    .fail(function ()
-    {
-        showError("Failed to create file: " + name);
+        if (ok)
+        {
+            console.log("File created: " + name);
+            loadDirectory(currentUri(), false);
+        }
+        else
+        {
+            ui.showError("Failed to create file: " + name);
+        }
     });
 }
 
@@ -1047,7 +1043,7 @@ function changeSettings(key, value, altValue)
         })
         .fail(function (xhr, status, err)
         {
-            showError("Failed to change settings: " + err);
+            ui.showError("Failed to change settings: " + err);
         });
     }
 
@@ -1101,7 +1097,7 @@ function addFavorite()
         })
         .fail(function (xhr, status, err)
         {
-            showError("Failed to add favorite.");
+            ui.showError("Failed to add favorite.");
         });
     }
 
@@ -1146,7 +1142,7 @@ function removeFavorite()
         })
         .fail(function (xhr, status, err)
         {
-            showError("Failed to remove favorite.");
+            ui.showError("Failed to remove favorite.");
         });
     }
 
@@ -1307,7 +1303,7 @@ function updateNavBar()
 
 function loadDirectory(href, pushToHistory)
 {
-    var busyIndicator = showBusyIndicator("Loading");
+    var busyIndicator = ui.showBusyIndicator("Loading");
 
     scrollPositionsMap[currentUri()] = $(document).scrollTop();
 
@@ -1316,7 +1312,7 @@ function loadDirectory(href, pushToHistory)
         if (xhr.status !== 200)
         {
             busyIndicator.remove();
-            showError("Failed to load directory.");
+            ui.showError("Failed to load directory.");
             return;
         }
 
@@ -1367,7 +1363,7 @@ function login(user, password)
     })
     .fail(function (xhr, status, err)
     {
-        showError("Invalid login credentials.", function ()
+        ui.showError("Invalid login credentials.", function ()
         {
             showLoginDialog();
         });

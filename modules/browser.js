@@ -451,6 +451,9 @@ function makeHtmlHead(initFunction)
                 tag("script").attr("src", "/::res/shellfish/core/shellfish.js")
             )
             .content(
+                tag("script").attr("src", "/::res/browser/file.js")
+            )
+            .content(
                 tag("script").attr("src", "/::res/browser/html.js")
             )
             .content(
