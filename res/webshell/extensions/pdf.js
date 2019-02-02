@@ -15,7 +15,7 @@ function viewPdf(href)
           .css("left", 0)
           .css("width", "100%")
           .css("height", ($(window).height() - page.find("header").height()) + "px");
-    iframe.prop("src", "/::res/viewer/pdfjs/web/viewer.html?file=" + encodeURI(href));
+    iframe.prop("src", "/::res/webshell/extensions/pdfjs/web/viewer.html?file=" + encodeURI(href));
     sh.push(page);
 }
 

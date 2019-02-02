@@ -1409,19 +1409,19 @@ function logout()
 function init()
 {
     var js = [
-        "/::res/browser/file.js",
-        "/::res/browser/html.js",
-        "/::res/browser/ui.js",
+        "/::res/webshell/file.js",
+        "/::res/webshell/html.js",
+        "/::res/webshell/ui.js",
 
-        "/::res/viewer/admin.js",
-        "/::res/viewer/audio.js",
-        "/::res/viewer/image.js",
-        "/::res/viewer/markdown.js",
-        "/::res/viewer/pdf.js",
-        "/::res/viewer/text.js",
-        "/::res/viewer/tips.js",
-        "/::res/viewer/vcard.js",
-        "/::res/viewer/video.js"
+        "/::res/webshell/extensions/admin.js",
+        "/::res/webshell/extensions/audio.js",
+        "/::res/webshell/extensions/image.js",
+        "/::res/webshell/extensions/markdown.js",
+        "/::res/webshell/extensions/pdf.js",
+        "/::res/webshell/extensions/text.js",
+        "/::res/webshell/extensions/tips.js",
+        "/::res/webshell/extensions/vcard.js",
+        "/::res/webshell/extensions/video.js"
     ];
     importJs(js, function ()
     {
@@ -1474,8 +1474,8 @@ function init()
 function initLogin()
 {
     var js = [
-        "/::res/browser/html.js",
-        "/::res/browser/ui.js"
+        "/::res/webshell/html.js",
+        "/::res/webshell/ui.js"
     ];
     importJs(js, function ()
     {

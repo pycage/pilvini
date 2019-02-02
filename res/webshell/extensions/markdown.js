@@ -73,7 +73,7 @@ function viewMarkdown(href)
 
     var toggleButton = page.addIconButton("sh-icon-edit", toggleMode);
 
-    page.find("section").html("<script src='/::res/viewer/markdown/showdown.js'></script>");
+    page.find("section").html("<script src='/::res/webshell/extensions/markdown/showdown.js'></script>");
 
     page.find("section").append("<div class='sh-html'>");
     var viewBox = page.find("section div");
