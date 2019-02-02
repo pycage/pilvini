@@ -32,7 +32,7 @@ var Service = function (contentRoot)
                 }
             }
             
-            var uri = urlObj.pathname.substr(8);
+            var uri = urlObj.pathname.substr("/::shell".length);
             if (uri === "")
             {
                 uri = "/";

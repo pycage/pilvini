@@ -243,10 +243,10 @@ function viewImage(href)
     loadImage(href);
 }
 
-$(document).ready(function ()
+(function ()
 {
     mimeRegistry.register("image/gif", viewImage);
     mimeRegistry.register("image/jpeg", viewImage);
     mimeRegistry.register("image/png", viewImage);
     mimeRegistry.register("image/svg+xml", viewImage);
-});
+})();

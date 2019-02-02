@@ -109,6 +109,17 @@ ui.showDialog = function (title, msg)
         dlg.find("footer > span").append(btn);
     };
 
+    dlg.addLabel = function (text)
+    {
+        var label = $(
+            tag("p")
+            .content(escapeHtml(text))
+            .html()
+        );
+        dlg.find("section").append(label);
+        return label;
+    };
+
     dlg.addTextEntry = function (text, value)
     {
         var label = $(
@@ -240,8 +251,22 @@ ui.showPage = function (title)
         return btn;
     };
 
+    page.addListView = function ()
+    {
+        var ul = $(
+            tag("ul").class("sh-listview")
+            .html()
+        );
+
+        page.find("> section").append(ul);
+
+        return ul;
+    };
+
     $("body").append(page);
     sh.push(page);
+
+    sh.onSwipeBack(page, function () { sh.pop(); });
 
     return page;
 };
@@ -280,4 +305,69 @@ ui.pushStatus = function (icon, message)
     $("#statusbox").append(statusEntry);
 
     return statusEntry;
+};
+
+ui.listItem = function (title, subtitle, callback)
+{
+    var li = $(
+        tag("li")
+        .style("height", "80px")
+        .on("click", "")
+        .content(
+            tag("div").class("sh-left")
+            .style("display", "none")
+            .style("width", "80px")
+            .style("background-repeat", "no-repeat")
+            .style("background-position", "50% 50%")
+        )
+        .content(
+            tag("div")
+            .style("position", "absolute")
+            .style("top", "1em")
+            .style("left", "0")
+            .style("right", "0")
+            .style("padding-left", "0.5em")
+            .content(
+                tag("h1").content(escapeHtml(title))
+            )
+            .content(
+                tag("h2").content(escapeHtml(subtitle))
+            )
+        )
+        .content(
+            tag("div").class("sh-right")
+            .style("display", "none")
+            .style("width", "42px")
+            .style("text-align", "center")
+            .style("border-left", "solid 1px var(--color-border)")
+            .content(
+                tag("span").class("sh-fw-icon")
+                .style("line-height", "80px")
+            )
+        )
+        .html()
+    );
+
+    var iconBox = li.find("> div").eq(0);
+    var labelBox = li.find("> div").eq(1);
+    var buttonBox = li.find("> div").eq(2);
+
+    li.on("click", callback);
+
+    li.setIcon = function (url)
+    {
+        labelBox.css("left", "80px");
+        iconBox.css("display", "block");
+        iconBox.css("background-image", "url(" + url + ")");
+    };
+
+    li.setAction = function (icon, callback)
+    {
+        labelBox.css("right", "42px");
+        buttonBox.css("display", "block");
+        buttonBox.find("span").addClass(icon);
+        buttonBox.on("click", callback);
+    };
+
+    return li;
 };

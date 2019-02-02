@@ -5,22 +5,20 @@ const modCrypto = require("crypto"),
       modHttp = require("http"),
       modHttps = require("https"),
       modPath = require("path"),
-      modUrl = require("url"),
-      modZlib = require("zlib");
+      modUrl = require("url");
 
 const modCodeAuth = require("./modules/codeauth.js"),
+      modConfig = require("./modules/config.js"),
       modCookies = require("./modules/cookies"),
       modHttpAuth = require("./modules/httpauth.js"),
-      modBrowser = require("./modules/browser.js"),
       modDav = require("./modules/dav.js"),
-      modId3Tags = require("./modules/id3tags"),
-      modLockStore = require("./modules/lockstore.js"),
       modMime = require("./modules/mime.js"),
       modShares = require("./modules/shares.js"),
       modUserContext = require("./modules/usercontext.js"),
       modUtils = require("./modules/utils.js");
 
-const svcImageOfTheDay = require("./modules/services/image-of-the-day-service.js"),
+const svcAdmin = require("./modules/services/admin-service.js"),
+      svcImageOfTheDay = require("./modules/services/image-of-the-day-service.js"),
       svcLogin = require("./modules/services/login-service.js"),
       svcRes = require("./modules/services/res-service.js"),
       svcShell = require("./modules/services/shell-service.js"),
@@ -31,7 +29,7 @@ const VERSION = "0.2.0rc";
 
 console.debug = function(msg)
 {
-    if (CONFIG.global && CONFIG.global.debug)
+    if (CONFIG.root.global && CONFIG.root.global.debug)
     {
         console.log("[" + new Date().toLocaleString() + "] [DEBUG] >>>\n" +
                     msg +
@@ -186,15 +184,15 @@ function clientFingerprint(request, forRoaming)
  */
 function handleRequest(request, response)
 {
-    var contentRoot = CONFIG.server.root;
+    var contentRoot = CONFIG.root.server.root;
     var urlObj = modUrl.parse(request.url, true);
     var shares = new modShares.Shares(contentRoot);
 
     // setup users
     var authUsers = { };
-    for (var i = 0; i < CONFIG.users.length; ++i)
+    for (var i = 0; i < CONFIG.root.users.length; ++i)
     {
-        var user = CONFIG.users[i];
+        var user = CONFIG.root.users[i];
         authUsers[user.name] = user.password_hash;
     }
     // mix in share guest users
@@ -260,30 +258,30 @@ function handleRequest(request, response)
                     "Fingerprints: " + fingerprint + ", " + roamingFingerprint + " (roaming)");
     }
 
-    // get the user's home directory
+    // get the user's properties
     var userHome = "";
-    shares.shares().forEach(function (shareId)
+    var permissions = [];
+
+    if (shares.shares().indexOf(authUser) !== -1)
     {
-        if (shareId === authUser)
-        {
-            userHome = shares.info(shareId).root;
-        }
-    });
-    if (userHome === "")
+        userHome = shares.info(authUser).root;
+        permissions = [];
+    }
+    else
     {
-        CONFIG.users.forEach(function (u)
+        CONFIG.root.users.forEach(function (u)
         {
             if (u.name === authUser)
             {
                 userHome = u.home;
+                permissions = u.permissions || [];
             }
-        });
+        });        
     }
 
-    // get the user's particular access permissions
-    var userContext = shares.shares().indexOf(authUser) === -1
-        ? new modUserContext.UserContext(authUser, userHome)
-        : new modUserContext.UserContext(null, userHome);
+    var userContext = new modUserContext.UserContext(authUser,
+                                                     userHome,
+                                                     permissions);
 
     // a logging version of response.writeHead
     response.request = request;
@@ -552,45 +550,33 @@ function handleRequest(request, response)
 
 
 // read configuration
-//var config;
 var configPath = modPath.join(__dirname, "config.json");
-const CONFIG = function ()
-{
-    try
-    {
-        return JSON.parse(modFs.readFileSync(configPath, "utf8"));
-    }
-    catch (err)
-    {
-        console.error("Failed to read configuration: " + err);
-        return { };
-    }
-} ();
+var CONFIG = new modConfig.Config(configPath);
 
-if (! CONFIG.server)
+if (! CONFIG.root.server)
 {
     process.exit(1);
 }
 
 // setup authenticators
-var codeAuthenticator = new modCodeAuth.Authenticator(CONFIG.authentication.realm);
+var codeAuthenticator = new modCodeAuth.Authenticator(CONFIG.root.authentication.realm);
 var httpAuthenticator;
-if (CONFIG.authentication.method === "basic")
+if (CONFIG.root.authentication.method === "basic")
 {
-    httpAuthenticator = new modHttpAuth.Authenticator("Basic", CONFIG.authentication.realm);
+    httpAuthenticator = new modHttpAuth.Authenticator("Basic", CONFIG.root.authentication.realm);
 }
-else if (CONFIG.authentication.method === "digest")
+else if (CONFIG.root.authentication.method === "digest")
 {
-    httpAuthenticator = new modHttpAuth.Authenticator("Digest", CONFIG.authentication.realm);
+    httpAuthenticator = new modHttpAuth.Authenticator("Digest", CONFIG.root.authentication.realm);
 }
 else
 {
-    throw "Invalid authentication method '" + CONFIG.authentication.method + "'";
+    throw "Invalid authentication method '" + CONFIG.root.authentication.method + "'";
 }
 
 // setup fingerprints registry
 var fingerprints = { };
-CONFIG.users.forEach(function (u)
+CONFIG.root.users.forEach(function (u)
 {
     if (u.fingerprints)
     {
@@ -603,20 +589,21 @@ CONFIG.users.forEach(function (u)
 
 // setup services
 var services = {
-    "image-of-the-day": new svcImageOfTheDay.Service(CONFIG.server.root),
+    "admin": new svcAdmin.Service(CONFIG),
+    "image-of-the-day": new svcImageOfTheDay.Service(CONFIG.root.server.root),
     "login": new svcLogin.Service(codeAuthenticator),
-    "res": new svcRes.Service(CONFIG.server.root, modPath.join(__dirname, "res")),
-    "shell": new svcShell.Service(CONFIG.server.root),
-    "tags": new svcTags.Service(CONFIG.server.root),
-    "thumbnail": new svcThumbnail.Service(CONFIG.server.root)
+    "res": new svcRes.Service(CONFIG.root.server.root, modPath.join(__dirname, "res")),
+    "shell": new svcShell.Service(CONFIG.root.server.root),
+    "tags": new svcTags.Service(CONFIG.root.server.root),
+    "thumbnail": new svcThumbnail.Service(CONFIG.root.server.root)
 };
 
 // setup HTTP server
 var server;
-if (CONFIG.server.use_ssl)
+if (CONFIG.root.server.use_ssl)
 {
-    var sslServerKey = modFs.readFileSync(modPath.join(__dirname, CONFIG.server.ssl_key), "utf8");
-    var sslServerCert = modFs.readFileSync(modPath.join(__dirname, CONFIG.server.ssl_certificate), "utf8");
+    var sslServerKey = modFs.readFileSync(modPath.join(__dirname, CONFIG.root.server.ssl_key), "utf8");
+    var sslServerCert = modFs.readFileSync(modPath.join(__dirname, CONFIG.root.server.ssl_certificate), "utf8");
     server = modHttps.createServer({ key: sslServerKey, cert: sslServerCert });
 }
 else
@@ -626,12 +613,12 @@ else
 
 // run HTTP server
 server.on("request", handleRequest);
-server.listen(CONFIG.server.port, CONFIG.server.listen);
+server.listen(CONFIG.root.server.port, CONFIG.root.server.listen);
 
 console.log("                   | Version " + VERSION)
 console.log("   .-------.       |");
 console.log("  ( Pilvini ).--.  | (c) 2017 - 2019 Martin Grimme");
 console.log(" (  Cloud Drive  ) | https://github.com/pycage/pilvini");
 console.log("  ```````````````  |");
-console.log("Listening....      | Port " + CONFIG.server.port + " " + (CONFIG.server.use_ssl ? "(SSL)" : ""));
+console.log("Listening....      | Port " + CONFIG.root.server.port + " " + (CONFIG.root.server.use_ssl ? "(SSL)" : ""));
 console.log("");

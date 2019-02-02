@@ -10,6 +10,10 @@
     font-weight: 100;
 }
 
+.sh-icon-add-user:before {
+    font-family: Material; content: "\f1ff";
+}
+
 .sh-icon-arrow-up:before {
     font-family: Material; content: "\f303";
 }

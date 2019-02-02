@@ -961,7 +961,7 @@ function viewAudio(href)
 
 
 var audio;
-$(document).ready(function ()
+(function ()
 {
     audio = new Audio();
 
@@ -983,4 +983,4 @@ $(document).ready(function ()
     mimeRegistry.register("audio/flac", audio.add);
     mimeRegistry.register("audio/mp3", audio.add);
     mimeRegistry.register("audio/ogg", audio.add);
-});
+})();

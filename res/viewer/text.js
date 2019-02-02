@@ -110,7 +110,7 @@ function viewText(href)
     });
 }
 
-$(document).ready(function ()
+(function ()
 {
     mimeRegistry.register("application/x-batch", viewText);
     mimeRegistry.register("application/x-json", viewText);
@@ -120,4 +120,4 @@ $(document).ready(function ()
     mimeRegistry.register("text/plain", viewText);
     mimeRegistry.register("text/javascript", viewText);
     mimeRegistry.register("text/xml", viewText);
-});
+})();

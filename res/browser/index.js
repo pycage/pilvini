@@ -1,5 +1,24 @@
 "use strict";
 
+function importJs(uris, callback)
+{
+    if (uris.length === 0)
+    {
+        callback();
+        return;
+    }
+
+    var uri = uris.shift();
+    var script = document.createElement("script");
+    script.setAttribute("type","text/javascript");
+    script.setAttribute("src", uri);
+    script.onload = function ()
+    {
+        importJs(uris, callback);
+    };
+    document.head.appendChild(script);
+}
+
 var MimeRegistry = function ()
 {
     var m_mapping = { };
@@ -449,7 +468,7 @@ function removeSelected()
 
 function showLoginDialog()
 {
-    var dlg = ui.showDialog("Login", "Welcome to pilvini.");
+    var dlg = ui.showDialog("Login", "Welcome to Pilvini Web Shell.");
     var loginEntry = dlg.addTextEntry("Login:", "");
     var passwordEntry = dlg.addPasswordEntry("Password:", "");
     dlg.addButton("Login", function ()
@@ -1389,53 +1408,78 @@ function logout()
 
 function init()
 {
-    $("#upload").on("change", onFilesSelected);
-    sh.push("main-page", function () { }, true);
+    var js = [
+        "/::res/browser/file.js",
+        "/::res/browser/html.js",
+        "/::res/browser/ui.js",
 
-    var page = $("#main-page");
-    var clipboardPage = $("#clipboard-page");
-    setTimeout(function () { loadThumbnails(page); }, 500);
-
-    /* setup history navigation */
-    window.addEventListener("popstate", function (ev)
+        "/::res/viewer/admin.js",
+        "/::res/viewer/audio.js",
+        "/::res/viewer/image.js",
+        "/::res/viewer/markdown.js",
+        "/::res/viewer/pdf.js",
+        "/::res/viewer/text.js",
+        "/::res/viewer/tips.js",
+        "/::res/viewer/vcard.js",
+        "/::res/viewer/video.js"
+    ];
+    importJs(js, function ()
     {
-        if (ev.state && ev.state.uri)
+        $("#upload").on("change", onFilesSelected);
+        sh.push("main-page", function () { }, true);
+    
+        var page = $("#main-page");
+        var clipboardPage = $("#clipboard-page");
+        setTimeout(function () { loadThumbnails(page); }, 500);
+    
+        /* setup history navigation */
+        window.addEventListener("popstate", function (ev)
         {
-            loadDirectory(ev.state.uri, false);
-        }
-    }, false);
-
-    /* setup swipe suppport */
-    sh.onSwipeBack(page, function ()
-    {
-        var upButton = $("#upButton");
-        if (upButton.length)
+            if (ev.state && ev.state.uri)
+            {
+                loadDirectory(ev.state.uri, false);
+            }
+        }, false);
+    
+        /* setup swipe suppport */
+        sh.onSwipeBack(page, function ()
         {
-            loadDirectory(upButton.data("url"), true);
-        }
-    });
-
-    sh.onSwipeBack(clipboardPage, function ()
-    {
-        sh.pop();
-    });
-
-    /* setup drag and drop for external files */
-    $("body").on("dragover", onDragOver);
-    $("body").on("drop", onDrop);
-
-    unselectAll();
-    checkClipboard();
-    updateNavBar();
-
-    mimeRegistry.register("application/x-folder", function (url)
-    {
-        loadDirectory(url, true);
+            var upButton = $("#upButton");
+            if (upButton.length)
+            {
+                loadDirectory(upButton.data("url"), true);
+            }
+        });
+    
+        sh.onSwipeBack(clipboardPage, function ()
+        {
+            sh.pop();
+        });
+    
+        /* setup drag and drop for external files */
+        $("body").on("dragover", onDragOver);
+        $("body").on("drop", onDrop);
+    
+        unselectAll();
+        checkClipboard();
+        updateNavBar();
+    
+        mimeRegistry.register("application/x-folder", function (url)
+        {
+            loadDirectory(url, true);
+        });
     });
 }
 
 function initLogin()
 {
-    sh.push("main-page", function () { }, true);
-    showLoginDialog();
+    var js = [
+        "/::res/browser/html.js",
+        "/::res/browser/ui.js"
+    ];
+    importJs(js, function ()
+    {
+        sh.push("main-page", function () { }, true);
+        showLoginDialog();
+    });
 }

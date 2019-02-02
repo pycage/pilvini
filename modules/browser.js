@@ -451,37 +451,7 @@ function makeHtmlHead(initFunction)
                 tag("script").attr("src", "/::res/shellfish/core/shellfish.js")
             )
             .content(
-                tag("script").attr("src", "/::res/browser/file.js")
-            )
-            .content(
-                tag("script").attr("src", "/::res/browser/html.js")
-            )
-            .content(
-                tag("script").attr("src", "/::res/browser/ui.js")
-            )
-            .content(
                 tag("script").attr("src", "/::res/browser/index.js")
-            )
-            .content(
-                tag("script").attr("src", "/::res/viewer/audio.js")
-            )
-            .content(
-                tag("script").attr("src", "/::res/viewer/image.js")
-            )
-            .content(
-                tag("script").attr("src", "/::res/viewer/markdown.js")
-            )
-            .content(
-                tag("script").attr("src", "/::res/viewer/pdf.js")
-            )
-            .content(
-                tag("script").attr("src", "/::res/viewer/text.js")
-            )
-            .content(
-                tag("script").attr("src", "/::res/viewer/vcard.js")
-            )
-            .content(
-                tag("script").attr("src", "/::res/viewer/video.js")
             )
             .content(
                 tag("script")

@@ -1,9 +1,16 @@
 "use strict";
 
-function UserContext(authUser, home)
+function UserContext(authUser, home, permissions)
 {
     var m_user = authUser;
     var m_home = home;
+    var m_permissions = permissions;
+
+    function hasPermission(name)
+    {
+        var v = m_permissions.indexOf(name) !== -1;
+        return function () { return v; };
+    }
 
     this.name = function ()
     {
@@ -15,9 +22,10 @@ function UserContext(authUser, home)
         return m_home;
     };
 
-    this.mayCreate = function () { return authUser !== null; };
-    this.mayDelete = function () { return authUser !== null; };
-    this.mayModify = function () { return authUser !== null; };
-    this.mayShare = function () { return authUser !== null; };
+    this.mayAdmin = hasPermission("ADMIN");
+    this.mayCreate = hasPermission("CREATE");
+    this.mayDelete = hasPermission("DELETE");
+    this.mayModify = hasPermission("MODIFY");
+    this.mayShare = hasPermission("SHARE");
 }
 exports.UserContext = UserContext;

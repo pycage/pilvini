@@ -124,7 +124,7 @@ function viewMarkdown(href)
     });
 }
 
-$(document).ready(function ()
+(function ()
 {
     mimeRegistry.register("text/x-markdown", viewMarkdown);
-});
+})();

@@ -448,8 +448,8 @@ function viewVideo(href)
     popup.find("h1").html(decodeURIComponent(name));
 }
 
-$(document).ready(function ()
+(function ()
 {
     mimeRegistry.register("video/mp4", viewVideo);
     mimeRegistry.register("video/webm", viewVideo);
-});
+})();

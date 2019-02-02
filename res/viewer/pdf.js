@@ -19,7 +19,7 @@ function viewPdf(href)
     sh.push(page);
 }
 
-$(document).ready(function ()
+(function ()
 {
     mimeRegistry.register("application/pdf", viewPdf);
-});
+})();

@@ -458,8 +458,8 @@ function VCardCollection(data)
     }
 }
 
-$(document).ready(function ()
+(function ()
 {
     mimeRegistry.register("text/vcard", viewVCard);
-});
+})();
 
