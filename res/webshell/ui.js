@@ -63,6 +63,9 @@ ui.showDialog = function (title, msg)
         .content(
             tag("div").class("sh-dropshadow")
             .style("background-color", "var(--color-primary-background)")
+            .style("max-width", "calc(100vw - 2rem)")
+            .style("max-height", "calc(100vh - 2rem)")
+            .style("overflow", "auto")
             .content(
                 tag("header")
                 .content(
@@ -158,6 +161,37 @@ ui.showDialog = function (title, msg)
         p.append(label).append(entry);
         dlg.find("section").append(p);
         return entry;
+    };
+
+    dlg.addSwitch = function (text, checked)
+    {
+        var label = $(
+            tag("label").content(escapeHtml(text))
+            .style("display", "inline-block")
+            .style("min-width", "6em")
+            .html()
+        );
+
+        var swtch = $(
+            tag("label").class("sh-switch")
+            .content(
+                tag("input").attr("type", "checkbox")
+            )
+            .content(
+                tag("span")
+            )
+            .html()
+        );
+
+        if (checked)
+        {
+            swtch.find("input").prop("checked", true);
+        }
+
+        var p = $("<p>");
+        p.append(swtch).append(label);
+        dlg.find("section").append(p);
+        return swtch.find("input");
     };
 
     $("body").append(dlg);

@@ -37,7 +37,8 @@ exports.Service = function (config)
                 {
                     return {
                         "name": item.name,
-                        "home": item.home
+                        "home": item.home,
+                        "permissions": item.permissions || []
                     };
                 });
                 send(response, JSON.stringify(obj), callback);
@@ -56,6 +57,7 @@ exports.Service = function (config)
                 var user = request.headers["x-pilvini-user"] || "";
                 var password = request.headers["x-pilvini-password"] || "";
                 var home = request.headers["x-pilvini-home"] || "";
+                var permissions = request.headers["x-pilvini-permissions"] || "";
 
                 var hash = modCrypto.createHash("md5");
                 hash.update(user + ":pilvini:" + password);
@@ -64,7 +66,8 @@ exports.Service = function (config)
                 m_config.root.users.push({
                     "name": user,
                     "password_hash": passwordHash,
-                    "home": userContext.home() + home
+                    "home": userContext.home() + home,
+                    "permissions": permissions.split(" ")
                 });
                 m_config.write();
                 response.writeHeadLogged(201, "Created");

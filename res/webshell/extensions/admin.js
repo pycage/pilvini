@@ -43,7 +43,7 @@
             data.users.forEach(function (item)
             {
                 var name = item.name;
-                var item = ui.listItem(item.name, item.home, function ()
+                var item = ui.listItem(item.name, item.home + " (" + item.permissions.join(" ") + ")", function ()
                 {
 
                 });
@@ -72,17 +72,31 @@
     function showCreateUserDialog()
     {
         var dlg = ui.showDialog("Create User", "Create a new user.");
+
         var nameEntry = dlg.addTextEntry("Name:", "user");
         var passwordEntry = dlg.addTextEntry("Password:", "");
         var homeEntry = dlg.addTextEntry("Home:", currentUri());
+        dlg.addLabel("Permissions:");
+        var mayCreate = dlg.addSwitch("Create", true);
+        var mayDelete = dlg.addSwitch("Delete", true);
+        var mayModify = dlg.addSwitch("Modify", true);
+        var mayShare = dlg.addSwitch("Share", false);
+        var mayAdmin = dlg.addSwitch("Administrator", false);
+
         dlg.addButton("Create", function ()
         {
-            createUser(nameEntry.val(), passwordEntry.val(), homeEntry.val());
+            var permissions = [];
+            if (mayCreate.prop("checked")) permissions.push("CREATE");
+            if (mayDelete.prop("checked")) permissions.push("DELETE");
+            if (mayModify.prop("checked")) permissions.push("MODIFY");
+            if (mayShare.prop("checked")) permissions.push("SHARE");
+            if (mayAdmin.prop("checked")) permissions.push("ADMIN");
+            createUser(nameEntry.val(), passwordEntry.val(), homeEntry.val(), permissions);
         }, true);
         dlg.addButton("Cancel");
     }
 
-    function createUser(name, password, home)
+    function createUser(name, password, home, permissions)
     {
         $.ajax({
             type: "POST",
@@ -92,6 +106,7 @@
                 xhr.setRequestHeader("x-pilvini-user", name);
                 xhr.setRequestHeader("x-pilvini-password", password);
                 xhr.setRequestHeader("x-pilvini-home", home);
+                xhr.setRequestHeader("x-pilvini-permissions", permissions.join(" "));
             },
         })
         .done(function (data, status, xhr)
