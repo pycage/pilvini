@@ -187,15 +187,16 @@ function viewVideo(href)
 
     function toggleFullscreen()
     {
+        var fullscreenButton = videoDiv.find(".video-fullscreen-button");
         if (sh.isFullscreen())
         {
             sh.exitFullscreen();
-            $(this).removeClass("sh-icon-unfullscreen").addClass("sh-icon-fullscreen");
+            fullscreenButton.removeClass("sh-icon-unfullscreen").addClass("sh-icon-fullscreen");
         }
         else
         {
             sh.requestFullscreen(videoDiv);
-            $(this).removeClass("sh-icon-fullscreen").addClass("sh-icon-unfullscreen");
+            fullscreenButton.removeClass("sh-icon-fullscreen").addClass("sh-icon-unfullscreen");
         }
     }
 
