@@ -34,14 +34,17 @@
         var idx = images.indexOf(src);
         if (idx !== -1)
         {
-            if (idx > 0)
+            slideOut(1, function ()
             {
-                loadImage(images[idx - 1]);
-            }
-            else
-            {
-                loadImage(images[images.length - 1]);
-            }
+                if (idx > 0)
+                {
+                    loadImage(images[idx - 1]);
+                }
+                else
+                {
+                    loadImage(images[images.length - 1]);
+                }
+            });
         }
     }
 
@@ -58,14 +61,17 @@
         var idx = images.indexOf(src);
         if (idx !== -1)
         {
-            if (idx < images.length - 1)
+            slideOut(-1, function ()
             {
-                loadImage(images[idx + 1]);
-            }
-            else
-            {
-                loadImage(images[0]);
-            }
+                if (idx < images.length - 1)
+                {
+                    loadImage(images[idx + 1]);
+                }
+                else
+                {
+                    loadImage(images[0]);
+                }
+            });
         }
     }
 
@@ -74,8 +80,6 @@
     function openPopup()
     {
         popup = ui.showPreviewPopup();
-        var w = popup.width() - 32;
-        var h = popup.height() - 32;
 
         popup.find("> div").html(
             tag("div")
@@ -87,6 +91,16 @@
                 .style("max-height", "calc(100vh - 80px)")
             )
             .content(
+                tag("span").class("image-busy-indicator sh-fw-icon")
+                .style("position", "absolute")
+                .style("width", "1em")
+                .style("height", "1em")
+                .style("top", "calc(50% - 0.5em)")
+                .style("left", "calc(50% - 0.5em)")
+                .style("font-size", "200%")
+                .style("color", "#fff")
+            )
+            .content(
                 tag("footer")
                 .style("background-color", "rgba(1, 1, 1, 0.6)")
                 .style("color", "#fff")
@@ -95,10 +109,10 @@
                 .style("margin", "0")
                 .style("left", "0")
                 .style("right", "0")
-                .style("bottom", "-80px")
+                .style("bottom", "0")
                 .style("min-height", "80px")
                 .style("line-height", "80px")
-                .style("visibility", "hidden")
+                .style("visibility", "visible")
                 .on("click", "event.stopPropagation();")
                 .content(
                     tag("div").class("image-progress-label")
@@ -150,12 +164,6 @@
             .html()
         );
 
-        /*
-        popup.find("> div")
-        .css("max-width", "calc(100vw - 80px)")
-        .css("max-height", "calc(100vh - 80px)");
-        */
-
         var img = popup.find("img");
 
         img.on("load", function ()
@@ -174,7 +182,7 @@
                 height: (img.height() + 2) + "px"
             }, 350, function ()
             {
-                img.css("visibility", "inherit");
+                slideIn(function () { });
             });    
         });
 
@@ -206,8 +214,6 @@
                 beginX: ev.originalEvent.touches[0].screenX,
                 dx: 0
             };
-    
-            popup.find("h1").css("display", "none");
         });
     
         img.on("touchmove", function (ev)
@@ -235,10 +241,11 @@
             {
                 previousImage();
             }
-    
-            $(this).css("margin-left", 0)
-                   .css("opacity", 1);
-            popup.find("h1").css("display", "block");
+            else
+            {
+                $(this).css("margin-left", 0)
+                       .css("opacity", 1); 
+            }
         });
 
         popup.find("> div > div").on("click", function (event)
@@ -295,10 +302,9 @@
             openPopup();
         }
 
-        var busyIndicator = ui.showBusyIndicator("Loading");
+        popup.find(".image-busy-indicator").addClass("sh-busy-indicator");
         var img = popup.find("img");
         img
-        .css("visibility", "hidden")
         .css("min-width", "0")
         .css("min-height", "0");
         img.data("src", href);
@@ -330,7 +336,7 @@
         })
         .always(function ()
         {
-            busyIndicator.remove();
+            popup.find(".image-busy-indicator").removeClass("sh-busy-indicator");
         });
     
     
@@ -345,6 +351,43 @@
             name = href;
         }
         popup.find("h1").html(decodeURIComponent(name));
+    }
+
+    /* Slides out the image into the given direction.
+     */
+    function slideOut(direction, callback)
+    {
+        var img = popup.find("img");
+        img.animate({
+            marginLeft: direction * img.width() / 2,
+            opacity: 0
+        }, 350, callback);
+    }
+
+    /* Slides the image into view.
+     */
+    function slideIn(callback)
+    {
+        var img = popup.find("img");
+        var marginLeft = img.css("margin-left").replace(/px/, "");
+        if (marginLeft < 0)
+        {
+            img.css("margin-left", (img.width() / 2) + "px");
+        }
+        else if (marginLeft > 0)
+        {
+            img.css("margin-left", (-img.width() / 2) + "px");
+        }
+        else
+        {
+            callback();
+            return;
+        }
+
+        img.animate({
+            marginLeft: 0,
+            opacity: 1
+        }, 350, callback);
     }
 
     /* Updates the status of the play button.
@@ -415,9 +458,6 @@
             popup.find("img")
             .css("max-width", "calc(100vw - 80px)")
             .css("max-height", "calc(100vh - 80px)");
-            popup.find("> div")
-            .css("width", "auto")
-            .css("height", "auto");
         }
         else
         {
@@ -438,15 +478,30 @@
         var h = img.height();
         var ratio = w / h;
 
-        console.log("ratio: " + ratio);
+        var margin = sh.isFullscreen() ? 0 : 80;
+        var viewWidth = $(window).width() - margin;
+        var viewHeight = $(window).height() - margin;
 
-        var viewWidth = $(window).width() - 80;
-        var viewHeight = $(window).height() - 80;
+        var w2 = viewHeight * ratio;
+        var h2 = viewHeight;
+        if (w2 > viewWidth)
+        {
+            w2 = viewWidth;
+            h2 = viewWidth / ratio;
+        }
 
-        var w2 = Math.min(ratio * viewHeight, viewWidth);
-        var h2 = Math.min(viewHeight / ratio, viewHeight);        
-
-        console.log("w2 " + w2 + ", h2 " + h2);
+        img
+        .css("min-width", w2 + "px")
+        .css("min-height", h2 + "px");
+        
+        if (h2 < viewHeight && sh.isFullscreen())
+        {
+            img.css("transform", "translateY(" + ((viewHeight - h2) / 2)  + "px)");
+        }
+        else
+        {
+            img.css("transform", "initial");
+        }
     }
 
     var popup = null;
@@ -457,6 +512,11 @@
         if (popup)
         {
             updateSizeConstraints();
+            var div = popup.find("> div");
+            var img = popup.find("img");
+            div
+            .css("width", img.width() + 2 + "px")
+            .css("height", img.height() + 2 + "px");
         }
     })
 
