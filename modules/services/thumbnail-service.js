@@ -3,20 +3,20 @@
 const attempt = require("../attempt.js").attempt;
 
 const modCrypto = require("crypto"),
-      modFs = require("fs"),
       modPath = require("path"),
       modUrl = require("url");
 
 const modMime = require("../mime.js"),
       modUtils = require("../utils.js"),
-      modThumbnail = attempt(function () {return require("../thumbnail.js"); });
+      modThumbnail = attempt(function () {return require("../thumbnail.js"); }),
+      modVfs = require("../vfs.js");
 
 
 function loadOrCreateThumbnail(targetFile, thumbDir, thumbFile, maxWidth, maxHeight, response, callback)
 {
-    modFs.stat(targetFile, function (err, targetStats)
+    modVfs.stat(targetFile, function (err, targetStats)
     {
-        modFs.stat(thumbFile, function (err, thumbnailStats)
+        modVfs.stat(thumbFile, function (err, thumbnailStats)
         {
             console.debug("Thumbnail mtime: " +
                           (thumbnailStats ? thumbnailStats.mtime : "<unavailable>") +
@@ -65,7 +65,7 @@ function writeThumbnail(thumbDir, thumbFile, stream, response, callback)
 {
     modUtils.mkdirs(thumbDir, function (err)
     {
-        modFs.open(thumbFile, "w", function(err, fd)
+        modVfs.open(thumbFile, "w", function(err, fd)
         {
             if (err)
             {
@@ -75,7 +75,7 @@ function writeThumbnail(thumbDir, thumbFile, stream, response, callback)
                 return;
             }
            
-            var writeStream = modFs.createWriteStream("", { "fd": fd });
+            var writeStream = modVfs.createWriteStreamFd(fd);
             
             stream.on("data", function(data)
             {

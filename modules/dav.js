@@ -1,10 +1,10 @@
 "use strict";
 
-const modFs = require("fs"),
-      modPath = require("path"),
-      modUrl = require("url"),
-      modUtils = require("./utils.js"),
+const modPath = require("path");
+
+const modUtils = require("./utils.js"),
       modXmlsax = require("./xmlsax.js"),
+      modVfs = require("./vfs.js"),
       modZip = require("./zip.js");
 
 
@@ -37,7 +37,7 @@ function pathFromHref(href, contentRoot)
 
 function readCollection(path, callback)
 {
-    modFs.readdir(path,
+    modVfs.readdir(path,
                   //"utf-8",
                   function(err, files)
                   {
@@ -51,7 +51,7 @@ function readCollection(path, callback)
                       for (var i = 0; i < files.length; ++i)
                       {
                           var name = files[i];
-                          modFs.stat(modPath.join(path, name),
+                          modVfs.stat(modPath.join(path, name),
                                      function(path, name)
                                      {
                                          return function(err, stats)
@@ -152,7 +152,7 @@ var DavSession = function(home)
     {
         function recursiveCopy(src, dest, callback)
         {
-            modFs.stat(src, function (err, stats)
+            modVfs.stat(src, function (err, stats)
             {
                 if (err)
                 {
@@ -161,7 +161,7 @@ var DavSession = function(home)
                 }
                 else if (stats.isDirectory())
                 {
-                    modFs.readdir(src, function (err, files)
+                    modVfs.readdir(src, function (err, files)
                     {
                         if (err)
                         {
@@ -170,7 +170,7 @@ var DavSession = function(home)
                         }
                         else
                         {
-                            modFs.mkdir(dest, function (err)
+                            modVfs.mkdir(dest, function (err)
                             {
                                 if (err)
                                 {
@@ -199,12 +199,17 @@ var DavSession = function(home)
                 else
                 {
                     // TODO: error handling
-                    var reader = modFs.createReadStream(src);
-                    reader.on("end", function ()
+                    modVfs.createReadStream(src, function (reader)
                     {
-                        callback();
+                        modVfs.createWriteStream(dest, function (writer)
+                        {
+                            reader.on("end", function ()
+                            {
+                                callback();
+                            });
+                            reader.pipe(writer);
+                        });
                     });
-                    reader.pipe(modFs.createWriteStream(dest));
                 }
             });
         }
@@ -233,7 +238,7 @@ var DavSession = function(home)
 
         function recursiveDelete(path, callback)
         {
-            modFs.stat(path, function (err, stats)
+            modVfs.stat(path, function (err, stats)
             {
                 if (err)
                 {
@@ -242,7 +247,7 @@ var DavSession = function(home)
                 }
                 else if (stats.isDirectory())
                 {
-                    modFs.readdir(path, function (err, files)
+                    modVfs.readdir(path, function (err, files)
                     {
                         if (err)
                         {
@@ -253,7 +258,7 @@ var DavSession = function(home)
                         {
                             var token = new CountToken(files.length, function ()
                             {
-                                modFs.rmdir(path, function(err)
+                                modVfs.rmdir(path, function(err)
                                 {
                                     if (err)
                                     {
@@ -280,7 +285,7 @@ var DavSession = function(home)
                 }
                 else
                 {
-                    modFs.unlink(path, function(err)
+                    modVfs.unlink(path, function(err)
                     {
                         if (err)
                         {
@@ -319,16 +324,16 @@ var DavSession = function(home)
         // TODO: compression and chunked
         
         // try to open first to work around crash with EACCES while streaming
-        modFs.open(path, "r", function (err, fd)
+        modVfs.open(path, "r", function (err, fd)
         {
             if (err)
             {
                 resultCallback(403, "Forbidden", 0, -1, 0, null, 0);
                 return;
             }
-            modFs.closeSync(fd);
+            modVfs.close(fd, function () { });
 
-            modFs.stat(path, function (err, stats)
+            modVfs.stat(path, function (err, stats)
             {
                 if (err)
                 {
@@ -351,12 +356,14 @@ var DavSession = function(home)
                     });
                     return;
                 }
-    
-                var stream = null;
+
+                console.log("read");
                 if (range.length == 0)
                 {
-                    stream = modFs.createReadStream(path);
-                    resultCallback(200, "OK", 0, -1, stats.size, stream, stats.size);
+                    modVfs.createReadStream(path, function (stream)
+                    {
+                        resultCallback(200, "OK", 0, -1, stats.size, stream, stats.size);
+                    });
                 }
                 else
                 {
@@ -366,8 +373,10 @@ var DavSession = function(home)
                                       stats.size - 1);
     
                     console.debug("Bytes Range: " + from + "-" + to + "/" + stats.size);
-                    stream = modFs.createReadStream(path, { start: from, end: to });
-                    resultCallback(206, "Partial Content", from, to, stats.size, stream, to - from + 1);
+                    modVfs.createReadStreamRanged(path, from, to, function (stream)
+                    {
+                        resultCallback(206, "Partial Content", from, to, stats.size, stream, to - from + 1);
+                    });
                 }
             });
         });
@@ -379,7 +388,7 @@ var DavSession = function(home)
         var path = pathFromHref(href, m_home);
         console.debug("Head for " + path);
 
-        modFs.stat(path, function(err, stats)
+        modVfs.stat(path, function(err, stats)
         {
             if (err)
             {
@@ -396,46 +405,44 @@ var DavSession = function(home)
     {
         var path = pathFromHref(href, m_home);
         
-        modFs.stat(path,
-                   function(err, stats)
-                   {
-                       if (err)
-                       {
-                           modFs.writeFile(path, "",
-                                           function(err)
-                                           {
-                                               if (err)
-                                               {
-                                                   resultCallback(403, "Forbidden");
-                                               }
-                                               else
-                                               {
-                                                   resultCallback(200, "OK");
-                                               }
-                                           });
-                       }
-                       else
-                       {
-                           resultCallback(200, "OK");
-                       }
-                   });
+        modVfs.stat(path, function(err, stats)
+        {
+            if (err)
+            {
+                modVfs.writeFile(path, "", function (err)
+                {
+                    if (err)
+                    {
+                        resultCallback(403, "Forbidden");
+                    }
+                    else
+                    {
+                        resultCallback(200, "OK");
+                    }
+                });
+            }
+            else
+            {
+                resultCallback(200, "OK");
+            }
+        });
     };
 
     that.mkcol = function(href, resultCallback)
     {
         var path = pathFromHref(href, m_home);
     	
-    	modFs.mkdir(path, function(err)
-    			    {
-    					if (err)
-    					{
-    						resultCallback(403, "Forbidden");
-    					}
-    					else
-    					{
-    						resultCallback(201, "Created");
-    					}
-    			    });
+    	modVfs.mkdir(path, function(err)
+        {
+            if (err)
+            {
+                resultCallback(403, "Forbidden");
+            }
+            else
+            {
+                resultCallback(201, "Created");
+            }
+        });
     };
     
     that.move = function(href, destinationHref, resultCallback)
@@ -445,7 +452,7 @@ var DavSession = function(home)
 
         console.debug("Move: " + path + " -> " + destinationPath);
         
-        modFs.rename(path, destinationPath, function(err)
+        modVfs.rename(path, destinationPath, function(err)
         {
             if (err)
             {
@@ -502,7 +509,7 @@ var DavSession = function(home)
         console.debug("Props: " + props);
 
         var path = pathFromHref(href, m_home);
-        modFs.stat(path, function(err, stats)
+        modVfs.stat(path, function(err, stats)
         {
             if (err)
             {
@@ -555,7 +562,7 @@ var DavSession = function(home)
         var path = pathFromHref(href, m_home);
         
         // TODO: preserve stats
-        modFs.open(path, "w", function(err, fd)
+        modVfs.open(path, "w", function(err, fd)
         {
             if (err)
             {
@@ -566,23 +573,24 @@ var DavSession = function(home)
 
             console.debug("Writing file " + path);
             
-            var writeStream = modFs.createWriteStream("", { "fd": fd });
-            
-            stream.on("data", function(data)
+            modVfs.createWriteStream("", { "fd": fd }, function (writeStream)
             {
-                console.debug("Writing chunk: " + data.length + " bytes");
-                writeStream.write(data);
-            });
-            
-            stream.on("end", function()
-            {
-                writeStream.end();
-            });
-            
-            writeStream.on("finish", function()
-            {
-                console.debug("File written");
-                resultCallback(200, "OK");
+                stream.on("data", function(data)
+                {
+                    console.debug("Writing chunk: " + data.length + " bytes");
+                    writeStream.write(data);
+                });
+                
+                stream.on("end", function()
+                {
+                    writeStream.end();
+                });
+                
+                writeStream.on("finish", function()
+                {
+                    console.debug("File written");
+                    resultCallback(200, "OK");
+                });
             });
         });
     };

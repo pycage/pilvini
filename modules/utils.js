@@ -2,7 +2,8 @@
 
 const modFs = require("fs"),
       modPath = require("path"),
-      modMime = require("./mime.js");
+      modMime = require("./mime.js"),
+      modVfs = require("./vfs.js");
 
 /* Creates a hierarchy of directories recursively.
  */
@@ -11,12 +12,12 @@ function mkdirs(path, callback)
     var dir = modPath.dirname(path);
     var name = modPath.basename(path);
 
-    modFs.exists(dir, function (ok)
+    modVfs.stat(dir, function (err, stat)
     {
         console.debug("mkdir " + path);
-        if (ok)
+        if (! err)
         {
-            modFs.mkdir(path, function (err)
+            modVfs.mkdir(path, function (err)
             {
                 callback(err);
             });
@@ -92,7 +93,7 @@ exports.limitFiles = limitFiles;
  */
 function getFile(response, path)
 {
-    modFs.readFile(path, function (err, data)
+    modVfs.readFile(path, function (err, data)
     {
         if (err)
         {

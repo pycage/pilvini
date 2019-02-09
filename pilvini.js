@@ -404,7 +404,7 @@ function handleRequest(request, response)
             if (stream)
             {
                 response.on("error", tracker.abort);
-                response.on("unpipe", function () { stream.destroy(); tracker.end(); });
+                response.on("unpipe", function () { /*stream.destroy();*/ tracker.end(); });
                 stream.on("data", function (chunk) { tracker.transfer(chunk.length); });
                 stream.pipe(response);
             }

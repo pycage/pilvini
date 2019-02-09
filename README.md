@@ -14,6 +14,36 @@ in a secure way, SSL-encrypted and guarded by authorization.
 
 *pilvini* runs on whatever platform Node.js is running.
 
+## Features:
+
+ * WebDAV Server
+   * SSL-encrypted communication and HTTP authentication
+   * Multiple users with various permissions
+   * Securely exposes a subdirectory on the host's filesystem
+   * Virtual file system
+     * Archives (ZIP) are handled transparently as directories
+     * Recursively open archives inside archives
+
+ * Full-featured HTML5 web shell
+   * For desktop, mobile, and TV screen
+   * File operations (new file / directory, copy, rename, delete, upload, download)
+   * Upload data by dragging files or directories from outside the browser window
+   * Download directory hierarchies as ZIP files
+   * Clipboard for moving / copying files
+   * path breadcrumbs and favorites menu with bookmarked directories
+   * Touchscreen gestures such as swipe back on mobile devices
+   * Image preview and slideshow
+   * Music playback
+   * Video playback
+   * File viewers for
+     * text (with editing)
+     * Markdown text (with editing)
+     * PDF
+     * image
+     * video
+   * Preview thumbnails for images, videos, and music files with embedded cover art
+   * Create and revoke password-protected directory shares
+
 ## Requirements:
 
  * Node.js
@@ -63,6 +93,7 @@ text editor:
      [http://www.adamek.biz/md5-generator.php].
    * `home` This is the path that *pilvini* confines the user to. This path is relative to the `root` path configured for the server.
    * `fingerprints` An optional list of fingerprints that may be used to identify the user. See **Login via Fingerprint** for details.
+   * `permissions` A list of permissions given to the user. Available permissions are: `CREATE`, `DELETE`, `MODIFY`, `SHARE`, `ADMIN`.
 
  * `global` This is the section for global settings.
    * `debug` Set this value to true to enable verbose debug logging.

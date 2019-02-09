@@ -1468,6 +1468,12 @@ function init()
         {
             loadDirectory(url, true);
         });
+
+        mimeRegistry.register("application/zip", function (url)
+        {
+            loadDirectory(url, true);
+        });
+
     });
 }
 

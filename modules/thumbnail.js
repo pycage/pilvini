@@ -1,6 +1,11 @@
+"use strict";
+
 const modFs = require("fs"),
-      modLwip = require("lwip"),
-      modId3Tags = require("./id3tags");
+      modLwip = require("lwip");
+
+
+const modId3Tags = require("./id3tags"),
+      modVfs = require("./vfs.js");
 
 exports.makeThumbnail = function (mimeType, file, thumbFile, maxWidth, maxHeight, callback)
 {
@@ -96,33 +101,66 @@ function makeImageThumbnail(imageFile, thumbFile, maxWidth, maxHeight, callback)
 {
     if (imageFile.toLowerCase().endsWith(".svg"))
     {
-        var reader = modFs.createReadStream(imageFile);
-        reader.on("end", function ()
+        modVfs.createReadStream(imageFile, function (reader)
         {
-            callback(null);
+            reader.on("end", function ()
+            {
+                callback(null);
+            });
+            reader.pipe(modFs.createWriteStream(thumbFile));    
         });
-        reader.pipe(modFs.createWriteStream(thumbFile));
     }
     else
     {
-        modLwip.open(imageFile, function (err, image)
+        modVfs.readFile(imageFile, function (err, buffer)
         {
-            if (! err)
+            if (err)
             {
-                var scale = Math.max(maxWidth / image.width(), maxHeight / image.height());
-
-                var begin = Date.now();
-                image.batch().scale(scale).writeFile(thumbFile, "jpg", function (err)
-                {
-                    console.debug("Thumbnailing " + imageFile + " -> " + thumbFile +
-                                  " took " + (Date.now() - begin) + " ms");
-                    callback(err);
-                });
+                callback(err);
+                return;
+            }
+            
+            var type = "";
+            if (imageFile.toLowerCase().endsWith(".gif"))
+            {
+                type = "gif";
+            }
+            else if (imageFile.toLowerCase().endsWith(".png"))
+            {
+                type = "png";
+            }
+            else if (imageFile.toLowerCase().endsWith(".jpg"))
+            {
+                type = "jpg";
+            }
+            else if (imageFile.toLowerCase().endsWith(".jpeg"))
+            {
+                type = "jpg";
             }
             else
             {
-                callback(err);
+                callback("Unsupported image type");
             }
+
+            modLwip.open(buffer, type, function (err, image)
+            {
+                if (! err)
+                {
+                    var scale = Math.max(maxWidth / image.width(), maxHeight / image.height());
+    
+                    var begin = Date.now();
+                    image.batch().scale(scale).writeFile(thumbFile, "jpg", function (err)
+                    {
+                        console.debug("Thumbnailing " + imageFile + " -> " + thumbFile +
+                                      " took " + (Date.now() - begin) + " ms");
+                        callback(err);
+                    });
+                }
+                else
+                {
+                    callback(err);
+                }
+            });
         });
     }
 }

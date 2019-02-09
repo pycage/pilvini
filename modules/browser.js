@@ -7,7 +7,8 @@ const modFs = require("fs"),
       modHtml = require("./html.js"),
       modMime = require("./mime.js"),
       modThumbnail = attempt(function () { return require("./thumbnail.js"); }),
-      modUtils = require("./utils.js");
+      modUtils = require("./utils.js"),
+      modVfs = require("./vfs.js");
 
 const MIME_INFO = {
     "application/java-archive": { "icon": "package.png" },
@@ -101,7 +102,7 @@ function prepareClipboard(userRoot, callback)
     var path = modPath.join(userRoot, ".pilvini", "clipboard");
 
     // create clipboard if missing
-    modFs.stat(path, function (err, stats)
+    modVfs.stat(path, function (err, stats)
     {
         if (err)
         {
@@ -119,7 +120,7 @@ function prepareClipboard(userRoot, callback)
 
 function readStats(sortMode, path, callback)
 {
-    modFs.readdir(path, function (err, files)
+    modVfs.readdir(path, function (err, files)
     {
         if (err || files.length === 0)
         {
@@ -131,7 +132,7 @@ function readStats(sortMode, path, callback)
         for (var i = 0; i < files.length; ++i)
         {
             var file = files[i];
-            modFs.stat(modPath.join(path, file), function (file) { return function (err, stat)
+            modVfs.stat(modPath.join(path, file), function (file) { return function (err, stat)
             {
                 result.push([file, stat]);
                 if (result.length === files.length)

@@ -1,7 +1,8 @@
 "use strict";
 
-const modFs = require("fs"),
-      modZlib = require("zlib");
+const modZlib = require("zlib");
+
+const modVfs = require("./vfs.js");
 
 const TAGS_MAP = {
     "APIC": "PICTURE",
@@ -193,7 +194,7 @@ const ID3_FLAG_FOOTER_PRESENT = 1 << 4;
 function readBytes(fd, offset, size, callback)
 {
     var buffer = new Buffer(size);
-    modFs.read(fd, buffer, 0, size, offset, function (err, bytesRead, buffer)
+    modVfs.read(fd, buffer, 0, size, offset, function (err, bytesRead, buffer)
     {
         callback(err, buffer);
     });
@@ -520,7 +521,7 @@ function parseId3v1(fd, tags, resultCallback)
     function readTagSoup(fd, callback)
     {
         // read the last 128 bytes
-        modFs.fstat(fd, function (err, stats)
+        modVfs.fstat(fd, function (err, stats)
         {
             if (err)
             {
@@ -943,7 +944,7 @@ exports.Tags = function (file)
 
     that.read = function (callback)
     {
-        modFs.open(m_file, "r", function (err, fd)
+        modVfs.open(m_file, "r", function (err, fd)
         {
             if (err)
             {
@@ -953,7 +954,7 @@ exports.Tags = function (file)
 
             function closeCallback(err)
             {
-                modFs.close(fd, function (closeErr)
+                modVfs.close(fd, function (closeErr)
                 {
                     callback(err | closeErr);
                 });
@@ -961,7 +962,7 @@ exports.Tags = function (file)
 
             // read Tag Type, Version Major, Version Minor
             var buffer = new Buffer(5);
-            modFs.read(fd, buffer, 0, buffer.length, 0, function (err, bytesRead, buffer)
+            modVfs.read(fd, buffer, 0, buffer.length, 0, function (err, bytesRead, buffer)
             {
                 if (err)
                 {
