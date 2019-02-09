@@ -91,6 +91,13 @@
                 .style("max-height", "calc(100vh - 80px)")
             )
             .content(
+                tag("span").class("image-countdown-indicator")
+                .style("position", "absolute")
+                .style("top", "0")
+                .style("right", "1em")
+                .style("color", "#fff")
+            )
+            .content(
                 tag("span").class("image-busy-indicator sh-fw-icon")
                 .style("position", "absolute")
                 .style("width", "1em")
@@ -182,8 +189,14 @@
                 height: (img.height() + 2) + "px"
             }, 350, function ()
             {
-                slideIn(function () { });
-            });    
+                slideIn(function ()
+                {
+                    if (playing)
+                    {
+                        runSlideshow();
+                    }
+                });
+            });
         });
 
         popup.attr("tabindex", -1).focus();
@@ -405,37 +418,74 @@
         }
     }
 
+    /* Updates the slideshow countdown.
+     */
+    function updateCountdown()
+    {
+        var out = "";
+        if (playing)
+        {
+            for (var i = 0; i < slideshowCountdown; ++i)
+            {
+                out += ".";
+            }
+        }
+        popup.find(".image-countdown-indicator").html(out);
+    }
+
     /* Toggle slideshow mode.
      */
     function toggleSlideshow()
     {
         if (! playing)
         {
-            startSlideshow();
+            var dlg = ui.showDialog("Slideshow", "Interval between images:");
+            var entry = dlg.addTextEntry("Seconds", "" + slideshowInterval);
+            dlg.addButton("Start", function ()
+            {
+                slideshowInterval = Number.parseInt(entry.val()) || 5;
+                slideshowCountdown = 0;
+                runSlideshow();
+            }, true);
         }
         else
         {
             stopSlideshow();
         }
+        updateCountdown();
     }
 
-    /* Starts the slideshow.
+    /* Runs a slideshow iteration.
      */
-    function startSlideshow()
+    function runSlideshow()
     {
         playing = true;
         updatePlaybutton();
 
         function trigger()
-        {
+        {            
             if (popup && playing)
             {
-                nextImage();
-                setTimeout(trigger, 5000);
+                --slideshowCountdown;
+                updateCountdown();
+
+                if (slideshowCountdown === 0)
+                {
+                    nextImage();
+                }
+                else
+                {
+                    setTimeout(trigger, 1000);
+                }
             }
         }
 
-        setTimeout(trigger, 5000);
+        if (slideshowCountdown === 0)
+        {
+            slideshowCountdown = slideshowInterval;
+            updateCountdown();
+            setTimeout(trigger, 1000);
+        }
     }
 
     /* Stops the slideshow.
@@ -506,6 +556,8 @@
 
     var popup = null;
     var playing = false;
+    var slideshowInterval = 30;
+    var slideshowCountdown = 0;
 
     $(window).resize(function ()
     {

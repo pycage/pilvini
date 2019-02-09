@@ -74,24 +74,25 @@ function writeThumbnail(thumbDir, thumbFile, stream, response, callback)
                 callback();
                 return;
             }
-           
-            var writeStream = modVfs.createWriteStreamFd(fd);
-            
-            stream.on("data", function(data)
+
+            modVfs.createWriteStreamFd(fd, function (writeStream)
             {
-                writeStream.write(data);
-            });
-            
-            stream.on("end", function()
-            {
-                writeStream.end();
-            });
-            
-            writeStream.on("finish", function()
-            {
-                response.writeHeadLogged(200, "OK");
-                response.end();
-                callback();
+                stream.on("data", function(data)
+                {
+                    writeStream.write(data);
+                });
+                
+                stream.on("end", function()
+                {
+                    writeStream.end();
+                });
+                
+                writeStream.on("finish", function()
+                {
+                    response.writeHeadLogged(200, "OK");
+                    response.end();
+                    callback();
+                });
             });
         });
     });
