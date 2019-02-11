@@ -60,6 +60,7 @@ ui.showDialog = function (title, msg)
 {
     var dlg = $(
         tag("form").class("sh-popup")
+        .on("click", "event.stopPropagation();")
         .content(
             tag("div").class("sh-dropshadow")
             .style("background-color", "var(--color-primary-background)")
@@ -134,6 +135,7 @@ ui.showDialog = function (title, msg)
         var entry = $(
             tag("input").attr("type", "text")
             .attr("value", escapeHtml(value || ""))
+            .on("keydown", "event.stopPropagation();")
             .html()
         );
 

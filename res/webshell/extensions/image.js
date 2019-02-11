@@ -265,7 +265,7 @@
         {
             event.stopPropagation();
 
-            var footer = popup.find("footer");
+            var footer = popup.find("> div > div > footer");
             if (footer.css("visibility") === "visible")
             {
                 footer.animate({
@@ -440,6 +440,7 @@
         if (! playing)
         {
             var dlg = ui.showDialog("Slideshow", "Interval between images:");
+            popup.find("> div > div").append(dlg);
             var entry = dlg.addTextEntry("Seconds", "" + slideshowInterval);
             dlg.addButton("Start", function ()
             {
