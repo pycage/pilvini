@@ -131,7 +131,7 @@ exports.createWriteStream = function (path, args, callback)
     callback(modFs.createWriteStream(path, args));
 };
 
-exports.createWriteStreamFd = function (fd, args, callback)
+exports.createWriteStreamFd = function (fd, callback)
 {
     console.log("vfs.createWriteStreamFd");
     callback(modFs.createWriteStream("", { "fd": fd }));
