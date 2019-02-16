@@ -573,7 +573,7 @@ var DavSession = function(home)
 
             console.debug("Writing file " + path);
             
-            modVfs.createWriteStream("", { "fd": fd }, function (writeStream)
+            modVfs.createWriteStreamFd(fd, function (writeStream)
             {
                 stream.on("data", function(data)
                 {

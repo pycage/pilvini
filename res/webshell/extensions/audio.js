@@ -874,7 +874,7 @@ var Audio = function ()
 
     this.enqueue = function (item)
     {
-        var uri = $(item).data("url");
+        var uri = $(item).data("meta").uri;
         m_playlist.add(uri, false);
     };
 

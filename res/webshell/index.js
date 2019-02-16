@@ -41,18 +41,97 @@ var MimeRegistry = function ()
 };
 var mimeRegistry = new MimeRegistry();
 
-var scrollPositionsMap = { };
 
+var Storage = function ()
+{
+    var m_indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB;
+    var m_db = null;
+
+    function open(callback)
+    {
+        if (m_db)
+        {
+            callback(m_db);
+        }
+        else
+        {
+            var req = m_indexedDB.open("Pilvini", 1);
+            req.onerror = function (event)
+            {
+                ui.showError("Failed to store data at storage://" + uri + ".");
+            };
+            req.onupgradeneeded = function ()
+            {
+                var db = this.result;
+                if (! db.objectStoreNames.contains("Storage"))
+                {
+                    var store = db.createObjectStore("Storage");
+                }
+            };
+            req.onsuccess = function (event)
+            {
+                var m_db = this.result;
+                m_db.onerror = function (event)
+                {
+                    ui.showError("Storage failure: " + event.target.errorCode);
+                };
+                callback(m_db);
+            };
+        }
+    }
+
+    this.store = function (uri, data, callback)
+    {
+        open(function (db)
+        {
+            var tx = db.transaction(["Storage"], "readwrite");
+            var store = tx.objectStore("Storage");
+
+            var req = store.put(data, uri);
+            req.onsuccess = function (event)
+            {
+                callback();
+            };
+            req.onerror = function ()
+            {
+                ui.showError("Failed to store data: " + this.error);
+            };
+        });
+    };
+
+    this.load = function (uri, callback)
+    {
+        open(function (db)
+        {
+            var tx = db.transaction("Storage", "readonly");
+            var store = tx.objectStore("Storage");
+
+            var req = store.get(uri);
+            req.onsuccess = function (event)
+            {
+                callback(event.target.result);
+            };
+            req.onerror = function ()
+            {
+                ui.showError("Failed to load data: " + this.error);
+            };
+        });
+    };
+};
+var storage = new Storage();
+
+var scrollPositionsMap = { };
+var actionsMenu = null;
 
 function currentUri()
 {
-    return $("#main-page > section").data("url");
+    return $("#main-page > section").data("meta").uri;
 }
 
 function viewFile(item)
 {
-    var mimeType = $(item).data("mimetype");
-    var url = $(item).data("url");
+    var mimeType = $(item).data("meta").mimeType;
+    var uri = $(item).data("meta").uri;
 
     var viewers = mimeRegistry.viewers(mimeType);
     if (viewers.length === 0)
@@ -61,301 +140,8 @@ function viewFile(item)
     }
     else
     {
-        viewers[0](url);
+        viewers[0](uri);
     }
-}
-
-/* Initiates loading the thumbnails of the items on the page.
- */
-function loadThumbnails(page)
-{
-    console.log("Location: " + currentUri());
-
-    var items = [];
-    $(page).find(".fileitem").each(function (idx)
-    {
-        if ($(this).find(".thumbnail").length)
-        {
-            items.push(this);
-        }
-    });
-
-    console.log("loadThumbnails: " + items.length + " images");
-    loadNextThumbnail(currentUri(), items);
-}
-
-/* Loads the next thumbnail.
- */
-function loadNextThumbnail(forLocation, items)
-{
-    if (items.length === 0)
-    {
-        return;
-    }
-
-    // sort images by visibility to load those in view first
-    var topPos = $(document).scrollTop();
-    var bottomPos = topPos + $(window).height();
-
-    items.sort(function (a, b)
-    {
-        var aPos = $(a).offset().top;
-        var bPos = $(b).offset().top;
-        var aHeight = $(a).height();
-        var bHeight = $(b).height();
-        var aVisible = aPos < bottomPos && aPos + aHeight > topPos;
-        var bVisible = bPos < bottomPos && bPos + bHeight > topPos;
-
-        if (aVisible && ! bVisible)
-        {
-            return -1;
-        }
-        else if (! aVisible && bVisible)
-        {
-            return 1;
-        }
-        else
-        {
-            return aPos - bPos;
-        }
-    });
-
-    var item = items.shift();
-    var name = $(item).find("h1").html();
-    var img = $(item).find(".thumbnail");
-    var url = img.data("x-thumbnail");
-    //var img = images.shift();
-    //var url = img.attr("data-x-thumbnail");
-    console.log("GET: " + url);
-
-    var now = Date.now();
-
-    var statusEntry = ui.pushStatus("sh-icon-wait", name);
-
-    var settings = {
-        beforeSend: function (xhr)
-        {
-             xhr.overrideMimeType("text/plain; charset=x-user-defined");
-             xhr.setRequestHeader("x-pilvini-width", 80);
-             xhr.setRequestHeader("x-pilvini-height", 80);
-        }
-    };
-
-    $.ajax(url, settings)
-    .done(function (data, status, xhr)
-    {
-        if (xhr.status === 200)
-        {
-            var contentType = "image/jpeg"; //xhr.getResponseHeader("Content-Type");
-            if (url.toLowerCase().endsWith(".svg"))
-            {
-                contentType = "image/svg+xml";
-            }
-    
-            var buffer = "";
-            for (var i = 0; i < data.length; ++i)
-            {
-                buffer += String.fromCharCode(data.charCodeAt(i) & 0xff);
-            }
-            var pic = "data:" + contentType + ";base64," + btoa(buffer);
-    
-            var then = Date.now();
-            $(img).css("background-image", "url(" + pic + ")");
-            $(img).css("background-size", "cover");
-    
-            var speed = Math.ceil((data.length / 1024) / ((then - now) / 1000.0));
-            console.log("Loading took " + (then - now) + " ms, size: " + data.length + " B (" + speed + " kB/s).");
-
-            if (currentUri() === forLocation)
-            {
-                loadNextThumbnail(forLocation, items);
-            }
-            statusEntry.remove();
-        }
-        else if (xhr.status === 204)
-        {
-            // create thumbnail client-side, send to server, and retry           
-            generateThumbnail(item, function (data)
-            {
-                var thumbnailUrl = $(item).find(".thumbnail").data("x-thumbnail");
-                submitThumbnail("image/jpeg", data, thumbnailUrl, function (ok)
-                {
-                    statusEntry.remove();
-                    if (ok)
-                    {
-                        items.unshift(item);
-                    }
-                    if (currentUri() === forLocation)
-                    {
-                        loadNextThumbnail(forLocation, items);
-                    }
-                });
-            });
-        }
-    })
-    .fail(function ()
-    {
-        if (currentUri() === forLocation)
-        {
-            loadNextThumbnail(forLocation, items);
-        }
-        statusEntry.remove();
-    });
-}
-
-/* Generates a client-side thumbnail.
- */
-function generateThumbnail(item, callback)
-{
-    var mimeType = $(item).data("mimetype");
-    if (mimeType.indexOf("video/") === 0)
-    {
-        var sourceUrl = $(item).data("url");
-        generateVideoThumbnail(sourceUrl, callback);
-    }
-    else
-    {
-        callback(false);
-    }
-}
-
-/* Generates a video thumbnail.
- */
-function generateVideoThumbnail(url, callback)
-{
-    function extractImage(data)
-    {
-        var pos = data.indexOf(",");
-        var b64 = data.substr(pos + 1);
-        return atob(b64);
-    }
-
-
-    var videoPlayer = document.createElement("video");
-    videoPlayer.autoplay = true;
-    videoPlayer.muted = true;
-
-    var canvas = document.createElement("canvas");
-    canvas.width = 80;
-    canvas.height = 80;
-
-    var ctx = canvas.getContext("2d");
-    
-    $(videoPlayer).on("canplay", function ()
-    {
-        //alert("canplay");
-        $(videoPlayer).off("canplay");
-        videoPlayer.currentTime = videoPlayer.duration * 0.2;
-        //videoPlayer.play();
-    });
-
-    $(videoPlayer).on("seeked", function ()
-    {
-        //alert("seeked");
-        $(videoPlayer).off("seeked");
-        var w = videoPlayer.videoWidth;
-        var h = videoPlayer.videoHeight;
-
-        // crop viewport
-        var cw = Math.min(w, h);
-        var ch = cw;
-        var cx = (w - cw) / 2;
-        var cy = (h - ch) / 2;
-
-        ctx.fillStyle = "#000";
-        ctx.fillRect(0, 0, 80, 80);
-
-        // capturing the image can go wrong and we don't want to upload a
-        // broken thumbnail in these cases
-        //  - Mobile Firefox does not allow capturing at all
-        //  - Silk on Fire TV treats mp4 as copy-protected and captures all black
-        //    (webm is fine, though)
-        var data = "";
-        try
-        {
-            ctx.drawImage(videoPlayer, cx, cy, cw, ch, 0, 0, 80, 80);
-
-            // check if we got a valid image, as some browsers silently give us a black screen
-            // for copy-protection
-            var buffer = ctx.getImageData(0, 0, 80, 1);    
-            var allBlack = true;
-            for (var i = 0; i < buffer.data.length; i += 4)
-            {
-                if (buffer.data[i] !== 0 || buffer.data[i + 1] !== 0 || buffer.data[i + 2] !== 0)
-                {
-                    allBlack = false;
-                    break;
-                }
-            }
-            if (allBlack)
-            {
-                throw "No content";
-            }
-
-            data = extractImage(canvas.toDataURL("image/jpeg"));
-        }
-        catch (err)
-        {
-            //alert(err);
-            console.error("Failed to thumbnail video " + url + ": " + err);
-        }
-
-        $(videoPlayer).off("error");
-        videoPlayer.src = "";
-        videoPlayer.load();
-        $(videoPlayer).remove();
-
-        callback(data);
-    });
-
-    $(videoPlayer).on("error", function ()
-    {
-        console.error("Failed to thumbnail video " + url + ": read error");
-        callback("");
-    });
-
-    videoPlayer.src = url;
-    videoPlayer.load();
-}
-
-/* Submits a client-side-generated thumbnail to the server.
- */
-function submitThumbnail(mimeType, data, url, callback)
-{
-    if (data === "")
-    {
-        callback(false);
-        return;
-    }
-
-    // fill binary buffer
-    var buffer = new ArrayBuffer(data.length);
-    var writer = new Uint8Array(buffer);
-    for (var i = 0; i < data.length; ++i)
-    {
-        writer[i] = data.charCodeAt(i);
-    }
-
-    $.ajax({
-        url: url,
-        type: "PUT",
-        data: buffer,
-        processData: false,
-        beforeSend: function (xhr)
-        {
-             xhr.overrideMimeType(mimeType);
-             xhr.setRequestHeader("x-pilvini-width", 80);
-             xhr.setRequestHeader("x-pilvini-height", 80);
-        }
-    })
-    .done(function ()
-    {
-        callback(true);
-    })
-    .fail(function (xhr, status, err)
-    {
-        callback(false);
-    });
 }
 
 function share(shareId, password)
@@ -602,106 +388,6 @@ function clearClipboard(callback)
             {
                 checkClipboard();
                 callback();
-            }
-        });
-    });
-}
-
-function copyItemToClipboard(item)
-{
-    var name = unescapeHtml($(item).find("h1").html());
-    var li = $(item).clone();
-    li.data("url", "/.pilvini/clipboard/" + encodeURIComponent(name));
-    li.off("click");
-    li.find("div").last().remove();
-    li.appendTo("#clipboard ul");
-
-    checkClipboard();
-}
-
-function cutItem(item)
-{
-    console.log("Cut item");
-
-    var name = unescapeHtml($(item).find("h1").html());
-    var sourceUri = $(item).data("url");
-    var targetUri = "/.pilvini/clipboard/" + encodeURIComponent(name);
-
-    file.move(sourceUri, targetUri, function (ok)
-    {
-        if (ok)
-        {
-            console.log("File cut: " + name);
-            copyItemToClipboard(item);
-            $(item).remove();
-            updateNavBar();
-        }
-        else
-        {
-            ui.showError("Failed to cut: " + name);
-        }
-    });
-}
-
-function copyItem(item)
-{
-    console.log("Copy item");
-    
-    var name = unescapeHtml($(item).find("h1").html());
-    var sourceUri = $(item).data("url");
-    var targetUri = "/.pilvini/clipboard/" + encodeURIComponent(name);
-    
-    var statusEntry = ui.pushStatus("sh-icon-clipboard", "Copying " + name);
-
-    file.copy(sourceUri, targetUri, function (ok)
-    {
-        if (ok)
-        {
-            console.log("File copied: " + name);
-            copyItemToClipboard(item);
-        }
-        else
-        {
-            ui.showError("Failed to copy: " + name);
-        }
-        statusEntry.remove();
-    });
-}
-
-function pasteItems()
-{
-    console.log("Paste items");
-
-    var count = 0;
-    $("#clipboard ul li").each(function ()
-    {
-        ++count;
-    });
-
-    $("#clipboard ul li").each(function ()
-    {
-        var item = this;
-
-        var name = unescapeHtml($(item).find("h1").html());
-        var sourceUri = $(item).data("url");
-        var targetUri = currentUri() + "/" + name;
-
-        file.move(sourceUri, targetUri, function (ok)
-        {
-            if (ok)
-            {
-                console.log("File pasted: " + name);
-                $(item).remove();
-            }
-            else
-            {
-                ui.showError("Failed to paste: " + name);
-            }
-
-            --count;
-            if (count === 0)
-            {
-                loadDirectory(currentUri(), false);
             }
         });
     });
@@ -1362,6 +1048,85 @@ function loadDirectory(href, pushToHistory)
     });
 }
 
+function loadDirectoryJson(href, pushToHistory)
+{
+    var busyIndicator = ui.showBusyIndicator("Loading");
+
+    scrollPositionsMap[currentUri()] = $(document).scrollTop();
+
+    $("#main-page #filesbox").html("");
+
+    $.ajax({
+        type: "GET",
+        url: "/::shell" + href + "?json",
+        dataType: "json"
+    })
+    .done(function (data, status, xhr)
+    {
+        if (pushToHistory)
+        {
+            window.history.pushState({ "uri": href }, href, "/::shell" + href);
+        }
+        showDirectory(data);
+    })
+    .fail(function (xhr, status, err)
+    {
+        ui.showError("Failed to load directory.");
+    })
+    .always(function ()
+    {
+        busyIndicator.remove();
+    });
+}
+
+function showDirectory(data)
+{
+    var files = data.files || [];
+    files.sort(function (a, b)
+    {
+        if (a.name < b.name)
+        {
+            return -1;
+        }
+        else if (a.name > b.name)
+        {
+            return 1;
+        }
+        else
+        {
+            return 0;
+        }
+    });
+
+    var listView = $(
+        tag("ul").class("sh-listview")
+        .html()
+    );
+    files.forEach(function (entry)
+    {
+        var item = ui.listItem(entry.name, entry.info, function ()
+        {
+            viewFile(this);
+        });
+        item.addClass("fileitem");
+        item.data("mimetype", entry.mimeType);
+        item.data("url", entry.uri);
+        if (entry.icon)
+        {
+            item.setIcon(entry.icon);
+        }
+        listView.append(item);
+    });
+    var filesBox = $("#main-page #filesbox");
+    filesBox.append(listView);
+
+    var page = $("#main-page");
+    var section = page.find("> section");
+    section.data("url", data.uri);
+    page.find("> header h1").html(escapeHtml(data.uri));
+    setTimeout(function () { loadThumbnails(page); }, 500);
+}
+
 function login(user, password)
 {
     $.ajax({
@@ -1413,6 +1178,7 @@ function init()
         "/::res/webshell/html.js",
         "/::res/webshell/ui.js",
 
+        "/::res/webshell/extensions/files.js",
         "/::res/webshell/extensions/admin.js",
         "/::res/webshell/extensions/audio.js",
         "/::res/webshell/extensions/image.js",
@@ -1426,13 +1192,16 @@ function init()
     importJs(js, function ()
     {
         $("#upload").on("change", onFilesSelected);
-        sh.push("main-page", function () { }, true);
+        //sh.push("main-page", function () { }, true);
     
+        /*
         var page = $("#main-page");
         var clipboardPage = $("#clipboard-page");
         setTimeout(function () { loadThumbnails(page); }, 500);
+        */
     
         /* setup history navigation */
+        /*
         window.addEventListener("popstate", function (ev)
         {
             if (ev.state && ev.state.uri)
@@ -1440,8 +1209,10 @@ function init()
                 loadDirectory(ev.state.uri, false);
             }
         }, false);
+        */
     
         /* setup swipe suppport */
+        /*
         sh.onSwipeBack(page, function ()
         {
             var upButton = $("#upButton");
@@ -1455,25 +1226,32 @@ function init()
         {
             sh.pop();
         });
+        */
     
         /* setup drag and drop for external files */
         $("body").on("dragover", onDragOver);
         $("body").on("drop", onDrop);
     
+        /*
         unselectAll();
         checkClipboard();
         updateNavBar();
+        */
     
+        actionsMenu.addSeparator();
+        actionsMenu.addItem(new ui.MenuItem("", "Logout", logout));
+
+        /*
         mimeRegistry.register("application/x-folder", function (url)
         {
-            loadDirectory(url, true);
+            loadDirectoryJson(url, true);
         });
 
         mimeRegistry.register("application/zip", function (url)
         {
             loadDirectory(url, true);
         });
-
+        */
     });
 }
 

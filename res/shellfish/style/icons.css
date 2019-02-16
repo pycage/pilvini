@@ -26,12 +26,12 @@
     font-family: Material; content: "\f120";
 }
 
-.sh-icon-clipboard:before {
-    font-family: Material; content: "\f109";
-}
-
 .sh-icon-cloud-upload:before {
     font-family: Material; content: "\f21e";
+}
+
+.sh-icon-download:before {
+    font-family: Material; content: "\f220";
 }
 
 .sh-icon-edit:before {
@@ -46,12 +46,32 @@
     font-family: Material; content: "\f269";
 }
 
+.sh-icon-clipboard:before {
+    font-family: Material; content: "\f109";
+}
+
+.sh-icon-clipboard-copy:before {
+    font-family: Material; content: "\f237";
+}
+
+.sh-icon-clipboard-cut:before {
+    font-family: Material; content: "\f1bc";
+}
+
+.sh-icon-clipboard-paste:before {
+    font-family: Material; content: "\f10b";
+}
+
 .sh-icon-close:before {
     font-family: Material; content: "\f136";
 }
 
 .sh-icon-cloud:before {
     font-family: Material; content: "\f21d";
+}
+
+.sh-icon-file:before {
+    font-family: Material; content: "\f223";
 }
 
 .sh-icon-folder:before {
@@ -136,6 +156,14 @@
 
 .sh-icon-move-up:before {
     font-family: Material; content: "\f2fc";
+}
+
+.sh-icon-new-file:before {
+    font-family: Material; content: "\f221";
+}
+
+.sh-icon-rename:before {
+    font-family: Material; content: "\f22e";
 }
 
 .sh-icon-share:before {

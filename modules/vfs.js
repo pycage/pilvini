@@ -125,13 +125,13 @@ exports.createReadStreamRanged = function (path, from, to, callback)
     }
 };
 
-exports.createWriteStream = function (path, args, callback)
+exports.createWriteStream = function (path, callback)
 {
     console.log("vfs.createWriteStream");
-    callback(modFs.createWriteStream(path, args));
+    callback(modFs.createWriteStream(path));
 };
 
-exports.createWriteStreamFd = function (fd, args, callback)
+exports.createWriteStreamFd = function (fd, callback)
 {
     console.log("vfs.createWriteStreamFd");
     callback(modFs.createWriteStream("", { "fd": fd }));

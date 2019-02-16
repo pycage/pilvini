@@ -464,7 +464,7 @@ sh.menu_close = function (callback)
  */
 sh.toggle_submenu = function (item)
 {
-    $(item).parent().find(".sh-submenu").each(function (i)
+    $(item).parent().parent().find(".sh-submenu").each(function (i)
     {
         if (this !== item)
         {

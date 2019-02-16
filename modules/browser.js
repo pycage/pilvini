@@ -16,6 +16,7 @@ const MIME_INFO = {
     "application/pdf": { "icon": "pdf.png" },
     "application/vnd.oasis.opendocument.text": { "icon": "document.png" },
     "application/x-batch": { "icon": "text.png" },
+    "application/x-folder": {"icon": "folder.png" },
     "application/x-json": { "icon": "text.png" },
     "application/x-python": { "icon": "text.png" },
     "application/x-shellscript": { "icon": "text.png" },
@@ -122,9 +123,14 @@ function readStats(sortMode, path, callback)
 {
     modVfs.readdir(path, function (err, files)
     {
-        if (err || files.length === 0)
+        if (err)
         {
-            callback([]);
+            callback(err, []);
+            return;
+        }
+        else if (files.length === 0)
+        {
+            callback(null, []);
             return;
         }
 
@@ -168,7 +174,7 @@ function readStats(sortMode, path, callback)
                         }
                     });
 
-                    callback(r);
+                    callback(null, r);
                 }
             }; } (file));
         }
@@ -247,8 +253,39 @@ function makeFileItem(pathUri, file, stat, active, callback)
     return callback(uri, info, mimeType, iconHtml);
 }
 
+function makeFilesJson(uri, stats, active)
+{
+    var files = [];
+
+    for (var i = 0; i < stats.length; ++i)
+    {
+        var file = stats[i][0];
+        var stat = stats[i][1];
+
+        if (! stat || file.indexOf(".") === 0)
+        {
+            continue;
+        }
+
+        makeFileItem(uri, file, stat, active, function (uri, info, mimeType, iconHtml)
+        {
+            files.push({
+                "uri": uri,
+                "name": file,
+                "info": info,
+                "mimeType": mimeType,
+                "icon": getIcon(mimeType)
+            });
+        });
+    }
+
+    return files;
+}
+
 function makeFiles(uri, stats, active)
 {
+    stats = [];
+
     var tag = modHtml.tag;
     var t = tag("ul").class("sh-listview");
     if (active)
@@ -543,6 +580,27 @@ function makeFavorites(userRoot)
     t.content(tag("hr"));
 
     return t;
+}
+
+function makeSharesJson(userHome, shares)
+{
+    var result = [];
+
+    shares.shares().forEach(function (shareId)
+    {
+        var shareRoot = shares.info(shareId).root;
+        if (shareRoot.substr(0, userHome.length) === userHome)
+        {
+            // this share is within reach of the user
+            var uri = shareRoot.substr(userHome.length);
+            result.push({
+                "share": shareId,
+                "uri": uri
+            });
+        }
+    });
+
+    return result;
 }
 
 function makeShares(userHome, shares)
@@ -966,19 +1024,62 @@ function makeHtml(viewMode, sortMode, contentRoot, uri, path, stats, clipboardSt
                 .content(
                     tag("a").id("download").data("ajax", "false").attr("href", "#").attr("download", "name").style("display", "none")
                 )
+                /*
                 .content(
                     makeMainPage(viewMode, sortMode, contentRoot, uri, path, stats, userContext, shares)
+                )
+                */
+                .content(
+                    tag("div").id("pagelayer")
                 )
                 .content(
                     makeStatusBox()
                 )
+                /*
                 .content(
                     makeClipboardPage(clipboardStats)
                 )
+                */
             );
 
     return t;
 }
+
+function makeJson(uri, contentRoot, userContext, shares, callback)
+{
+    var fullPath = modUtils.uriToPath(uri, contentRoot + userContext.home());
+
+    var settings = readSettings(contentRoot + userContext.home());
+    console.debug("Settings: " + JSON.stringify(settings));
+    var viewMode = settings.view || "list";
+    var sortMode = settings.sort || "name";
+
+    console.debug("Full Path: " + fullPath + "\n" +
+                  "View Mode: " + viewMode + "\n" +
+                  "Sort Mode: " + sortMode);
+
+    readStats(sortMode, fullPath, function (err, stats)
+    {
+        if (err)
+        {
+            callback(false, "");
+            return;
+        }
+
+        var obj = {
+            "uri": uri,
+            "permissions": userContext.permissions(),
+            "files": makeFilesJson(uri, stats, true),
+            "shares": makeSharesJson(userContext.home(), shares)
+        };
+
+        var json = JSON.stringify(obj, 4);
+        console.log(json);
+        callback(true, json);
+    });
+
+}
+exports.makeJson = makeJson;
 
 function createMainPage(uri, contentRoot, userContext, shares, callback)
 {
@@ -994,8 +1095,14 @@ function createMainPage(uri, contentRoot, userContext, shares, callback)
                   "View Mode: " + viewMode + "\n" +
                   "Sort Mode: " + sortMode);
 
-    readStats(sortMode, fullPath, function (stats)
+    readStats(sortMode, fullPath, function (err, stats)
     {
+        if (err)
+        {
+            callback(false, "");
+            return;
+        }
+
         var html = makeMainPage(viewMode, sortMode, contentRoot, uri, userPath, stats, userContext, shares).html();
         callback(true, html);
     });
@@ -1018,9 +1125,15 @@ function makeIndex(uri, contentRoot, userContext, shares, callback)
 
     prepareClipboard(contentRoot + userContext.home(), function ()
     {
-        readStats(sortMode, fullPath, function (stats)
+        readStats(sortMode, fullPath, function (err, stats)
         {
-            readStats(sortMode, modPath.join(contentRoot + userContext.home(), ".pilvini", "clipboard"), function (clipboardStats)
+            if (err)
+            {
+                callback(false, "");
+                return;
+            }
+
+            readStats(sortMode, modPath.join(contentRoot + userContext.home(), ".pilvini", "clipboard"), function (err, clipboardStats)
             {
                 var html = "<!DOCTYPE html>\n" + makeHtml(viewMode, sortMode, contentRoot, uri, userPath, stats, clipboardStats, userContext, shares).html();
                 callback(true, html);

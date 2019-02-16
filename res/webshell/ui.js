@@ -242,7 +242,7 @@ ui.showPreviewPopup = function ()
     return popup;
 };
 
-ui.showPage = function (title)
+ui.showPage = function (title, backCallback)
 {
     var page = $(
         tag("div").class("sh-page")
@@ -258,6 +258,7 @@ ui.showPage = function (title)
         )
         .content(
             tag("section")
+            .style("position", "relative")
         )
         .html()
     );
@@ -266,12 +267,24 @@ ui.showPage = function (title)
 
     header.find("> span").on("click", function ()
     {
-        page.pop();
+        if (backCallback)
+        {
+            backCallback();
+        }
+        else
+        {
+            page.pop();
+        }
     });
 
     page.pop = function ()
     {
         sh.pop(function () { page.remove(); });
+    };
+
+    page.setTitle = function (title)
+    {
+        header.find("h1").html(escapeHtml(title));
     };
 
     page.addIconButton = function (icon, callback)
@@ -299,10 +312,20 @@ ui.showPage = function (title)
         return ul;
     };
 
-    $("body").append(page);
+    $("#pagelayer").append(page);
     sh.push(page);
 
-    sh.onSwipeBack(page, function () { sh.pop(); });
+    sh.onSwipeBack(page, function ()
+    {
+        if (backCallback)
+        {
+            backCallback();
+        }
+        else
+        {
+            page.pop();
+        }
+    });
 
     return page;
 };
@@ -402,8 +425,150 @@ ui.listItem = function (title, subtitle, callback)
         labelBox.css("right", "42px");
         buttonBox.css("display", "block");
         buttonBox.find("span").addClass(icon);
-        buttonBox.on("click", callback);
+        buttonBox.on("click", function (event)
+        {
+            event.stopPropagation();
+            callback();
+        });
     };
 
     return li;
+};
+
+ui.Menu = function ()
+{
+    var m_menu;
+
+    this.addItem = function (item)
+    {
+        var ul = m_menu.find("> div > ul").last();
+        ul.append(item.get());
+    };
+
+    this.addSeparator = function ()
+    {
+        var ul = m_menu.find("> div > ul").last();
+        ul.append($(
+            tag("hr")
+            .html()
+        ));
+    }
+
+    this.addSubMenu = function (subMenu)
+    {
+        var div = m_menu.find("> div");
+        div.append(subMenu.get());
+        div.append("<ul>");
+    };
+
+    this.popup = function (parent)
+    {
+        sh.menu(parent, m_menu);
+    };
+
+    this.close = function ()
+    {
+        sh.menu_close();
+    }
+
+    m_menu = $(
+        tag("div").class("sh-menu")
+        .content(
+            tag("div")
+            .on("click", "event.stopPropagation();")
+            .content(
+                tag("ul")
+            )
+        )
+        .html()
+    );
+
+    m_menu.on("click", function ()
+    {
+        console.log("close menu");
+        sh.menu_close();
+    });
+
+    $("body").append(m_menu);
+};
+
+ui.MenuItem = function (icon, text, callback)
+{
+    var m_item;
+
+    this.setEnabled = function (value)
+    {
+        if (value)
+        {
+            m_item.removeClass("sh-disabled");
+        }
+        else
+        {
+            m_item.addClass("sh-disabled");
+        }
+    };
+
+    this.get = function ()
+    {
+        return m_item;
+    };
+
+    m_item = $(
+        tag("li")
+        .style("position", "relative")
+        .on("click", "")
+        .content(
+            tag("span").class("sh-left sh-fw-icon " + icon)
+        )
+        .content(
+            tag("span")
+            .style("padding-left", "1.2em")
+            .content(escapeHtml(text))
+        )
+        .html()
+    );
+
+    m_item.on("click", function ()
+    {
+        sh.menu_close();
+        callback();
+    });
+};
+
+ui.SubMenu = function (text)
+{
+    var m_subMenu;
+
+    this.addItem = function (item)
+    {
+        var ul = m_subMenu.find("ul").last();
+        ul.append(item.get());
+    };
+
+    this.addSeparator = function ()
+    {
+        var ul = m_subMenu.find("ul").last();
+        ul.append($(
+            tag("hr")
+            .html()
+        ));
+    }
+
+    this.get = function ()
+    {
+        return m_subMenu;
+    };
+
+    m_subMenu = $(
+        tag("div")
+        .content(
+            tag("h1").class("sh-submenu")
+            .on("click", "sh.toggle_submenu(this);")
+            .content(escapeHtml(text))
+        )
+        .content(
+            tag("ul")
+        )
+        .html()
+    );
 };
