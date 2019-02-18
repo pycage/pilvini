@@ -5,7 +5,6 @@ var files = { };
 (function ()
 {
     var m_page;
-    var m_navBar;
     var m_currentUri = "";
 
     var m_miClipboardCut;
@@ -1014,6 +1013,89 @@ var files = { };
         filesBox.append(listView);
     }
 
+    function onDragOver(ev)
+    {
+        ev.dataTransfer = ev.originalEvent.dataTransfer;
+        ev.stopPropagation();
+        ev.preventDefault();
+        ev.dataTransfer.dropEffect = "copy";
+    }
+    
+    function onDrop(ev)
+    {
+        function progressCallback(a, b)
+        {
+            amount = a;
+            total = b;
+        }
+
+        function fileCallback(type, name, progress, ctx)
+        {
+            if (progress === 0)
+            {
+                var icon = type === "directory" ? "sh-icon-folder" : "sh-icon-cloud-upload";
+                ctx.statusEntry = ui.pushStatus(icon, amount + "/" + total + " " + name);
+            }
+            else if (progress === -1)
+            {
+                ctx.statusEntry.remove();
+                if (type === "directory")
+                {
+                    ui.showError("Failed to create directory: " + name);
+
+                }
+                else
+                {
+                    ui.showError("Failed to upload file: " + name);
+                }
+            }
+            else if (progress === 1)
+            {
+                ctx.statusEntry.remove();
+            }
+            else
+            {
+                ctx.statusEntry.setProgress(progress * 100);
+            }
+        }
+
+        function finishedCallback()
+        {
+            if (m_currentUri === rootUri)
+            {
+                loadDirectory(m_currentUri, false);
+            }
+        }
+
+        var rootUri = m_currentUri;
+        var amount = 0;
+        var total = 0;
+
+        ev.dataTransfer = ev.originalEvent.dataTransfer;
+        ev.stopPropagation();
+        ev.preventDefault();
+    
+        var items = ev.dataTransfer.items;
+        for (var i = 0; i < items.length; ++i)
+        {
+            var item = items[i];
+            if (item.webkitGetAsEntry)
+            {
+                uploadHierarchy(item.webkitGetAsEntry(), m_currentUri, fileCallback, progressCallback, finishedCallback);
+            }
+            else if (ev.dataTransfer.getAsEntry)
+            {
+                uploadHierarchy(item.getAsEntry(), m_currentUri, fileCallback, progressCallback, finishedCallback);
+            }
+            else
+            {
+                uploadFiles(ev.dataTransfer.files, m_currentUri, fileCallback, progressCallback, finishedCallback);
+                break;
+            }
+        }
+    
+    }
+
 
     m_page = ui.showPage("", cdUp);
     m_page.find("> header > h1").on("click", openPathMenu);
@@ -1044,7 +1126,7 @@ var files = { };
     actionsMenu.addSubMenu(subMenuClipboard);
     
     var subMenuAction = new ui.SubMenu("Action");
-    subMenuAction.addItem(new ui.MenuItem("sh-icon-cloud-upload", "Upload"));
+    subMenuAction.addItem(new ui.MenuItem("sh-icon-cloud-upload", "Upload", function () { $("#upload").click(); }));
     m_miDownload = new ui.MenuItem("sh-icon-download", "Download", eachSelected(downloadItem));
     subMenuAction.addItem(m_miDownload);
     m_miRename = new ui.MenuItem("sh-icon-rename", "Rename", eachSelected(renameItem));
@@ -1067,6 +1149,17 @@ var files = { };
             loadDirectory(ev.state.uri, false);
         }
     }, false);
+
+    /* setup file upload */
+    $("#upload").on("change", function (event)
+    {
+        // TODO: proper callbacks!
+        uploadFiles(event.target.files, m_currentUri, function () { }, function () { }, function () { });
+    });
+
+    /* setup drag and drop for external files */
+    $("body").on("dragover", onDragOver);
+    $("body").on("drop", onDrop);
 
     loadDirectory("/", true);
     loadClipboard();
