@@ -156,228 +156,6 @@ function showLoginDialog()
     }, true);
 }
 
-/*
-function upload(file, target, amount, totalAmount, callback)
-{
-    var statusEntry = ui.pushStatus("sh-icon-cloud-upload", 
-                                 amount + "/" + totalAmount + " " + file.name);
-
-    function createMonitoringXhr()
-    {
-        var xhr = $.ajaxSettings.xhr();
-        if (xhr.upload)
-        {
-            xhr.upload.addEventListener("progress", function (status)
-            {
-                console.log("progress " + status.loaded + " / " + status.total);
-                if (status.lengthComputable && status.total > 0)
-                {
-                    var p = status.loaded / status.total;
-                    statusEntry.setProgress(p * 100);
-                }
-            }, false);
-        }
-
-        return xhr;
-    }
-
-    console.log("Upload: " + file.name + " -> " + target);
-    for (var key in file)
-    {
-        console.log(" - " + key + ": " + file[key]);
-    }
-
-    var reader = new FileReader();
-    reader.onload = function (ev)
-    {
-        console.log("FileReader::onLoad");
-        var data = new Uint8Array(ev.target.result);
-
-        $.ajax({
-                   url: target,
-                   type: "PUT",
-                   contentType: "application/octet-stream",
-                   processData: false,
-                   data: data,
-                   xhr: createMonitoringXhr
-               })
-        .done(function () {
-            console.log("File uploaded: " + file.name + ", size: " + data.length);
-        })
-        .fail(function () {
-            ui.showError("Failed to upload: " + file.name);
-        })
-        .always(function () {
-            statusEntry.remove();
-            callback();
-        });
-    };
-    reader.onerror = function (event)
-    {
-        reader.abort();
-        console.log(reader.error);
-        ui.showError("Failed to upload: " + file.name);
-        statusEntry.remove();
-        callback();
-    };
-    reader.readAsArrayBuffer(file);
-}
-
-function uploadFiles(files)
-{
-    if (files.length == 0)
-    {
-        return;
-    }
-
-    var count = 0;
-    for (var i = 0; i < files.length; ++i)
-    {
-        ++count;
-    }
-
-    for (i = 0; i < files.length; ++i)
-    {
-        var file = files[i];
-        var targetUri = currentUri() +
-                        (currentUri() !== "/" ? "/" : "") +
-                        encodeURIComponent(file.name);
-
-        upload(file, targetUri, i, files.length, function ()
-        {
-            --count;
-
-            if (count === 0)
-            {
-                loadDirectory(currentUri(), false);
-            }
-        });
-    }
-}
-
-function uploadHierarchy(item)
-{
-    var rootUri = currentUri();
-
-    function listDirectory(reader, items, callback)
-    {
-        reader.readEntries(function (entries)
-        {
-            var count = entries.length;
-            entries.forEach(function (entry)
-            {
-                items.push(entry);
-                --count;
-                if (count === 0)
-                {
-                    listDirectory(reader, items, callback);
-                }
-            });
-            if (entries.length === 0)
-            {
-                callback(items);
-            }
-        });
-    }
-
-    function walk(item, items, callback)
-    {
-        console.log("walk " + item.fullPath);
-        if (item.isDirectory)
-        {
-            items.push(item);
-            listDirectory(item.createReader(), [], function (dirItems)
-            {
-                var count = dirItems.length;
-                dirItems.forEach(function (dirItem)
-                {
-                    //alert("will walk " + dirItem.fullPath);
-                    walk(dirItem, items, function (subItems)
-                    {
-                        --count;
-                        if (count === 0)
-                        {
-                            callback(items);
-                        }
-                    });
-                });
-                if (dirItems.length === 0)
-                {
-                    callback(items);
-                }
-            });
-        }
-        else
-        {
-            items.push(item);
-            callback(items);
-        }
-    }
-
-    function processItems(items, callback)
-    {
-        if (items.length === 0)
-        {
-            callback();
-            return;
-        }
-
-        var item = items.shift();
-        ++currentCount;
-
-        var targetUri = rootUri +
-                        (rootUri !== "/" ? "/" : "") +
-                        item.fullPath.substr(1).split("/").map(function (a) { return encodeURIComponent(a); }).join("/");
-
-        if (item.isDirectory)
-        {
-            console.log("mkdir " + targetUri);
-            var statusEntry = ui.pushStatus("sh-icon-folder", item.name);
-            file.mkdir(targetUri, function (ok)
-            {
-                if (ok)
-                {
-                    console.log("Directory created: " + name);
-                    processItems(items, callback);
-                }
-                else
-                {
-                    ui.showError("Failed to create directory: " + name);
-                }
-                statusEntry.remove();
-            });
-        }
-        else
-        {
-            console.log("put " + targetUri);
-            item.file(function (file)
-            {
-                upload(file, targetUri, currentCount, totalCount, function ()
-                {
-                    processItems(items, callback);
-                });
-            });
-        }
-    }
-
-    var totalCount = 0;
-    var currentCount = 0;
-
-    walk(item, [], function (items)
-    {
-        totalCount = items.length;
-
-        processItems(items, function ()
-        {
-            console.log("all done");
-            if (currentUri() === rootUri)
-            {
-                loadDirectory(currentUri(), false);
-            }
-        })
-    });
-}
-*/
 
 function changeSettings(key, value, altValue)
 {
@@ -430,49 +208,6 @@ function changeSettings(key, value, altValue)
 }
 
 /*
-function onFilesSelected(ev)
-{
-    uploadFiles(ev.target.files);
-}
-*/
-
-/*
-function onDragOver(ev)
-{
-    ev.dataTransfer = ev.originalEvent.dataTransfer;
-    ev.stopPropagation();
-    ev.preventDefault();
-    ev.dataTransfer.dropEffect = 'copy';
-}
-
-function onDrop(ev)
-{
-    ev.dataTransfer = ev.originalEvent.dataTransfer;
-    ev.stopPropagation();
-    ev.preventDefault();
-
-    var items = ev.dataTransfer.items;
-    for (var i = 0; i < items.length; ++i)
-    {
-        var item = items[i];
-        if (item.webkitGetAsEntry)
-        {
-            uploadHierarchy(item.webkitGetAsEntry());
-        }
-        else if (ev.dataTransfer.getAsEntry)
-        {
-            uploadHierarchy(item.getAsEntry());
-        }
-        else
-        {
-            uploadFiles(ev.dataTransfer.files);
-            break;
-        }
-    }
-
-}
-*/
-
 function updateNavBar()
 {
     $("#navbar").html("");
@@ -571,7 +306,9 @@ function updateNavBar()
         $("#navbar").height(h1);
     }
 }
+*/
 
+/*
 function loadDirectory(href, pushToHistory)
 {
     var busyIndicator = ui.showBusyIndicator("Loading");
@@ -613,6 +350,7 @@ function loadDirectory(href, pushToHistory)
         }, true);
     });
 }
+*/
 
 function login(user, password)
 {
@@ -678,50 +416,7 @@ function init()
         "/::res/webshell/extensions/video.js"
     ];
     importJs(js, function ()
-    {
-        //$("#upload").on("change", onFilesSelected);
-        //sh.push("main-page", function () { }, true);
-    
-        /*
-        var page = $("#main-page");
-        var clipboardPage = $("#clipboard-page");
-        setTimeout(function () { loadThumbnails(page); }, 500);
-        */
-    
-        /* setup history navigation */
-        /*
-        window.addEventListener("popstate", function (ev)
-        {
-            if (ev.state && ev.state.uri)
-            {
-                loadDirectory(ev.state.uri, false);
-            }
-        }, false);
-        */
-    
-        /* setup swipe suppport */
-        /*
-        sh.onSwipeBack(page, function ()
-        {
-            var upButton = $("#upButton");
-            if (upButton.length)
-            {
-                loadDirectory(upButton.data("url"), true);
-            }
-        });
-    
-        sh.onSwipeBack(clipboardPage, function ()
-        {
-            sh.pop();
-        });
-        */
-    
-        /* setup drag and drop for external files */
-        /*
-        $("body").on("dragover", onDragOver);
-        $("body").on("drop", onDrop);
-        */
-       
+    {         
         actionsMenu.addSeparator();
         actionsMenu.addItem(new ui.MenuItem("", "Logout", logout));
     });

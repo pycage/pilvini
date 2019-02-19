@@ -313,7 +313,7 @@ ui.showPage = function (title, backCallback)
     };
 
     $("#pagelayer").append(page);
-    sh.push(page);
+    sh.push(page, function () { }, $(".sh-page").length === 1);
 
     sh.onSwipeBack(page, function ()
     {

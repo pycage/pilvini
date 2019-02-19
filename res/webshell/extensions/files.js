@@ -62,6 +62,7 @@ var files = { };
         var uri = m_currentUri;
         m_favorites.push({ name: name, uri: uri });
         storage.store("favorites", m_favorites, function () { });
+        loadDirectory(m_currentUri, false);
     }
 
     /* Removes the current location from the favorites menu.
@@ -74,6 +75,7 @@ var files = { };
             return a.uri !== uri;
         });
         storage.store("favorites", m_favorites, function () { });
+        loadDirectory(m_currentUri, false);
     }
 
     function showShareDialog()
@@ -876,9 +878,26 @@ var files = { };
         m_shares = data.shares;
         var filesBox = m_page.find("> section");
 
+        var isFav = m_favorites.find(function (a) { return a.uri === m_currentUri; }) !== undefined;
+        var isShare = m_shares.find(function (a) { return a.uri === m_currentUri; }) !== undefined;
+
+
         setupNavBar();
         filesBox.append(listView);
         m_page.setTitle(decodeURI(data.uri));
+        if (isFav)
+        {
+            m_page.find("> header h1").prepend($(
+                tag("span").class("sh-fw-icon sh-icon-star-circle").content(" ").html()
+            ));
+        }
+        if (isShare)
+        {
+            m_page.find("> header h1").prepend($(
+                tag("span").class("sh-fw-icon sh-icon-share").content(" ").html()
+            ));
+        }
+
 
         setTimeout(function () { loadThumbnails(); }, 500);
         updateNavBar();
