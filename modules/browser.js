@@ -51,7 +51,7 @@ function getIcon(mimeType)
     }
 }
 
-function readStats(sortMode, path, callback)
+function readStats(path, callback)
 {
     modVfs.readdir(path, function (err, files)
     {
@@ -79,7 +79,8 @@ function readStats(sortMode, path, callback)
                     .filter(function (a)
                     {
                         return !! a[1];
-                    })
+                    });
+                    /*
                     .sort(function (a, b)
                     {
                         if (a[1].isDirectory() && ! b[1].isDirectory())
@@ -105,6 +106,7 @@ function readStats(sortMode, path, callback)
                             }
                         }
                     });
+                    */
 
                     callback(null, r);
                 }
@@ -368,11 +370,9 @@ function makeJson(uri, contentRoot, userContext, shares, callback)
 {
     var fullPath = modUtils.uriToPath(uri, contentRoot + userContext.home());
 
-    console.debug("Full Path: " + fullPath + "\n" +
-                  "View Mode: " + viewMode + "\n" +
-                  "Sort Mode: " + sortMode);
+    console.debug("Full Path: " + fullPath);
 
-    readStats(sortMode, fullPath, function (err, stats)
+    readStats(fullPath, function (err, stats)
     {
         if (err)
         {
