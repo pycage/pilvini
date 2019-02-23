@@ -57,6 +57,7 @@ sh.push = function (which, callback, immediate)
     }
 
     // adjust header label width
+    /*
     var header = page.find("> header");
     if (header.length) {
         var spanLeftWidth = 16;
@@ -74,11 +75,12 @@ sh.push = function (which, callback, immediate)
         header.css("padding-left", spanLeftWidth + "px")
               .css("padding-right", spanRightWidth + "px");
     }
+    */
 
     page.addClass("sh-visible");
     $(".sh-page.sh-visible").each(function (i)
     {
-        $(this).css("zIndex", i);
+        //$(this).css("zIndex", i);
     });
 
 
@@ -437,7 +439,7 @@ sh.menu = function (parent, which, callback)
         content.css("left", l + "px");
         content.css("top", p.offset().top - $(document).scrollTop() + h + "px");
 
-        menu.css("zIndex", $(".sh-page").length);
+        //menu.css("zIndex", $(".sh-page").length);
         menu.addClass("sh-visible");
     }
 }
@@ -464,7 +466,7 @@ sh.menu_close = function (callback)
  */
 sh.toggle_submenu = function (item)
 {
-    $(item).parent().find(".sh-submenu").each(function (i)
+    $(item).parent().parent().find(".sh-submenu").each(function (i)
     {
         if (this !== item)
         {
@@ -481,7 +483,7 @@ sh.popup = function (which, callback)
     if (p.length)
     {
         p.addClass("sh-visible");
-        p.css("zIndex", $(".sh-page.sh-visible").length + $(".sh-popup.sh-visible").length);
+        //p.css("zIndex", $(".sh-page.sh-visible").length + $(".sh-popup.sh-visible").length);
 
         if (callback)
         {

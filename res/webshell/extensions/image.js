@@ -2,34 +2,13 @@
 
 (function ()
 {
-    /* Finds all image files in the current directory.
-     */
-    function getImageFiles()
-    {
-        var items = $("#filesbox .filelink");
-        var images = [];
-    
-        for (var i = 0; i < items.length; ++i)
-        {
-            var item = items[i];
-            var mimeType = $(item).data("mimetype");
-            var url = $(item).data("url");
-            if (mimeType.indexOf("image/") === 0)
-            {
-                images.push(url);
-            }
-        }
-    
-        return images;
-    }
-
     /* Loads the previous image.
      */
     function previousImage()
     {
         var img = popup.find("img");
         var src = img.data("src");
-        var images = getImageFiles();
+        var images = files.filesByMimetype("image/");
     
         var idx = images.indexOf(src);
         if (idx !== -1)
@@ -54,7 +33,7 @@
     {
         var img = popup.find("img");
         var src = img.data("src");
-        var images = getImageFiles();
+        var images = files.filesByMimetype("image/");
     
         console.log("src: " + src);
         console.log(images);
@@ -177,7 +156,7 @@
         {
             var img = popup.find("img");
             var src = img.data("src");
-            var images = getImageFiles();
+            var images = files.filesByMimetype("image/");
             var idx = images.indexOf(src);
             popup.find(".image-progress-label").html((idx + 1 ) + " / " + images.length);
 

@@ -141,17 +141,8 @@
         });
     }
 
-
-    var item = $(
-        tag("li")
-        .on("click", "")
-        .content("Administration")
-        .html()
-    );
-    item.on("click", function ()
+    files.actionsMenu().addItem(new ui.MenuItem("", "Administration", function ()
     {
-        sh.menu_close();
         openPage();
-    });
-    $("#more-menu > div > ul").last().prepend(item);
+    }));
 })();

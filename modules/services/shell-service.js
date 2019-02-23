@@ -38,13 +38,13 @@ var Service = function (contentRoot)
                 uri = "/";
             }
             
-            if (urlObj.search.indexOf("ajax") !== -1)
+            if (urlObj.search.indexOf("json") !== -1)
             {
-                modBrowser.createMainPage(uri, m_contentRoot, userContext, shares, cb);
+                modBrowser.makeJson(uri, m_contentRoot, userContext, shares, cb);
             }
             else
             {
-                modBrowser.makeIndex(uri, m_contentRoot, userContext, shares, cb);
+                modBrowser.makeIndex(cb);
             }
         }
         else if (request.method === "POST")

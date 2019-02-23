@@ -11,7 +11,7 @@ function viewPdf(href)
     page.find("section").html("<iframe>");
     var iframe = page.find("iframe");
     iframe.css("position", "absolute");
-    iframe.css("top", page.find("header").height() + "px")
+    iframe.css("top", "-1px")
           .css("left", 0)
           .css("width", "100%")
           .css("height", ($(window).height() - page.find("header").height()) + "px");

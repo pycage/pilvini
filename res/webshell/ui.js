@@ -242,22 +242,35 @@ ui.showPreviewPopup = function ()
     return popup;
 };
 
-ui.showPage = function (title)
+ui.showPage = function (title, backCallback)
 {
     var page = $(
         tag("div").class("sh-page")
         .content(
-            tag("header")
+            tag("header").class("sh-dropshadow")
+            .style("padding-left", "3em")
+            .style("padding-right", "3em")
             .content(
                 tag("span").class("sh-left sh-fw-icon sh-icon-back")
+                .style("font-size", "150%")
                 .on("click", "")
             )
             .content(
-                tag("h1").content(escapeHtml(title))
+                tag("div")
+                .style("line-height", "1rem")
+                .style("padding-top", "0.6rem")
+                .content(
+                    tag("h1").content(escapeHtml(title))
+
+                )
+                .content(
+                    tag("h2").content("")
+                )                    
             )
         )
         .content(
             tag("section")
+            .style("position", "relative")
         )
         .html()
     );
@@ -266,7 +279,14 @@ ui.showPage = function (title)
 
     header.find("> span").on("click", function ()
     {
-        page.pop();
+        if (backCallback)
+        {
+            backCallback();
+        }
+        else
+        {
+            page.pop();
+        }
     });
 
     page.pop = function ()
@@ -274,10 +294,23 @@ ui.showPage = function (title)
         sh.pop(function () { page.remove(); });
     };
 
+    page.setTitle = function (title)
+    {
+        header.find("h1").html(escapeHtml(title));
+    };
+
+    page.setSubtitle = function (title)
+    {
+        header.find("h2").html(escapeHtml(title));
+    };
+
     page.addIconButton = function (icon, callback)
     {
+        var count = header.find(".sh-right").length;
         var btn = $(
             tag("span").class("sh-right sh-fw-icon " + icon)
+            .style("margin-right", (count * 3) + "rem")
+            .style("font-size", "150%")
             .on("click", "")
             .html()
         );
@@ -299,48 +332,22 @@ ui.showPage = function (title)
         return ul;
     };
 
-    $("body").append(page);
-    sh.push(page);
+    $("#pagelayer").append(page);
+    sh.push(page, function () { }, $(".sh-page").length === 1);
 
-    sh.onSwipeBack(page, function () { sh.pop(); });
+    sh.onSwipeBack(page, function ()
+    {
+        if (backCallback)
+        {
+            backCallback();
+        }
+        else
+        {
+            page.pop();
+        }
+    });
 
     return page;
-};
-
-/* Pushes a status message to the status area and returns its node.
- * Invoke remove() on the node to remove.
- */
-ui.pushStatus = function (icon, message)
-{
-    var statusEntry = $(
-        tag("div")
-        .style("position", "relative")
-        .content(
-            tag("div")
-            .style("position", "absolute")
-            .style("background-color", "var(--color-highlight-background)")
-            .style("width", "0%")
-            .style("height", "100%")
-        )
-        .content(
-            tag("h1")
-            .style("position", "relative")
-            .content(
-                tag("span").class("sh-fw-icon " + icon)
-            )
-            .content(escapeHtml(message))
-        )
-        .html()
-    );
-
-    statusEntry.setProgress = function (p)
-    {
-        statusEntry.find("> div").css("width", p + "%");
-    };
-
-    $("#statusbox").append(statusEntry);
-
-    return statusEntry;
 };
 
 ui.listItem = function (title, subtitle, callback)
@@ -350,7 +357,7 @@ ui.listItem = function (title, subtitle, callback)
         .style("height", "80px")
         .on("click", "")
         .content(
-            tag("div").class("sh-left")
+            tag("div").class("sh-left icon")
             .style("display", "none")
             .style("width", "80px")
             .style("background-repeat", "no-repeat")
@@ -371,7 +378,7 @@ ui.listItem = function (title, subtitle, callback)
             )
         )
         .content(
-            tag("div").class("sh-right")
+            tag("div").class("sh-right selector")
             .style("display", "none")
             .style("width", "42px")
             .style("text-align", "center")
@@ -402,8 +409,197 @@ ui.listItem = function (title, subtitle, callback)
         labelBox.css("right", "42px");
         buttonBox.css("display", "block");
         buttonBox.find("span").addClass(icon);
-        buttonBox.on("click", callback);
+        buttonBox.on("click", function (event)
+        {
+            event.stopPropagation();
+            callback();
+        });
     };
 
     return li;
+};
+
+ui.Menu = function ()
+{
+    var m_menu;
+
+    this.clear = function()
+    {
+        m_menu.find("> div").html("");
+        m_menu.find("> div").append("<ul>");
+    };
+
+    this.addItem = function (item)
+    {
+        var ul = m_menu.find("> div > ul").last();
+        ul.append(item.get());
+    };
+
+    this.addSeparator = function ()
+    {
+        var ul = m_menu.find("> div > ul").last();
+        ul.append($(
+            tag("hr")
+            .html()
+        ));
+    }
+
+    this.addSubMenu = function (subMenu)
+    {
+        var div = m_menu.find("> div");
+        div.append(subMenu.get());
+        div.append("<ul>");
+    };
+
+    this.popup = function (parent)
+    {
+        sh.menu(parent, m_menu);
+    };
+
+    this.close = function ()
+    {
+        sh.menu_close();
+    }
+
+    m_menu = $(
+        tag("div").class("sh-menu")
+        .content(
+            tag("div")
+            .on("click", "event.stopPropagation();")
+            .content(
+                tag("ul")
+            )
+        )
+        .html()
+    );
+
+    m_menu.on("click", function (event)
+    {
+        event.stopPropagation();
+        sh.menu_close();
+    });
+
+    $("body").append(m_menu);
+};
+
+ui.MenuItem = function (icon, text, callback)
+{
+    var m_item;
+
+    this.setEnabled = function (value)
+    {
+        if (value)
+        {
+            m_item.removeClass("sh-disabled");
+        }
+        else
+        {
+            m_item.addClass("sh-disabled");
+        }
+    };
+
+    this.get = function ()
+    {
+        return m_item;
+    };
+
+    m_item = $(
+        tag("li")
+        .style("position", "relative")
+        .on("click", "")
+        .content(
+            tag("span").class("sh-left sh-fw-icon " + icon)
+        )
+        .content(
+            tag("span")
+            .style("padding-left", "1.2em")
+            .content(escapeHtml(text))
+        )
+        .html()
+    );
+
+    m_item.on("click", function ()
+    {
+        sh.menu_close();
+        callback();
+    });
+};
+
+ui.SubMenu = function (text)
+{
+    var m_subMenu;
+
+    this.addItem = function (item)
+    {
+        var ul = m_subMenu.find("ul").last();
+        ul.append(item.get());
+    };
+
+    this.addSeparator = function ()
+    {
+        var ul = m_subMenu.find("ul").last();
+        ul.append($(
+            tag("hr")
+            .html()
+        ));
+    }
+
+    this.get = function ()
+    {
+        return m_subMenu;
+    };
+
+    m_subMenu = $(
+        tag("div")
+        .content(
+            tag("h1").class("sh-submenu")
+            .on("click", "sh.toggle_submenu(this);")
+            .content(escapeHtml(text))
+        )
+        .content(
+            tag("ul")
+        )
+        .html()
+    );
+};
+
+ui.StatusItem = function (icon, message)
+{
+    var m_item;
+
+    this.setText = function (text)
+    {
+        m_item.find("h1").html(escapeHtml(text));
+    };
+
+    this.setProgress = function (p)
+    {
+        m_item.find("> div").css("width", p + "%");
+    };
+
+    this.get = function ()
+    {
+        return m_item;
+    };
+
+    m_item = $(
+        tag("div")
+        .style("position", "relative")
+        .content(
+            tag("div")
+            .style("position", "absolute")
+            .style("background-color", "var(--color-highlight-background)")
+            .style("width", "0%")
+            .style("height", "100%")
+        )
+        .content(
+            tag("h1")
+            .style("position", "relative")
+            .content(
+                tag("span").class("sh-fw-icon " + icon)
+            )
+            .content(escapeHtml(message))
+        )
+        .html()
+    );
 };

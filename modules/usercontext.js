@@ -12,6 +12,11 @@ function UserContext(authUser, home, permissions)
         return function () { return v; };
     }
 
+    this.permissions = function ()
+    {
+        return m_permissions;
+    }
+
     this.name = function ()
     {
         return m_user;

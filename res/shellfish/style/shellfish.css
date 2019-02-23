@@ -41,7 +41,7 @@ h1 {
 }
 
 h2 {
-    font-size: 100%;
+    font-size: 70%;
     font-weight: normal;
     padding-left: 0.5rem;
     padding-right: 0.5rem;
@@ -64,10 +64,9 @@ label {
 header {
     height: 2rem;
     line-height: 2rem;
-    z-index: 1;
     background-color: var(--color-primary-background);
     color: var(--color-primary);
-    border-bottom: solid 1px var(--color-border);
+    /*border-bottom: solid 1px var(--color-border);*/
     
     text-align: center;
 }
@@ -75,8 +74,6 @@ header {
 footer {
     height: 2rem;
     line-height: 2rem;
-    z-index: 1;
-    
     background-color: var(--color-primary-background);
     color: var(--color-primary);
     border-top: solid 1px var(--color-border);
