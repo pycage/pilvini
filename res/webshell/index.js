@@ -1,5 +1,7 @@
 "use strict";
 
+/* Imports the given JavaScript files and invokes the callback afterwards.
+ */
 function importJs(uris, callback)
 {
     if (uris.length === 0)
@@ -34,7 +36,7 @@ var MimeRegistry = function ()
         viewers.push(viewer);
     };
 
-    this.viewers = function (mimeType)
+    this.fileHandlers = function (mimeType)
     {
         return m_mapping[mimeType] || [];
     }
@@ -120,237 +122,47 @@ var Storage = function ()
 };
 var storage = new Storage();
 
-var scrollPositionsMap = { };
-var actionsMenu = null;
-
-function currentUri()
+var Configuration = function ()
 {
-    return $("#main-page > section").data("meta").uri;
-}
+    var m_config;
 
-function viewFile(item)
-{
-    var mimeType = $(item).data("meta").mimeType;
-    var uri = $(item).data("meta").uri;
-
-    var viewers = mimeRegistry.viewers(mimeType);
-    if (viewers.length === 0)
+    this.get = function (key, defaultValue)
     {
-        ui.showError("There is no viewer available for this type: " + mimeType);
+        return m_config[key] || defaultValue;
+    };
+
+    this.set = function (key, value)
+    {
+        m_config[key] = value;
+        storage.store("configuration", m_config, function () { });
+    };
+
+    storage.load("configuration", function (data)
+    {
+        m_config = data || { };
+    });
+};
+var configuration = new Configuration();
+
+
+/* Opens the given file item.
+ */
+function openFile(item)
+{
+    var mimeType = item.mimeType;
+    var uri = item.uri;
+
+    var handlers = mimeRegistry.fileHandlers(mimeType);
+    if (handlers.length === 0)
+    {
+        ui.showError("There is no handler available for this type: " + mimeType);
     }
     else
     {
-        viewers[0](uri);
+        handlers[0](uri);
     }
 }
 
-
-function showLoginDialog()
-{
-    var dlg = ui.showDialog("Login", "Welcome to Pilvini Web Shell.");
-    var loginEntry = dlg.addTextEntry("Login:", "");
-    var passwordEntry = dlg.addPasswordEntry("Password:", "");
-    dlg.addButton("Login", function ()
-    {
-        login(loginEntry.val(), passwordEntry.val());
-    }, true);
-}
-
-
-function changeSettings(key, value, altValue)
-{
-    var settingsFile = "/.pilvini/settings.json";
-
-    function apply(json)
-    {
-        if (json[key] === value)
-        {
-            json[key] = altValue;
-        }
-        else
-        {
-            json[key] = value;
-        }
-
-        console.log("Uploading settings...");
-        $.ajax({
-            url: settingsFile,
-            type: "PUT",
-            data: JSON.stringify(json),
-            processData: false,
-            beforeSend: function (xhr) { xhr.overrideMimeType("text/plain; charset=x-user-defined"); }
-        })
-        .done(function ()
-        {
-            console.log("Settings changed: " + key + " = " + value);
-            loadDirectory(currentUri(), false);
-        })
-        .fail(function (xhr, status, err)
-        {
-            ui.showError("Failed to change settings: " + err);
-        });
-    }
-
-    $.ajax({
-        type: "GET",
-        url: settingsFile,
-        dataType: "json"
-    })
-    .done(function (data, status, xhr)
-    {
-        console.log("Data: " + JSON.stringify(data));
-        apply(data);
-    })
-    .fail(function (xhr, status, err)
-    {
-        apply({ });
-    });
-}
-
-/*
-function updateNavBar()
-{
-    $("#navbar").html("");
-    var items = $("#filesbox .fileitem");
-    var currentLetter = "";
-    for (var i = 0; i < items.length; ++i)
-    {
-        var item = $(items[i]);
-        var letter = item.find("h1").html()[0].toUpperCase();
-
-        if (letter !== currentLetter)
-        {
-            $("#navbar").append(
-                tag("span")
-                .style("position", "absolute")
-                .style("top", (item.offset().top - $("#main-page > header").height()) + "px")
-                .style("left", "0")
-                .style("right", "0")
-                .content(letter)
-                .html()
-            )
-            currentLetter = letter;
-        }
-    }
-
-    $("#navbar").off("mousedown").on("mousedown", function (event)
-    {
-        this.pressed = true;
-
-        var percents = (event.clientY - $(this).offset().top) /
-                       ($(window).height() - $(this).offset().top);
-        $(document).scrollTop(($(document).height() - $(window).height()) * percents);
-    });
-
-    $("#navbar").off("mouseup").on("mouseup", function (event)
-    {
-        this.pressed = false;
-    });
-
-    $("#navbar").off("mouseleave").on("mouseleave", function (event)
-    {
-        this.pressed = false;
-    });
-
-    $("#navbar").off("mousemove").on("mousemove", function (event)
-    {
-        if (this.pressed)
-        {
-            var percents = (event.clientY - $(this).offset().top) /
-                           ($(window).height() - $(this).offset().top);
-            $(document).scrollTop(($(document).height() - $(window).height()) * percents);
-        }
-    });
-
-    // quite an effort to work around quirks in certain touch browsers
-
-    $("#navbar").off("touchstart").on("touchstart", function (event)
-    {
-        var scrollBegin = $(document).scrollTop();
-        $("#main-page").addClass("sh-page-transitioning");
-        $("#main-page > section").scrollTop(scrollBegin);
-        this.touchContext = {
-            top: $(this).offset().top,
-            scrollBegin: scrollBegin,
-            scrollTarget: 0
-        };
-    });
-
-    $("#navbar").off("touchend").on("touchend", function (event)
-    {
-        $("#main-page > section").css("margin-top", 0);
-        $("#main-page").removeClass("sh-page-transitioning");
-        if (this.touchContext.scrollTarget > 0)
-        {
-            $(document).scrollTop(this.touchContext.scrollTarget);
-        }    
-    });
-
-    $("#navbar").off("touchmove").on("touchmove", function (event)
-    {
-        event.preventDefault();
-        
-        var percents = (event.originalEvent.touches[0].clientY - this.touchContext.top) /
-                       ($(window).height() - this.touchContext.top);
-        percents = Math.max(0, Math.min(1, percents));
-
-        var scrollTop = ($("#navbar").height() + $("#main-page > header").height() - $(window).height()) * percents;
-
-        $("#main-page > section").css("margin-top", (-scrollTop) + "px");
-        this.touchContext.scrollTarget = scrollTop;        
-    });
-
-    var h1 = $(window).height() - $("#main-page > header").height() - 1;
-    if ($("#navbar").height() < h1)
-    {
-        $("#navbar").height(h1);
-    }
-}
-*/
-
-/*
-function loadDirectory(href, pushToHistory)
-{
-    var busyIndicator = ui.showBusyIndicator("Loading");
-
-    scrollPositionsMap[currentUri()] = $(document).scrollTop();
-
-    $("#main-page").load("/::shell" + href + "?ajax #main-page > *", function (data, status, xhr)
-    {
-        if (xhr.status !== 200)
-        {
-            busyIndicator.remove();
-            ui.showError("Failed to load directory.");
-            return;
-        }
-
-        if (pushToHistory)
-        {
-            window.history.pushState({ "uri": href }, href, "/::shell" + href);
-        }
-
-        var page = $("#main-page");
-        
-        sh.push(page, function ()
-        {
-            setTimeout(function () { loadThumbnails(page); }, 500);
-        
-            unselectAll();
-            checkClipboard();
-            updateNavBar();
-            
-            busyIndicator.remove();
-            
-            console.log("@ " + scrollPositionsMap[href]);
-            $(document).scrollTop(scrollPositionsMap[href] || 0);
-            // FIXME: this is quite a hack
-            page.prop("rememberedScrollTop",  scrollPositionsMap[href] || 0);
-            
-            page.trigger("pilvini-page-replaced");
-        }, true);
-    });
-}
-*/
 
 function login(user, password)
 {
@@ -416,14 +228,25 @@ function init()
         "/::res/webshell/extensions/video.js"
     ];
     importJs(js, function ()
-    {         
-        actionsMenu.addSeparator();
-        actionsMenu.addItem(new ui.MenuItem("", "Logout", logout));
+    {
+        files.actionsMenu().addSeparator();
+        files.actionsMenu().addItem(new ui.MenuItem("", "Logout", logout));
     });
 }
 
 function initLogin()
 {
+    function showLoginDialog()
+    {
+        var dlg = ui.showDialog("Login", "Welcome to Pilvini Web Shell.");
+        var loginEntry = dlg.addTextEntry("Login:", "");
+        var passwordEntry = dlg.addPasswordEntry("Password:", "");
+        dlg.addButton("Login", function ()
+        {
+            login(loginEntry.val(), passwordEntry.val());
+        }, true);
+    }
+
     var js = [
         "/::res/webshell/html.js",
         "/::res/webshell/ui.js"

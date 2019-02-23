@@ -64,7 +64,6 @@ label {
 header {
     height: 2rem;
     line-height: 2rem;
-    z-index: 1;
     background-color: var(--color-primary-background);
     color: var(--color-primary);
     border-bottom: solid 1px var(--color-border);
@@ -75,8 +74,6 @@ header {
 footer {
     height: 2rem;
     line-height: 2rem;
-    z-index: 1;
-    
     background-color: var(--color-primary-background);
     color: var(--color-primary);
     border-top: solid 1px var(--color-border);

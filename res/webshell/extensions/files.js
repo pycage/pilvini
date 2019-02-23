@@ -7,6 +7,9 @@ var files = { };
     var m_page;
     var m_currentUri = "";
 
+    var m_pathMenu;
+    var m_actionsMenu;
+
     var m_miClipboardCut;
     var m_miClipboardCopy;
     var m_miClipboardPaste;
@@ -23,6 +26,15 @@ var files = { };
     var m_favorites = [];
     var m_shares = [];
 
+    var m_scrollPositionsMap = { };
+
+
+    /* Returns the actions menu.
+     */
+    files.actionsMenu = function ()
+    {
+        return m_actionsMenu;
+    };
 
     /* Returns a list of URIs by MIME type.
      */
@@ -45,6 +57,11 @@ var files = { };
         return result;
     };
 
+    files.eachSelected = function (callback)
+    {
+        return eachSelected(callback);
+    }
+
 
     /* Adds the current location to the favorites menu.
      */
@@ -60,8 +77,9 @@ var files = { };
 
         var name = extractName(m_currentUri);
         var uri = m_currentUri;
-        m_favorites.push({ name: name, uri: uri });
-        storage.store("favorites", m_favorites, function () { });
+        var favs = configuration.get("favorites", []);
+        favs.push({ name: name, uri: uri });
+        configuration.set("favorites", favs);
         loadDirectory(m_currentUri, false);
     }
 
@@ -70,11 +88,26 @@ var files = { };
     function removeFavorite()
     {
         var uri = m_currentUri;
-        m_favorites = m_favorites.filter(function (a)
+        var favs = configuration.get("favorites", []);
+        favs = favs.filter(function (a)
         {
             return a.uri !== uri;
         });
-        storage.store("favorites", m_favorites, function () { });
+        configuration.set("favorites", favs);
+        loadDirectory(m_currentUri, false);
+    }
+
+    function setSortMode(mode)
+    {
+        configuration.set("sort-mode", mode);
+        m_scrollPositionsMap = { };
+        loadDirectory(m_currentUri, false);
+    }
+
+    function setViewMode(mode)
+    {
+        configuration.set("view-mode", mode);
+        m_scrollPositionsMap = { };
         loadDirectory(m_currentUri, false);
     }
 
@@ -243,7 +276,8 @@ var files = { };
     
         var item = items.shift();
         var name = $(item).find("h1").html();
-        var img = $(item).find(".sh-left");
+        var img = $(item).hasClass("icon") ? item
+                                           : $(item).find(".icon");
         var thumbnailUri = "/::thumbnail" + $(item).data("meta").uri;
     
         var now = Date.now();
@@ -561,13 +595,13 @@ var files = { };
 
     function selectAll()
     {
-        m_page.find(".fileitem > div.sh-right").addClass("sh-selected");
+        m_page.find(".fileitem > div.selector").addClass("sh-selected");
         checkSelected();
     }
 
     function unselectAll()
     {
-        m_page.find(".fileitem > div.sh-right").removeClass("sh-selected");
+        m_page.find(".fileitem > div.selector").removeClass("sh-selected");
         checkSelected();        
     }
 
@@ -579,7 +613,7 @@ var files = { };
 
     function checkSelected()
     {
-        var size = m_page.find(".fileitem > div.sh-right.sh-selected").length;
+        var size = m_page.find(".fileitem > div.selector.sh-selected").length;
 
         m_miClipboardCut.setEnabled(size > 0);
         m_miClipboardCopy.setEnabled(size > 0);
@@ -595,7 +629,7 @@ var files = { };
     {
         return function ()
         {
-            var items = m_page.find(".fileitem > div.sh-right.sh-selected");
+            var items = m_page.find(".fileitem > div.selector.sh-selected");
             items.each(function ()
             {
                 callback($(this).parent());
@@ -606,12 +640,13 @@ var files = { };
 
     function openPathMenu()
     {
-        var menu = new ui.Menu();
+        m_pathMenu.clear();
 
         var favsMenu = new ui.SubMenu("Favorites");
-        menu.addSubMenu(favsMenu);
+        m_pathMenu.addSubMenu(favsMenu);
 
-        if (m_favorites.find(function (a) { return a.uri === m_currentUri; }))
+        var favs = configuration.get("favorites", []);
+        if (favs.find(function (a) { return a.uri === m_currentUri; }))
         {
             favsMenu.addItem(new ui.MenuItem("", "Remove from Favorites", removeFavorite));
         }
@@ -620,16 +655,17 @@ var files = { };
             favsMenu.addItem(new ui.MenuItem("", "Add to Favorites", addFavorite));
         }
         favsMenu.addSeparator();
-        m_favorites.forEach(function (f)
+        favs.forEach(function (f)
         {
             favsMenu.addItem(new ui.MenuItem("sh-icon-star-circle", f.name, function ()
             {
+                m_scrollPositionsMap = { };
                 loadDirectory(f.uri, true);
             }));
         });
 
         var sharesMenu = new ui.SubMenu("Shares");
-        menu.addSubMenu(sharesMenu);
+        m_pathMenu.addSubMenu(sharesMenu);
 
         console.log(m_shares);
         if (m_shares.find(function (a) { return a.uri === m_currentUri; }))
@@ -645,17 +681,18 @@ var files = { };
         {
             sharesMenu.addItem(new ui.MenuItem("sh-icon-share", s.share, function ()
             {
+                m_scrollPositionsMap = { };
                 loadDirectory(s.uri, true);
             }));
         });
 
-        menu.addSeparator();
+        m_pathMenu.addSeparator();
         var menuItem = new ui.MenuItem("", "/", function ()
         {
-            menu.close();
+            m_scrollPositionsMap = { };
             loadDirectory("/", true);
         });
-        menu.addItem(menuItem);
+        m_pathMenu.addItem(menuItem);
 
         var parts = m_currentUri.split("/");
         var breadcrumbUri = "";
@@ -671,13 +708,14 @@ var files = { };
             {
                 return function ()
                 {
+                    m_scrollPositionsMap = { };
                     loadDirectory(uri, true);
                 };
             }(breadcrumbUri));
-            menu.addItem(menuItem);
+            m_pathMenu.addItem(menuItem);
         }
 
-        menu.popup(m_page.find("> header h1"));
+        m_pathMenu.popup(m_page.find("> header h1"));
     }
 
     function setupNavBar()
@@ -772,12 +810,15 @@ var files = { };
 
         var items = m_page.find(".fileitem");
         var currentLetter = "";
+        var previousOffset = -1;
+
         for (var i = 0; i < items.length; ++i)
         {
             var item = $(items[i]);
             var letter = item.find("h1").html()[0].toUpperCase();
+            var offset = item.offset().top;
     
-            if (letter !== currentLetter)
+            if (letter !== currentLetter && offset !== previousOffset)
             {
                 navBar.append(
                     tag("span")
@@ -789,6 +830,7 @@ var files = { };
                     .html()
                 )
                 currentLetter = letter;
+                previousOffset = offset;
             }
         }
 
@@ -803,7 +845,7 @@ var files = { };
     {
         var busyIndicator = ui.showBusyIndicator("Loading");
 
-        scrollPositionsMap[m_currentUri] = $(document).scrollTop();
+        m_scrollPositionsMap[m_currentUri] = $(document).scrollTop();
 
         m_page.find("> section").html("");
 
@@ -833,57 +875,146 @@ var files = { };
 
     function showDirectory(data)
     {
-        var files = data.files || [];
+        var files = (data.files || []).filter(function (f)
+        {
+            // don't show hiddens
+            return ! f.name.startsWith(".");
+        });
         files.sort(function (a, b)
         {
-            if (a.name < b.name)
+            if (a.mimeType === "application/x-folder" && b.mimeType !== "application/x-folder")
             {
                 return -1;
             }
-            else if (a.name > b.name)
+            else if (a.mimeType !== "application/x-folder" && b.mimeType === "application/x-folder")
             {
                 return 1;
             }
             else
             {
-                return 0;
+                switch (configuration.get("sort-mode", "name"))
+                {
+                case "name":
+                    return a.name.toLowerCase() < b.name.toLowerCase() ? -1 : 1;
+                case "date":
+                    return a.mtime < b.mtime ? -1 : 1;
+                default:
+                    return a.name.toLowerCase() < b.name.toLowerCase() ? -1 : 1;
+                }
             }
         });
     
-        var listView = $(
-            tag("ul").class("sh-listview")
-            .style("margin-left", "32px")
-            .html()
-        );
-        files.forEach(function (entry)
+        var filesBox = m_page.find("> section");
+
+        switch (configuration.get("view-mode", "list"))
         {
-            var item = ui.listItem(entry.name, entry.info, function ()
+        case "list":
+            var listView = $(
+                tag("ul").class("sh-listview")
+                .style("margin-left", "32px")
+                .html()
+            );
+            files.forEach(function (entry)
             {
-                viewFile(this);
+                var info = "";
+                if (entry.mimeType !== "application/x-folder")
+                {
+                    info += (entry.size / (1024 * 1024)).toFixed(2) + " MB, ";
+                }
+                var d = new Date(entry.mtime);
+                info += d.toLocaleDateString() + " " + d.toLocaleTimeString();
+                var item = ui.listItem(entry.name, info, function ()
+                {
+                    openFile(entry);
+                });
+                item.addClass("fileitem");
+                item.data("meta", entry);
+                item.setAction("sh-icon-checked-circle", function ()
+                {
+                    toggleSelect(item.find(".selector"));
+                });
+                if (entry.icon)
+                {
+                    item.setIcon(entry.icon);
+                }
+                listView.append(item);
             });
-            item.addClass("fileitem");
-            item.data("meta", entry);
-            item.setAction("sh-icon-checked-circle", function ()
+            filesBox.append(listView);
+            break;
+
+        case "grid":
+            var gridView = $(
+                tag("div")
+                .style("display", "flex")
+                .style("flex-direction", "row")
+                .style("flex-wrap", "wrap")
+                .style("justify-content", "flex-start")
+                .style("margin-left", "32px")
+                .html()
+            );
+            files.forEach(function (entry)
             {
-                toggleSelect(item.find(".sh-right"));
+                var item = $(
+                    tag("div").class("fileitem icon")
+                    .style("position", "relative")
+                    .style("width", "160px")
+                    .style("height", "160px")
+                    .style("padding", "0").style("margin", "0")
+                    .style("margin-top", "2px")
+                    .style("margin-left", "2px")
+                    .style("background-repeat", "no-repeat")
+                    .style("background-position", "50% 50%")
+                    .style("background-image", "url(" + entry.icon + ")")
+                    .content(
+                        tag("h1")
+                        .style("position", "absolute")
+                        .style("background-color", "var(--color-primary-background-translucent)")
+                        .style("padding", "0")
+                        .style("left", "0")
+                        .style("right", "0")
+                        .style("bottom", "0")
+                        .style("font-size", "80%")
+                        .style("text-align", "center")
+                        .content(entry.name)
+                    )
+                    .content(
+                        tag("div").class("selector")
+                        .style("position", "absolute")
+                        .style("top", "0")
+                        .style("right", "0")
+                        .style("width", "42px")
+                        .style("height", "42px")
+                        .style("text-align", "center")
+                        .content(
+                            tag("span").class("sh-fw-icon sh-icon-checked-circle")
+                            .style("line-height", "42px")
+                        )
+                    )
+                    .html()
+                );
+                item.data("meta", entry);
+                item.on("click", function ()
+                {
+                    openFile(entry);
+                });
+                item.find(".selector").on("click", function (event)
+                {
+                    event.stopPropagation();
+                    toggleSelect(item.find(".selector"));
+                });
+                gridView.append(item);
             });
-            if (entry.icon)
-            {
-                item.setIcon(entry.icon);
-            }
-            listView.append(item);
-        });
+            filesBox.append(gridView);
+            break;
+        }
 
         m_currentUri = data.uri;
         m_shares = data.shares;
-        var filesBox = m_page.find("> section");
 
-        var isFav = m_favorites.find(function (a) { return a.uri === m_currentUri; }) !== undefined;
+        var isFav = configuration.get("favorites", []).find(function (a) { return a.uri === m_currentUri; }) !== undefined;
         var isShare = m_shares.find(function (a) { return a.uri === m_currentUri; }) !== undefined;
 
-
         setupNavBar();
-        filesBox.append(listView);
         m_page.setTitle(decodeURI(data.uri));
         if (isFav)
         {
@@ -898,6 +1029,7 @@ var files = { };
             ));
         }
 
+        $(document).scrollTop(m_scrollPositionsMap[m_currentUri] || 0);
 
         setTimeout(function () { loadThumbnails(); }, 500);
         updateNavBar();
@@ -1120,18 +1252,28 @@ var files = { };
     m_page.find("> header > h1").on("click", openPathMenu);
     m_page.addIconButton("sh-icon-menu", function ()
     {
-        actionsMenu.popup($(this));
+        m_actionsMenu.popup($(this));
     });
     m_page.append($(
         tag("footer").class("sh-dropshadow")
         .html()
     ));
 
-    actionsMenu = new ui.Menu();
+    m_pathMenu = new ui.Menu();
+
+    m_actionsMenu = new ui.Menu();
+
+    var subMenuView = new ui.SubMenu("View");
+    subMenuView.addItem(new ui.MenuItem("", "As List", function () { setViewMode("list"); }));
+    subMenuView.addItem(new ui.MenuItem("", "As Grid", function () { setViewMode("grid"); }));
+    subMenuView.addItem(new ui.MenuItem("", "By Name", function () { setSortMode("name"); }));
+    subMenuView.addItem(new ui.MenuItem("", "By Date", function () { setSortMode("date"); }));
+    m_actionsMenu.addSubMenu(subMenuView);
+
     var subMenuNew = new ui.SubMenu("New");
-    subMenuNew.addItem(new ui.MenuItem("sh-icon-folder", "Directory", makeNewDirectory));
-    subMenuNew.addItem(new ui.MenuItem("sh-icon-file", "File", makeNewFile));
-    actionsMenu.addSubMenu(subMenuNew);
+    subMenuNew.addItem(new ui.MenuItem("sh-icon-folder", "Directory...", makeNewDirectory));
+    subMenuNew.addItem(new ui.MenuItem("sh-icon-file", "File...", makeNewFile));
+    m_actionsMenu.addSubMenu(subMenuNew);
     
     var subMenuClipboard = new ui.SubMenu("Clipboard");
     m_miClipboardCut = new ui.MenuItem("sh-icon-clipboard-cut", "Cut", eachSelected(cutToClipboard));
@@ -1142,23 +1284,22 @@ var files = { };
     subMenuClipboard.addItem(m_miClipboardPaste);
     m_miClipboardShow = new ui.MenuItem("sh-icon-clipboard", "Show", openClipboardPage);
     subMenuClipboard.addItem(m_miClipboardShow);
-    actionsMenu.addSubMenu(subMenuClipboard);
+    m_actionsMenu.addSubMenu(subMenuClipboard);
     
     var subMenuAction = new ui.SubMenu("Action");
-    subMenuAction.addItem(new ui.MenuItem("sh-icon-cloud-upload", "Upload", function () { $("#upload").click(); }));
+    subMenuAction.addItem(new ui.MenuItem("sh-icon-cloud-upload", "Upload...", function () { $("#upload").click(); }));
     m_miDownload = new ui.MenuItem("sh-icon-download", "Download", eachSelected(downloadItem));
     subMenuAction.addItem(m_miDownload);
-    m_miRename = new ui.MenuItem("sh-icon-rename", "Rename", eachSelected(renameItem));
+    m_miRename = new ui.MenuItem("sh-icon-rename", "Rename...", eachSelected(renameItem));
     subMenuAction.addItem(m_miRename);
     m_miDelete = new ui.MenuItem("sh-icon-trashcan", "Delete", removeSelected);
     subMenuAction.addItem(m_miDelete);
-    actionsMenu.addSubMenu(subMenuAction);
+    m_actionsMenu.addSubMenu(subMenuAction);
 
     m_miSelectAll = new ui.MenuItem("", "Select All", selectAll);
-    actionsMenu.addItem(m_miSelectAll);
+    m_actionsMenu.addItem(m_miSelectAll);
     m_miUnselectAll = new ui.MenuItem("", "Unselect All", unselectAll);
-    actionsMenu.addItem(m_miUnselectAll);
-
+    m_actionsMenu.addItem(m_miUnselectAll);
 
     /* setup history navigation */
     window.addEventListener("popstate", function (ev)
@@ -1182,12 +1323,6 @@ var files = { };
 
     loadDirectory("/", true);
     loadClipboard();
-
-    storage.load("favorites", function (data)
-    {
-        m_favorites = data || [];
-    });
-
 
     mimeRegistry.register("application/x-folder", function (uri)
     {

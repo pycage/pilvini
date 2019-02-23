@@ -373,7 +373,7 @@ ui.listItem = function (title, subtitle, callback)
         .style("height", "80px")
         .on("click", "")
         .content(
-            tag("div").class("sh-left")
+            tag("div").class("sh-left icon")
             .style("display", "none")
             .style("width", "80px")
             .style("background-repeat", "no-repeat")
@@ -394,7 +394,7 @@ ui.listItem = function (title, subtitle, callback)
             )
         )
         .content(
-            tag("div").class("sh-right")
+            tag("div").class("sh-right selector")
             .style("display", "none")
             .style("width", "42px")
             .style("text-align", "center")
@@ -438,6 +438,12 @@ ui.listItem = function (title, subtitle, callback)
 ui.Menu = function ()
 {
     var m_menu;
+
+    this.clear = function()
+    {
+        m_menu.find("> div").html("");
+        m_menu.find("> div").append("<ul>");
+    };
 
     this.addItem = function (item)
     {
@@ -483,9 +489,9 @@ ui.Menu = function ()
         .html()
     );
 
-    m_menu.on("click", function ()
+    m_menu.on("click", function (event)
     {
-        console.log("close menu");
+        event.stopPropagation();
         sh.menu_close();
     });
 

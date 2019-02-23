@@ -80,33 +80,6 @@ function readStats(path, callback)
                     {
                         return !! a[1];
                     });
-                    /*
-                    .sort(function (a, b)
-                    {
-                        if (a[1].isDirectory() && ! b[1].isDirectory())
-                        {
-                            return -1;
-                        }
-                        else if (! a[1].isDirectory() && b[1].isDirectory())
-                        {
-                            return 1;
-                        }
-                        else
-                        {
-                            switch (sortMode)
-                            {
-                            case "date":
-                                return a[1].mtime < b[1].mtime ? -1 : 1;
-                            case "date-desc":
-                                return a[1].mtime > b[1].mtime ? -1 : 1;
-                            case "name-desc":
-                                return a[0].toLowerCase() > b[0].toLowerCase() ? -1 : 1;
-                            default:
-                                return a[0].toLowerCase() < b[0].toLowerCase() ? -1 : 1;
-                            }
-                        }
-                    });
-                    */
 
                     callback(null, r);
                 }
@@ -115,39 +88,32 @@ function readStats(path, callback)
     });
 }
 
-function makeInfo(file, stat)
+function makeFileItem(pathUri, file, stat)
 {
-    var info = (stat.size / (1024 * 1024)).toFixed(2) + " MB, " +
-            stat.mtime.toDateString();
-    return info;
-}
-
-function makeFileItem(pathUri, file, stat, active, callback)
-{
-    var mimeType = modMime.mimeType(file);
-    var info = "";
+    var mimeType = "";
     var uri = (pathUri + "/" + encodeURIComponent(file)).replace(/'/g, "%27").replace("//", "/");
-
+    
     if (stat.isDirectory())
     {
         mimeType = "application/x-folder";
     }
-    else if (mimeType.startsWith("image/") ||
-             mimeType.startsWith("audio/") ||
-             mimeType === "video/mp4" ||
-             mimeType === "video/webm")
-    {
-        info = makeInfo(file, stat);
-    }
     else
     {
-        info = makeInfo(file, stat);
+        mimeType = modMime.mimeType(file);
     }
 
-    return callback(uri, info, mimeType);
+    var item = {
+        "uri": uri,
+        "name": file,
+        "mimeType": mimeType,
+        "size": stat.size,
+        "mtime": stat.mtime.getTime(),
+        "icon": getIcon(mimeType)
+    }
+    return item;
 }
 
-function makeFilesJson(uri, stats, active)
+function makeFilesJson(uri, stats)
 {
     var files = [];
 
@@ -156,93 +122,17 @@ function makeFilesJson(uri, stats, active)
         var file = stats[i][0];
         var stat = stats[i][1];
 
-        if (! stat || file.indexOf(".") === 0)
+        if (! stat || file === ".pilvini")
         {
             continue;
         }
 
-        makeFileItem(uri, file, stat, active, function (uri, info, mimeType)
-        {
-            files.push({
-                "uri": uri,
-                "name": file,
-                "info": info,
-                "mimeType": mimeType,
-                "icon": getIcon(mimeType)
-            });
-        });
+        files.push(makeFileItem(uri, file, stat));
     }
 
     return files;
 }
 
-/*
-function makeFilesGrid(sortMode, uri, stats, active)
-{
-    function getSectionHeader(name, stat)
-    {
-        if (sortMode === "name" || sortMode === "name-desc")
-        {
-            return name[0];
-        }
-        else
-        {
-            return stat.mtime.toDateString();
-        }
-    }
-
-    var tag = modHtml.tag;
-    var t = tag("div");
-
-    var currentP = tag("p");
-    t.content(currentP);
-
-    var currentHeader = "";
-    for (var i = 0; i < stats.length; ++i)
-    {
-        var file = stats[i][0];
-        var stat = stats[i][1];
-
-        if (! stat || file.indexOf(".") === 0)
-        {
-            continue;
-        }
-
-        var thisHeader = getSectionHeader(file, stat);
-        if (thisHeader !== currentHeader)
-        {
-            currentHeader = thisHeader;
-            t.content(tag("h3").content(thisHeader));
-            currentP = tag("p");
-            t.content(currentP);
-        }
-        
-        currentP.content(makeFileItem(uri, file, stat, active, function (uri, info, mimeType, iconHtml)
-        {
-            var tag = modHtml.tag;
-            
-            var t = tag("div").class("fileitem")
-                    .style("position", "relative")
-                    .style("display", "inline-block")
-                    .style("width", "80px")
-                    .style("height", "80px")
-                    .data("mimetype", mimeType)
-                    .data("url", uri)
-                    .content(iconHtml);
-
-            if (active)
-            {
-                t = t.on("click", "viewFile(this);");
-            }
-
-            return t;
-        }))
-        .content("&nbsp;");
-    }
-
-    return t;
-}
-*/
 
 function makeHtmlHead(initFunction)
 {

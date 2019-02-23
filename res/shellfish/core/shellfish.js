@@ -78,7 +78,7 @@ sh.push = function (which, callback, immediate)
     page.addClass("sh-visible");
     $(".sh-page.sh-visible").each(function (i)
     {
-        $(this).css("zIndex", i);
+        //$(this).css("zIndex", i);
     });
 
 
@@ -437,7 +437,7 @@ sh.menu = function (parent, which, callback)
         content.css("left", l + "px");
         content.css("top", p.offset().top - $(document).scrollTop() + h + "px");
 
-        menu.css("zIndex", $(".sh-page").length);
+        //menu.css("zIndex", $(".sh-page").length);
         menu.addClass("sh-visible");
     }
 }
@@ -481,7 +481,7 @@ sh.popup = function (which, callback)
     if (p.length)
     {
         p.addClass("sh-visible");
-        p.css("zIndex", $(".sh-page.sh-visible").length + $(".sh-popup.sh-visible").length);
+        //p.css("zIndex", $(".sh-page.sh-visible").length + $(".sh-popup.sh-visible").length);
 
         if (callback)
         {
