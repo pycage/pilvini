@@ -247,13 +247,25 @@ ui.showPage = function (title, backCallback)
     var page = $(
         tag("div").class("sh-page")
         .content(
-            tag("header")
+            tag("header").class("sh-dropshadow")
+            .style("padding-left", "3em")
+            .style("padding-right", "3em")
             .content(
                 tag("span").class("sh-left sh-fw-icon sh-icon-back")
+                .style("font-size", "150%")
                 .on("click", "")
             )
             .content(
-                tag("h1").content(escapeHtml(title))
+                tag("div")
+                .style("line-height", "1rem")
+                .style("padding-top", "0.6rem")
+                .content(
+                    tag("h1").content(escapeHtml(title))
+
+                )
+                .content(
+                    tag("h2").content("")
+                )                    
             )
         )
         .content(
@@ -287,10 +299,18 @@ ui.showPage = function (title, backCallback)
         header.find("h1").html(escapeHtml(title));
     };
 
+    page.setSubtitle = function (title)
+    {
+        header.find("h2").html(escapeHtml(title));
+    };
+
     page.addIconButton = function (icon, callback)
     {
+        var count = header.find(".sh-right").length;
         var btn = $(
             tag("span").class("sh-right sh-fw-icon " + icon)
+            .style("margin-right", (count * 3) + "rem")
+            .style("font-size", "150%")
             .on("click", "")
             .html()
         );
@@ -328,42 +348,6 @@ ui.showPage = function (title, backCallback)
     });
 
     return page;
-};
-
-/* Pushes a status message to the status area and returns its node.
- * Invoke remove() on the node to remove.
- */
-ui.pushStatus = function (icon, message)
-{
-    var statusEntry = $(
-        tag("div")
-        .style("position", "relative")
-        .content(
-            tag("div")
-            .style("position", "absolute")
-            .style("background-color", "var(--color-highlight-background)")
-            .style("width", "0%")
-            .style("height", "100%")
-        )
-        .content(
-            tag("h1")
-            .style("position", "relative")
-            .content(
-                tag("span").class("sh-fw-icon " + icon)
-            )
-            .content(escapeHtml(message))
-        )
-        .html()
-    );
-
-    statusEntry.setProgress = function (p)
-    {
-        statusEntry.find("> div").css("width", p + "%");
-    };
-
-    $("#statusbox").append(statusEntry);
-
-    return statusEntry;
 };
 
 ui.listItem = function (title, subtitle, callback)
@@ -574,6 +558,47 @@ ui.SubMenu = function (text)
         )
         .content(
             tag("ul")
+        )
+        .html()
+    );
+};
+
+ui.StatusItem = function (icon, message)
+{
+    var m_item;
+
+    this.setText = function (text)
+    {
+        m_item.find("h1").html(escapeHtml(text));
+    };
+
+    this.setProgress = function (p)
+    {
+        m_item.find("> div").css("width", p + "%");
+    };
+
+    this.get = function ()
+    {
+        return m_item;
+    };
+
+    m_item = $(
+        tag("div")
+        .style("position", "relative")
+        .content(
+            tag("div")
+            .style("position", "absolute")
+            .style("background-color", "var(--color-highlight-background)")
+            .style("width", "0%")
+            .style("height", "100%")
+        )
+        .content(
+            tag("h1")
+            .style("position", "relative")
+            .content(
+                tag("span").class("sh-fw-icon " + icon)
+            )
+            .content(escapeHtml(message))
         )
         .html()
     );

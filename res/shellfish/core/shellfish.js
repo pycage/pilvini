@@ -57,6 +57,7 @@ sh.push = function (which, callback, immediate)
     }
 
     // adjust header label width
+    /*
     var header = page.find("> header");
     if (header.length) {
         var spanLeftWidth = 16;
@@ -74,6 +75,7 @@ sh.push = function (which, callback, immediate)
         header.css("padding-left", spanLeftWidth + "px")
               .css("padding-right", spanRightWidth + "px");
     }
+    */
 
     page.addClass("sh-visible");
     $(".sh-page.sh-visible").each(function (i)

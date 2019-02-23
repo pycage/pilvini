@@ -4,9 +4,6 @@
  */
 function upload(file, target, cbContext, fileCallback, finishedCallback)
 {
-    //var statusEntry = ui.pushStatus("sh-icon-cloud-upload", 
-    //                             amount + "/" + totalAmount + " " + file.name);
-
     function createMonitoringXhr()
     {
         var xhr = $.ajaxSettings.xhr();
@@ -188,7 +185,7 @@ function uploadHierarchy(item, rootUri, fileCallback, progressCallback, finished
         {
             console.log("mkdir " + targetUri);
             fileCallback("directory", item.name, 0, cbContext);
-            //var statusEntry = ui.pushStatus("sh-icon-folder", item.name);
+            
             file.mkdir(targetUri, function (ok)
             {
                 if (ok)

@@ -23,7 +23,6 @@ var files = { };
     var m_miUnselectAll;
     
     var m_clipboard = [];
-    var m_favorites = [];
     var m_shares = [];
 
     var m_scrollPositionsMap = { };
@@ -62,6 +61,34 @@ var files = { };
         return eachSelected(callback);
     }
 
+    files.pushStatus = function (item)
+    {
+        pushStatus(item);
+    }
+
+    files.popStatus = function (item)
+    {
+        popStatus(item);
+    }
+
+
+    /* Pushes the given item into the status box.
+     */
+    function pushStatus(item)
+    {
+        $("#statusbox").append(item.get());
+        m_page.find("> section").css("padding-bottom", m_page.find("#statusbox").height() + "px");
+        updateNavBar();
+    }
+
+    /* Removes the given item from the status box.
+     */
+    function popStatus(item)
+    {
+        item.get().remove();
+        m_page.find("> section").css("padding-bottom", m_page.find("#statusbox").height() + "px");
+        updateNavBar();
+    }
 
     /* Adds the current location to the favorites menu.
      */
@@ -281,7 +308,8 @@ var files = { };
         var thumbnailUri = "/::thumbnail" + $(item).data("meta").uri;
     
         var now = Date.now();
-        var statusEntry = ui.pushStatus("sh-icon-wait", name);
+        var statusEntry = new ui.StatusItem("sh-icon-wait", name);
+        pushStatus(statusEntry);
     
         var settings = {
             beforeSend: function (xhr)
@@ -321,7 +349,7 @@ var files = { };
                 {
                     loadNextThumbnail(forLocation, items);
                 }
-                statusEntry.remove();
+                popStatus(statusEntry);
             }
             else if (xhr.status === 204)
             {
@@ -331,7 +359,7 @@ var files = { };
                     var thumbnailUri = "/::thumbnail" + $(item).data("meta").uri;
                     submitThumbnail("image/jpeg", data, thumbnailUri, function (ok)
                     {
-                        statusEntry.remove();
+                        popStatus(statusEntry);
                         if (ok)
                         {
                             items.unshift(item);
@@ -343,6 +371,10 @@ var files = { };
                     });
                 });
             }
+            else
+            {
+                popStatus(statusEntry);
+            }
         })
         .fail(function ()
         {
@@ -350,7 +382,7 @@ var files = { };
             {
                 loadNextThumbnail(forLocation, items);
             }
-            statusEntry.remove();
+            popStatus(statusEntry);
         });
     }
 
@@ -715,7 +747,24 @@ var files = { };
             m_pathMenu.addItem(menuItem);
         }
 
-        m_pathMenu.popup(m_page.find("> header h1"));
+        m_pathMenu.popup(m_page.find("> header > div"));
+    }
+
+    function setupStatusBox()
+    {
+        var statusBox = $(
+            tag("div").id("statusbox")
+            .style("position", "fixed")
+            .style("bottom", "0")
+            .style("left", "0")
+            .style("right", "0")
+            .style("height", "auto")
+            .style("border", "solid 1px var(--color-border)")
+            .style("background-color", "var(--color-primary-background)")
+            .html()
+        );
+
+        m_page.append(statusBox);
     }
 
     function setupNavBar()
@@ -903,6 +952,7 @@ var files = { };
                 }
             }
         });
+        m_page.setSubtitle(files.length + " items");
     
         var filesBox = m_page.find("> section");
 
@@ -1016,6 +1066,7 @@ var files = { };
 
         setupNavBar();
         m_page.setTitle(decodeURI(data.uri));
+        document.title = "Pilvini - " + decodeURI(data.uri);
         if (isFav)
         {
             m_page.find("> header h1").prepend($(
@@ -1080,7 +1131,8 @@ var files = { };
         var sourceUri = meta.uri;
         var targetUri = "/.pilvini/clipboard/" + encodeURIComponent(meta.name);
 
-        var statusEntry = ui.pushStatus("sh-icon-clipboard", "Copying " + meta.name);
+        var statusEntry = new ui.StatusItem("sh-icon-clipboard", "Copying " + meta.name);
+        pushStatus(statusEntry);
 
         file.copy(sourceUri, targetUri, function (ok)
         {
@@ -1093,7 +1145,7 @@ var files = { };
             {
                 ui.showError("Failed to copy: " + meta.name);
             }
-            statusEntry.remove();
+            popStatus(statusEntry);
         });
     }
 
@@ -1185,15 +1237,15 @@ var files = { };
             if (progress === 0)
             {
                 var icon = type === "directory" ? "sh-icon-folder" : "sh-icon-cloud-upload";
-                ctx.statusEntry = ui.pushStatus(icon, amount + "/" + total + " " + name);
+                ctx.statusEntry = new ui.StatusItem(icon, amount + "/" + total + " " + name);
+                pushStatus(ctx.statusEntry);
             }
             else if (progress === -1)
             {
-                ctx.statusEntry.remove();
+                popStatus(ctx.statusEntry);
                 if (type === "directory")
                 {
                     ui.showError("Failed to create directory: " + name);
-
                 }
                 else
                 {
@@ -1202,7 +1254,7 @@ var files = { };
             }
             else if (progress === 1)
             {
-                ctx.statusEntry.remove();
+                popStatus(ctx.statusEntry);
             }
             else
             {
@@ -1249,11 +1301,8 @@ var files = { };
 
 
     m_page = ui.showPage("", cdUp);
-    m_page.find("> header > h1").on("click", openPathMenu);
-    m_page.addIconButton("sh-icon-menu", function ()
-    {
-        m_actionsMenu.popup($(this));
-    });
+    m_page.find("> header > div").on("click", openPathMenu);
+    m_page.addIconButton("sh-icon-menu", function () { m_actionsMenu.popup($(this)); });
     m_page.append($(
         tag("footer").class("sh-dropshadow")
         .html()
@@ -1321,6 +1370,7 @@ var files = { };
     $("body").on("dragover", onDragOver);
     $("body").on("drop", onDrop);
 
+    setupStatusBox();
     loadDirectory("/", true);
     loadClipboard();
 

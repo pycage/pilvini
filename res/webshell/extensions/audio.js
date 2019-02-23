@@ -357,6 +357,7 @@ var Audio = function ()
     {
         var item = $(
             tag("div")
+            .style("position", "relative")
             .style("height", "64px")
             .content(
                 tag("div").class("sh-left audio-cover")
@@ -412,7 +413,11 @@ var Audio = function ()
         });
         */
 
-        $("#statusbox").append(item);
+        var obj = {
+            get: function () { return item; }
+        };
+
+        files.pushStatus(obj);
 
         return item;
     }
@@ -939,7 +944,10 @@ var Audio = function ()
 
             if (m_statusItem)
             {
-                m_statusItem.remove();
+                var obj = {
+                    get: function () { return m_statusItem; }
+                };
+                files.popStatus(obj);
                 m_statusItem = null;
             }
             //closeFooter();
