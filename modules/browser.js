@@ -213,23 +213,6 @@ function makeSharesJson(userHome, shares)
     return result;
 }
 
-function makeStatusBox()
-{
-    var tag = modHtml.tag;
-
-    var t = tag("div").id("statusbox").class("sh-dropshadow")
-            .style("position", "fixed")
-            .style("top", "3rem")
-            .style("left", "0")
-            //.style("max-width", "60vw")
-            .style("width", "100%")
-            .style("height", "auto")
-            .style("border", "solid 1px var(--color-border)")
-            .style("background-color", "var(--color-primary-background)");
-
-    return t;
-}
-
 function makeHtml()
 {
     var tag = modHtml.tag;
@@ -247,9 +230,6 @@ function makeHtml()
                 )
                 .content(
                     tag("div").id("pagelayer")
-                )
-                .content(
-                    makeStatusBox()
                 )
             );
 

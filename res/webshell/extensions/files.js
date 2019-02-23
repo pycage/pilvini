@@ -736,7 +736,7 @@ var files = { };
             }
 
             breadcrumbUri += "/" + parts[i];
-            menuItem = new ui.MenuItem("", decodeURI(parts[i]), function (uri)
+            menuItem = new ui.MenuItem("", decodeURIComponent(parts[i]), function (uri)
             {
                 return function ()
                 {
@@ -952,7 +952,6 @@ var files = { };
                 }
             }
         });
-        m_page.setSubtitle(files.length + " items");
     
         var filesBox = m_page.find("> section");
 
@@ -1065,8 +1064,19 @@ var files = { };
         var isShare = m_shares.find(function (a) { return a.uri === m_currentUri; }) !== undefined;
 
         setupNavBar();
-        m_page.setTitle(decodeURI(data.uri));
-        document.title = "Pilvini - " + decodeURI(data.uri);
+        m_page.setTitle(decodeURIComponent(data.uri));
+        m_page.setSubtitle(files.length + " items");
+        document.title = "Pilvini - " + decodeURIComponent(data.uri);
+
+        if (data.uri === "/")
+        {
+            m_page.find("> header > span").first().css("visibility", "hidden");
+        }
+        else
+        {
+            m_page.find("> header > span").first().css("visibility", "visible");
+        }
+
         if (isFav)
         {
             m_page.find("> header h1").prepend($(
