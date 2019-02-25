@@ -332,6 +332,8 @@ var files = { };
         $.ajax(thumbnailUri, settings)
         .done(function (data, status, xhr)
         {
+            popStatus(statusEntry);
+
             if (xhr.status === 200)
             {
                 var contentType = "image/jpeg"; //xhr.getResponseHeader("Content-Type");
@@ -353,7 +355,6 @@ var files = { };
         
                 var speed = Math.ceil((data.length / 1024) / ((then - now) / 1000.0));
                 console.log("Loading took " + (then - now) + " ms, size: " + data.length + " B (" + speed + " kB/s).");
-                popStatus(statusEntry);
     
                 if (m_currentUri === forLocation)
                 {
@@ -368,7 +369,6 @@ var files = { };
                     var thumbnailUri = "/::thumbnail" + $(item).data("meta").uri;
                     submitThumbnail("image/jpeg", data, thumbnailUri, function (ok)
                     {
-                        popStatus(statusEntry);
                         if (ok)
                         {
                             items.unshift(item);
@@ -379,10 +379,6 @@ var files = { };
                         }
                     });
                 });
-            }
-            else
-            {
-                popStatus(statusEntry);
             }
         })
         .fail(function ()
