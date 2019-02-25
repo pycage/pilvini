@@ -302,10 +302,19 @@ var files = { };
         });
     
         var item = items.shift();
-        var name = $(item).find("h1").html();
+        var meta = $(item).data("meta");
+        if (! meta)
+        {
+            if (m_currentUri === forLocation)
+            {
+                loadNextThumbnail(forLocation, items);
+            }
+            return;
+        }
+        var name = meta.name;
         var img = $(item).hasClass("icon") ? item
                                            : $(item).find(".icon");
-        var thumbnailUri = "/::thumbnail" + $(item).data("meta").uri;
+        var thumbnailUri = "/::thumbnail" + meta.uri;
     
         var now = Date.now();
         var statusEntry = new ui.StatusItem("sh-icon-wait", name);
@@ -344,12 +353,12 @@ var files = { };
         
                 var speed = Math.ceil((data.length / 1024) / ((then - now) / 1000.0));
                 console.log("Loading took " + (then - now) + " ms, size: " + data.length + " B (" + speed + " kB/s).");
+                popStatus(statusEntry);
     
                 if (m_currentUri === forLocation)
                 {
                     loadNextThumbnail(forLocation, items);
                 }
-                popStatus(statusEntry);
             }
             else if (xhr.status === 204)
             {
@@ -378,11 +387,11 @@ var files = { };
         })
         .fail(function ()
         {
+            popStatus(statusEntry);
             if (m_currentUri === forLocation)
             {
                 loadNextThumbnail(forLocation, items);
             }
-            popStatus(statusEntry);
         });
     }
 
