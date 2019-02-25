@@ -1128,7 +1128,9 @@ var files = { };
         {
             if (ok)
             {
-                m_clipboard.push(meta);
+                var targetMeta = JSON.parse(JSON.stringify(meta));
+                targetMeta.uri = targetUri;
+                m_clipboard.push(targetMeta);
                 $(item).remove();
                 updateNavBar();
                 checkClipboard();
@@ -1153,7 +1155,9 @@ var files = { };
         {
             if (ok)
             {
-                m_clipboard.push(meta);
+                var targetMeta = JSON.parse(JSON.stringify(meta));
+                targetMeta.uri = targetUri;
+                m_clipboard.push(targetMeta);
                 checkClipboard();
             }
             else
@@ -1200,6 +1204,7 @@ var files = { };
         .done(function (data, status, xhr)
         {
             m_clipboard = data.files;
+            checkClipboard();
         })
         .fail(function (xhr, status, err)
         {
@@ -1217,9 +1222,17 @@ var files = { };
             .html()
         );
 
+        console.log(JSON.stringify(m_clipboard));
         m_clipboard.forEach(function (entry)
         {
-            var item = ui.listItem(entry.name, entry.info, function () { });
+            var info = "";
+            if (entry.mimeType !== "application/x-folder")
+            {
+                info += (entry.size / (1024 * 1024)).toFixed(2) + " MB, ";
+            }
+            var d = new Date(entry.mtime);
+            info += d.toLocaleDateString() + " " + d.toLocaleTimeString();
+            var item = ui.listItem(entry.name, info, function () { });
             if (entry.icon)
             {
                 item.setIcon(entry.icon);
