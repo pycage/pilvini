@@ -72,6 +72,12 @@ var files = { };
     }
 
 
+    function joinPath(a, b)
+    {
+        return a.endsWith("/") ? a + b
+                               : a + "/" + b;
+    }
+
     /* Pushes the given item into the status box.
      */
     function pushStatus(item)
@@ -193,7 +199,7 @@ var files = { };
             var name = entry.val();
             if (name !== "")
             {
-                var targetUri = m_currentUri + "/" + encodeURIComponent(name);
+                var targetUri = joinPath(m_currentUri, encodeURIComponent(name));
                 file.mkdir(targetUri, function (ok)
                 {
                     if (ok)
@@ -223,7 +229,7 @@ var files = { };
             var name = entry.val();
             if (name !== "")
             {
-                var targetUri = m_currentUri + "/" + encodeURIComponent(name);
+                var targetUri = joinPath(m_currentUri, encodeURIComponent(name));
                 file.create(targetUri, function (ok)
                 {
                     if (ok)
@@ -576,7 +582,7 @@ var files = { };
         dlg.addButton("Rename", function ()
         {
             var newName = entry.val();
-            var targetUri = m_currentUri + "/" + encodeURIComponent(newName);
+            var targetUri = joinPath(m_currentUri, encodeURIComponent(newName));
 
             file.move(meta.uri, targetUri, function (ok)
             {
@@ -1175,7 +1181,7 @@ var files = { };
         m_clipboard.forEach(function (meta)
         {
             var sourceUri = meta.uri;
-            var targetUri = m_currentUri + "/" + encodeURIComponent(meta.name);
+            var targetUri = joinPath(m_currentUri, encodeURIComponent(meta.name));
 
             file.move(sourceUri, targetUri, function (ok)
             {
