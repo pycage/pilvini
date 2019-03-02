@@ -3,7 +3,6 @@
 var Audio = function ()
 {
     var that = this;
-    var m_haveFooter = false;
     var m_isSeeking = false;
     var m_statusItem = null;
 
@@ -112,6 +111,8 @@ var Audio = function ()
 
     function mayUseFixedBackground()
     {
+        return false;
+        /*
         var ua = navigator.userAgent;
         if (! ua)
         {
@@ -125,6 +126,7 @@ var Audio = function ()
         {
             return true;
         }
+        */
     }
 
     function formatTime(seconds)
@@ -193,8 +195,6 @@ var Audio = function ()
         var artist = data.ARTIST || "-";
         var cover = data.PICTURE;
 
-        //getTitleLabel().html(escapeHtml(title));
-        //getArtistLabel().html(escapeHtml(artist));
         var pic = "";
         if (cover && cover.mimeType && cover.data)
         {
@@ -212,11 +212,6 @@ var Audio = function ()
             }
 
             pic = "data:" + contentType + ";base64," + btoa(buffer);
-            //getCoverImage().css("background-image", "url(" + pic + ")");
-        }
-        else
-        {
-            //getCoverImage().css("background-image", "");
         }
 
         callback(title, artist, pic);
@@ -368,17 +363,41 @@ var Audio = function ()
                 .style("text-align", "center")
                 .style("font-size", "200%")
                 .style("line-height", "64px")
-                /*
                 .content(
                     tag("span").class("sh-fw-icon sh-icon-media-play-circle audio-play-button")
                     .style("color", "white")
                     .style("text-shadow", "#000 0px 0px 1px")
                 )
-                */
+            )
+            .content(
+                tag("div").class("audio-progress-bar")
+                .style("position", "absolute")
+                .style("top", "0")
+                .style("left", "64px")
+                .style("right", "42px")
+                .style("height", "4px")
+                .content(
+                    tag("div")
+                    .style("position", "absolute")
+                    .style("top", "0")
+                    .style("left", "0")
+                    .style("width", "100%")
+                    .style("height", "1px")
+                )
+                .content(
+                    tag("div")
+                    .style("position", "absolute")
+                    .style("top", "0")
+                    .style("left", "0")
+                    .style("width", "0%")
+                    .style("height", "100%")
+                    .style("background-color", "var(--color-primary)")
+                )
             )
             .content(
                 tag("div")
                 .style("margin-left", "64px")
+                .style("margin-right", "42px")
                 .style("margin-top", "4px")
                 .style("padding-top", "0.5em")
                 .style("padding-left", "0.5em")
@@ -394,24 +413,81 @@ var Audio = function ()
                     .content("-")
                 )
             )
+            .content(
+                tag("div").class("sh-right audio-close-button")
+                .style("width", "42px")
+                .style("text-align", "center")
+                .style("border-left", "solid 1px var(--color-border)")
+                .style("line-height", "80px")
+                .content(
+                    tag("span").class("sh-fw-icon sh-icon-close")
+                )
+            )
+            .content(
+                tag("video")
+                .style("display", "none")
+                /*
+                .style("position", "absolute")
+                .style("width", "64px")
+                .style("height", "64px")
+                .style("top", "0")
+                .style("right", "0")
+                */
+                //.attr("src", "/Videos/video2.mp4")
+                .attr("src", "/::res/webshell/extensions/audio/null.mp4")
+            )
             .html()
         );
 
         item.on("click", openPage);
-
-        /*
-        item.find(".audio-play-button").on("click", function ()
+        item.find(".audio-close-button").on("click", function (event)
         {
+            event.stopPropagation();
+            item.close();
+        });
+        
+        item.find(".audio-play-button").on("click", function (event)
+        {
+            event.stopPropagation();
             if (audio.prop("paused"))
             {
                 audio.trigger("play");
+                item.wakeLock();
             }
             else
             {
                 audio.trigger("pause");
+                item.wakeUnlock();
             }
         });
-        */
+
+        // acquire wake lock to not get playback killed on Android devices
+        var wakeLocker = item.find("video");
+        wakeLocker.prop("muted", true);
+        wakeLocker.prop("loop", true);
+        wakeLocker.trigger("load");
+
+        item.wakeLock = function ()
+        {
+            console.log("Acquiring Wakelock");
+            wakeLocker.trigger("play");
+        };
+
+        item.wakeUnlock = function ()
+        {
+            console.log("Releasing Wakelock");
+            wakeLocker.trigger("pause");
+        };
+
+        item.close = function ()
+        {
+            m_playlist.clear();
+            var obj = {
+                get: function () { return item; }
+            };
+            files.popStatus(obj);
+            m_statusItem = null;
+        };
 
         var obj = {
             get: function () { return item; }
@@ -420,121 +496,6 @@ var Audio = function ()
         files.pushStatus(obj);
 
         return item;
-    }
-
-    /* Opens the player footer.
-     */
-    function openFooter()
-    {
-        m_haveFooter = true;
-        sh.set_footer("main-page", 80);
-    
-        var t = tag("div").class("sh-theme-dark")
-                .content(
-                    tag("div").class("sh-left audio-cover")
-                    .style("width", "80px")
-                    .style("background-size", "80px 80px")
-                    .style("background-repeat", "no-repeat")
-                    .style("text-align", "center")
-                    .style("font-size", "200%")
-                    .style("line-height", "80px")
-                    .content(
-                        tag("span").class("sh-fw-icon sh-icon-media-play-circle audio-play-button")
-                        .style("color", "white")
-                        .style("text-shadow", "#000 0px 0px 1px")
-                    )
-                )
-                .content(
-                    tag("div").class("audio-progress-bar")
-                    .style("position", "absolute")
-                    .style("top", "0")
-                    .style("left", "80px")
-                    .style("right", "42px")
-                    .style("height", "4px")
-                    .content(
-                        tag("div")
-                        .style("position", "absolute")
-                        .style("top", "0")
-                        .style("left", "0")
-                        .style("width", "100%")
-                        .style("height", "1px")
-                    )
-                    .content(
-                        tag("div")
-                        .style("position", "absolute")
-                        .style("top", "0")
-                        .style("left", "0")
-                        .style("width", "0%")
-                        .style("height", "100%")
-                        .style("background-color", "var(--color-primary)")
-                    )
-                )
-                .content(
-                    tag("div")
-                    .style("margin-left", "80px")
-                    .style("margin-right", "42px")
-                    .style("margin-top", "4px")
-                    .style("padding-top", "1em")
-                    .style("padding-left", "0.5em")
-                    .style("text-align", "left")
-                    .content(
-                        tag("h1").class("audio-title")
-                        .style("line-height", "1.2em")
-                        .content("-")
-                    )
-                    .content(
-                        tag("h2").class("sh-font-small audio-artist")
-                        .style("line-height", "1.2em")
-                        .content("-")
-                    )
-                )
-                .content(
-                    tag("div").class("sh-right audio-close-button")
-                    .style("width", "42px")
-                    .style("text-align", "center")
-                    .style("border-left", "solid 1px var(--color-border)")
-                    .style("line-height", "80px")
-                    .content(
-                        tag("span").class("sh-fw-icon sh-icon-close")
-                    )
-                );
-
-        var footer = $("#main-page > footer");
-       
-        footer.html(t.html());
-        footer.addClass("sh-inverse");
-
-        footer.find("> div > div:nth-child(3)").on("click", function ()
-        {
-            openPage();
-        });
-
-        footer.find(".audio-play-button").on("click", function ()
-        {
-            if (audio.prop("paused"))
-            {
-                audio.trigger("play");
-            }
-            else
-            {
-                audio.trigger("pause");
-            }
-        });
-
-        footer.find(".audio-close-button").on("click", function ()
-        {
-            m_playlist.clear();
-        });
-
-    }
-
-    /* Closes the player footer.
-     */
-    function closeFooter()
-    {
-        m_haveFooter = false;
-        $("#main-page > footer").html("");
-        sh.set_footer("main-page", 0);
     }
 
     /* Creates the playlist UI.
@@ -714,29 +675,24 @@ var Audio = function ()
 
         var page = ui.showPage("");
         page.addClass("sh-theme-dark");
-        page.addIconButton("sh-icon-close", function ()
-        {
-            m_playlist.clear();
-        });
 
         page.css("padding-top", "0");
         page.find("> header")
         .css("background-color", "var(--color-primary-background-translucent)");
         page.find("> section").html(t.html());
-        //var page = $(".sh-page").last();
         var pageSection = page.find("> section");
 
-        //sh.onSwipeBack(page, function () { sh.pop(); });
-
         pageSection.find(".audio-play-button").on("click", function ()
-        {   
+        {
             if (audio.prop("paused"))
             {
                 audio.trigger("play");
+                m_statusItem.wakeLock();
             }
             else
             {
                 audio.trigger("pause");
+                m_statusItem.wakeUnlock();
             }
         });
 
@@ -854,16 +810,9 @@ var Audio = function ()
             }, "slow", function () { });
         });
 
-
-        page.on("sh-closed", function ()
-        {
-            page.remove();
-        });
-
         var pos = pageSection.find("ul").offset().top;
         console.log("ul offset " + pos);
         console.log("window height: " + $(window).height());
-        //$(".audio-scroll-gap").height($(window).height());
 
         sh.push(page, function ()
         {
@@ -917,6 +866,7 @@ var Audio = function ()
         audio.trigger("load");
         audio.trigger("play");
         updateMetadata();
+        m_statusItem.wakeLock();
     }
 
 
@@ -926,12 +876,7 @@ var Audio = function ()
         {
             m_statusItem = pushStatusItem();
         }
-        /*
-        if (! m_haveFooter)
-        {
-            openFooter();
-        }
-        */
+
         if (entry)
         {
             play(entry[1]);
@@ -941,17 +886,13 @@ var Audio = function ()
             // force-stop buffering
             audio.prop("src", "");
             audio.trigger("load");
-
-            if (m_statusItem)
-            {
-                var obj = {
-                    get: function () { return m_statusItem; }
-                };
-                files.popStatus(obj);
-                m_statusItem = null;
-            }
-            //closeFooter();
+            m_statusItem.wakeUnlock();
         }
+
+        updatePlayStatus();
+        updatePosition();
+        updateBuffering();
+        updateMetadata();
     });
 
 
@@ -964,17 +905,6 @@ var Audio = function ()
     {
         var uri = $(item).data("meta").uri;
         m_playlist.add(uri, false);
-    };
-
-    this.restoreUi = function ()
-    {
-        if (m_haveFooter)
-        {
-            //openFooter();
-            updatePlayStatus();
-            updatePosition();
-            updateMetadata();
-        }
     };
 
     this.updatePullerState = updatePullerState;
@@ -998,69 +928,12 @@ var Audio = function ()
 
 
 
-
-
-/*
-function viewAudio(href)
-{
-    function formatTime(seconds)
-    {
-        var t = seconds;
-        var secs = Math.floor(t) % 60;
-        t /= 60;
-        var minutes = Math.floor(t) % 60;
-        t /= 60;
-        var hours = Math.floor(t);
-
-        var h = hours.toFixed(0);
-        var m = minutes.toFixed(0);
-        var s = secs.toFixed(0);
-
-        if (h.length === 1) { h = "0" + h; }
-        if (m.length === 1) { m = "0" + m; }
-        if (s.length === 1) { s = "0" + s; }
-
-        return (hours > 0 ? h + ":" : "") + m + ":" + s;
-    }
-
-
-    function getAudioFiles()
-    {
-        var items = $("#filesbox .filelink");
-        var audios = [];
-
-        for (var i = 0; i < items.length; ++i)
-        {
-            var item = items[i];
-            var mimeType = $(item).data("mimetype");
-            var url = $(item).data("url");
-
-            if (mimeType.indexOf("audio/") === 0)
-            {
-                audios.push(url);
-            }
-        }
-
-        return audios;
-    }
-
-}
-*/
-
-
 var audio;
 (function ()
 {
     audio = new Audio();
 
     //files.actionsMenu().addItem(new ui.MenuItem("", "Add to Playlist", files.eachSelected(audio.enqueue)));
-
-    /*
-    $("#main-page").on("pilvini-page-replaced", function ()
-    {
-        audio.restoreUi();
-    });
-    */
 
     $(window).scroll(function ()
     {
