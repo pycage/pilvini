@@ -75,7 +75,7 @@
 
         var nameEntry = dlg.addTextEntry("Name:", "user");
         var passwordEntry = dlg.addTextEntry("Password:", "");
-        var homeEntry = dlg.addTextEntry("Home:", currentUri());
+        var homeEntry = dlg.addTextEntry("Home:", files.currentUri());
         dlg.addLabel("Permissions:");
         var mayCreate = dlg.addSwitch("Create", true);
         var mayDelete = dlg.addSwitch("Delete", true);

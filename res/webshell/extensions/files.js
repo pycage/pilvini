@@ -27,6 +27,13 @@ var files = { };
 
     var m_scrollPositionsMap = { };
 
+    
+    /* Returns the current location.
+     */
+    files.currentUri = function ()
+    {
+        return m_currentUri;
+    };
 
     /* Returns the actions menu.
      */
