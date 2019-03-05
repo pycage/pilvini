@@ -141,8 +141,17 @@
         });
     }
 
+    files.actionsMenu()
+    .add(
+        files.menu.item("Administration")
+        .visible(files.predicates.permissions("ADMIN"))
+        .action(openPage)
+    );
+
+    /*
     files.actionsMenu().addItem(new ui.MenuItem("", "Administration", function ()
     {
         openPage();
     }));
+    */
 })();

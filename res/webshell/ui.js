@@ -453,19 +453,19 @@ ui.Menu = function ()
 
     this.popup = function (parent)
     {
+        $("body").append(m_menu);
         sh.menu(parent, m_menu);
     };
 
     this.close = function ()
     {
-        sh.menu_close();
+        m_menu.remove();
     }
 
     m_menu = $(
         tag("div").class("sh-menu")
         .content(
             tag("div")
-            .on("click", "event.stopPropagation();")
             .content(
                 tag("ul")
             )
@@ -476,10 +476,8 @@ ui.Menu = function ()
     m_menu.on("click", function (event)
     {
         event.stopPropagation();
-        sh.menu_close();
+        m_menu.remove();
     });
-
-    $("body").append(m_menu);
 };
 
 ui.MenuItem = function (icon, text, callback)
@@ -518,11 +516,7 @@ ui.MenuItem = function (icon, text, callback)
         .html()
     );
 
-    m_item.on("click", function ()
-    {
-        sh.menu_close();
-        callback();
-    });
+    m_item.on("click", callback);
 };
 
 ui.SubMenu = function (text)
@@ -553,7 +547,7 @@ ui.SubMenu = function (text)
         tag("div")
         .content(
             tag("h1").class("sh-submenu")
-            .on("click", "sh.toggle_submenu(this);")
+            .on("click", "event.stopPropagation(); sh.toggle_submenu(this);")
             .content(escapeHtml(text))
         )
         .content(

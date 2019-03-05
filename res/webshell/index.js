@@ -144,6 +144,55 @@ var Configuration = function ()
 };
 var configuration = new Configuration();
 
+/* Joins predicates.
+ */
+function and(predicates)
+{
+    var args = arguments;
+    return function ()
+    {
+        var v = false;
+        for (var i = 0; i < args.length; ++i)
+        {
+            v &= args[i]();
+            if (v)
+            {
+                break;
+            }
+        }
+        return v;
+    };
+}
+
+/* Joins predicates.
+ */
+function or(predicates)
+{
+    var args = arguments;
+    return function ()
+    {
+        var v = false;
+        for (var i = 0; i < args.length; ++i)
+        {
+            v |= args[i]();
+            if (v)
+            {
+                break;
+            }
+        }
+        return v;
+    };
+}
+
+/* Negates the given predicate.
+ */
+function not(predicate)
+{
+    return function ()
+    {
+        return ! predicate();
+    };
+}
 
 /* Opens the given file item.
  */
@@ -229,8 +278,14 @@ function init()
     ];
     importJs(js, function ()
     {
-        files.actionsMenu().addSeparator();
-        files.actionsMenu().addItem(new ui.MenuItem("", "Logout", logout));
+        files.actionsMenu()
+        .add(
+            files.menu.separator()
+        )
+        .add(
+            files.menu.item("Logout")
+            .action(logout)
+        );
     });
 }
 

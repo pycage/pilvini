@@ -933,7 +933,17 @@ var audio;
 {
     audio = new Audio();
 
-    //files.actionsMenu().addItem(new ui.MenuItem("", "Add to Playlist", files.eachSelected(audio.enqueue)));
+    files.actionsMenu().add(
+        files.menu.item("Add to Playlist")
+        .visible(
+            or(
+                files.predicates.mimeTypeSelected("audio/flac"),
+                files.predicates.mimeTypeSelected("audio/mp3"),
+                files.predicates.mimeTypeSelected("audio/ogg")
+            )
+        )
+        .action(files.eachSelected(audio.enqueue))
+    );
 
     $(window).scroll(function ()
     {

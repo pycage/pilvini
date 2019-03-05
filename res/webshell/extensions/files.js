@@ -1,33 +1,170 @@
 "use strict";
 
 var files = { };
+files.menu = { };
+files.predicates = { };
+
+(function ()
+{
+    function Node(type, text)
+    {
+        var that = this;
+        var m_type = type;
+        var m_text = text;
+        var m_icon = "";
+        var m_callback = function () { };
+        var m_enabled = function () { return true; };
+        var m_visible = function () { return true; };
+        var m_children = [];
+
+        this.isEnabled = function ()
+        {
+            return m_enabled();
+        };
+        
+        this.isVisible = function ()
+        {
+            return m_visible();
+        };
+
+        this.type = function ()
+        {
+            return m_type;
+        };
+
+        this.icon = function (icon)
+        {
+            m_icon = icon;
+            return that;
+        };
+
+        this.action = function (cb)
+        {
+            m_callback = cb;
+            return that;
+        };
+
+        this.enabled = function (predicate)
+        {
+            m_enabled = predicate;
+            return that;
+        };
+
+        this.visible = function (predicate)
+        {
+            m_visible = predicate;
+            return that;
+        };
+
+        this.add = function (child)
+        {
+            m_children.push(child);
+            return that;
+        };
+
+        this.child = function (n)
+        {
+            if (n >= 0)
+            {
+                return m_children[n];
+            }
+            else
+            {
+                return m_children[m_children.length + n];
+            }
+        };
+
+        this.create = function ()
+        {
+            var visibleChildren = m_children.filter(function (c)
+            {
+                return c.isVisible();
+            });
+
+            if (m_type === "menu")
+            {
+                var menu = new ui.Menu();
+                visibleChildren.forEach(function (c)
+                {
+                    if (c.type() === "submenu")
+                    {
+                        menu.addSubMenu(c.create());
+                    }
+                    else if (c.type() === "separator")
+                    {
+                        menu.addSeparator();
+                    }
+                    else
+                    {
+                        menu.addItem(c.create());
+                    }
+                });
+                return menu;
+            }
+            else if (m_type === "submenu")
+            {
+                var menu = new ui.SubMenu(m_text);
+                visibleChildren.forEach(function (c)
+                {
+                    if (c.type() === "submenu")
+                    {
+                        menu.addSubMenu(c.create());
+                    }
+                    else if (c.type() === "separator")
+                    {
+                        menu.addSeparator();
+                    }
+                    else
+                    {
+                        menu.addItem(c.create());
+                    }
+                });
+                return menu;
+            }
+            else
+            {
+                var item = new ui.MenuItem(m_icon, m_text, m_callback);
+                item.setEnabled(m_enabled());
+                return item;
+            }
+        };
+    }
+
+    files.menu.menu = function ()
+    {
+        return new Node("menu", "");
+    }
+
+    files.menu.submenu = function (t)
+    {
+        return new Node("submenu", t);
+    }
+
+    files.menu.item = function (t)
+    {
+        return new Node("item", t);
+    }
+
+    files.menu.separator = function ()
+    {
+        return new Node("separator", "");
+    }
+})();
 
 (function ()
 {
     var m_page;
     var m_currentUri = "";
+    var m_permissions = [];
 
-    var m_pathMenu;
     var m_actionsMenu;
-
-    var m_miClipboardCut;
-    var m_miClipboardCopy;
-    var m_miClipboardPaste;
-    var m_miClipboardShow;
-    
-    var m_miDownload;
-    var m_miDelete;
-    var m_miRename;
-
-    var m_miSelectAll;
-    var m_miUnselectAll;
-    
+   
     var m_clipboard = [];
     var m_shares = [];
 
     var m_scrollPositionsMap = { };
 
-    
+
     /* Returns the current location.
      */
     files.currentUri = function ()
@@ -646,33 +783,63 @@ var files = { };
     function selectAll()
     {
         m_page.find(".fileitem > div.selector").addClass("sh-selected");
-        checkSelected();
     }
 
     function unselectAll()
     {
         m_page.find(".fileitem > div.selector").removeClass("sh-selected");
-        checkSelected();        
     }
 
     function toggleSelect(item)
     {
         $(item).toggleClass("sh-selected");
-        checkSelected();
     }
 
-    function checkSelected()
+    files.predicates.filesSelected = function ()
     {
         var size = m_page.find(".fileitem > div.selector.sh-selected").length;
+        return size > 0;
+    }
 
-        m_miClipboardCut.setEnabled(size > 0);
-        m_miClipboardCopy.setEnabled(size > 0);
+    files.predicates.oneFileSelected = function ()
+    {
+        var size = m_page.find(".fileitem > div.selector.sh-selected").length;
+        return size === 1;
+    }
 
-        m_miDownload.setEnabled(size > 0);
-        m_miDelete.setEnabled(size > 0);
-        m_miRename.setEnabled(size === 1);
+    files.predicates.clipboardFilled = function ()
+    {
+        return m_clipboard.length > 0;
+    }
 
-        m_miUnselectAll.setEnabled(size > 0);
+    files.predicates.permissions = function (ps)
+    {
+        var permissions = [];
+        for (var i = 0; i < arguments.length; ++i)
+        {
+            permissions.push(arguments[i]);
+        }
+        return function ()
+        {
+            return permissions
+            .map(function (p) { return m_permissions.indexOf(p) !== -1; })
+            .reduce(function (a, b) { return a && b; }, true);
+        };
+    }
+
+    files.predicates.mimeTypeSelected = function (mimeType)
+    {
+        return function ()
+        {
+            var v = false;
+            var items = m_page.find(".fileitem > div.selector.sh-selected");
+            items.each(function ()
+            {
+                var meta = $(this).parent().data("meta");
+                v |= meta.mimeType === mimeType;
+            });
+            return v;
+        };
     }
 
     function eachSelected(callback)
@@ -690,59 +857,88 @@ var files = { };
 
     function openPathMenu()
     {
-        m_pathMenu.clear();
-
-        var favsMenu = new ui.SubMenu("Favorites");
-        m_pathMenu.addSubMenu(favsMenu);
-
         var favs = configuration.get("favorites", []);
-        if (favs.find(function (a) { return a.uri === m_currentUri; }))
+        function isFavPredicate()
         {
-            favsMenu.addItem(new ui.MenuItem("", "Remove from Favorites", removeFavorite));
+            return !! favs.find(function (a) { return a.uri === m_currentUri; });
         }
-        else
+
+        console.log(JSON.stringify(m_shares) + " current " + m_currentUri);
+        function isSharePredicate()
         {
-            favsMenu.addItem(new ui.MenuItem("", "Add to Favorites", addFavorite));
+            return !! m_shares.find(function (a) { return a.uri === m_currentUri; });
         }
-        favsMenu.addSeparator();
+
+        var menu = files.menu.menu()
+        .add(
+            files.menu.submenu("Favorites")
+            .add(
+                files.menu.item("Remove from Favorites")
+                .visible(isFavPredicate)
+                .action(removeFavorite)
+            )
+            .add(
+                files.menu.item("Add to Favorites")
+                .visible(not(isFavPredicate))
+                .action(addFavorite)
+            )
+            .add(
+                files.menu.separator()
+            )
+        )
+        .add(
+            files.menu.submenu("Shares")
+            .visible(files.predicates.permissions("SHARE"))
+            .add(
+                files.menu.item("Unshare This")
+                .visible(isSharePredicate)
+                .action(unshare)
+            )
+            .add(
+                files.menu.item("Share This")
+                .visible(not(isSharePredicate))
+                .action(showShareDialog)
+            )
+            .add(
+                files.menu.separator()
+            )
+        )
+        .add(
+            files.menu.separator()
+        );
+
         favs.forEach(function (f)
         {
-            favsMenu.addItem(new ui.MenuItem("sh-icon-star-circle", f.name, function ()
-            {
-                m_scrollPositionsMap = { };
-                loadDirectory(f.uri, true);
-            }));
+            menu.child(0).add(
+                files.menu.item(f.name).icon("sh-icon-star-circle")
+                .action(function ()
+                {
+                    m_scrollPositionsMap = { };
+                    loadDirectory(f.uri, true);
+                })
+            );
         });
 
-        var sharesMenu = new ui.SubMenu("Shares");
-        m_pathMenu.addSubMenu(sharesMenu);
-
-        console.log(m_shares);
-        if (m_shares.find(function (a) { return a.uri === m_currentUri; }))
-        {
-            sharesMenu.addItem(new ui.MenuItem("", "Unshare This", unshare));
-        }
-        else
-        {
-            sharesMenu.addItem(new ui.MenuItem("", "Share This", showShareDialog));
-        }
-        sharesMenu.addSeparator();
         m_shares.forEach(function (s)
         {
-            sharesMenu.addItem(new ui.MenuItem("sh-icon-share", s.share, function ()
-            {
-                m_scrollPositionsMap = { };
-                loadDirectory(s.uri, true);
-            }));
+            menu.child(1).add(
+                files.menu.item(s.share).icon("sh-icon-share")
+                .action(function ()
+                {
+                    m_scrollPositionsMap = { };
+                    loadDirectory(s.uri, true);
+                })
+            );
         });
 
-        m_pathMenu.addSeparator();
-        var menuItem = new ui.MenuItem("", "/", function ()
-        {
-            m_scrollPositionsMap = { };
-            loadDirectory("/", true);
-        });
-        m_pathMenu.addItem(menuItem);
+        menu.add(
+            files.menu.item("/")
+            .action(function ()
+            {
+                m_scrollPositionsMap = { };
+                loadDirectory("/", true);
+            })
+        );
 
         var parts = m_currentUri.split("/");
         var breadcrumbUri = "";
@@ -754,18 +950,20 @@ var files = { };
             }
 
             breadcrumbUri += "/" + parts[i];
-            menuItem = new ui.MenuItem("", decodeURIComponent(parts[i]), function (uri)
-            {
-                return function ()
+            menu.add(
+                files.menu.item(decodeURIComponent(parts[i]))
+                .action(function (uri)
                 {
-                    m_scrollPositionsMap = { };
-                    loadDirectory(uri, true);
-                };
-            }(breadcrumbUri));
-            m_pathMenu.addItem(menuItem);
+                    return function ()
+                    {
+                        m_scrollPositionsMap = { };
+                        loadDirectory(uri, true);
+                    };
+                }(breadcrumbUri))
+            );
         }
 
-        m_pathMenu.popup(m_page.find("> header > div"));
+        menu.create().popup(m_page.find("> header > div"));
     }
 
     function setupStatusBox()
@@ -965,6 +1163,8 @@ var files = { };
                     return a.name.toLowerCase() < b.name.toLowerCase() ? -1 : 1;
                 case "date":
                     return a.mtime < b.mtime ? -1 : 1;
+                case "number":
+                    return Number.parseInt(a.name) < Number.parseInt(b.name) ? -1 : 1;
                 default:
                     return a.name.toLowerCase() < b.name.toLowerCase() ? -1 : 1;
                 }
@@ -1077,6 +1277,7 @@ var files = { };
 
         m_currentUri = data.uri;
         m_shares = data.shares;
+        m_permissions = data.permissions;
 
         var isFav = configuration.get("favorites", []).find(function (a) { return a.uri === m_currentUri; }) !== undefined;
         var isShare = m_shares.find(function (a) { return a.uri === m_currentUri; }) !== undefined;
@@ -1112,8 +1313,6 @@ var files = { };
 
         setTimeout(function () { loadThumbnails(); }, 500);
         updateNavBar();
-        checkSelected();
-        checkClipboard();
     }
 
     function cdUp()
@@ -1121,14 +1320,6 @@ var files = { };
         var parts = m_currentUri.split("/");
         var parentUri = parts.slice(0, parts.length - 1).join("/");
         loadDirectory(parentUri, true);
-    }
-
-    function checkClipboard()
-    {
-        var size = m_clipboard.length;
-
-        m_miClipboardPaste.setEnabled(size > 0);
-        m_miClipboardShow.setEnabled(size > 0);
     }
 
     function cutToClipboard(item)
@@ -1146,7 +1337,6 @@ var files = { };
                 m_clipboard.push(targetMeta);
                 $(item).remove();
                 updateNavBar();
-                checkClipboard();
             }
             else
             {
@@ -1171,7 +1361,6 @@ var files = { };
                 var targetMeta = JSON.parse(JSON.stringify(meta));
                 targetMeta.uri = targetUri;
                 m_clipboard.push(targetMeta);
-                checkClipboard();
             }
             else
             {
@@ -1217,7 +1406,6 @@ var files = { };
         .done(function (data, status, xhr)
         {
             m_clipboard = data.files;
-            checkClipboard();
         })
         .fail(function (xhr, status, err)
         {
@@ -1343,53 +1531,112 @@ var files = { };
 
     m_page = ui.showPage("", cdUp);
     m_page.find("> header > div").on("click", openPathMenu);
-    m_page.addIconButton("sh-icon-menu", function () { m_actionsMenu.popup($(this)); });
+    m_page.addIconButton("sh-icon-menu", function ()
+    {
+        var menu = m_actionsMenu.create();
+        menu.popup($(this));
+    });
     m_page.append($(
         tag("footer").class("sh-dropshadow")
         .html()
     ));
 
-    m_pathMenu = new ui.Menu();
 
-    m_actionsMenu = new ui.Menu();
-
-    var subMenuView = new ui.SubMenu("View");
-    subMenuView.addItem(new ui.MenuItem("", "As List", function () { setViewMode("list"); }));
-    subMenuView.addItem(new ui.MenuItem("", "As Grid", function () { setViewMode("grid"); }));
-    subMenuView.addItem(new ui.MenuItem("", "By Name", function () { setSortMode("name"); }));
-    subMenuView.addItem(new ui.MenuItem("", "By Date", function () { setSortMode("date"); }));
-    m_actionsMenu.addSubMenu(subMenuView);
-
-    var subMenuNew = new ui.SubMenu("New");
-    subMenuNew.addItem(new ui.MenuItem("sh-icon-folder", "Directory...", makeNewDirectory));
-    subMenuNew.addItem(new ui.MenuItem("sh-icon-file", "File...", makeNewFile));
-    m_actionsMenu.addSubMenu(subMenuNew);
-    
-    var subMenuClipboard = new ui.SubMenu("Clipboard");
-    m_miClipboardCut = new ui.MenuItem("sh-icon-clipboard-cut", "Cut", eachSelected(cutToClipboard));
-    subMenuClipboard.addItem(m_miClipboardCut);
-    m_miClipboardCopy = new ui.MenuItem("sh-icon-clipboard-copy", "Copy", eachSelected(copyToClipboard));
-    subMenuClipboard.addItem(m_miClipboardCopy);;
-    m_miClipboardPaste = new ui.MenuItem("sh-icon-clipboard-paste", "Paste", pasteFromClipboard);
-    subMenuClipboard.addItem(m_miClipboardPaste);
-    m_miClipboardShow = new ui.MenuItem("sh-icon-clipboard", "Show", openClipboardPage);
-    subMenuClipboard.addItem(m_miClipboardShow);
-    m_actionsMenu.addSubMenu(subMenuClipboard);
-    
-    var subMenuAction = new ui.SubMenu("Action");
-    subMenuAction.addItem(new ui.MenuItem("sh-icon-cloud-upload", "Upload...", function () { $("#upload").click(); }));
-    m_miDownload = new ui.MenuItem("sh-icon-download", "Download", eachSelected(downloadItem));
-    subMenuAction.addItem(m_miDownload);
-    m_miRename = new ui.MenuItem("sh-icon-rename", "Rename...", eachSelected(renameItem));
-    subMenuAction.addItem(m_miRename);
-    m_miDelete = new ui.MenuItem("sh-icon-trashcan", "Delete", removeSelected);
-    subMenuAction.addItem(m_miDelete);
-    m_actionsMenu.addSubMenu(subMenuAction);
-
-    m_miSelectAll = new ui.MenuItem("", "Select All", selectAll);
-    m_actionsMenu.addItem(m_miSelectAll);
-    m_miUnselectAll = new ui.MenuItem("", "Unselect All", unselectAll);
-    m_actionsMenu.addItem(m_miUnselectAll);
+    /* setup actions menu */
+    m_actionsMenu = files.menu.menu()
+    .add(
+        files.menu.submenu("View")
+        .add(
+            files.menu.item("As List")
+            .action(function () { setViewMode("list"); })
+        )
+        .add(
+            files.menu.item("As Grid")
+            .action(function () { setViewMode("grid"); })
+        )
+        .add(
+            files.menu.item("By Name")
+            .action(function () { setSortMode("name"); })
+        )
+        .add(
+            files.menu.item("By Date")
+            .action(function () { setSortMode("date"); })
+        )
+        .add(
+            files.menu.item("By Number")
+            .action(function () { setSortMode("number"); })
+        )
+    )
+    .add(
+        files.menu.submenu("New")
+        .visible(files.predicates.permissions("CREATE"))
+        .add(
+            files.menu.item("Directory...").icon("sh-icon-folder")
+            .action(makeNewDirectory)
+        )
+        .add(
+            files.menu.item("File...").icon("sh-icon-file")
+            .action(makeNewFile)
+        )
+    )
+    .add(
+        files.menu.submenu("Clipboard")
+        .visible(files.predicates.permissions("CREATE"))
+        .add(
+            files.menu.item("Cut").icon("sh-icon-clipboard-cut")
+            .enabled(files.predicates.filesSelected)
+            .action(eachSelected(cutToClipboard))
+        )
+        .add(
+            files.menu.item("Copy").icon("sh-icon-clipboard-copy")
+            .enabled(files.predicates.filesSelected)
+            .action(eachSelected(copyToClipboard))
+        )
+        .add(
+            files.menu.item("Paste").icon("sh-icon-clipboard-paste")
+            .enabled(files.predicates.clipboardFilled)
+            .action(pasteFromClipboard)
+        )
+        .add(
+            files.menu.item("Show").icon("sh-icon-clipboard")
+            .enabled(files.predicates.clipboardFilled)
+            .action(openClipboardPage)
+        )
+    )
+    .add(
+        files.menu.submenu("Action")
+        .add(
+            files.menu.item("Upload...").icon("sh-icon-cloud-upload")
+            .visible(files.predicates.permissions("CREATE"))
+            .action(function () { $("#upload").click(); })
+        )
+        .add(
+            files.menu.item("Download").icon("sh-icon-download")
+            .enabled(files.predicates.filesSelected)
+            .action(eachSelected(downloadItem))
+        )
+        .add(
+            files.menu.item("Rename...").icon("sh-icon-rename")
+            .visible(files.predicates.permissions("MODIFY"))
+            .enabled(files.predicates.oneFileSelected)
+            .action(eachSelected(renameItem))
+        )
+        .add(
+            files.menu.item("Delete").icon("sh-icon-trashcan")
+            .visible(files.predicates.permissions("DELETE"))
+            .enabled(files.predicates.filesSelected)
+            .action(removeSelected)
+        )
+    )
+    .add(
+        files.menu.item("Select All")
+        .action(selectAll)
+    )
+    .add(
+        files.menu.item("Unselect All")
+        .enabled(files.predicates.filesSelected)
+        .action(unselectAll)
+    );
 
     /* setup history navigation */
     window.addEventListener("popstate", function (ev)
