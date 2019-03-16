@@ -24,6 +24,39 @@ var CountToken = function (count, callback)
     }
 };
 
+var zipCache = { };
+
+
+function openZipFile(zipPath, callback)
+{
+    if (zipCache[zipPath])
+    {
+        callback(zipCache[zipPath]);
+    }
+    else
+    {
+        modVfs.readFile(zipPath, function (err, buffer)
+        {
+            if (err)
+            {
+                callback(null);
+                return;
+            }
+            
+            var zipper = new JSZip();
+            zipper.loadAsync(buffer).then(function (zip)
+            {
+                if (zip)
+                {
+                    zipCache[zipPath] = zip;
+                }
+                callback(zip);
+            });
+        });
+    }
+}
+
+
 function addFileSync(zip, path)
 {
     var stats = modFs.statSync(path);
@@ -98,113 +131,123 @@ exports.makeZip = function(path, callback)
 
 exports.readZip = function(zipPath, subPath, callback)
 {
+    function handle(zip)
+    {
+        if (! zip)
+        {
+            callback("failed to open ZIP", []);
+            return;
+        }
+
+        var files = [];
+
+        for (var file in zip.files)
+        {
+            var fileObj = zip.files[file];
+            var filePath = fileObj.name.replace(/\/$/, "");
+            var dir = filePath.substr(0, filePath.lastIndexOf("/"));
+
+            if (dir === subPath)
+            {
+                var parts = filePath.split("/");
+                var name = parts[parts.length - 1];
+                files.push(name);
+            }                
+        }
+
+        callback(null, files);
+    }
+
     subPath = subPath.replace(/\/$/, "");
     
     console.log("readZip: " + zipPath + "#" + subPath);
-
-    modVfs.readFile(zipPath, function (err, buffer)
-    {
-        if (err)
-        {
-            callback(err, []);
-            return;
-        }
-        
-        var zipper = new JSZip();
-        zipper.loadAsync(buffer).then(function (zip)
-        {
-            var files = [];
-
-            for (var file in zip.files)
-            {
-                var fileObj = zip.files[file];
-                var filePath = fileObj.name.replace(/\/$/, "");
-                var dir = filePath.substr(0, filePath.lastIndexOf("/"));
-
-                if (dir === subPath)
-                {
-                    var parts = filePath.split("/");
-                    var name = parts[parts.length - 1];
-                    files.push(name);
-                }                
-            }
-
-            callback(null, files);
-        });
-
-    });
+    openZipFile(zipPath, handle);
 };
 
 /* Returns a stream for reading the given file in a ZIP.
  */
 exports.createReadStream = function (zipPath, innerPath, callback)
 {
-    modVfs.readFile(zipPath, function (err, buffer)
+    function handle(zip)
     {
-        if (err)
+        if (! zip)
         {
-            callback(err, []);
+            callback("failed to open ZIP", []);
             return;
         }
-        var zipper = new JSZip();
-        zipper.loadAsync(buffer).then(function (zip)
+
+        zip.file(innerPath).async("nodebuffer").then(function (b)
         {
-            zip.file(innerPath).async("nodebuffer").then(function (b)
-            {
-                var readable = new modStream.Readable();
-                readable._read = function () { };
-                readable.push(b);
-                readable.push(null);
-                callback(b.length, readable);
-            });
+            var readable = new modStream.Readable();
+            readable._read = function () { };
+            readable.push(b);
+            readable.push(null);
+            callback(b.length, readable);
         });
-    });
+    }
+
+    openZipFile(zipPath, handle);
 };
 
 exports.createReadStreamRanged = function (zipPath, innerPath, from, to, callback)
 {
-    modVfs.readFile(zipPath, function (err, buffer)
+    function handle(zip)
     {
-        if (err)
+        if (! zip)
         {
-            callback(err, []);
+            callback("failed to open ZIP", []);
             return;
         }
-        var zipper = new JSZip();
-        zipper.loadAsync(buffer).then(function (zip)
+
+        zip.file(innerPath).async("nodebuffer").then(function (b)
         {
-            zip.file(innerPath).async("nodebuffer").then(function (b)
-            {
-                var readable = new modStream.Readable();
-                readable._read = function () { };
-                readable.push(b.slice(from, to - from));
-                readable.push(null);
-                callback(b.length, readable);
-            });
+            var readable = new modStream.Readable();
+            readable._read = function () { };
+            readable.push(b.slice(from, to - from));
+            readable.push(null);
+            callback(b.length, readable);
         });
-    });
+    }
+
+    openZipFile(zipPath, handle);
 };
 
 /* Opens a file in the ZIP and passes a handle to the callback.
  */
 exports.open = function (zipPath, innerPath, mode, callback)
 {
-    modVfs.readFile(zipPath, function (err, buffer)
+    function handle(zip)
     {
-        if (err)
+        if (! zip)
         {
-            callback(err, null);
+            callback("failed to open ZIP", null);
             return;
         }
-        var zipper = new JSZip();
-        zipper.loadAsync(buffer).then(function (zip)
-        {
-            var fd = {
-                isZip: true,
-                file: zip.file(innerPath)
-            };
-            callback(null, fd);
-        });
+
+        var fd = {
+            isZip: true,
+            file: zip.file(innerPath)
+        };
+        callback(null, fd);
+    }
+
+    openZipFile(zipPath, handle);
+};
+
+/* Reads from the given file entry of a ZIP.
+ */
+exports.readFile = function (file, buffer, offset, length, position, callback)
+{
+    file.async("nodebuffer").then(function (b)
+    {
+        var readable = new modStream.Readable();
+        readable._read = function () { };
+        readable.push(b.slice(position, length));
+        readable.push(null);
+        
+        var data = readable.read(length);
+        data.copy(buffer, offset);
+        callback(null, length, buffer);
     });
 };
 
@@ -217,6 +260,45 @@ exports.close = function (fd, callback)
 
 exports.stat = function (zipPath, innerPath, callback)
 {
+    function handle(zip)
+    {
+        if (! zip)
+        {
+            callback("failed to open ZIP", []);
+            return;
+        }
+
+        var stats = [];
+
+        for (var file in zip.files)
+        {
+            var fileObj = zip.files[file];
+            var filePath = fileObj.name.replace(/\/$/, "");
+            var dir = filePath.substr(0, filePath.lastIndexOf("/"));
+
+            if (filePath === innerPath)
+            {
+                var parts = filePath.split("/");
+                var name = parts[parts.length - 1];
+                var isDir = fileObj.dir;
+                stats.push({
+                    isDirectory: function (isDir) { return function () { return isDir; }; }(isDir),
+                    mtime: new Date(fileObj.date),
+                    size: fileObj._data.uncompressedSize 
+                });
+            }                
+        }
+
+        if (stats.length === 0)
+        {
+            callback("no such file", null);
+        }
+        else
+        {
+            callback(null, stats[0]);
+        }
+    }
+
     innerPath = innerPath.replace(/\/$/, "");
 
     if (innerPath === "")
@@ -225,47 +307,5 @@ exports.stat = function (zipPath, innerPath, callback)
         return;
     }
     
-    modVfs.readFile(zipPath, function (err, buffer)
-    {
-        if (err)
-        {
-            callback(err, []);
-            return;
-        }
-        
-        var zipper = new JSZip();
-        zipper.loadAsync(buffer).then(function (zip)
-        {
-            var stats = [];
-
-            for (var file in zip.files)
-            {
-                var fileObj = zip.files[file];
-                var filePath = fileObj.name.replace(/\/$/, "");
-                var dir = filePath.substr(0, filePath.lastIndexOf("/"));
-
-                if (filePath === innerPath)
-                {
-                    var parts = filePath.split("/");
-                    var name = parts[parts.length - 1];
-                    var isDir = fileObj.dir;
-                    stats.push({
-                        isDirectory: function (isDir) { return function () { return isDir; }; }(isDir),
-                        mtime: new Date(fileObj.date),
-                        size: fileObj._data.uncompressedSize 
-                    });
-                }                
-            }
-
-            if (stats.length === 0)
-            {
-                callback("no such file", null);
-            }
-            else
-            {
-                callback(null, stats[0]);
-            }
-        });
-
-    });
+    openZipFile(zipPath, handle);
 };

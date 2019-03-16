@@ -257,8 +257,8 @@ ui.showPage = function (title, backCallback)
             )
             .content(
                 tag("div")
-                .style("line-height", "1rem")
-                .style("padding-top", "0.6rem")
+                .style("line-height", "1.3rem")
+                .style("padding-top", "0.2rem")
                 .content(
                     tag("h1").content(escapeHtml(title))
 

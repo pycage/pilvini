@@ -63,7 +63,7 @@ function splitPath(path)
     {
         var outerPath = parts.slice(0, idx + 1).join("/");
         var innerPath = parts.slice(idx + 1).join("/");
-        console.log("vfs.splitPath: " + path + " -> " + outerPath + "#" + innerPath);
+        //console.log("vfs.splitPath: " + path + " -> " + outerPath + "#" + innerPath);
         return [outerPath, innerPath];
     }
     else
@@ -75,7 +75,7 @@ function splitPath(path)
 
 exports.close = function (fd, callback)
 {
-    console.log("vfs.close");
+    //console.log("vfs.close");
 
     if (fd.isZip)
     {
@@ -89,7 +89,7 @@ exports.close = function (fd, callback)
 
 exports.createReadStream = function (path, callback)
 {
-    console.log("vfs.createReadStream");
+    //console.log("vfs.createReadStream");
 
     switch (lastVfs(path))
     {
@@ -108,7 +108,7 @@ exports.createReadStream = function (path, callback)
 
 exports.createReadStreamRanged = function (path, from, to, callback)
 {
-    console.log("vfs.createReadStream");
+    //console.log("vfs.createReadStream");
 
     switch (lastVfs(path))
     {
@@ -127,13 +127,13 @@ exports.createReadStreamRanged = function (path, from, to, callback)
 
 exports.createWriteStream = function (path, callback)
 {
-    console.log("vfs.createWriteStream");
+    //console.log("vfs.createWriteStream");
     callback(modFs.createWriteStream(path));
 };
 
 exports.createWriteStreamFd = function (fd, callback)
 {
-    console.log("vfs.createWriteStreamFd");
+    //console.log("vfs.createWriteStreamFd");
     callback(modFs.createWriteStream("", { "fd": fd }));
 };
 
@@ -149,7 +149,7 @@ exports.mkdir = function (path, callback)
 
 exports.open = function (path, mode, callback)
 {
-    console.log("vfs.open");
+    //console.log("vfs.open");
 
     switch (lastVfs(path))
     {
@@ -165,14 +165,21 @@ exports.open = function (path, mode, callback)
 
 exports.read = function (fd, buffer, offset, length, position, callback)
 {
-    console.log("vfs.read");
+    //console.log("vfs.read");
 
-    modFs.read(fd, buffer, offset, length, position, callback);
+    if (fd.isZip)
+    {
+        modZip.readFile(fd.file, buffer, offset, length, position, callback);
+    }
+    else
+    {
+        modFs.read(fd, buffer, offset, length, position, callback);
+    }
 };
 
 exports.readdir = function (path, callback)
 {
-    console.log("vfs.readdir");
+    //console.log("vfs.readdir");
 
     if (! path.endsWith("/"))
     {
@@ -193,7 +200,7 @@ exports.readdir = function (path, callback)
 
 exports.readFile = function (path, callback)
 {
-    console.log("vfs.readFile");
+    //console.log("vfs.readFile");
 
     switch (lastVfs(path))
     {
@@ -222,7 +229,7 @@ exports.rmdir = function (path, callback)
 
 exports.stat = function (path, callback)
 {
-    console.log("vfs.stat");
+    //console.log("vfs.stat");
 
     switch (lastVfs(path))
     {
