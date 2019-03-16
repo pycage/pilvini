@@ -69,8 +69,6 @@ function viewMarkdown(href)
     var page = ui.showPage(name);
     var originalContent = "";
 
-    sh.onSwipeBack(page, function () { page.pop(); });
-
     var toggleButton = page.addIconButton("sh-icon-edit", toggleMode);
 
     page.find("section").html("<script src='/::res/webshell/extensions/markdown/showdown.js'></script>");
@@ -86,7 +84,6 @@ function viewMarkdown(href)
            .css("padding", "1em")
            .css("height", ($(window).height() * 0.8) + "px");
 
-    sh.push(page);
     page.one("sh-closed", function ()
     {
         var data = editBox.val();

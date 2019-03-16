@@ -57,8 +57,6 @@ function viewText(href)
     var page = ui.showPage(name);
     var originalContent = "";
 
-    sh.onSwipeBack(page, function () { page.pop(); });
-
     var toggleButton = page.addIconButton("sh-icon-edit", toggleMode);
 
     page.find("section").append("<pre></pre>");
@@ -72,7 +70,6 @@ function viewText(href)
            .css("padding", "1em")
            .css("height", ($(window).height() * 0.8) + "px");
 
-    sh.push(page);
     page.one("sh-closed", function ()
     {
         var data = editBox.val();

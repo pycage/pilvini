@@ -1144,7 +1144,14 @@ files.predicates = { };
         })
         .fail(function (xhr, status, err)
         {
-            ui.showError("Failed to load directory.");
+            if (status === "parsererror")
+            {
+                window.location.reload();
+            }
+            else
+            {
+                ui.showError("Failed to load directory.");
+            }
         })
         .always(function ()
         {

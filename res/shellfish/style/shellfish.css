@@ -30,7 +30,7 @@ body {
 h1, h2 {
     white-space: nowrap;
     text-overflow: ellipsis;
-    overflow: hidden;
+    overflow-x: hidden;
 }
 
 h1 {

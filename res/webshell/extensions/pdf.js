@@ -6,7 +6,6 @@ function viewPdf(href)
     var name = decodeURI(parts[parts.length - 1]);
 
     var page = ui.showPage(name);
-    sh.onSwipeBack(page, function () { page.pop(); });
 
     page.find("section").html("<iframe>");
     var iframe = page.find("iframe");
@@ -16,7 +15,6 @@ function viewPdf(href)
           .css("width", "100%")
           .css("height", ($(window).height() - page.find("header").height()) + "px");
     iframe.prop("src", "/::res/webshell/extensions/pdfjs/web/viewer.html?file=" + encodeURI(href));
-    sh.push(page);
 }
 
 (function ()

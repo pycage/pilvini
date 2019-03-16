@@ -34,7 +34,6 @@ sh.push = function (which, callback, immediate)
     var prevPage = $(".sh-page.sh-visible").last();
     if (prevPage.length)
     {
-        console.log("Prev page: " + prevPage);
         if (prevPage[0] === page[0])
         {
             prevPage = [];
@@ -331,7 +330,7 @@ sh.onSwipeBack = function (which, callback)
                     resetPage();
                     resetHeader();
                 }
-            }, 100);
+            }, 500);
         }
 
         var swipeContext = this.swipeContext;

@@ -42,7 +42,6 @@ function viewVCard(href)
     var name = decodeURI(parts[parts.length - 1]);
     
     var page = ui.showPage(name);
-    sh.onSwipeBack(page, function () { page.pop(); });
     
     page.find("section").html("<ul class='sh-listview'></ul>");
 
