@@ -164,6 +164,8 @@ files.predicates = { };
 
     var m_scrollPositionsMap = { };
 
+    var m_logItem = null;
+
 
     /* Returns the current location.
      */
@@ -215,6 +217,18 @@ files.predicates = { };
         popStatus(item);
     }
 
+    function log(message)
+    {
+        if (! m_logItem)
+        {
+            m_logItem = new ui.StatusItem("", message);
+            pushStatus(m_logItem)
+        }
+        else
+        {
+            m_logItem.setText(message);
+        }
+    }
 
     function joinPath(a, b)
     {
@@ -1072,6 +1086,7 @@ files.predicates = { };
     {
         var navBar = m_page.find(".files-navbar");
         navBar.html("");
+        navBar.height(0);
 
         var items = m_page.find(".fileitem");
         var currentLetter = "";
@@ -1099,11 +1114,11 @@ files.predicates = { };
             }
         }
 
-        var h1 = $(window).height() - m_page.find("> header").height() - 1;
-        if (navBar.height() < h1)
-        {
-            navBar.height(h1);
-        }
+        var windowHeight = $(window).height() - m_page.find("> header").height() - 1;
+        var contentHeight = m_page.find("> section").height();
+        var minHeight = Math.max(windowHeight, contentHeight);
+        navBar.height(Math.max(windowHeight, contentHeight));
+        //log("win height: " + $(window).height() + ", content height: " + contentHeight);
     }
 
     function loadDirectory(uri, pushToHistory)
@@ -1646,6 +1661,8 @@ files.predicates = { };
             loadDirectory(ev.state.uri, false);
         }
     }, false);
+
+    $(window).resize(updateNavBar);
 
     /* setup file upload */
     $("#upload").on("change", function (event)
