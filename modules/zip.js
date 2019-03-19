@@ -29,9 +29,19 @@ var zipCache = { };
 
 function openZipFile(zipPath, callback)
 {
+    var now = Date.now();
+    for (var key in zipCache)
+    {
+        if (zipCache[key][0] + 5 * 60 * 1000 < now)
+        {
+            delete zipCache[key];
+        }
+    }
+
     if (zipCache[zipPath])
     {
-        callback(zipCache[zipPath]);
+        zipCache[zipPath][0] = now;
+        callback(zipCache[zipPath][1]);
     }
     else
     {
@@ -48,7 +58,7 @@ function openZipFile(zipPath, callback)
             {
                 if (zip)
                 {
-                    zipCache[zipPath] = zip;
+                    zipCache[zipPath] = [now, zip];
                 }
                 callback(zip);
             });
@@ -140,6 +150,7 @@ exports.readZip = function(zipPath, subPath, callback)
         }
 
         var files = [];
+        var seen = { };
 
         for (var file in zip.files)
         {
@@ -152,7 +163,32 @@ exports.readZip = function(zipPath, subPath, callback)
                 var parts = filePath.split("/");
                 var name = parts[parts.length - 1];
                 files.push(name);
+                seen[name] = true;
             }                
+        }
+
+        for (var file in zip.files)
+        {
+            var fileObj = zip.files[file];
+            var filePath = fileObj.name.replace(/\/$/, "");
+            var dir = filePath.substr(0, filePath.lastIndexOf("/"));
+
+            if (subPath === "" || dir.startsWith(subPath))
+            {
+                var pos = dir.indexOf("/", subPath.length);
+                if (pos !== -1)
+                {
+                    var subDir = dir.substr(0, pos);
+                    var parts = subDir.split("/");
+                    var name = parts[parts.length - 1];
+
+                    if (! seen[name])
+                    {
+                        files.push(name);
+                        seen[name] = true;
+                    }
+                }
+            }
         }
 
         callback(null, files);
@@ -270,6 +306,7 @@ exports.stat = function (zipPath, innerPath, callback)
 
         var stats = [];
 
+        var existsAsPrefix = false;
         for (var file in zip.files)
         {
             var fileObj = zip.files[file];
@@ -286,7 +323,20 @@ exports.stat = function (zipPath, innerPath, callback)
                     mtime: new Date(fileObj.date),
                     size: fileObj._data.uncompressedSize 
                 });
-            }                
+            }
+            else if (filePath.startsWith(innerPath))
+            {
+                existsAsPrefix = true;
+            }
+        }
+
+        if (stats.length === 0 && existsAsPrefix)
+        {
+            stats.push({
+                isDirectory: function () { return true; },
+                mtime: new Date(),
+                size: 0
+            });
         }
 
         if (stats.length === 0)
