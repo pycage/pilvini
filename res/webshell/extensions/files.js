@@ -1431,7 +1431,7 @@ files.predicates = { };
         })
         .fail(function (xhr, status, err)
         {
-            ui.showError("Failed to load clipboard contents.");
+            //ui.showError("Failed to load clipboard contents.");
         });
     }
 

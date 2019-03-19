@@ -60,7 +60,7 @@ var Storage = function ()
             var req = m_indexedDB.open("Pilvini", 1);
             req.onerror = function (event)
             {
-                ui.showError("Failed to store data at storage://" + uri + ".");
+                //ui.showError("Failed to store data at storage://" + uri + ".");
             };
             req.onupgradeneeded = function ()
             {
@@ -75,7 +75,7 @@ var Storage = function ()
                 var m_db = this.result;
                 m_db.onerror = function (event)
                 {
-                    ui.showError("Storage failure: " + event.target.errorCode);
+                    //ui.showError("Storage failure: " + event.target.errorCode);
                 };
                 callback(m_db);
             };
@@ -96,7 +96,7 @@ var Storage = function ()
             };
             req.onerror = function ()
             {
-                ui.showError("Failed to store data: " + this.error);
+                //ui.showError("Failed to store data: " + this.error);
             };
         });
     };
@@ -115,7 +115,7 @@ var Storage = function ()
             };
             req.onerror = function ()
             {
-                ui.showError("Failed to load data: " + this.error);
+                //ui.showError("Failed to load data: " + this.error);
             };
         });
     };
@@ -124,7 +124,7 @@ var storage = new Storage();
 
 var Configuration = function ()
 {
-    var m_config;
+    var m_config = { };
 
     this.get = function (key, defaultValue)
     {
@@ -212,34 +212,6 @@ function openFile(item)
     }
 }
 
-
-function login(user, password)
-{
-    $.ajax({
-        type: "POST",
-        url: "/::login/",
-        beforeSend: function(xhr)
-        {
-             xhr.setRequestHeader("x-pilvini-user", user);
-             xhr.setRequestHeader("x-pilvini-password", password);
-        },
-    })
-    .done(function (data, status, xhr)
-    {
-        // server returns the auth code on successful login
-        var authCode = xhr.getResponseHeader("X-Pilvini-Auth");
-        document.cookie = "AuthCode=" + authCode + "; path=/";
-        window.location.reload();
-    })
-    .fail(function (xhr, status, err)
-    {
-        ui.showError("Invalid login credentials.", function ()
-        {
-            showLoginDialog();
-        });
-    });
-}
-
 function logout()
 {
     $.ajax({
@@ -291,6 +263,42 @@ function init()
 
 function initLogin()
 {
+    function login(user, password)
+    {
+        if (user === "")
+        {
+            ui.showError("Invalid login credentials.", function ()
+            {
+                showLoginDialog();
+            });
+            return;
+        }
+
+        $.ajax({
+            type: "POST",
+            url: "/::login/",
+            beforeSend: function(xhr)
+            {
+                 xhr.setRequestHeader("x-pilvini-user", user);
+                 xhr.setRequestHeader("x-pilvini-password", password);
+            },
+        })
+        .done(function (data, status, xhr)
+        {
+            // server returns the auth code on successful login
+            var authCode = xhr.getResponseHeader("X-Pilvini-Auth");
+            document.cookie = "AuthCode=" + authCode + "; path=/";
+            window.location.reload();
+        })
+        .fail(function (xhr, status, err)
+        {
+            ui.showError("Invalid login credentials.", function ()
+            {
+                showLoginDialog();
+            });
+        });
+    }
+
     function showLoginDialog()
     {
         var dlg = ui.showDialog("Login", "Welcome to Pilvini Web Shell.");
