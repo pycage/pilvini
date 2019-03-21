@@ -316,7 +316,38 @@ function initLogin()
     ];
     importJs(js, function ()
     {
-        sh.push("main-page", function () { }, true);
+        var page = ui.showPage("Pilvini Secure Cloud Drive");
+        page.find("> header h2").html("&copy; 2017 - 2019 Martin Grimme");
+        page.find("> header > span").first().css("visibility", "hidden");
+
+        page
+        .css("background-size", "cover")
+        .css("background-repeat", "no-repeat");
+
+        page.append($(
+            tag("p").class("sh-font-small")
+            .style("position", "absolute")
+            .style("bottom", "1em")
+            .style("right", "1em")
+            .style("color", "#fff")
+            .style("text-align", "right")
+            .style("text-shadow", "#000 1px 1px 1px")
+            .html()
+        ));
+
+        $.ajax({
+            type: "GET",
+            url: "/::image-of-the-day/",
+            dataType: "json"
+        })
+        .done(function (data, status, xhr)
+        {
+            var pic = "data:image/jpeg;base64," + data.image;
+            page.css("background-image", "url(" + pic + ")");
+            page.find("p").html("Background image by bing.com<hr style='border: solid 1px #fff;'>" + escapeHtml(atob(data.description)));
+        });
+
         showLoginDialog();
+
     });
 }

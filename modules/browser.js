@@ -284,32 +284,7 @@ function makeLoginPage(callback)
             .content(
                 tag("body").class("sh-theme-default")
                 .content(
-                    tag("div").id("main-page").class("sh-page")
-                    .style("background-image", "url('/::image-of-the-day/')")
-                    .style("background-size", "cover")
-                    .style("background-repeat", "no-repeat")
-                    .content(
-                        tag("header").class("sh-dropshadow")
-                        .content(
-                            tag("h1")
-                            .content("Pilvini Secure Cloud Drive")
-                        )
-                    )
-                    .content(
-                        tag("footer")
-                        .class("sh-font-small")
-                        .style("visibility", "visible")
-                        .content("&copy; 2017 - 2019 Martin Grimme - https://github.com/pycage/pilvini")
-                    )
-                    .content(
-                        tag("p").class("sh-font-small")
-                        .style("position", "absolute")
-                        .style("bottom", "3em")
-                        .style("right", "1em")
-                        .style("color", "#fff")
-                        .style("text-shadow", "#000 0px 0px 1px")
-                        .content("Background image by bing.com")
-                    )
+                    tag("div").id("pagelayer")
                 )
             );
 

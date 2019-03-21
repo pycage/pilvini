@@ -6,14 +6,21 @@ var modHttp = require("http"),
 var Service = function (contentRoot)
 {
     var m_currentBackground = null;
+    var m_currentDescription = "";
     var m_timestamp = 0;
 
     function sendBackground(response)
     {
-        response.setHeader("Content-Length", m_currentBackground.length);
-        response.setHeader("Content-Type", "image/jpeg");
+        var obj = {
+            image: Buffer.from(m_currentBackground, "binary").toString("base64"),
+            description: Buffer.from(m_currentDescription, "binary").toString("base64")
+        };
+
+        var data = JSON.stringify(obj);
+
+        response.setHeader("Content-Length", Buffer.byteLength(data, "utf-8"));
         response.writeHeadLogged(200, "OK");
-        response.write(m_currentBackground);
+        response.write(data);
         response.end();
     }
 
@@ -78,6 +85,7 @@ var Service = function (contentRoot)
                 {
                     var json = JSON.parse(data);
                     var url = json["images"][0].url;
+                    m_currentDescription = json["images"][0].title + " / " + json["images"][0].copyright;
                     console.log("url " + url);
                     serve("http://bing.com" + url, response);
                     m_timestamp = now;
