@@ -229,7 +229,7 @@ function makeHtml()
                     tag("a").id("download").data("ajax", "false").attr("href", "#").attr("download", "name").style("display", "none")
                 )
                 .content(
-                    tag("div").id("pagelayer")
+                    tag("div").id("pagestack")
                 )
             );
 
@@ -284,7 +284,7 @@ function makeLoginPage(callback)
             .content(
                 tag("body").class("sh-theme-default")
                 .content(
-                    tag("div").id("pagelayer")
+                    tag("div").id("pagestack")
                 )
             );
 

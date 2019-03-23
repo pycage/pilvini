@@ -232,6 +232,8 @@ function logout()
 function init()
 {
     var js = [
+        "/::res/shellfish/core/low.js",
+        "/::res/shellfish/core/mid.js",
         "/::res/webshell/file.js",
         "/::res/webshell/html.js",
         "/::res/webshell/ui.js",
@@ -301,30 +303,37 @@ function initLogin()
 
     function showLoginDialog()
     {
-        var dlg = ui.showDialog("Login", "Welcome to Pilvini Web Shell.");
-        var loginEntry = dlg.addTextEntry("Login:", "");
-        var passwordEntry = dlg.addPasswordEntry("Password:", "");
+        var dlg = new sh.Dialog("Login");
+        dlg.add(new sh.Label("Welcome to Pilvini Web Shell."));
+
+        var loginEntry = new sh.TextInput("");
+        var passwordEntry = new sh.TextInput("", true);
+        dlg.add(new sh.Labeled("Login:", loginEntry));
+        dlg.add(new sh.Labeled("Password:", passwordEntry));
+
         dlg.addButton("Login", function ()
         {
-            login(loginEntry.val(), passwordEntry.val());
+            login(loginEntry.value(), passwordEntry.value());
         }, true);
+
+        dlg.show();
     }
 
     var js = [
+        "/::res/shellfish/core/low.js",
+        "/::res/shellfish/core/mid.js",
         "/::res/webshell/html.js",
         "/::res/webshell/ui.js"
     ];
     importJs(js, function ()
     {
-        var page = ui.showPage("Pilvini Secure Cloud Drive");
-        page.find("> header h2").html("&copy; 2017 - 2019 Martin Grimme");
-        page.find("> header > span").first().css("visibility", "hidden");
+        var page = new sh.Page("Pilvini Secure Cloud Drive", "© 2017 - 2019 Martin Grimme");
 
-        page
+        page.get()
         .css("background-size", "cover")
         .css("background-repeat", "no-repeat");
 
-        page.append($(
+        page.get().append($(
             tag("p").class("sh-font-small")
             .style("position", "absolute")
             .style("bottom", "1em")
@@ -335,6 +344,8 @@ function initLogin()
             .html()
         ));
 
+        page.push(function () { });
+
         $.ajax({
             type: "GET",
             url: "/::image-of-the-day/",
@@ -343,11 +354,10 @@ function initLogin()
         .done(function (data, status, xhr)
         {
             var pic = "data:image/jpeg;base64," + data.image;
-            page.css("background-image", "url(" + pic + ")");
-            page.find("p").html("Background image by bing.com<hr style='border: solid 1px #fff;'>" + escapeHtml(atob(data.description)));
+            page.get().css("background-image", "url(" + pic + ")");
+            page.get().find("p").html("Background image by bing.com<hr style='border: solid 1px #fff;'>" + escapeHtml(atob(data.description)));
         });
 
         showLoginDialog();
-
     });
 }

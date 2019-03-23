@@ -71,29 +71,44 @@
 
     function showCreateUserDialog()
     {
-        var dlg = ui.showDialog("Create User", "Create a new user.");
+        var dlg = new sh.Dialog("Create User");
+        dlg.add(new sh.Label("Create a new user."));
 
-        var nameEntry = dlg.addTextEntry("Name:", "user");
-        var passwordEntry = dlg.addTextEntry("Password:", "");
-        var homeEntry = dlg.addTextEntry("Home:", files.currentUri());
-        dlg.addLabel("Permissions:");
-        var mayCreate = dlg.addSwitch("Create", true);
-        var mayDelete = dlg.addSwitch("Delete", true);
-        var mayModify = dlg.addSwitch("Modify", true);
-        var mayShare = dlg.addSwitch("Share", false);
-        var mayAdmin = dlg.addSwitch("Administrator", false);
+        var nameEntry = new sh.TextInput("user");
+        var passwordEntry = new sh.TextInput("");
+        var homeEntry = new sh.TextInput(files.currentUri());
+
+        var mayCreate = new sh.Switch(true);
+        var mayDelete = new sh.Switch(true);
+        var mayModify = new sh.Switch(true);
+        var mayShare = new sh.Switch(false);
+        var mayAdmin = new sh.Switch(false);
+
+        dlg.add(new sh.Labeled("Name:", nameEntry));
+        dlg.add(new sh.Labeled("Password:", passwordEntry));
+        dlg.add(new sh.Labeled("Home:", homeEntry));
+
+        dlg.add(new sh.Label("Permissions:"));
+
+        dlg.add(new sh.Labeled("Create", mayCreate));
+        dlg.add(new sh.Labeled("Delete", mayDelete));
+        dlg.add(new sh.Labeled("Modify", mayModify));
+        dlg.add(new sh.Labeled("Share", mayShare));
+        dlg.add(new sh.Labeled("Administrator", mayAdmin));
 
         dlg.addButton("Create", function ()
         {
             var permissions = [];
-            if (mayCreate.prop("checked")) permissions.push("CREATE");
-            if (mayDelete.prop("checked")) permissions.push("DELETE");
-            if (mayModify.prop("checked")) permissions.push("MODIFY");
-            if (mayShare.prop("checked")) permissions.push("SHARE");
-            if (mayAdmin.prop("checked")) permissions.push("ADMIN");
-            createUser(nameEntry.val(), passwordEntry.val(), homeEntry.val(), permissions);
+            if (mayCreate.checked()) permissions.push("CREATE");
+            if (mayDelete.checked()) permissions.push("DELETE");
+            if (mayModify.checked()) permissions.push("MODIFY");
+            if (mayShare.checked()) permissions.push("SHARE");
+            if (mayAdmin.checked()) permissions.push("ADMIN");
+            createUser(nameEntry.value(), passwordEntry.value(), homeEntry.value(), permissions);
         }, true);
         dlg.addButton("Cancel");
+
+        dlg.show();
     }
 
     function createUser(name, password, home, permissions)

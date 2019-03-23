@@ -186,7 +186,7 @@ files.predicates = { };
     files.filesByMimetype = function (pattern)
     {
         var result = [];
-        var items = m_page.find(".fileitem");
+        var items = m_page.get().find(".fileitem");
 
         for (var i = 0; i < items.length; ++i)
         {
@@ -241,7 +241,7 @@ files.predicates = { };
     function pushStatus(item)
     {
         $("#statusbox").append(item.get());
-        m_page.find("> section").css("padding-bottom", m_page.find("#statusbox").height() + "px");
+        m_page.get().find("> section").css("padding-bottom", m_page.get().find("#statusbox").height() + "px");
         updateNavBar();
     }
 
@@ -250,7 +250,7 @@ files.predicates = { };
     function popStatus(item)
     {
         item.get().remove();
-        m_page.find("> section").css("padding-bottom", m_page.find("#statusbox").height() + "px");
+        m_page.get().find("> section").css("padding-bottom", m_page.get().find("#statusbox").height() + "px");
         updateNavBar();
     }
 
@@ -413,7 +413,7 @@ files.predicates = { };
         console.log("Location: " + m_currentUri);
 
         var items = [];
-        m_page.find(".fileitem").each(function (idx)
+        m_page.get().find(".fileitem").each(function (idx)
         {
             var item = $(this);
             var mimeType = item.data("meta").mimeType;
@@ -796,12 +796,12 @@ files.predicates = { };
 
     function selectAll()
     {
-        m_page.find(".fileitem > div.selector").addClass("sh-selected");
+        m_page.get().find(".fileitem > div.selector").addClass("sh-selected");
     }
 
     function unselectAll()
     {
-        m_page.find(".fileitem > div.selector").removeClass("sh-selected");
+        m_page.get().find(".fileitem > div.selector").removeClass("sh-selected");
     }
 
     function toggleSelect(item)
@@ -811,13 +811,13 @@ files.predicates = { };
 
     files.predicates.filesSelected = function ()
     {
-        var size = m_page.find(".fileitem > div.selector.sh-selected").length;
+        var size = m_page.get().find(".fileitem > div.selector.sh-selected").length;
         return size > 0;
     }
 
     files.predicates.oneFileSelected = function ()
     {
-        var size = m_page.find(".fileitem > div.selector.sh-selected").length;
+        var size = m_page.get().find(".fileitem > div.selector.sh-selected").length;
         return size === 1;
     }
 
@@ -846,7 +846,7 @@ files.predicates = { };
         return function ()
         {
             var v = false;
-            var items = m_page.find(".fileitem > div.selector.sh-selected");
+            var items = m_page.get().find(".fileitem > div.selector.sh-selected");
             items.each(function ()
             {
                 var meta = $(this).parent().data("meta");
@@ -860,7 +860,7 @@ files.predicates = { };
     {
         return function ()
         {
-            var items = m_page.find(".fileitem > div.selector.sh-selected");
+            var items = m_page.get().find(".fileitem > div.selector.sh-selected");
             items.each(function ()
             {
                 callback($(this).parent());
@@ -977,7 +977,7 @@ files.predicates = { };
             );
         }
 
-        menu.create().popup(m_page.find("> header > div"));
+        menu.create().popup(m_page.get().find("> header > div"));
     }
 
     function setupStatusBox()
@@ -994,7 +994,7 @@ files.predicates = { };
             .html()
         );
 
-        m_page.append(statusBox);
+        m_page.get().append(statusBox);
     }
 
     function setupNavBar()
@@ -1012,7 +1012,7 @@ files.predicates = { };
                        .html()
         );
 
-        m_page.find("> section").append(navBar);
+        m_page.get().find("> section").append(navBar);
 
         navBar.on("mousedown", function (event)
         {
@@ -1048,8 +1048,8 @@ files.predicates = { };
         navBar.on("touchstart", function (event)
         {
             var scrollBegin = $(document).scrollTop();
-            m_page.addClass("sh-page-transitioning");
-            m_page.find("> section").scrollTop(scrollBegin);
+            m_page.get().addClass("sh-page-transitioning");
+            m_page.get().find("> section").scrollTop(scrollBegin);
             this.touchContext = {
                 top: $(this).offset().top,
                 scrollBegin: scrollBegin,
@@ -1059,8 +1059,8 @@ files.predicates = { };
 
         navBar.on("touchend", function (event)
         {
-            m_page.find("> section").css("margin-top", 0);
-            m_page.removeClass("sh-page-transitioning");
+            m_page.get().find("> section").css("margin-top", 0);
+            m_page.get().removeClass("sh-page-transitioning");
             if (this.touchContext.scrollTarget > 0)
             {
                 $(document).scrollTop(this.touchContext.scrollTarget);
@@ -1075,20 +1075,20 @@ files.predicates = { };
                         ($(window).height() - this.touchContext.top);
             percents = Math.max(0, Math.min(1, percents));
 
-            var scrollTop = (navBar.height() + m_page.find("> header").height() - $(window).height()) * percents;
+            var scrollTop = (navBar.height() + m_page.get().find("> header").height() - $(window).height()) * percents;
 
-            m_page.find("> section").css("margin-top", (-scrollTop) + "px");
+            m_page.get().find("> section").css("margin-top", (-scrollTop) + "px");
             this.touchContext.scrollTarget = scrollTop;        
         });
     }
 
     function updateNavBar()
     {
-        var navBar = m_page.find(".files-navbar");
+        var navBar = m_page.get().find(".files-navbar");
         navBar.html("");
         navBar.height(0);
 
-        var items = m_page.find(".fileitem");
+        var items = m_page.get().find(".fileitem");
         var currentLetter = "";
         var previousOffset = -1;
 
@@ -1103,7 +1103,7 @@ files.predicates = { };
                 navBar.append(
                     tag("span")
                     .style("position", "absolute")
-                    .style("top", (item.offset().top - m_page.find("> header").height()) + "px")
+                    .style("top", (item.offset().top - m_page.get().find("> header").height()) + "px")
                     .style("left", "0")
                     .style("right", "0")
                     .content(letter)
@@ -1114,8 +1114,8 @@ files.predicates = { };
             }
         }
 
-        var windowHeight = $(window).height() - m_page.find("> header").height() - 1;
-        var contentHeight = m_page.find("> section").height();
+        var windowHeight = $(window).height() - m_page.get().find("> header").height() - 1;
+        var contentHeight = m_page.get().find("> section").height();
         var minHeight = Math.max(windowHeight, contentHeight);
         navBar.height(Math.max(windowHeight, contentHeight));
         //log("win height: " + $(window).height() + ", content height: " + contentHeight);
@@ -1127,7 +1127,7 @@ files.predicates = { };
 
         m_scrollPositionsMap[m_currentUri] = $(document).scrollTop();
 
-        m_page.find("> section").html("");
+        m_page.get().find("> section").html("");
 
         $.ajax({
             type: "GET",
@@ -1193,7 +1193,7 @@ files.predicates = { };
             }
         });
     
-        var filesBox = m_page.find("> section");
+        var filesBox = m_page.get().find("> section");
 
         switch (configuration.get("view-mode", "list"))
         {
@@ -1311,22 +1311,22 @@ files.predicates = { };
 
         if (data.uri === "/")
         {
-            m_page.find("> header > span").first().css("visibility", "hidden");
+            m_page.get().find("> header > span").first().css("visibility", "hidden");
         }
         else
         {
-            m_page.find("> header > span").first().css("visibility", "visible");
+            m_page.get().find("> header > span").first().css("visibility", "visible");
         }
 
         if (isFav)
         {
-            m_page.find("> header h1").prepend($(
+            m_page.get().find("> header h1").prepend($(
                 tag("span").class("sh-fw-icon sh-icon-star-circle").content(" ").html()
             ));
         }
         if (isShare)
         {
-            m_page.find("> header h1").prepend($(
+            m_page.get().find("> header h1").prepend($(
                 tag("span").class("sh-fw-icon sh-icon-share").content(" ").html()
             ));
         }
@@ -1550,7 +1550,22 @@ files.predicates = { };
     
     }
 
+    m_page = new sh.Page("", "");
+    m_page.get().find("> header > div").on("click", openPathMenu);
+    m_page.addLeftHeaderButton("sh-icon-back", cdUp);
+    m_page.addRightHeaderButton("sh-icon-menu", function ()
+    {
+        var menu = m_actionsMenu.create();
+        menu.popup($(this));
+    });
+    m_page.get().append($(
+        tag("footer").class("sh-dropshadow")
+        .html()
+    ));
 
+    m_page.push();
+
+    /*
     m_page = ui.showPage("", cdUp);
     m_page.find("> header > div").on("click", openPathMenu);
     m_page.addIconButton("sh-icon-menu", function ()
@@ -1562,6 +1577,7 @@ files.predicates = { };
         tag("footer").class("sh-dropshadow")
         .html()
     ));
+    */
 
 
     /* setup actions menu */
