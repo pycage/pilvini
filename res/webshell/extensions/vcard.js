@@ -41,9 +41,11 @@ function viewVCard(href)
     var parts = href.split("/");
     var name = decodeURI(parts[parts.length - 1]);
     
-    var page = ui.showPage(name);
+    var page = new sh.Page(name, "");
+    page.addLeftHeaderButton("sh-icon-back", function () { page.pop(); });
     
-    page.find("section").html("<ul class='sh-listview'></ul>");
+    page.get().find("section").html("<ul class='sh-listview'></ul>");
+    page.push(function () { });
 
     loadVCard(page, href);
 }
@@ -57,7 +59,7 @@ function loadVCard(page, href)
     })
     .done(function (data, status, xhr)
     {
-        var listView = page.find("section ul");
+        var listView = page.get().find("section ul");
 
         var coll = new VCardCollection(data);
         var cards = coll.cards();

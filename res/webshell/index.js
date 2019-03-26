@@ -355,7 +355,7 @@ function initLogin()
         {
             var pic = "data:image/jpeg;base64," + data.image;
             page.get().css("background-image", "url(" + pic + ")");
-            page.get().find("p").html("Background image by bing.com<hr style='border: solid 1px #fff;'>" + escapeHtml(atob(data.description)));
+            page.get().find("p").html("Background image powered by bing.com<hr style='border: solid 1px #fff;'>" + escapeHtml(atob(data.description)));
         });
 
         showLoginDialog();

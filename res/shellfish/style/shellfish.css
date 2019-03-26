@@ -81,12 +81,12 @@ footer {
 }
 
 
-span[onclick]:hover, li[onclick]:hover, h1[onclick]:hover, h2[onclick]:hover {
+div[onclick]:hover, span[onclick]:hover, li[onclick]:hover, h1[onclick]:hover, h2[onclick]:hover {
     color: var(--color-highlight);
     background-color: var(--color-highlight-background);
 }
 
-span[onclick]:active, li[onclick]:active, h1[onclick]:active, h2[onclick]:active {
+div[onclick]:active, span[onclick]:active, li[onclick]:active, h1[onclick]:active, h2[onclick]:active {
     color: var(--color-highlight);
     background-color: var(--color-highlight-background);
 }

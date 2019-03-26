@@ -20,6 +20,12 @@ sh.Page = function (title, subtitle)
                     sh.tag("h2").content(sh.escapeHtml(subtitle))
                 )                    
             )
+            .content(
+                tag("div").class("sh-left")
+            )
+            .content(
+                tag("div").class("sh-right")
+            )
         )
         .content(
             sh.tag("section")
@@ -63,56 +69,178 @@ sh.Page = function (title, subtitle)
         m_page.find("> header h2").html(sh.escapeHtml(text));
     };
 
-    /* Adds a left header button.
+    /* Adds an item to the left side of the header.
      */
-    this.addLeftHeaderButton = function (icon, callback)
+    this.addToHeaderLeft = function (item)
     {
-        var count = m_page.find("> header .sh-left").length;
-        var btn = $(
-            sh.tag("span").class("sh-left sh-fw-icon " + icon)
-            .style("margin-right", (count * 3) + "rem")
-            .style("font-size", "150%")
-            .on("click", "")
-            .html()
-        );
-        btn.on("click", callback);
-        m_page.find("> header").append(btn);
-    
-        return btn;
+        m_page.find("> header .sh-left").append(item.get());
     };
 
-    /* Adds a right header button.
+    /* Adds an item to the right side of the header.
      */
-    this.addRightHeaderButton = function (icon, callback)
+    this.addToHeaderRight = function (item)
     {
-        var count = m_page.find("> header .sh-right").length;
-        var btn = $(
-            sh.tag("span").class("sh-right sh-fw-icon " + icon)
-            .style("margin-right", (count * 3) + "rem")
-            .style("font-size", "150%")
-            .on("click", "")
-            .html()
-        );
-        btn.on("click", callback);
-        m_page.find("> header").append(btn);
-    
-        return btn;
+        m_page.find("> header .sh-right").append(item.get());
+    };
+
+    /* Adds an item to the page.
+     */
+    this.add = function (item)
+    {
+        m_page.find("> section").append(item.get());
     };
 };
 
 sh.Menu = function ()
 {
+    var m_menu;
 
+    this.clear = function()
+    {
+        m_menu.find("> div").html("");
+        m_menu.find("> div").append("<ul>");
+    };
+
+    this.addItem = function (item)
+    {
+        var ul = m_menu.find("> div > ul").last();
+        ul.append(item.get());
+    };
+
+    this.addSeparator = function ()
+    {
+        var ul = m_menu.find("> div > ul").last();
+        ul.append($(
+            tag("hr")
+            .html()
+        ));
+    }
+
+    this.addSubMenu = function (subMenu)
+    {
+        var div = m_menu.find("> div");
+        div.append(subMenu.get());
+        div.append("<ul>");
+    };
+
+    this.popup = function (parent)
+    {
+        $("body").append(m_menu);
+        sh.menu(parent, m_menu);
+    };
+
+    this.close = function ()
+    {
+        m_menu.remove();
+    }
+
+    m_menu = $(
+        tag("div").class("sh-menu")
+        .content(
+            tag("div")
+            .content(
+                tag("ul")
+            )
+        )
+        .html()
+    );
+
+    m_menu.on("click", function (event)
+    {
+        event.stopPropagation();
+        m_menu.remove();
+    });
 };
 
-sh.SubMenu = function (title)
+sh.MenuItem = function (icon, text, callback)
 {
+    var m_item;
 
+    this.setEnabled = function (value)
+    {
+        if (value)
+        {
+            m_item.removeClass("sh-disabled");
+        }
+        else
+        {
+            m_item.addClass("sh-disabled");
+        }
+    };
+
+    this.get = function ()
+    {
+        return m_item;
+    };
+
+    m_item = $(
+        tag("li")
+        .style("position", "relative")
+        .on("click", "")
+        .content(
+            tag("span").class("sh-left sh-fw-icon " + icon)
+        )
+        .content(
+            tag("span")
+            .style("padding-left", "1.2em")
+            .content(sh.escapeHtml(text))
+        )
+        .html()
+    );
+
+    m_item.on("click", callback);
 };
 
-sh.MenuItem = function (title, callback)
+sh.SubMenu = function (text)
 {
+    var m_subMenu;
 
+    this.addItem = function (item)
+    {
+        var ul = m_subMenu.find("ul").last();
+        ul.append(item.get());
+    };
+
+    this.addSeparator = function ()
+    {
+        var ul = m_subMenu.find("ul").last();
+        ul.append($(
+            tag("hr")
+            .html()
+        ));
+    }
+
+    this.get = function ()
+    {
+        return m_subMenu;
+    };
+
+    m_subMenu = $(
+        tag("div")
+        .content(
+            tag("h1").class("sh-submenu")
+            .on("click", "")
+            .content(sh.escapeHtml(text))
+        )
+        .content(
+            tag("ul")
+        )
+        .html()
+    );
+
+    m_subMenu.find("> h1").on("click", function (event)
+    {
+        event.stopPropagation();
+        var item = this;
+        m_subMenu.parent().find(".sh-submenu").each(function (i)
+        {
+            if (this !== item)
+            {
+                $(this).removeClass("sh-submenu-visible");
+            }
+        });
+        $(item).toggleClass("sh-submenu-visible");
+    });
 };
 
 sh.Dialog = function (title)
@@ -254,6 +382,36 @@ sh.Button = function (text, callback)
 
 };
 
+sh.IconButton = function (icon, callback)
+{
+    var that = this;
+    var m_icon = icon;
+    var m_button = $(
+        sh.tag("div")
+        .style("display", "inline-block")
+        .style("width", "3rem")
+        .style("height", "100%")
+        .content(
+            sh.tag("span").class("sh-fw-icon " + icon)
+            .style("font-size", "150%")
+        )
+        .on("click", "")
+        .html()
+    );
+    m_button.on("click", function (event) { event.stopPropagation(); callback(that); });
+
+    this.get = function ()
+    {
+        return m_button;
+    };
+
+    this.setIcon = function (icon)
+    {
+        m_button.find("span").removeClass(m_icon).addClass(icon);
+        m_icon = icon;
+    };
+};
+
 sh.Switch = function (checked)
 {
     var m_swtch = $(
@@ -286,4 +444,95 @@ sh.Switch = function (checked)
     {
         return m_swtch.find("input").prop("checked");
     };
+};
+
+sh.ListView = function ()
+{
+    var m_listView = $(
+        tag("ul").class("sh-listview")
+        .html()
+    );
+
+    this.get = function ()
+    {
+        return m_listView;
+    };
+
+    this.add = function (item)
+    {
+        m_listView.append(item.get());
+    };
+};
+
+sh.ListItem = function (title, subtitle)
+{
+    var m_listItem = $(
+        tag("li")
+        .style("height", "80px")
+        .on("click", "")
+        .content(
+            tag("div").class("sh-left icon")
+            .style("display", "none")
+            .style("width", "80px")
+            .style("background-repeat", "no-repeat")
+            .style("background-position", "50% 50%")
+        )
+        .content(
+            tag("div")
+            .style("position", "absolute")
+            .style("top", "1em")
+            .style("left", "0")
+            .style("right", "0")
+            .style("padding-left", "0.5em")
+            .content(
+                tag("h1").content(sh.escapeHtml(title))
+            )
+            .content(
+                tag("h2").content(sh.escapeHtml(subtitle))
+            )
+        )
+        .content(
+            tag("div").class("sh-right selector")
+            .style("display", "none")
+            .style("width", "42px")
+            .style("text-align", "center")
+            .style("border-left", "solid 1px var(--color-border)")
+            .content(
+                tag("span").class("sh-fw-icon")
+                .style("line-height", "80px")
+            )
+        )
+        .html()
+    );
+
+    var m_iconBox = li.find("> div").eq(0);
+    var m_labelBox = li.find("> div").eq(1);
+    var m_buttonBox = li.find("> div").eq(2);
+
+    m_listItem.on("click", callback);
+
+    this.get = function ()
+    {
+        return m_listItem;
+    };
+
+    this.setIcon = function (url)
+    {
+        m_labelBox.css("left", "80px");
+        m_iconBox.css("display", "block");
+        m_iconBox.css("background-image", "url(" + url + ")");
+    };
+
+    this.setAction = function (icon, callback)
+    {
+        m_labelBox.css("right", "42px");
+        m_buttonBox.css("display", "block");
+        m_buttonBox.find("span").addClass(icon);
+        m_buttonBox.on("click", function (event)
+        {
+            event.stopPropagation();
+            callback();
+        });
+    };
+
 };

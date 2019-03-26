@@ -11,14 +11,14 @@ function viewText(href)
     {
         if (editBox.css("display") === "none")
         {
-            toggleButton.removeClass("sh-icon-edit").addClass("sh-icon-checked");
+            toggleButton.setIcon("sh-icon-checked");
             viewBox.css("display", "none");
             editBox.css("display", "block");
             edited = true;
         }
         else
         {
-            toggleButton.removeClass("sh-icon-checked").addClass("sh-icon-edit");
+            toggleButton.setIcon("sh-icon-edit");
             viewBox.css("display", "block");
             editBox.css("display", "none");
             setText(editBox.val());
@@ -54,23 +54,25 @@ function viewText(href)
     var parts = href.split("/");
     var name = decodeURI(parts[parts.length - 1]);
 
-    var page = ui.showPage(name);
+    var page = new sh.Page(name, "");
     var originalContent = "";
 
-    var toggleButton = page.addIconButton("sh-icon-edit", toggleMode);
+    page.addToHeaderLeft(new sh.IconButton("sh-icon-back", function () { page.pop(); }));
+    var toggleButton = new sh.IconButton("sh-icon-edit", toggleMode);
+    page.addToHeaderRight(toggleButton);
 
-    page.find("section").append("<pre></pre>");
-    var viewBox = page.find("section pre");
+    page.get().find("section").append("<pre></pre>");
+    var viewBox = page.get().find("section pre");
     viewBox.css("padding", "0.5em");
 
-    page.find("section").append("<textarea>");
-    var editBox = page.find("section textarea");
+    page.get().find("section").append("<textarea>");
+    var editBox = page.get().find("section textarea");
     editBox.css("display", "none")
            .css("width", "100%")
            .css("padding", "1em")
            .css("height", ($(window).height() * 0.8) + "px");
 
-    page.one("sh-closed", function ()
+    page.get().one("sh-closed", function ()
     {
         var data = editBox.val();
         if (edited && data !== originalContent)
@@ -79,6 +81,7 @@ function viewText(href)
         }
     });
 
+    page.push(function () {});
 
     var busyIndicator = ui.showBusyIndicator("Loading");
 

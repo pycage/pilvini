@@ -83,7 +83,7 @@ files.predicates = { };
 
             if (m_type === "menu")
             {
-                var menu = new ui.Menu();
+                var menu = new sh.Menu();
                 visibleChildren.forEach(function (c)
                 {
                     if (c.type() === "submenu")
@@ -103,7 +103,7 @@ files.predicates = { };
             }
             else if (m_type === "submenu")
             {
-                var menu = new ui.SubMenu(m_text);
+                var menu = new sh.SubMenu(m_text);
                 visibleChildren.forEach(function (c)
                 {
                     if (c.type() === "submenu")
@@ -123,7 +123,7 @@ files.predicates = { };
             }
             else
             {
-                var item = new ui.MenuItem(m_icon, m_text, m_callback);
+                var item = new sh.MenuItem(m_icon, m_text, m_callback);
                 item.setEnabled(m_enabled());
                 return item;
             }
@@ -1552,12 +1552,12 @@ files.predicates = { };
 
     m_page = new sh.Page("", "");
     m_page.get().find("> header > div").on("click", openPathMenu);
-    m_page.addLeftHeaderButton("sh-icon-back", cdUp);
-    m_page.addRightHeaderButton("sh-icon-menu", function ()
+    m_page.addToHeaderLeft(new sh.IconButton("sh-icon-back", cdUp));
+    m_page.addToHeaderRight(new sh.IconButton("sh-icon-menu", function (button)
     {
         var menu = m_actionsMenu.create();
-        menu.popup($(this));
-    });
+        menu.popup(button.get());
+    }));
     m_page.get().append($(
         tag("footer").class("sh-dropshadow")
         .html()
