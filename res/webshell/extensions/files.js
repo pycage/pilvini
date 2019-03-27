@@ -1437,13 +1437,13 @@ files.predicates = { };
 
     function openClipboardPage()
     {
-        var clipboardPage = ui.showPage("Clipboard");
+        var clipboardPage = new sh.Page("Clipboard", "");
+        clipboardPage.setSwipeBack(function () { clipboardPage.pop(); });
+        clipboardPage.addToHeaderLeft(new sh.IconButton("sh-icon-back", function () { clipboardPage.pop(); }));
+        clipboardPage.push();
 
-        clipboardPage.find("> section").html("");
-        var listView = $(
-            tag("ul").class("sh-listview")
-            .html()
-        );
+        var listView = new sh.ListView();
+        clipboardPage.add(listView);
 
         console.log(JSON.stringify(m_clipboard));
         m_clipboard.forEach(function (entry)
@@ -1455,16 +1455,13 @@ files.predicates = { };
             }
             var d = new Date(entry.mtime);
             info += d.toLocaleDateString() + " " + d.toLocaleTimeString();
-            var item = ui.listItem(entry.name, info, function () { });
+            var item = new sh.ListItem(entry.name, info, function () { });
             if (entry.icon)
             {
                 item.setIcon(entry.icon);
             }
-            listView.append(item);
+            listView.add(item);
         });
-
-        var filesBox = clipboardPage.find("> section");
-        filesBox.append(listView);
     }
 
     function onDragOver(ev)
@@ -1552,6 +1549,7 @@ files.predicates = { };
 
     m_page = new sh.Page("", "");
     m_page.get().find("> header > div").on("click", openPathMenu);
+    m_page.setSwipeBack(cdUp);
     m_page.addToHeaderLeft(new sh.IconButton("sh-icon-back", cdUp));
     m_page.addToHeaderRight(new sh.IconButton("sh-icon-menu", function (button)
     {
@@ -1564,20 +1562,6 @@ files.predicates = { };
     ));
 
     m_page.push();
-
-    /*
-    m_page = ui.showPage("", cdUp);
-    m_page.find("> header > div").on("click", openPathMenu);
-    m_page.addIconButton("sh-icon-menu", function ()
-    {
-        var menu = m_actionsMenu.create();
-        menu.popup($(this));
-    });
-    m_page.append($(
-        tag("footer").class("sh-dropshadow")
-        .html()
-    ));
-    */
 
 
     /* setup actions menu */

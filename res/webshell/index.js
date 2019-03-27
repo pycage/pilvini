@@ -344,7 +344,7 @@ function initLogin()
             .html()
         ));
 
-        page.push(function () { });
+        page.push();
 
         $.ajax({
             type: "GET",

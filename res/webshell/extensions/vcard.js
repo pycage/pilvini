@@ -42,10 +42,11 @@ function viewVCard(href)
     var name = decodeURI(parts[parts.length - 1]);
     
     var page = new sh.Page(name, "");
-    page.addLeftHeaderButton("sh-icon-back", function () { page.pop(); });
+    page.setSwipeBack(function () { page.pop(); });
+    page.addToHeaderLeft(new sh.IconButton("sh-icon-back", function () { page.pop(); }));
     
     page.get().find("section").html("<ul class='sh-listview'></ul>");
-    page.push(function () { });
+    page.push();
 
     loadVCard(page, href);
 }

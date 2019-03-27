@@ -4,32 +4,43 @@
 {
     function openPage()
     {
-        var page = ui.showPage("Administration");
-        var listView = page.addListView();
-    
-        var item = ui.listItem("Users", "", function ()
+        var page = new sh.Page("Administration", "");
+        page.setSwipeBack(function () { page.pop(); });
+        page.addToHeaderLeft(new sh.IconButton("sh-icon-back", function () { page.pop(); }));
+        var listView = new sh.ListView();
+        page.add(listView);
+        
+        var item = new sh.ListItem("Users", "", function ()
         {
             openUsersPage();
         });
         item.setIcon("/::res/icons/face.png");
-        listView.append(item);
-    
-        item = ui.listItem("Statistics", "", function ()
+        listView.add(item);
+        
+        item = new sh.ListItem("Statistics", "", function ()
         {
             ui.showError("Statistics are not yet available.");
         });
         item.setIcon("/::res/file-icons/text.png");
-        listView.append(item);
+        listView.add(item);
+
+        page.push();
     }
 
     function openUsersPage()
     {
-        var page = ui.showPage("Users");
-        page.addIconButton("sh-icon-add-user", function ()
+        var page = new sh.Page("Users", "");
+        page.setSwipeBack(function () { page.pop(); });
+        page.addToHeaderLeft(new sh.IconButton("sh-icon-back", function () { page.pop(); }));
+        page.addToHeaderRight(new sh.IconButton("sh-icon-add-user", function ()
         {
             showCreateUserDialog();
-        });
-        var listView = page.addListView();
+        }));
+
+        var listView = new sh.ListView();
+        page.add(listView);
+
+        page.push();
 
         var busyIndicator = ui.showBusyIndicator("Loading");
 
@@ -43,7 +54,7 @@
             data.users.forEach(function (item)
             {
                 var name = item.name;
-                var item = ui.listItem(item.name, item.home + " (" + item.permissions.join(" ") + ")", function ()
+                var item = new sh.ListItem(item.name, item.home + " (" + item.permissions.join(" ") + ")", function ()
                 {
 
                 });
@@ -56,7 +67,7 @@
                     },
                     function () { });
                 });
-                listView.append(item);
+                listView.add(item);
             });
         })
         .fail(function (xhr, status, err)

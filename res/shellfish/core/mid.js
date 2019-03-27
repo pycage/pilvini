@@ -51,8 +51,21 @@ sh.Page = function (title, subtitle)
      */
     this.pop = function (callback)
     {
-        sh.pagePop(callback);
-        m_page.remove();
+        sh.pagePop(function ()
+        {
+            m_page.remove();
+            if (callback)
+            {
+                callback();
+            }
+        });
+    };
+
+    /* Sets a swipe-back action.
+     */
+    this.setSwipeBack = function (callback)
+    {
+        sh.pageOnSwipe(m_page, callback);
     };
 
     /* Sets the page title.
@@ -464,7 +477,7 @@ sh.ListView = function ()
     };
 };
 
-sh.ListItem = function (title, subtitle)
+sh.ListItem = function (title, subtitle, callback)
 {
     var m_listItem = $(
         tag("li")
@@ -505,9 +518,9 @@ sh.ListItem = function (title, subtitle)
         .html()
     );
 
-    var m_iconBox = li.find("> div").eq(0);
-    var m_labelBox = li.find("> div").eq(1);
-    var m_buttonBox = li.find("> div").eq(2);
+    var m_iconBox = m_listItem.find("> div").eq(0);
+    var m_labelBox = m_listItem.find("> div").eq(1);
+    var m_buttonBox = m_listItem.find("> div").eq(2);
 
     m_listItem.on("click", callback);
 

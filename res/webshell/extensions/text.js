@@ -57,6 +57,7 @@ function viewText(href)
     var page = new sh.Page(name, "");
     var originalContent = "";
 
+    page.setSwipeBack(function () { page.pop(); });
     page.addToHeaderLeft(new sh.IconButton("sh-icon-back", function () { page.pop(); }));
     var toggleButton = new sh.IconButton("sh-icon-edit", toggleMode);
     page.addToHeaderRight(toggleButton);
@@ -81,7 +82,7 @@ function viewText(href)
         }
     });
 
-    page.push(function () {});
+    page.push();
 
     var busyIndicator = ui.showBusyIndicator("Loading");
 
