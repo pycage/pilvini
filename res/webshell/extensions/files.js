@@ -154,6 +154,7 @@ files.predicates = { };
 (function ()
 {
     var m_page;
+    var m_backButton;
     var m_currentUri = "";
     var m_permissions = [];
 
@@ -747,7 +748,7 @@ files.predicates = { };
                 if (ok)
                 {
                     console.log("File moved: " + name + " -> " + newName);
-                    $(item).find("h1").html(escapeHtml(newName));
+                    $(item).find("h1").html(sh.escapeHtml(newName));
                     loadDirectory(m_currentUri, false);    
                 }
                 else
@@ -983,7 +984,7 @@ files.predicates = { };
     function setupStatusBox()
     {
         var statusBox = $(
-            tag("div").id("statusbox")
+            sh.tag("div").id("statusbox")
             .style("position", "fixed")
             .style("bottom", "0")
             .style("left", "0")
@@ -999,7 +1000,7 @@ files.predicates = { };
 
     function setupNavBar()
     {
-        var navBar = $(tag("div").class("files-navbar")
+        var navBar = $(sh.tag("div").class("files-navbar")
                        .style("position", "absolute")
                        .style("top", "0")
                        .style("left", "0")
@@ -1101,7 +1102,7 @@ files.predicates = { };
             if (letter !== currentLetter && offset !== previousOffset)
             {
                 navBar.append(
-                    tag("span")
+                    sh.tag("span")
                     .style("position", "absolute")
                     .style("top", (item.offset().top - m_page.get().find("> header").height()) + "px")
                     .style("left", "0")
@@ -1198,11 +1199,9 @@ files.predicates = { };
         switch (configuration.get("view-mode", "list"))
         {
         case "list":
-            var listView = $(
-                tag("ul").class("sh-listview")
-                .style("margin-left", "32px")
-                .html()
-            );
+            var listView = new sh.ListView();
+            listView.get().css("margin-left", "32px");
+
             files.forEach(function (entry)
             {
                 var info = "";
@@ -1212,28 +1211,28 @@ files.predicates = { };
                 }
                 var d = new Date(entry.mtime);
                 info += d.toLocaleDateString() + " " + d.toLocaleTimeString();
-                var item = ui.listItem(entry.name, info, function ()
+                var item = new sh.ListItem(entry.name, info, function ()
                 {
                     openFile(entry);
                 });
-                item.addClass("fileitem");
-                item.data("meta", entry);
+                item.get().addClass("fileitem");
+                item.get().data("meta", entry);
                 item.setAction("sh-icon-checked-circle", function ()
                 {
-                    toggleSelect(item.find(".selector"));
+                    toggleSelect(item.get().find(".selector"));
                 });
                 if (entry.icon)
                 {
                     item.setIcon(entry.icon);
                 }
-                listView.append(item);
+                listView.add(item);
             });
-            filesBox.append(listView);
+            m_page.add(listView);
             break;
 
         case "grid":
             var gridView = $(
-                tag("div")
+                sh.tag("div")
                 .style("display", "flex")
                 .style("flex-direction", "row")
                 .style("flex-wrap", "wrap")
@@ -1244,7 +1243,7 @@ files.predicates = { };
             files.forEach(function (entry)
             {
                 var item = $(
-                    tag("div").class("fileitem icon")
+                    sh.tag("div").class("fileitem icon")
                     .style("position", "relative")
                     .style("width", "160px")
                     .style("height", "160px")
@@ -1255,7 +1254,7 @@ files.predicates = { };
                     .style("background-position", "50% 50%")
                     .style("background-image", "url(" + entry.icon + ")")
                     .content(
-                        tag("h1")
+                        sh.tag("h1")
                         .style("position", "absolute")
                         .style("background-color", "var(--color-primary-background-translucent)")
                         .style("padding", "0")
@@ -1267,7 +1266,7 @@ files.predicates = { };
                         .content(entry.name)
                     )
                     .content(
-                        tag("div").class("selector")
+                        sh.tag("div").class("selector")
                         .style("position", "absolute")
                         .style("top", "0")
                         .style("right", "0")
@@ -1275,7 +1274,7 @@ files.predicates = { };
                         .style("height", "42px")
                         .style("text-align", "center")
                         .content(
-                            tag("span").class("sh-fw-icon sh-icon-checked-circle")
+                            sh.tag("span").class("sh-fw-icon sh-icon-checked-circle")
                             .style("line-height", "42px")
                         )
                     )
@@ -1311,23 +1310,23 @@ files.predicates = { };
 
         if (data.uri === "/")
         {
-            m_page.get().find("> header > span").first().css("visibility", "hidden");
+            m_backButton.get().css("visibility", "hidden");
         }
         else
         {
-            m_page.get().find("> header > span").first().css("visibility", "visible");
+            m_backButton.get().css("visibility", "visible");
         }
 
         if (isFav)
         {
             m_page.get().find("> header h1").prepend($(
-                tag("span").class("sh-fw-icon sh-icon-star-circle").content(" ").html()
+                sh.tag("span").class("sh-fw-icon sh-icon-star-circle").content(" ").html()
             ));
         }
         if (isShare)
         {
             m_page.get().find("> header h1").prepend($(
-                tag("span").class("sh-fw-icon sh-icon-share").content(" ").html()
+                sh.tag("span").class("sh-fw-icon sh-icon-share").content(" ").html()
             ));
         }
 
@@ -1550,14 +1549,15 @@ files.predicates = { };
     m_page = new sh.Page("", "");
     m_page.get().find("> header > div").on("click", openPathMenu);
     m_page.setSwipeBack(cdUp);
-    m_page.addToHeaderLeft(new sh.IconButton("sh-icon-back", cdUp));
+    m_backButton = new sh.IconButton("sh-icon-back", cdUp);
+    m_page.addToHeaderLeft(m_backButton);
     m_page.addToHeaderRight(new sh.IconButton("sh-icon-menu", function (button)
     {
         var menu = m_actionsMenu.create();
         menu.popup(button.get());
     }));
     m_page.get().append($(
-        tag("footer").class("sh-dropshadow")
+        sh.tag("footer").class("sh-dropshadow")
         .html()
     ));
 

@@ -248,7 +248,7 @@ var Audio = function ()
             while (box.find("> div").length < buffered.length)
             {
                 box.append(
-                    tag("div")
+                    sh.tag("div")
                     .style("position", "absolute")
                     .style("background-color", "red")
                     .style("top", "0")
@@ -314,8 +314,8 @@ var Audio = function ()
         {
             parseMetadata(uri, data, function (title, artist, pic)
             {
-                $(".audio-title").html(escapeHtml(title));
-                $(".audio-artist").html(escapeHtml(artist));
+                $(".audio-title").html(sh.escapeHtml(title));
+                $(".audio-artist").html(sh.escapeHtml(artist));
                 if (pic !== "")
                 {
                     $(".audio-cover").css("background-image", "url(" + pic + ")");
@@ -351,11 +351,11 @@ var Audio = function ()
     function pushStatusItem()
     {
         var item = $(
-            tag("div")
+            sh.tag("div")
             .style("position", "relative")
             .style("height", "64px")
             .content(
-                tag("div").class("sh-left audio-cover")
+                sh.tag("div").class("sh-left audio-cover")
                 .style("width", "64px")
                 .style("height", "80px")
                 .style("background-size", "64px 64px")
@@ -364,20 +364,20 @@ var Audio = function ()
                 .style("font-size", "200%")
                 .style("line-height", "64px")
                 .content(
-                    tag("span").class("sh-fw-icon sh-icon-media-play-circle audio-play-button")
+                    sh.tag("span").class("sh-fw-icon sh-icon-media-play-circle audio-play-button")
                     .style("color", "white")
                     .style("text-shadow", "#000 0px 0px 1px")
                 )
             )
             .content(
-                tag("div").class("audio-progress-bar")
+                sh.tag("div").class("audio-progress-bar")
                 .style("position", "absolute")
                 .style("top", "0")
                 .style("left", "64px")
                 .style("right", "42px")
                 .style("height", "4px")
                 .content(
-                    tag("div")
+                    sh.tag("div")
                     .style("position", "absolute")
                     .style("top", "0")
                     .style("left", "0")
@@ -385,7 +385,7 @@ var Audio = function ()
                     .style("height", "1px")
                 )
                 .content(
-                    tag("div")
+                    sh.tag("div")
                     .style("position", "absolute")
                     .style("top", "0")
                     .style("left", "0")
@@ -395,7 +395,7 @@ var Audio = function ()
                 )
             )
             .content(
-                tag("div")
+                sh.tag("div")
                 .style("margin-left", "64px")
                 .style("margin-right", "42px")
                 .style("margin-top", "4px")
@@ -403,28 +403,28 @@ var Audio = function ()
                 .style("padding-left", "0.5em")
                 .style("text-align", "left")
                 .content(
-                    tag("h1").class("audio-title")
+                    sh.tag("h1").class("audio-title")
                     .style("line-height", "1.2em")
                     .content("-")
                 )
                 .content(
-                    tag("h2").class("sh-font-small audio-artist")
+                    sh.tag("h2").class("sh-font-small audio-artist")
                     .style("line-height", "1.2em")
                     .content("-")
                 )
             )
             .content(
-                tag("div").class("sh-right audio-close-button")
+                sh.tag("div").class("sh-right audio-close-button")
                 .style("width", "42px")
                 .style("text-align", "center")
                 .style("border-left", "solid 1px var(--color-border)")
                 .style("line-height", "80px")
                 .content(
-                    tag("span").class("sh-fw-icon sh-icon-close")
+                    sh.tag("span").class("sh-fw-icon sh-icon-close")
                 )
             )
             .content(
-                tag("video")
+                sh.tag("video")
                 .style("display", "none")
                 /*
                 .style("position", "absolute")
@@ -502,57 +502,57 @@ var Audio = function ()
      */
     function makePlaylistUi()
     {
-        var t = tag("ul").class("sh-listview")
+        var t = sh.tag("ul").class("sh-listview")
                 .style("text-align", "left")
                 .style("background-color", "var(--color-primary-background-translucent)")
         for (var i = 0; i < m_playlist.size(); ++i)
         {
             t.content(
-                tag("li").class("audio-playlist-item")
+                sh.tag("li").class("audio-playlist-item")
                 .data("playlist-key", m_playlist.itemAt(i)[0])
                 .style("height", "80px")
                 .style("background-color", "var(--color-primary-background-translucent)")
                 //.style("color", "#fff")
                 .on("click", "")
                 .content(
-                    tag("div").class("sh-left")
+                    sh.tag("div").class("sh-left")
                     .style("width", "80px")
                     .style("height", "80px")
                     .style("background-size", "cover")
                     .style("background-color", "#666")
                 )
                 .content(
-                    tag("div").class("sh-left")
+                    sh.tag("div").class("sh-left")
                     .style("margin-left", "80px")
                     .style("padding-left", "1rem")
                     .style("line-height", "80px")
                     .style("font-size", "200%")
                     .content(
-                        tag("span").class("sh-fw-icon sh-icon-media-play audio-playlist-indicator")
+                        sh.tag("span").class("sh-fw-icon sh-icon-media-play audio-playlist-indicator")
                         .style("visibility", "hidden")
                     )
                 )
                 .content(
-                    tag("h1").content("-")
+                    sh.tag("h1").content("-")
                     .style("margin-left", "80px")
                     .style("margin-right", "42px")
                     .style("padding-top", "1rem")
                     .style("padding-left" ,"3rem")
                 )
                 .content(
-                    tag("h2").content("-")
+                    sh.tag("h2").content("-")
                     .style("margin-left", "80px")
                     .style("margin-right", "42px")
                     .style("padding-left" ,"3rem")
                 )
                 .content(
-                    tag("div").class("sh-right audio-playlist-delete-button")
+                    sh.tag("div").class("sh-right audio-playlist-delete-button")
                     .style("width", "42px")
                     .style("text-align", "center")
                     .style("border-left", "solid 1px var(--color-border)")
                     .style("line-height", "80px")
                     .content(
-                        tag("span").class("sh-fw-icon sh-icon-close")
+                        sh.tag("span").class("sh-fw-icon sh-icon-close")
                     )
                 )
             );
@@ -565,13 +565,13 @@ var Audio = function ()
      */
     function openPage()
     {
-        var t = tag("div").class("audio-cover")
+        var t = sh.tag("div").class("audio-cover")
                 .style("background-size", "cover")
                 .style("background-position", "50% 0%")
                 .style("background-attachment", mayUseFixedBackground() ? "fixed" : "scroll")
                 .style("color", "var(--primary-color)")
                 .content(
-                    tag("div").class("audio-scroll-gap audio-cover")
+                    sh.tag("div").class("audio-scroll-gap audio-cover")
                     .style("position", "relative")
                     .style("background-size", "contain")
                     .style("background-position", "50% 0%")
@@ -579,7 +579,7 @@ var Audio = function ()
                     .style("background-color", "var(--color-primary-background-translucent)")
                     .style("height", "100vh")
                     .content(
-                        tag("div")
+                        sh.tag("div")
                         .style("position", "absolute")
                         .style("left", "0")
                         .style("right", "0")
@@ -588,12 +588,12 @@ var Audio = function ()
                         .style("text-shadow", "var(--color-primary-background) 0px 0px 1px")
                         .style("background-color", "var(--color-primary-background-translucent)")
                         .content(
-                            tag("div").class("audio-progress-bar")
+                            sh.tag("div").class("audio-progress-bar")
                             .style("position", "relative")
                             .style("height", "1rem")
                             .style("margin", "0")
                             .content(
-                                tag("div")
+                                sh.tag("div")
                                 .style("position", "absolute")
                                 .style("top", "0")
                                 .style("left", "0")
@@ -601,7 +601,7 @@ var Audio = function ()
                                 .style("height", "1px")
                             )
                             .content(
-                                tag("div")
+                                sh.tag("div")
                                 .style("position", "absolute")
                                 .style("top", "0")
                                 .style("left", "0")
@@ -611,30 +611,30 @@ var Audio = function ()
                             )
                         )
                         .content(
-                            tag("div")
+                            sh.tag("div")
                             .style("margin-bottom", "1rem")
                             .content(
-                                tag("span").class("audio-progress-label")
+                                sh.tag("span").class("audio-progress-label")
                                 .style("line-height", "1.2em")
                                 .content("00:00 / 00:00")
                             )
                         )
                         .content(
-                            tag("span").class("sh-fw-icon sh-icon-media-play-circle audio-play-button")
+                            sh.tag("span").class("sh-fw-icon sh-icon-media-play-circle audio-play-button")
                             .style("font-size", "4rem")
                         )
                         .content(
-                            tag("span").class("sh-left sh-fw-icon sh-icon-media-previous audio-previous-button")
-                            .style("font-size", "4rem")
-                            .style("margin-top", "3rem")
-                        )
-                        .content(
-                            tag("span").class("sh-right sh-fw-icon sh-icon-media-next audio-next-button")
+                            sh.tag("span").class("sh-left sh-fw-icon sh-icon-media-previous audio-previous-button")
                             .style("font-size", "4rem")
                             .style("margin-top", "3rem")
                         )
                         .content(
-                            tag("h1").class("audio-title").content("-")
+                            sh.tag("span").class("sh-right sh-fw-icon sh-icon-media-next audio-next-button")
+                            .style("font-size", "4rem")
+                            .style("margin-top", "3rem")
+                        )
+                        .content(
+                            sh.tag("h1").class("audio-title").content("-")
                             .style("font-size", "1.5rem")
                             .style("margin-top", "1rem")
                             .style("margin-left", "1rem")
@@ -642,7 +642,7 @@ var Audio = function ()
                             .style("line-height", "1.2em")
                         )
                         .content(
-                            tag("h2").class("audio-artist").content("-")
+                            sh.tag("h2").class("audio-artist").content("-")
                             .style("font-size", "1.2rem")
                             .style("margin-left", "1rem")
                             .style("margin-right", "1rem")
@@ -650,17 +650,17 @@ var Audio = function ()
                             .style("line-height", "1.2em")
                         )
                         .content(
-                            tag("span").class("sh-fw-icon sh-icon-move-up audio-playlist-puller")
+                            sh.tag("span").class("sh-fw-icon sh-icon-move-up audio-playlist-puller")
                             .style("font-size", "2rem")
                         )
 
                     )
                 )
                 .content(
-                    tag("div")
+                    sh.tag("div")
                     .style("background-color", "var(--color-primary-background-translucent)")
                     .content(
-                        tag("div")
+                        sh.tag("div")
                         .style("background-color", "var(--color-primary-background-translucent)")
                         .style("padding", "1rem")
                         .style("text-align", "center")
@@ -673,14 +673,15 @@ var Audio = function ()
                     makePlaylistUi()
                 );
 
-        var page = ui.showPage("");
-        page.addClass("sh-theme-dark");
+        var page = new sh.Page("", "");
+        page.get().addClass("sh-theme-dark");
+        page.addToHeaderLeft(new sh.IconButton("sh-icon-back", function () { page.pop(); }));
 
-        page.css("padding-top", "0");
-        page.find("> header")
+        page.get().css("padding-top", "0");
+        page.get().find("> header")
         .css("background-color", "var(--color-primary-background-translucent)");
-        page.find("> section").html(t.html());
-        var pageSection = page.find("> section");
+        page.get().find("> section").html(t.html());
+        var pageSection = page.get().find("> section");
 
         pageSection.find(".audio-play-button").on("click", function ()
         {
@@ -814,7 +815,7 @@ var Audio = function ()
         console.log("ul offset " + pos);
         console.log("window height: " + $(window).height());
 
-        sh.push(page, function ()
+        page.push(function ()
         {
             updatePlayStatus();
             updatePosition();
@@ -831,8 +832,8 @@ var Audio = function ()
                 {
                     parseMetadata(uri, data, function (title, artist, pic)
                     {
-                        $(item).find("h1").html(escapeHtml(title));
-                        $(item).find("h2").html(escapeHtml(artist));
+                        $(item).find("h1").html(sh.escapeHtml(title));
+                        $(item).find("h2").html(sh.escapeHtml(artist));
                         if (pic !== "")
                         {
                             $(item).find("div:nth-child(1)").css("background-image", "url(" + pic + ")");

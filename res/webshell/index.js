@@ -235,7 +235,6 @@ function init()
         "/::res/shellfish/core/low.js",
         "/::res/shellfish/core/mid.js",
         "/::res/webshell/file.js",
-        "/::res/webshell/html.js",
         "/::res/webshell/ui.js",
         "/::res/webshell/upload.js",
 
@@ -322,7 +321,6 @@ function initLogin()
     var js = [
         "/::res/shellfish/core/low.js",
         "/::res/shellfish/core/mid.js",
-        "/::res/webshell/html.js",
         "/::res/webshell/ui.js"
     ];
     importJs(js, function ()
@@ -334,7 +332,7 @@ function initLogin()
         .css("background-repeat", "no-repeat");
 
         page.get().append($(
-            tag("p").class("sh-font-small")
+            sh.tag("p").class("sh-font-small")
             .style("position", "absolute")
             .style("bottom", "1em")
             .style("right", "1em")
@@ -355,7 +353,7 @@ function initLogin()
         {
             var pic = "data:image/jpeg;base64," + data.image;
             page.get().css("background-image", "url(" + pic + ")");
-            page.get().find("p").html("Background image powered by bing.com<hr style='border: solid 1px #fff;'>" + escapeHtml(atob(data.description)));
+            page.get().find("p").html("Background image powered by bing.com<hr style='border: solid 1px #fff;'>" + sh.escapeHtml(atob(data.description)));
         });
 
         showLoginDialog();

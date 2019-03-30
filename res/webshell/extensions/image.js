@@ -61,23 +61,23 @@
         popup = ui.showPreviewPopup();
 
         popup.find("> div").html(
-            tag("div")
+            sh.tag("div")
             .style("position", "relative")
             .style("text-align", "center")
             .content(
-                tag("img")
+                sh.tag("img")
                 .style("max-width", "calc(100vw - 80px)")
                 .style("max-height", "calc(100vh - 80px)")
             )
             .content(
-                tag("span").class("image-countdown-indicator")
+                sh.tag("span").class("image-countdown-indicator")
                 .style("position", "absolute")
                 .style("top", "0")
                 .style("right", "1em")
                 .style("color", "#fff")
             )
             .content(
-                tag("span").class("image-busy-indicator sh-fw-icon")
+                sh.tag("span").class("image-busy-indicator sh-fw-icon")
                 .style("position", "absolute")
                 .style("width", "1em")
                 .style("height", "1em")
@@ -87,7 +87,7 @@
                 .style("color", "#fff")
             )
             .content(
-                tag("footer")
+                sh.tag("footer")
                 .style("background-color", "rgba(1, 1, 1, 0.6)")
                 .style("color", "#fff")
                 .style("font-size", "200%")
@@ -101,7 +101,7 @@
                 .style("visibility", "visible")
                 .on("click", "event.stopPropagation();")
                 .content(
-                    tag("div").class("image-progress-label")
+                    sh.tag("div").class("image-progress-label")
                     .style("position", "absolute")
                     .style("top", "6px")
                     .style("left", "0")
@@ -111,24 +111,24 @@
                     .style("font-size", "1rem")
                 )
                 .content(
-                    tag("span").class("sh-left")
+                    sh.tag("span").class("sh-left")
                     .content(
-                        tag("span").class("sh-fw-icon sh-icon-media-previous image-previous-button")
+                        sh.tag("span").class("sh-fw-icon sh-icon-media-previous image-previous-button")
                         .style("padding-left", "0.5em")
                         .style("font-size", "80%")
                     )
                     .content(
-                        tag("span").class("sh-fw-icon sh-icon-media-play-circle image-play-button")
+                        sh.tag("span").class("sh-fw-icon sh-icon-media-play-circle image-play-button")
                         .style("padding-left", "0.25em")
                     )
                     .content(
-                        tag("span").class("sh-fw-icon sh-icon-media-next image-next-button")
+                        sh.tag("span").class("sh-fw-icon sh-icon-media-next image-next-button")
                         .style("padding-left", "0.25em")
                         .style("font-size", "80%")
                     )
                 )
                 .content(
-                    tag("h1")
+                    sh.tag("h1")
                     .style("font-size", "1rem")
                     .style("position", "absolute")
                     .style("margin", "0")
@@ -144,7 +144,7 @@
                     .style("color", "#fff")
                 )
                 .content(
-                    tag("span").class("sh-right sh-fw-icon sh-icon-fullscreen image-fullscreen-button")
+                    sh.tag("span").class("sh-right sh-fw-icon sh-icon-fullscreen image-fullscreen-button")
                 )
             )
             .html()

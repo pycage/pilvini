@@ -21,10 +21,10 @@ sh.Page = function (title, subtitle)
                 )                    
             )
             .content(
-                tag("div").class("sh-left")
+                sh.tag("div").class("sh-left")
             )
             .content(
-                tag("div").class("sh-right")
+                sh.tag("div").class("sh-right")
             )
         )
         .content(
@@ -124,7 +124,7 @@ sh.Menu = function ()
     {
         var ul = m_menu.find("> div > ul").last();
         ul.append($(
-            tag("hr")
+            sh.tag("hr")
             .html()
         ));
     }
@@ -148,11 +148,11 @@ sh.Menu = function ()
     }
 
     m_menu = $(
-        tag("div").class("sh-menu")
+        sh.tag("div").class("sh-menu")
         .content(
-            tag("div")
+            sh.tag("div")
             .content(
-                tag("ul")
+                sh.tag("ul")
             )
         )
         .html()
@@ -187,14 +187,14 @@ sh.MenuItem = function (icon, text, callback)
     };
 
     m_item = $(
-        tag("li")
+        sh.tag("li")
         .style("position", "relative")
         .on("click", "")
         .content(
-            tag("span").class("sh-left sh-fw-icon " + icon)
+            sh.tag("span").class("sh-left sh-fw-icon " + icon)
         )
         .content(
-            tag("span")
+            sh.tag("span")
             .style("padding-left", "1.2em")
             .content(sh.escapeHtml(text))
         )
@@ -218,7 +218,7 @@ sh.SubMenu = function (text)
     {
         var ul = m_subMenu.find("ul").last();
         ul.append($(
-            tag("hr")
+            sh.tag("hr")
             .html()
         ));
     }
@@ -229,14 +229,14 @@ sh.SubMenu = function (text)
     };
 
     m_subMenu = $(
-        tag("div")
+        sh.tag("div")
         .content(
-            tag("h1").class("sh-submenu")
+            sh.tag("h1").class("sh-submenu")
             .on("click", "")
             .content(sh.escapeHtml(text))
         )
         .content(
-            tag("ul")
+            sh.tag("ul")
         )
         .html()
     );
@@ -369,7 +369,7 @@ sh.TextInput = function (text, asPassword)
 {
     var m_input = $(
         sh.tag("input").attr("type", asPassword ? "password" : "text")
-        .attr("value", escapeHtml(text || ""))
+        .attr("value", sh.escapeHtml(text || ""))
         .on("keydown", "event.stopPropagation();")
         .html()
     );
@@ -381,7 +381,7 @@ sh.TextInput = function (text, asPassword)
 
     this.setValue = function (text)
     {
-        m_input.val(escapeHtml(text));
+        m_input.val(sh.escapeHtml(text));
     };
 
     this.value = function ()
@@ -462,7 +462,7 @@ sh.Switch = function (checked)
 sh.ListView = function ()
 {
     var m_listView = $(
-        tag("ul").class("sh-listview")
+        sh.tag("ul").class("sh-listview")
         .html()
     );
 
@@ -480,38 +480,38 @@ sh.ListView = function ()
 sh.ListItem = function (title, subtitle, callback)
 {
     var m_listItem = $(
-        tag("li")
+        sh.tag("li")
         .style("height", "80px")
         .on("click", "")
         .content(
-            tag("div").class("sh-left icon")
+            sh.tag("div").class("sh-left icon")
             .style("display", "none")
             .style("width", "80px")
             .style("background-repeat", "no-repeat")
             .style("background-position", "50% 50%")
         )
         .content(
-            tag("div")
+            sh.tag("div")
             .style("position", "absolute")
             .style("top", "1em")
             .style("left", "0")
             .style("right", "0")
             .style("padding-left", "0.5em")
             .content(
-                tag("h1").content(sh.escapeHtml(title))
+                sh.tag("h1").content(sh.escapeHtml(title))
             )
             .content(
-                tag("h2").content(sh.escapeHtml(subtitle))
+                sh.tag("h2").content(sh.escapeHtml(subtitle))
             )
         )
         .content(
-            tag("div").class("sh-right selector")
+            sh.tag("div").class("sh-right selector")
             .style("display", "none")
             .style("width", "42px")
             .style("text-align", "center")
             .style("border-left", "solid 1px var(--color-border)")
             .content(
-                tag("span").class("sh-fw-icon")
+                sh.tag("span").class("sh-fw-icon")
                 .style("line-height", "80px")
             )
         )
@@ -529,10 +529,11 @@ sh.ListItem = function (title, subtitle, callback)
         return m_listItem;
     };
 
-    this.setIcon = function (url)
+    this.setIcon = function (url, fillMode)
     {
         m_labelBox.css("left", "80px");
         m_iconBox.css("display", "block");
+        m_iconBox.css("background-size", fillMode || "auto");
         m_iconBox.css("background-image", "url(" + url + ")");
     };
 

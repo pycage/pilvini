@@ -45,13 +45,14 @@ function viewVCard(href)
     page.setSwipeBack(function () { page.pop(); });
     page.addToHeaderLeft(new sh.IconButton("sh-icon-back", function () { page.pop(); }));
     
-    page.get().find("section").html("<ul class='sh-listview'></ul>");
+    var listView = new sh.ListView();
+    page.add(listView);
     page.push();
 
-    loadVCard(page, href);
+    loadVCard(listView, href);
 }
                  
-function loadVCard(page, href)
+function loadVCard(listView, href)
 {
     var busyIndicator = ui.showBusyIndicator("Loading");
   
@@ -60,8 +61,6 @@ function loadVCard(page, href)
     })
     .done(function (data, status, xhr)
     {
-        var listView = page.get().find("section ul");
-
         var coll = new VCardCollection(data);
         var cards = coll.cards();
         for (var i = 0; i < cards.length; ++i)
@@ -74,47 +73,24 @@ function loadVCard(page, href)
             var mail = card.prefOf("EMAIL");
             var photo = card.prefOf("PHOTO");
 
-            var html = "";
-            html += "<li style='height: 80px;'>";
-            html += "<div class='sh-left' style='width: 80px; background-repeat: no-repeat; background-position: 50% 50%;'></div>";
-            html += "<div style='position: absolute; left: 80px; right: 0; top: 1em; padding-left: 0.5em;'>"
-            html += "<h1>";
-            html += fn.value();
-            if (org)
-            {
-                html += " (" + org.value().replace(";", " ") + ")";
-            }
-            html += "</h1>";
-            html += "<h2 class='sh-font-small'>";
-            if (tel)
-            {
-                html += "<b>Phone</b> " + tel.value()+ " ";
-            }
-            if (mail)
-            {
-                html += "<b>e-Mail</b> " + mail.value() + " ";
-            }
-            html += "</h2>";
-            html += "</div>";
-            html += "</li>";
-
-            var li = $(html);
-
-            var img = li.find("> div:first-child");
+            var title = fn.value() +
+                        (org ? " (" + org.value().replace(";", " ") + ")"
+                             : "");
+            var subTitle = (tel ? "Phone: " + tel.value() + " "
+                                : "") +
+                           (mail ? "e-Mail: " + mail.value() + " "
+                                 : "");
+            
+            var listItem = new sh.ListItem(title, subTitle, function () { });
             if (photo)
             {
-                var pic = "data:image/jpeg;base64," + photo.value();
-                img.css("background-image", "url(" + pic + ")");
-                img.css("background-size", "cover");
+                listItem.setIcon("data:image/jpeg;base64," + photo.value(), "cover");
             }
             else
             {
-                img.css("background-image", "url(/::res/icons/face.png)");
-                img.css("background-size", "48px");
-
+                listItem.setIcon("/::res/icons/face.png", "auto");
             }
-
-            listView.append(li);
+            listView.add(listItem);
         }
     })
     .complete(function ()

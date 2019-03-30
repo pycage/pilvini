@@ -75,7 +75,7 @@ sh.Tag = function (t)
     {
         if (typeof c === "string")
         {
-            m_content.push(new Data(c));
+            m_content.push(new sh.Data(c));
         }
         else
         {
@@ -131,6 +131,16 @@ sh.Tag = function (t)
         return out;
     };
 };
+
+sh.Data = function (d)
+{
+    var m_data = d;
+
+    this.html = function ()
+    {
+        return m_data;
+    }
+}
 
 sh.tag = function (t)
 {
@@ -320,14 +330,14 @@ sh.pageOnSwipe = function (page, callback)
     page.on("touchstart", function (ev)
     {
         var backIndicator = $(
-            tag("div")
+            sh.tag("div")
             .style("position", "fixed")
             .style("top", "0")
             .style("bottom", "0")
             .style("left", "8px")
             .style("font-size", "10vh")
             .content(
-                tag("span").class("sh-fw-icon sh-icon-back")
+                sh.tag("span").class("sh-fw-icon sh-icon-back")
                 .style("line-height", "100vh")
                 .style("padding", "0.10em")
                 .style("background-color", "var(--color-primary)")
