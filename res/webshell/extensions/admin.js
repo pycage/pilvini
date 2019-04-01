@@ -137,7 +137,7 @@
         })
         .done(function (data, status, xhr)
         {
-            sh.pop();
+            sh.pagePop();
             openUsersPage();
         })
         .fail(function (xhr, status, err)
@@ -158,7 +158,7 @@
         })
         .done(function (data, status, xhr)
         {
-            sh.pop();
+            sh.pagePop();
             openUsersPage();
         })
         .fail(function (xhr, status, err)

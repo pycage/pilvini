@@ -5,7 +5,7 @@ var ui = { };
 ui.showBusyIndicator = function (title)
 {
     var indicator = $(
-        sh.tag("div").class("sh-popup")
+        sh.tag("div").class("sh-popup sh-visible")
         .content(
             sh.tag("div").class("sh-dropshadow")
             .style("color", "var(--color-primary)")
@@ -24,14 +24,13 @@ ui.showBusyIndicator = function (title)
         .html()
     );
     $("body").append(indicator);
-    sh.popup(indicator);
     return indicator;
 };
 
 ui.showDialog = function (title, msg)
 {
     var dlg = $(
-        sh.tag("form").class("sh-popup")
+        sh.tag("form").class("sh-popup sh-visible")
         .on("click", "event.stopPropagation();")
         .content(
             sh.tag("div").class("sh-dropshadow")
@@ -169,7 +168,6 @@ ui.showDialog = function (title, msg)
     };
 
     $("body").append(dlg);
-    sh.popup(dlg);
     return dlg;
 };
 
@@ -191,7 +189,7 @@ ui.showQuestion = function (title, msg, yesCb, noCb)
 ui.showPreviewPopup = function ()
 {
     var popup = $(
-        sh.tag("div").class("sh-popup")
+        sh.tag("div").class("sh-popup sh-visible")
         .style("background-color", "rgba(0, 0, 0, 0.8)")
         .content(
             sh.tag("div").class("sh-dropshadow")
@@ -209,8 +207,6 @@ ui.showPreviewPopup = function ()
     });
 
     $("body").append(popup);
-    sh.popup(popup);
-
     return popup;
 };
 

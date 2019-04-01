@@ -481,9 +481,9 @@
     function toggleFullscreen()
     {
         var fullscreenButton = popup.find(".image-fullscreen-button");
-        if (sh.isFullscreen())
+        if (sh.fullscreenStatus())
         {
-            sh.exitFullscreen();
+            sh.fullscreenExit();
             fullscreenButton.removeClass("sh-icon-unfullscreen").addClass("sh-icon-fullscreen");
             popup.find("img")
             .css("max-width", "calc(100vw - 80px)")
@@ -491,7 +491,7 @@
         }
         else
         {
-            sh.requestFullscreen(popup.find("> div > div"));
+            sh.fullscreenEnter(popup.find("> div > div"));
             fullscreenButton.removeClass("sh-icon-fullscreen").addClass("sh-icon-unfullscreen");
             popup.find("img")
             .css("max-width", "100vw")
@@ -508,7 +508,7 @@
         var h = img.height();
         var ratio = w / h;
 
-        var margin = sh.isFullscreen() ? 0 : 80;
+        var margin = sh.fullscreenStatus() ? 0 : 80;
         var viewWidth = $(window).width() - margin;
         var viewHeight = $(window).height() - margin;
 
@@ -524,7 +524,7 @@
         .css("min-width", w2 + "px")
         .css("min-height", h2 + "px");
         
-        if (h2 < viewHeight && sh.isFullscreen())
+        if (h2 < viewHeight && sh.fullscreenStatus())
         {
             img.css("transform", "translateY(" + ((viewHeight - h2) / 2)  + "px)");
         }

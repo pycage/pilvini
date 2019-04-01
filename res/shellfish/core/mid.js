@@ -139,7 +139,7 @@ sh.Menu = function ()
     this.popup = function (parent)
     {
         $("body").append(m_menu);
-        sh.menu(parent, m_menu);
+        sh.menuOpen(m_menu, parent, function () { });
     };
 
     this.close = function ()

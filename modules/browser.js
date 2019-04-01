@@ -176,10 +176,7 @@ function makeHtmlHead(initFunction)
                 .attr("href", "/::res/shellfish/style/shellfish.css")
             )
             .content(
-                tag("script").attr("src", "https://code.jquery.com/jquery-2.1.4.min.js")
-            )
-            .content(
-                tag("script").attr("src", "/::res/shellfish/core/shellfish.js")
+                tag("script").attr("src", "/::res/jquery-2.1.4.min.js")
             )
             .content(
                 tag("script").attr("src", "/::res/webshell/index.js")
