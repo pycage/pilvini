@@ -1,6 +1,6 @@
 "use strict";
 
-//var sh = { };
+var sh = { };
 
 /* Escapes the given text for HTML output.
  */
