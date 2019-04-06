@@ -42,7 +42,8 @@
 
         page.push();
 
-        var busyIndicator = ui.showBusyIndicator("Loading");
+        var busyIndicator = new sh.BusyPopup("Loading");
+        busyIndicator.show();
 
         $.ajax({
             type: "GET",
@@ -76,7 +77,7 @@
         })
         .always(function ()
         {
-            busyIndicator.remove();
+            busyIndicator.hide();
         });
     }
 

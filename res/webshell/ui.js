@@ -2,188 +2,21 @@
 
 var ui = { };
 
-ui.showBusyIndicator = function (title)
-{
-    var indicator = $(
-        sh.tag("div").class("sh-popup sh-visible")
-        .content(
-            sh.tag("div").class("sh-dropshadow")
-            .style("color", "var(--color-primary)")
-            .style("text-align", "center")
-            .style("padding", "1em")
-            .content(
-                sh.tag("span").class("sh-busy-indicator")
-                .style("font-size", "200%")
-            )
-            .content(sh.tag("br"))
-            .content(sh.tag("br"))
-            .content(
-                sh.tag("span").content(sh.escapeHtml(title))
-            )
-        )
-        .html()
-    );
-    $("body").append(indicator);
-    return indicator;
-};
-
-ui.showDialog = function (title, msg)
-{
-    var dlg = $(
-        sh.tag("form").class("sh-popup sh-visible")
-        .on("click", "event.stopPropagation();")
-        .content(
-            sh.tag("div").class("sh-dropshadow")
-            .style("background-color", "var(--color-primary-background)")
-            .style("max-width", "calc(100vw - 2rem)")
-            .style("max-height", "calc(100vh - 2rem)")
-            .style("overflow", "auto")
-            .content(
-                sh.tag("header")
-                .content(
-                    sh.tag("h1").class("sh-left")
-                    .content(sh.escapeHtml(title))
-                )
-            )
-            .content(
-                sh.tag("section")
-                .content(
-                    sh.tag("p")
-                    .content(sh.escapeHtml(msg))
-                )
-            )
-            .content(
-                sh.tag("footer")
-                .content(
-                    sh.tag("span").class("sh-right")
-                )
-            )
-        )
-        .html()
-    );
-
-    dlg.addButton = function (text, callback, asDefault)
-    {
-        var html;
-        if (asDefault)
-        {
-            html = sh.tag("input").attr("type", "submit")
-                   .on("click", "")
-                   .attr("value", sh.escapeHtml(text))
-                   .html();
-        }
-        else
-        {
-            html = sh.tag("a")
-                   .on("click", "")
-                   .content(sh.escapeHtml(text))
-                   .html();
-        }
-        var btn = $(html);
-        btn.on("click", function () { dlg.remove(); if (callback) callback() });
-        dlg.find("footer > span").append(btn);
-    };
-
-    dlg.addLabel = function (text)
-    {
-        var label = $(
-            sh.tag("p")
-            .content(sh.escapeHtml(text))
-            .html()
-        );
-        dlg.find("section").append(label);
-        return label;
-    };
-
-    dlg.addTextEntry = function (text, value)
-    {
-        var label = $(
-            sh.tag("label").content(sh.escapeHtml(text))
-            .style("display", "inline-block")
-            .style("min-width", "6em")
-            .html()
-        );
-        var entry = $(
-            sh.tag("input").attr("type", "text")
-            .attr("value", sh.escapeHtml(value || ""))
-            .on("keydown", "event.stopPropagation();")
-            .html()
-        );
-
-        var p = $("<p>");
-        p.append(label).append(entry);
-        dlg.find("section").append(p);
-        return entry;
-    };
-
-    dlg.addPasswordEntry = function (text, value)
-    {
-        var label = $(
-            sh.tag("label").content(sh.escapeHtml(text))
-            .style("display", "inline-block")
-            .style("min-width", "6em")
-            .html()
-        );
-        var entry = $(
-            sh.tag("input").attr("type", "password")
-            .attr("value", sh.escapeHtml(value || ""))
-            .html()
-        );
-
-        var p = $("<p>");
-        p.append(label).append(entry);
-        dlg.find("section").append(p);
-        return entry;
-    };
-
-    dlg.addSwitch = function (text, checked)
-    {
-        var label = $(
-            sh.tag("label").content(sh.escapeHtml(text))
-            .style("display", "inline-block")
-            .style("min-width", "6em")
-            .html()
-        );
-
-        var swtch = $(
-            sh.tag("label").class("sh-switch")
-            .content(
-                sh.tag("input").attr("type", "checkbox")
-            )
-            .content(
-                sh.tag("span")
-            )
-            .html()
-        );
-
-        if (checked)
-        {
-            swtch.find("input").prop("checked", true);
-        }
-
-        var p = $("<p>");
-        p.append(swtch).append(label);
-        dlg.find("section").append(p);
-        return swtch.find("input");
-    };
-
-    $("body").append(dlg);
-    return dlg;
-};
-
 ui.showError = function (msg, callback)
 {
-    var dlg = ui.showDialog("Error", msg);
+    var dlg = new sh.Dialog("Error");
+    dlg.add(new sh.Label(msg));
     dlg.addButton("OK", function () { if (callback) callback(); });
-    return dlg;
+    dlg.show();
 };
 
 ui.showQuestion = function (title, msg, yesCb, noCb)
 {
-    var dlg = ui.showDialog(title, msg);
+    var dlg = new sh.Dialog(title);
+    dlg.add(new sh.Label(msg));
     dlg.addButton("Yes", yesCb);
     dlg.addButton("No", noCb);
-    return dlg;
+    dlg.show();
 };
 
 ui.showPreviewPopup = function ()

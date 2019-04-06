@@ -256,6 +256,37 @@ sh.SubMenu = function (text)
     });
 };
 
+sh.Popup = function ()
+{
+    var m_popup = $(
+        sh.tag("div").class("sh-popup")
+        .style("background-color", "rgba(0, 0, 0, 0.8)")
+        .content(
+            sh.tag("div").class("sh-dropshadow")
+            .style("position", "relative")
+            .style("background-color", "black")
+            .style("overflow", "hidden")
+        )
+        .html()
+    );
+
+    m_popup.on("click", function ()
+    {
+        m_popup.trigger("sh-closed");
+        m_popup.remove();
+    });
+
+    this.add = function (item)
+    {
+        m_popup.find("> div").append(item.get());
+    };
+
+    this.show = function ()
+    {
+        $("body").append(m_popup);
+    };
+};
+
 sh.Dialog = function (title)
 {
     var m_dialog = $(
@@ -328,6 +359,39 @@ sh.Dialog = function (title)
     this.add = function (widget)
     {
         m_dialog.find("section").append(widget.get());
+    };
+};
+
+sh.BusyPopup = function (title)
+{
+    var m_popup = $(
+        sh.tag("div").class("sh-popup")
+        .content(
+            sh.tag("div").class("sh-dropshadow")
+            .style("color", "var(--color-primary)")
+            .style("text-align", "center")
+            .style("padding", "1em")
+            .content(
+                sh.tag("span").class("sh-busy-indicator")
+                .style("font-size", "200%")
+            )
+            .content(sh.tag("br"))
+            .content(sh.tag("br"))
+            .content(
+                sh.tag("span").content(sh.escapeHtml(title))
+            )
+        )
+        .html()
+    );
+
+    this.show = function ()
+    {
+        $("body").append(m_popup);
+    };
+
+    this.hide = function ()
+    {
+        m_popup.remove();
     };
 };
 

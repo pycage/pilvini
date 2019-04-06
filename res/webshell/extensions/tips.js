@@ -1,6 +1,8 @@
 (function ()
 {
-    var dlg = ui.showDialog("Tip of the Day", "Did you know..?");
-    dlg.addLabel("You can access Pilvini by WebDAV, too.");
-    dlg.addButton("Ok, got it!");
+    var dlg = new sh.Dialog("Tip of the Day");
+    dlg.add(new sh.Label("Did you know..?"));
+    dlg.add(new sh.Label("You can access Pilvini via WebDAV, too."));
+    dlg.addButton("Ok, got it!", function () { }, true);
+    dlg.show();
 })();

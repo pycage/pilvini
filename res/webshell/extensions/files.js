@@ -305,14 +305,18 @@ files.predicates = { };
 
     function showShareDialog()
     {
-        var dlg = ui.showDialog("Setup Share", "Share this directory.");
-        var loginEntry = dlg.addTextEntry("Share Login:", "");
-        var passwordEntry = dlg.addTextEntry("Share Password:", "");
+        var dlg = new sh.Dialog("Setup Share");
+        dlg.add(new sh.Label("Share this directory."));
+        var loginEntry = new sh.TextInput("");
+        var passwordEntry = new sh.TextInput("");
+        dlg.add(new sh.Labeled("Share Login:", loginEntry));
+        dlg.add(new sh.Labeled("Share Password:", passwordEntry));
         dlg.addButton("Share", function ()
         {
-            share(loginEntry.val(), passwordEntry.val());
+            share(loginEntry.value(), passwordEntry.value());
         }, true);
         dlg.addButton("Cancel");
+        dlg.show();
     }
 
     function share(shareId, password)
@@ -351,11 +355,13 @@ files.predicates = { };
 
     function makeNewDirectory()
     {
-        var dlg = ui.showDialog("New Directory", "Create a new directory.");
-        var entry = dlg.addTextEntry("Name:", "");
+        var dlg = new sh.Dialog("New Directory");
+        dlg.add(new sh.Label("Create a new directory."));
+        var entry = new sh.TextInput("");
+        dlg.add(new sh.Labeled("Name:", entry));
         dlg.addButton("Create", function ()
         {
-            var name = entry.val();
+            var name = entry.value();
             if (name !== "")
             {
                 var targetUri = joinPath(m_currentUri, encodeURIComponent(name));
@@ -377,15 +383,18 @@ files.predicates = { };
             }
         }, true);
         dlg.addButton("Cancel");
+        dlg.show();
     }
 
     function makeNewFile()
     {
-        var dlg = ui.showDialog("New File", "Create a new file.");
-        var entry = dlg.addTextEntry("Name:", "");
+        var dlg = new sh.Dialog("New File");
+        dlg.add(new sh.Label("Create a new file."));
+        var entry = new sh.TextInput("");
+        dlg.add(new sh.Labeled("Name:", entry));
         dlg.addButton("Create", function ()
         {
-            var name = entry.val();
+            var name = entry.value();
             if (name !== "")
             {
                 var targetUri = joinPath(m_currentUri, encodeURIComponent(name));
@@ -407,6 +416,7 @@ files.predicates = { };
             }
         }, true);
         dlg.addButton("Cancel");
+        dlg.show();
     }
 
     function loadThumbnails()
@@ -736,11 +746,13 @@ files.predicates = { };
         var meta = $(item).data("meta");
         var name = meta.name;
 
-        var dlg = ui.showDialog("Rename File", "Rename the file.");
-        var entry = dlg.addTextEntry("Name:", name);
+        var dlg = new sh.Dialog("Rename File");
+        dlg.add(new sh.Label("Rename the file."));
+        var entry = new sh.TextInput(name);
+        dlg.add(new sh.Labeled("Name:", entry));
         dlg.addButton("Rename", function ()
         {
-            var newName = entry.val();
+            var newName = entry.value();
             var targetUri = joinPath(m_currentUri, encodeURIComponent(newName));
 
             file.move(meta.uri, targetUri, function (ok)
@@ -753,11 +765,12 @@ files.predicates = { };
                 }
                 else
                 {
-                    ui.showError("Failed to move: " + name + " -> " + newName);
+                    ui.showError("Failed to move: " + name + " to " + newName);
                 }
             });
         }, true);
         dlg.addButton("Cancel");
+        dlg.show();
     }
 
     function removeSelected()
@@ -1124,7 +1137,8 @@ files.predicates = { };
 
     function loadDirectory(uri, pushToHistory)
     {
-        var busyIndicator = ui.showBusyIndicator("Loading");
+        var busyIndicator = new sh.BusyPopup("Loading");
+        busyIndicator.show();
 
         m_scrollPositionsMap[m_currentUri] = $(document).scrollTop();
 
@@ -1156,7 +1170,7 @@ files.predicates = { };
         })
         .always(function ()
         {
-            busyIndicator.remove();
+            busyIndicator.hide();
         });
 
     }

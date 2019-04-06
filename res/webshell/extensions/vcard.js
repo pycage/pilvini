@@ -54,7 +54,8 @@ function viewVCard(href)
                  
 function loadVCard(listView, href)
 {
-    var busyIndicator = ui.showBusyIndicator("Loading");
+    var busyIndicator = new sh.BusyPopup("Loading");
+    busyIndicator.show();
   
     $.ajax(href, {
         beforeSend: function (xhr) { xhr.overrideMimeType("text/vcard"); }
@@ -95,7 +96,7 @@ function loadVCard(listView, href)
     })
     .complete(function ()
     {
-        busyIndicator.remove();
+        busyIndicator.hide();
     });
 }
 

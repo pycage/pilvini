@@ -418,15 +418,17 @@
     {
         if (! playing)
         {
-            var dlg = ui.showDialog("Slideshow", "Interval between images:");
-            popup.find("> div > div").append(dlg);
-            var entry = dlg.addTextEntry("Seconds", "" + slideshowInterval);
+            var dlg = new sh.Dialog("Slideshow");
+            dlg.add(new sh.Label("Interval between images:"));
+            var entry = new sh.TextInput("" + slideshowInterval);
+            dlg.add(new sh.Labeled("Seconds", entry));
             dlg.addButton("Start", function ()
             {
-                slideshowInterval = Number.parseInt(entry.val()) || 5;
+                slideshowInterval = Number.parseInt(entry.value()) || 5;
                 slideshowCountdown = 0;
                 runSlideshow();
             }, true);
+            dlg.show();
         }
         else
         {

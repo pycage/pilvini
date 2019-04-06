@@ -38,7 +38,8 @@ function viewMarkdown(href)
 
     function upload(href, md, successCb)
     {
-        var busyIndicator = ui.showBusyIndicator("Saving");
+        var busyIndicator = new sh.BusyPopup("Saving");
+        busyIndicator.show();
 
         $.ajax({
             url: href,
@@ -57,7 +58,7 @@ function viewMarkdown(href)
         })
         .always(function ()
         {
-            busyIndicator.remove();
+            busyIndicator.hide();
         });
     }
 
@@ -98,7 +99,8 @@ function viewMarkdown(href)
 
     page.push();
 
-    var busyIndicator = ui.showBusyIndicator("Loading");
+    var busyIndicator = new sh.BusyPopup("Loading");
+    busyIndicator.show();
 
     $.ajax(href, {
         beforeSend: function (xhr) {xhr.overrideMimeType("text/x-markdown"); }
@@ -121,7 +123,7 @@ function viewMarkdown(href)
     })
     .complete(function ()
     {
-        busyIndicator.remove();
+        busyIndicator.hide();
     });
 }
 
