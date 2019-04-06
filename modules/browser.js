@@ -199,7 +199,7 @@ function makeSharesJson(userHome, shares)
         if (shareRoot.substr(0, userHome.length) === userHome)
         {
             // this share is within reach of the user
-            var uri = shareRoot.substr(userHome.length);
+            var uri = encodeURI(shareRoot.substr(userHome.length));
             result.push({
                 "share": shareId,
                 "uri": uri
