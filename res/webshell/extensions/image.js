@@ -6,7 +6,7 @@
      */
     function previousImage()
     {
-        var img = popup.find("img");
+        var img = popup.get().find("img");
         var src = img.data("src");
         var images = files.filesByMimetype("image/");
     
@@ -31,7 +31,7 @@
      */
     function nextImage()
     {
-        var img = popup.find("img");
+        var img = popup.get().find("img");
         var src = img.data("src");
         var images = files.filesByMimetype("image/");
     
@@ -58,9 +58,9 @@
      */
     function openPopup()
     {
-        popup = ui.showPreviewPopup();
+        popup = new sh.Popup();
 
-        popup.find("> div").html(
+        popup.get().find("> div").html(
             sh.tag("div")
             .style("position", "relative")
             .style("text-align", "center")
@@ -150,19 +150,19 @@
             .html()
         );
 
-        var img = popup.find("img");
+        var img = popup.get().find("img");
 
         img.on("load", function ()
         {
-            var img = popup.find("img");
+            var img = popup.get().find("img");
             var src = img.data("src");
             var images = files.filesByMimetype("image/");
             var idx = images.indexOf(src);
-            popup.find(".image-progress-label").html((idx + 1 ) + " / " + images.length);
+            popup.get().find(".image-progress-label").html((idx + 1 ) + " / " + images.length);
 
             updateSizeConstraints();
 
-            var div = popup.find("> div");
+            var div = popup.get().find("> div");
             div.animate({
                 width: (img.width() + 2) + "px",
                 height: (img.height() + 2) + "px"
@@ -178,14 +178,8 @@
             });
         });
 
-        popup.attr("tabindex", -1).focus();
-        popup.on("keydown", function (ev)
-        {
-            if (! $(this).hasClass("sh-visible"))
-            {
-                return;
-            }
-    
+        popup.get().on("keydown", function (ev)
+        {  
             console.log("key pressed: " + ev.which);
             switch (ev.which)
             {
@@ -240,11 +234,11 @@
             }
         });
 
-        popup.find("> div > div").on("click", function (event)
+        popup.get().find("> div > div").on("click", function (event)
         {
             event.stopPropagation();
 
-            var footer = popup.find("> div > div > footer");
+            var footer = popup.get().find("> div > div > footer");
             if (footer.css("visibility") === "visible")
             {
                 footer.animate({
@@ -267,22 +261,24 @@
             }
         });
 
-        popup.find("> div > div").on("dblclick", function (event)
+        popup.get().find("> div > div").on("dblclick", function (event)
         {
             event.stopPropagation();
             toggleFullscreen();
         });
 
-        popup.find(".image-previous-button").on("click", previousImage);
-        popup.find(".image-next-button").on("click", nextImage);
-        popup.find(".image-play-button").on("click", toggleSlideshow);
-        popup.find(".image-fullscreen-button").on("click", toggleFullscreen);
+        popup.get().find(".image-previous-button").on("click", previousImage);
+        popup.get().find(".image-next-button").on("click", nextImage);
+        popup.get().find(".image-play-button").on("click", toggleSlideshow);
+        popup.get().find(".image-fullscreen-button").on("click", toggleFullscreen);
 
-        popup.on("sh-closed", function ()
+        popup.get().on("sh-closed", function ()
         {
             popup = null;
             playing = false;
         });
+
+        popup.show();
     }
 
     /* Loads the given image.
@@ -294,8 +290,8 @@
             openPopup();
         }
 
-        popup.find(".image-busy-indicator").addClass("sh-busy-indicator");
-        var img = popup.find("img");
+        popup.get().find(".image-busy-indicator").addClass("sh-busy-indicator");
+        var img = popup.get().find("img");
         img
         .css("min-width", "0")
         .css("min-height", "0");
@@ -328,7 +324,7 @@
         })
         .always(function ()
         {
-            popup.find(".image-busy-indicator").removeClass("sh-busy-indicator");
+            popup.get().find(".image-busy-indicator").removeClass("sh-busy-indicator");
         });
     
     
@@ -342,14 +338,14 @@
         {
             name = href;
         }
-        popup.find("h1").html(decodeURIComponent(name));
+        popup.get().find("h1").html(decodeURIComponent(name));
     }
 
     /* Slides out the image into the given direction.
      */
     function slideOut(direction, callback)
     {
-        var img = popup.find("img");
+        var img = popup.get().find("img");
         img.animate({
             marginLeft: direction * img.width() / 2,
             opacity: 0
@@ -360,7 +356,7 @@
      */
     function slideIn(callback)
     {
-        var img = popup.find("img");
+        var img = popup.get().find("img");
         var marginLeft = img.css("margin-left").replace(/px/, "");
         if (marginLeft < 0)
         {
@@ -386,7 +382,7 @@
      */
     function updatePlaybutton()
     {
-        var playButton = popup.find(".image-play-button");
+        var playButton = popup.get().find(".image-play-button");
         if (playing)
         {
             playButton.removeClass("sh-icon-media-play-circle").addClass("sh-icon-media-pause-circle");
@@ -409,7 +405,7 @@
                 out += ".";
             }
         }
-        popup.find(".image-countdown-indicator").html(out);
+        popup.get().find(".image-countdown-indicator").html(out);
     }
 
     /* Toggle slideshow mode.
@@ -482,20 +478,20 @@
      */
     function toggleFullscreen()
     {
-        var fullscreenButton = popup.find(".image-fullscreen-button");
+        var fullscreenButton = popup.get().find(".image-fullscreen-button");
         if (sh.fullscreenStatus())
         {
             sh.fullscreenExit();
             fullscreenButton.removeClass("sh-icon-unfullscreen").addClass("sh-icon-fullscreen");
-            popup.find("img")
+            popup.get().find("img")
             .css("max-width", "calc(100vw - 80px)")
             .css("max-height", "calc(100vh - 80px)");
         }
         else
         {
-            sh.fullscreenEnter(popup.find("> div > div"));
+            sh.fullscreenEnter(popup.get().find("> div > div"));
             fullscreenButton.removeClass("sh-icon-fullscreen").addClass("sh-icon-unfullscreen");
-            popup.find("img")
+            popup.get().find("img")
             .css("max-width", "100vw")
             .css("max-height", "100vh");
         }
@@ -505,7 +501,7 @@
      */
     function updateSizeConstraints()
     {
-        var img = popup.find("img");
+        var img = popup.get().find("img");
         var w = img.width();
         var h = img.height();
         var ratio = w / h;
@@ -546,8 +542,8 @@
         if (popup)
         {
             updateSizeConstraints();
-            var div = popup.find("> div");
-            var img = popup.find("img");
+            var div = popup.get().find("> div");
+            var img = popup.get().find("img");
             div
             .css("width", img.width() + 2 + "px")
             .css("height", img.height() + 2 + "px");

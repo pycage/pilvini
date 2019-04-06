@@ -19,30 +19,6 @@ ui.showQuestion = function (title, msg, yesCb, noCb)
     dlg.show();
 };
 
-ui.showPreviewPopup = function ()
-{
-    var popup = $(
-        sh.tag("div").class("sh-popup sh-visible")
-        .style("background-color", "rgba(0, 0, 0, 0.8)")
-        .content(
-            sh.tag("div").class("sh-dropshadow")
-            .style("position", "relative")
-            .style("background-color", "black")
-            .style("overflow", "hidden")
-        )
-        .html()
-    );
-
-    popup.on("click", function ()
-    {
-        popup.trigger("sh-closed");
-        popup.remove();
-    });
-
-    $("body").append(popup);
-    return popup;
-};
-
 ui.StatusItem = function (icon, message)
 {
     var m_item;

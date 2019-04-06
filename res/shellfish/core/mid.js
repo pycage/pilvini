@@ -276,6 +276,11 @@ sh.Popup = function ()
         m_popup.remove();
     });
 
+    this.get = function ()
+    {
+        return m_popup;
+    };
+
     this.add = function (item)
     {
         m_popup.find("> div").append(item.get());
@@ -284,6 +289,7 @@ sh.Popup = function ()
     this.show = function ()
     {
         $("body").append(m_popup);
+        m_popup.attr("tabindex", -1).focus();
     };
 };
 
