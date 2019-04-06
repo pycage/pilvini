@@ -571,7 +571,7 @@ files.predicates = { };
     function generateThumbnail(item, callback)
     {
         var mimeType = $(item).data("meta").mimeType;
-        if (mimeType.indexOf("video/") === 0)
+        if (mimeType.indexOf("video/") === 0 && navigator.userAgent.indexOf("Mobile") === -1)
         {
             var sourceUri = $(item).data("meta").uri;
             generateVideoThumbnail(sourceUri, callback);
@@ -653,6 +653,19 @@ files.predicates = { };
                 if (allBlack)
                 {
                     throw "No content";
+                }
+
+                // prettify
+
+                ctx.fillStyle = "#666";
+                ctx.fillRect(0, 0, 10, 80);
+                ctx.fillRect(80 - 10, 0, 16, 80);
+
+                ctx.fillStyle = "#fff";
+                for (var y = 0; y < 80; y += 10)
+                {
+                    ctx.fillRect(2, y + 3, 6, 4);
+                    ctx.fillRect(80 - 8, y + 3, 6, 4);
                 }
 
                 data = extractImage(canvas.toDataURL("image/jpeg"));
