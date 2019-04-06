@@ -571,14 +571,14 @@ files.predicates = { };
     function generateThumbnail(item, callback)
     {
         var mimeType = $(item).data("meta").mimeType;
-        if (mimeType.indexOf("video/") === 0 && navigator.userAgent.indexOf("Mobile") === -1)
+        if (mimeType.indexOf("video/") === 0)
         {
             var sourceUri = $(item).data("meta").uri;
             generateVideoThumbnail(sourceUri, callback);
         }
         else
         {
-            callback(false);
+            callback("");
         }
     }
 
@@ -591,6 +591,12 @@ files.predicates = { };
             var pos = data.indexOf(",");
             var b64 = data.substr(pos + 1);
             return atob(b64);
+        }
+
+        if (navigator.userAgent.indexOf("Mobile") !== -1)
+        {
+            callback("");
+            return;
         }
 
 
