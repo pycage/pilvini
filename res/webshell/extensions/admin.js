@@ -173,5 +173,16 @@
         files.menu.item("Administration")
         .visible(files.predicates.permissions("ADMIN"))
         .action(openPage)
+    )
+    .add(
+        files.menu.item("User Agent")
+        .visible(files.predicates.permissions("ADMIN"))
+        .action(function ()
+        {
+            var dlg = new sh.Dialog("User Agent");
+            dlg.add(new sh.Label(navigator.userAgent));
+            dlg.addButton("Ok");
+            dlg.show();  
+        })
     );
 })();
