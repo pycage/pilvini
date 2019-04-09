@@ -86,7 +86,7 @@ function viewMarkdown(href)
     editBox.css("display", "none")
            .css("width", "100%")
            .css("padding", "1em")
-           .css("height", ($(window).height() * 0.8) + "px");
+           .css("height", "calc(100vh - 3rem)");
 
     page.get().one("sh-closed", function ()
     {

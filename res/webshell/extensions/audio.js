@@ -674,6 +674,7 @@ var Audio = function ()
                 );
 
         var page = new sh.Page("", "");
+        page.setSwipeBack(function () { page.pop(); });
         page.get().addClass("sh-theme-dark");
         page.addToHeaderLeft(new sh.IconButton("sh-icon-back", function () { page.pop(); }));
 
