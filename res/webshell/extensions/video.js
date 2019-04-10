@@ -205,7 +205,7 @@
             sh.fullscreenEnter(videoDiv);
             fullscreenButton.removeClass("sh-icon-fullscreen").addClass("sh-icon-unfullscreen");
         }
-        updateSizeConstraints();
+        setTimeout(updateSizeConstraints, 300);
     }
 
     /* Updates the video size constraints.
