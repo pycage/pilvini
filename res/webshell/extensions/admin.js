@@ -10,18 +10,22 @@
         var listView = new sh.ListView();
         page.add(listView);
         
-        var item = new sh.ListItem("Users", "", function ()
+        var item = new sh.ListItem();
+        item.title = "Users";
+        item.callback = function ()
         {
             openUsersPage();
-        });
-        item.setIcon("/::res/icons/face.png");
+        };
+        item.icon = "/::res/icons/face.png";
         listView.add(item);
         
-        item = new sh.ListItem("Statistics", "", function ()
+        item = new sh.ListItem();
+        item.title = "Statistics";
+        item.callback = function ()
         {
             ui.showError("Statistics are not yet available.");
-        });
-        item.setIcon("/::res/file-icons/text.png");
+        };
+        item.icon = "/::res/file-icons/text.png";
         listView.add(item);
 
         page.push();
@@ -55,20 +59,19 @@
             data.users.forEach(function (item)
             {
                 var name = item.name;
-                var item = new sh.ListItem(item.name, item.home + " (" + item.permissions.join(" ") + ")", function ()
-                {
-
-                });
-                item.setIcon("/::res/icons/face.png");
-                item.setAction("sh-icon-trashcan", function ()
+                var listItem = new sh.ListItem();
+                listItem.title = item.name;
+                listItem.subtitle = item.home + " (" + item.permissions.join(" ") + ")";
+                listItem.icon = "/::res/icons/face.png";
+                listItem.action = ["sh-icon-trashcan", function ()
                 {
                     ui.showQuestion("Delete User", "Delete user " + name + "?", function ()
                     {
                         deleteUser(name);
                     },
                     function () { });
-                });
-                listView.add(item);
+                }];
+                listView.add(listItem);
             });
         })
         .fail(function (xhr, status, err)
@@ -90,11 +93,16 @@
         var passwordEntry = new sh.TextInput("");
         var homeEntry = new sh.TextInput(files.currentUri());
 
-        var mayCreate = new sh.Switch(true);
-        var mayDelete = new sh.Switch(true);
-        var mayModify = new sh.Switch(true);
-        var mayShare = new sh.Switch(false);
-        var mayAdmin = new sh.Switch(false);
+        var mayCreate = new sh.Switch();
+        mayCreate.checked = true;
+        var mayDelete = new sh.Switch();
+        mayDelete.checked = true;
+        var mayModify = new sh.Switch();
+        mayModify.checked = true;
+        var mayShare = new sh.Switch();
+        mayShare.checked = false;
+        var mayAdmin = new sh.Switch();
+        mayAdmin.checked = false;
 
         dlg.add(new sh.Labeled("Name:", nameEntry));
         dlg.add(new sh.Labeled("Password:", passwordEntry));
@@ -111,11 +119,11 @@
         dlg.addButton("Create", function ()
         {
             var permissions = [];
-            if (mayCreate.checked()) permissions.push("CREATE");
-            if (mayDelete.checked()) permissions.push("DELETE");
-            if (mayModify.checked()) permissions.push("MODIFY");
-            if (mayShare.checked()) permissions.push("SHARE");
-            if (mayAdmin.checked()) permissions.push("ADMIN");
+            if (mayCreate.checked) permissions.push("CREATE");
+            if (mayDelete.checked) permissions.push("DELETE");
+            if (mayModify.checked) permissions.push("MODIFY");
+            if (mayShare.checked) permissions.push("SHARE");
+            if (mayAdmin.checked) permissions.push("ADMIN");
             createUser(nameEntry.value(), passwordEntry.value(), homeEntry.value(), permissions);
         }, true);
         dlg.addButton("Cancel");
@@ -170,14 +178,14 @@
 
     files.actionsMenu()
     .add(
-        files.menu.item("Administration")
+        sh.element(sh.MenuItem).text("Administration")
         .visible(files.predicates.permissions("ADMIN"))
-        .action(openPage)
+        .callback(openPage)
     )
     .add(
-        files.menu.item("User Agent")
+        sh.element(sh.MenuItem).text("User Agent")
         .visible(files.predicates.permissions("ADMIN"))
-        .action(function ()
+        .callback(function ()
         {
             var dlg = new sh.Dialog("User Agent");
             dlg.add(new sh.Label(navigator.userAgent));

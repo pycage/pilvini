@@ -234,6 +234,7 @@ function init()
     var js = [
         "/::res/shellfish/core/low.js",
         "/::res/shellfish/core/mid.js",
+        "/::res/shellfish/core/high.js",
         "/::res/webshell/file.js",
         "/::res/webshell/ui.js",
         "/::res/webshell/upload.js",
@@ -253,11 +254,11 @@ function init()
     {
         files.actionsMenu()
         .add(
-            files.menu.separator()
+            sh.element(sh.Separator)
         )
         .add(
-            files.menu.item("Logout")
-            .action(logout)
+            sh.element(sh.MenuItem).text("Logout")
+            .callback(logout)
         );
     });
 }

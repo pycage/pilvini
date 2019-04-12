@@ -224,6 +224,10 @@ span.sh-busy-indicator:before {
     visibility: visible;
 }
 
+.sh-hidden {
+    display: none;
+}
+
 .sh-font-small {
     font-size: 80%;
 }

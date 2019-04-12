@@ -82,14 +82,18 @@ function loadVCard(listView, href)
                            (mail ? "e-Mail: " + mail.value() + " "
                                  : "");
             
-            var listItem = new sh.ListItem(title, subTitle, function () { });
+            var listItem = new sh.ListItem();
+            listItem.title = title;
+            listItem.subtitle = subTitle;
             if (photo)
             {
-                listItem.setIcon("data:image/jpeg;base64," + photo.value(), "cover");
+                listItem.icon = "data:image/jpeg;base64," + photo.value();
+                listItem.fillMode = "cover";
             }
             else
             {
-                listItem.setIcon("/::res/icons/face.png", "auto");
+                listItem.icon = "/::res/icons/face.png";
+                listItem.fillMode = "auto";
             }
             listView.add(listItem);
         }

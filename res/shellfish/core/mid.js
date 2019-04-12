@@ -114,26 +114,10 @@ sh.Menu = function ()
         m_menu.find("> div").append("<ul>");
     };
 
-    this.addItem = function (item)
+    this.add = function (item)
     {
         var ul = m_menu.find("> div > ul").last();
         ul.append(item.get());
-    };
-
-    this.addSeparator = function ()
-    {
-        var ul = m_menu.find("> div > ul").last();
-        ul.append($(
-            sh.tag("hr")
-            .html()
-        ));
-    }
-
-    this.addSubMenu = function (subMenu)
-    {
-        var div = m_menu.find("> div");
-        div.append(subMenu.get());
-        div.append("<ul>");
     };
 
     this.popup = function (parent)
@@ -144,7 +128,7 @@ sh.Menu = function ()
 
     this.close = function ()
     {
-        m_menu.remove();
+        m_menu.detach();
     }
 
     m_menu = $(
@@ -161,15 +145,61 @@ sh.Menu = function ()
     m_menu.on("click", function (event)
     {
         event.stopPropagation();
-        m_menu.remove();
+        m_menu.detach();
     });
 };
 
-sh.MenuItem = function (icon, text, callback)
+sh.MenuItem = function ()
 {
-    var m_item;
+    Object.defineProperties(this, {
+        callback: { set: setCallback, get: callback, enumerable: true },
+        enabled: { set: setEnabled, get: enabled, enumerable: true },
+        icon: { set: setIcon, get: icon, enumerable: true },
+        text: { set: setText, get: text, enumerable: true },
+        visible: { set: setVisible, get: visible, enumerable: true }
+    });
 
-    this.setEnabled = function (value)
+    var m_item;
+    var m_icon = "";
+    var m_text = "";
+    var m_enabled = true;
+    var m_visible = true;
+    var m_callback = null;
+
+    function setIcon(icon)
+    {
+        m_item.find("span").first().removeClass(m_icon).addClass(icon);
+        m_icon = icon;
+    }
+
+    function icon()
+    {
+        return m_icon;
+    }
+
+    function setText(text)
+    {
+        m_text = text;
+        m_item.find("span").last().html(sh.escapeHtml(text));
+    }
+
+    function text()
+    {
+        return m_text;
+    }
+
+    function setCallback(callback)
+    {
+        m_callback = callback;
+        m_item.off("click").on("click", callback);
+    }
+
+    function callback()
+    {
+        return m_callback;
+    }
+
+    function setEnabled(value)
     {
         if (value)
         {
@@ -179,7 +209,31 @@ sh.MenuItem = function (icon, text, callback)
         {
             m_item.addClass("sh-disabled");
         }
-    };
+        m_enabled = value;
+    }
+
+    function enabled()
+    {
+        return m_enabled;
+    }
+
+    function setVisible(value)
+    {
+        if (value)
+        {
+            m_item.removeClass("sh-hidden");
+        }
+        else
+        {
+            m_item.addClass("sh-hidden");
+        }
+        m_visible = value;
+    }
+
+    function visible()
+    {
+        return m_visible;
+    }
 
     this.get = function ()
     {
@@ -191,36 +245,59 @@ sh.MenuItem = function (icon, text, callback)
         .style("position", "relative")
         .on("click", "")
         .content(
-            sh.tag("span").class("sh-left sh-fw-icon " + icon)
+            sh.tag("span").class("sh-left sh-fw-icon")
         )
         .content(
             sh.tag("span")
             .style("padding-left", "1.2em")
-            .content(sh.escapeHtml(text))
+            .content("")
         )
         .html()
     );
-
-    m_item.on("click", callback);
 };
 
-sh.SubMenu = function (text)
+sh.SubMenu = function ()
 {
+    Object.defineProperties(this, {
+        text: { set: setText, get: text, enumerable: true },
+        visible: { set: setVisible, get: visible, enumerable: true }
+    });
+    
     var m_subMenu;
+    var m_text = "";
 
-    this.addItem = function (item)
+    function setText(text)
+    {
+        m_text = text;
+        m_subMenu.find("h1").html(sh.escapeHtml(text));
+    }
+
+    function text()
+    {
+        return m_text;
+    }
+
+    this.add = function (item)
     {
         var ul = m_subMenu.find("ul").last();
         ul.append(item.get());
     };
 
-    this.addSeparator = function ()
+    function setVisible(value)
     {
-        var ul = m_subMenu.find("ul").last();
-        ul.append($(
-            sh.tag("hr")
-            .html()
-        ));
+        if (value)
+        {
+            m_subMenu.removeClass("sh-hidden");
+        }
+        else
+        {
+            m_subMenu.addClass("sh-hidden");
+        }
+    }
+
+    function visible()
+    {
+        return true;
     }
 
     this.get = function ()
@@ -233,7 +310,6 @@ sh.SubMenu = function (text)
         .content(
             sh.tag("h1").class("sh-submenu")
             .on("click", "")
-            .content(sh.escapeHtml(text))
         )
         .content(
             sh.tag("ul")
@@ -254,6 +330,19 @@ sh.SubMenu = function (text)
         });
         $(item).toggleClass("sh-submenu-visible");
     });
+};
+
+sh.Separator = function ()
+{
+    var m_sep = $(
+        sh.tag("hr")
+        .html()
+    );
+
+    this.get = function ()
+    {
+        return m_sep;
+    };
 };
 
 sh.Popup = function ()
@@ -488,6 +577,18 @@ sh.IconButton = function (icon, callback)
         return m_button;
     };
 
+    this.setEnabled = function (value)
+    {
+        if (value)
+        {
+            m_button.removeClass("sh-disabled");
+        }
+        else
+        {
+            m_button.addClass("sh-disabled");
+        }
+    };
+
     this.setIcon = function (icon)
     {
         m_button.find("span").removeClass(m_icon).addClass(icon);
@@ -497,6 +598,10 @@ sh.IconButton = function (icon, callback)
 
 sh.Switch = function (checked)
 {
+    Object.defineProperties(this, {
+        checked: { set: setChecked, get: checked, enumerable: true }
+    });
+
     var m_swtch = $(
         sh.tag("label").class("sh-switch")
         .content(
@@ -508,25 +613,20 @@ sh.Switch = function (checked)
         .html()
     );
 
-    if (checked)
-    {
-        m_swtch.find("input").prop("checked", true);
-    }
-
     this.get = function ()
     {
         return m_swtch;
     };
 
-    this.setChecked = function (value)
+    function setChecked(value)
     {
         m_swtch.find("input").prop("checked", value);
-    };
+    }
 
-    this.checked = function ()
+    function checked()
     {
-        return m_swtch.find("input").prop("checked");
-    };
+        return !! m_swtch.find("input").prop("checked");
+    }
 };
 
 sh.ListView = function ()
@@ -547,8 +647,24 @@ sh.ListView = function ()
     };
 };
 
-sh.ListItem = function (title, subtitle, callback)
+sh.ListItem = function ()
 {
+    Object.defineProperties(this, {
+        action: { set: setAction, get: action, enumerable: true },
+        callback: { set: setCallback, get: callback, enumerable: true },
+        fillMode: { set: setFillMode, get: fillMode, enumerable: true },
+        icon: { set: setIcon, get: icon, enumerable: true },
+        subtitle: { set: setSubtitle, get: subtitle, enumerable: true },
+        title: { set: setTitle, get: title, enumerable: true }
+    });
+
+    var m_action = ["", null];
+    var m_callback = null;
+    var m_icon = "";
+    var m_fillMode = "cover";
+    var m_title = "";
+    var m_subtitle = "";
+
     var m_listItem = $(
         sh.tag("li")
         .style("height", "80px")
@@ -568,10 +684,10 @@ sh.ListItem = function (title, subtitle, callback)
             .style("right", "0")
             .style("padding-left", "0.5em")
             .content(
-                sh.tag("h1").content(sh.escapeHtml(title))
+                sh.tag("h1").content("")
             )
             .content(
-                sh.tag("h2").content(sh.escapeHtml(subtitle))
+                sh.tag("h2").content("")
             )
         )
         .content(
@@ -592,23 +708,61 @@ sh.ListItem = function (title, subtitle, callback)
     var m_labelBox = m_listItem.find("> div").eq(1);
     var m_buttonBox = m_listItem.find("> div").eq(2);
 
-    m_listItem.on("click", callback);
-
     this.get = function ()
     {
         return m_listItem;
     };
 
-    this.setIcon = function (url, fillMode)
+    function setIcon(url)
     {
         m_labelBox.css("left", "80px");
         m_iconBox.css("display", "block");
-        m_iconBox.css("background-size", fillMode || "auto");
         m_iconBox.css("background-image", "url(" + url + ")");
-    };
-
-    this.setAction = function (icon, callback)
+        m_icon = url;
+    }
+    
+    function icon()
     {
+        return m_icon;
+    }
+    
+    function setFillMode(fillMode)
+    {
+        m_iconBox.css("background-size", fillMode || "auto");
+        m_fillMode = fillMode;
+    }
+
+    function fillMode()
+    {
+        return m_fillMode;
+    }
+
+    function setTitle(title)
+    {
+        m_labelBox.find("h1").html(sh.escapeHtml(title));
+        m_title = title;
+    }
+
+    function title()
+    {
+        return m_title;
+    }
+
+    function setSubtitle(subtitle)
+    {
+        m_labelBox.find("h2").html(sh.escapeHtml(subtitle));
+        m_subtitle = subtitle;
+    }
+
+    function subtitle()
+    {
+        return m_subtitle;
+    }
+
+    function setAction(action)
+    {
+        var icon = action[0];
+        var callback = action[1];
         m_labelBox.css("right", "42px");
         m_buttonBox.css("display", "block");
         m_buttonBox.find("span").addClass(icon);
@@ -617,6 +771,22 @@ sh.ListItem = function (title, subtitle, callback)
             event.stopPropagation();
             callback();
         });
-    };
+        m_action = action;
+    }
 
+    function action()
+    {
+        return m_action;
+    }
+
+    function setCallback(callback)
+    {
+        m_listItem.off("click").on("click", callback);
+        m_callback = callback;
+    }
+
+    function callback()
+    {
+        return callback;
+    }
 };

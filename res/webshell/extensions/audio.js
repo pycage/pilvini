@@ -935,7 +935,7 @@ var audio;
     audio = new Audio();
 
     files.actionsMenu().add(
-        files.menu.item("Add to Playlist")
+        sh.element(sh.MenuItem).text("Add to Playlist")
         .visible(
             or(
                 files.predicates.mimeTypeSelected("audio/flac"),
@@ -943,7 +943,7 @@ var audio;
                 files.predicates.mimeTypeSelected("audio/ogg")
             )
         )
-        .action(files.eachSelected(audio.enqueue))
+        .callback(files.eachSelected(audio.enqueue))
     );
 
     $(window).scroll(function ()

@@ -14,6 +14,10 @@
     font-family: Material; content: "\f1ff";
 }
 
+.sh-icon-alphabet:before {
+    content: "Az";
+}
+
 .sh-icon-arrow-up:before {
     font-family: Material; content: "\f303";
 }
@@ -60,6 +64,10 @@
 
 .sh-icon-clipboard-paste:before {
     font-family: Material; content: "\f10b";
+}
+
+.sh-icon-clock:before {
+    font-family: Material; content: "\f337";
 }
 
 .sh-icon-close:before {
@@ -162,6 +170,10 @@
     font-family: Material; content: "\f221";
 }
 
+.sh-icon-number:before {
+    content: "09";
+}
+
 .sh-icon-rename:before {
     font-family: Material; content: "\f22e";
 }
@@ -181,6 +193,15 @@
 .sh-icon-unfullscreen:before {
     font-family: Material; content: "\f16c";
 }
+
+.sh-icon-view-as-grid:before {
+    font-family: Material; content: "\f313";
+}
+
+.sh-icon-view-as-list:before {
+    font-family: Material; content: "\f31f";
+}
+
 
 .sh-icon-wait:before {
     font-family: Material; content: "\f179";
