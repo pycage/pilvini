@@ -548,7 +548,7 @@
             .css("width", img.width() + 2 + "px")
             .css("height", img.height() + 2 + "px");
         }
-    })
+    });
 
     mimeRegistry.register("image/gif", loadImage);
     mimeRegistry.register("image/jpeg", loadImage);

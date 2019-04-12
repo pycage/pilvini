@@ -205,6 +205,7 @@
             sh.fullscreenEnter(videoDiv);
             fullscreenButton.removeClass("sh-icon-fullscreen").addClass("sh-icon-unfullscreen");
         }
+        setTimeout(updateSizeConstraints, 300);
     }
 
     /* Updates the video size constraints.
@@ -234,9 +235,11 @@
         .css("max-width", viewWidth + "px")
         .css("max-height", viewHeight + "px");
 
-        if (h2 < viewHeight && sh.fullscreenStatus())
+        if ((w2 < viewWidth || h2 < viewHeight) && sh.fullscreenStatus())
         {
-            video.css("transform", "translateY(" + ((viewHeight - h2) / 2)  + "px)");
+            video.css("transform",
+                      "translateX(" + ((viewWidth - w2) / 2) + "px) " +
+                      "translateY(" + ((viewHeight - h2) / 2)  + "px)");
         }
         else
         {

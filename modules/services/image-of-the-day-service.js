@@ -104,6 +104,13 @@ var Service = function (contentRoot)
                 response.end();
             });
         });
+
+        req.on("error", function (err)
+        {
+            response.writeHeadLogged(500, "Internal Server Error");
+            response.end();
+        });
+
         req.end();
     };
 };
