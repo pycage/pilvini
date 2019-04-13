@@ -38,8 +38,8 @@ function viewMarkdown(href)
 
     function upload(href, md, successCb)
     {
-        var busyIndicator = new sh.BusyPopup("Saving");
-        busyIndicator.show();
+        var busyIndicator = sh.element(sh.BusyPopup).text("Saving");
+        busyIndicator.show_();
 
         $.ajax({
             url: href,
@@ -58,7 +58,7 @@ function viewMarkdown(href)
         })
         .always(function ()
         {
-            busyIndicator.hide();
+            busyIndicator.hide_();
         });
     }
 
@@ -99,8 +99,8 @@ function viewMarkdown(href)
 
     page.push();
 
-    var busyIndicator = new sh.BusyPopup("Loading");
-    busyIndicator.show();
+    var busyIndicator = sh.element(sh.BusyPopup).text("Loading");
+    busyIndicator.show_();
 
     $.ajax(href, {
         beforeSend: function (xhr) {xhr.overrideMimeType("text/x-markdown"); }
@@ -123,7 +123,7 @@ function viewMarkdown(href)
     })
     .complete(function ()
     {
-        busyIndicator.hide();
+        busyIndicator.hide_();
     });
 }
 

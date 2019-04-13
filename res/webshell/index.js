@@ -339,13 +339,18 @@ function initLogin()
     ];
     importJs(js, function ()
     {
-        var page = new sh.Page("Pilvini Secure Cloud Drive", "© 2017 - 2019 Martin Grimme");
+        var page = sh.element(sh.NSPage)
+        .header(
+            sh.element(sh.PageHeader)
+            .title("Pilvini Secure Cloud Drive")
+            .subtitle("© 2017 - 2019 Martin Grimme")
+        );
 
-        page.get()
+        page.get().get()
         .css("background-size", "cover")
         .css("background-repeat", "no-repeat");
 
-        page.get().append($(
+        page.get().get().append($(
             sh.tag("p").class("sh-font-small")
             .style("position", "absolute")
             .style("bottom", "1em")
@@ -356,7 +361,7 @@ function initLogin()
             .html()
         ));
 
-        page.push();
+        page.push_();
 
         $.ajax({
             type: "GET",
@@ -366,8 +371,8 @@ function initLogin()
         .done(function (data, status, xhr)
         {
             var pic = "data:image/jpeg;base64," + data.image;
-            page.get().css("background-image", "url(" + pic + ")");
-            page.get().find("p").html("Background image powered by bing.com<hr style='border: solid 1px #fff;'>" + sh.escapeHtml(atob(data.description)));
+            page.get().get().css("background-image", "url(" + pic + ")");
+            page.get().get().find("p").html("Background image powered by bing.com<hr style='border: solid 1px #fff;'>" + sh.escapeHtml(atob(data.description)));
         });
 
         showLoginDialog();

@@ -4,7 +4,7 @@ function viewText(href)
 {
     function setText(text)
     {
-        viewBox.html(text);
+        viewBox.html(sh.escapeHtml(text));
     }
 
     function toggleMode()
@@ -27,8 +27,8 @@ function viewText(href)
 
     function upload(href, text)
     {
-        var busyIndicator = new sh.BusyPopup("Saving");
-        busyIndicator.show();
+        var busyIndicator = sh.element(sh.BusyPopup).text("Saving");
+        busyIndicator.show_();
 
         $.ajax({
             url: href,
@@ -46,7 +46,7 @@ function viewText(href)
         })
         .always(function ()
         {
-            busyIndicator.hide();
+            busyIndicator.hide_();
         });
     }
 
@@ -85,8 +85,8 @@ function viewText(href)
 
     page.push();
 
-    var busyIndicator = new sh.BusyPopup("Loading");
-    busyIndicator.show();
+    var busyIndicator = sh.element(sh.BusyPopup).text("Loading");
+    busyIndicator.show_();
 
     $.ajax(href, {
         beforeSend: function (xhr) {xhr.overrideMimeType("text/plain"); }
@@ -109,7 +109,7 @@ function viewText(href)
     })
     .complete(function ()
     {
-        busyIndicator.hide();
+        busyIndicator.hide_();
     });
 }
 

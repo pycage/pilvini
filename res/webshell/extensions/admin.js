@@ -4,50 +4,55 @@
 {
     function openPage()
     {
-        var page = new sh.Page("Administration", "");
-        page.setSwipeBack(function () { page.pop(); });
-        page.addToHeaderLeft(new sh.IconButton("sh-icon-back", function () { page.pop(); }));
-        var listView = new sh.ListView();
-        page.add(listView);
-        
-        var item = new sh.ListItem();
-        item.title = "Users";
-        item.callback = function ()
-        {
-            openUsersPage();
-        };
-        item.icon = "/::res/icons/face.png";
-        listView.add(item);
-        
-        item = new sh.ListItem();
-        item.title = "Statistics";
-        item.callback = function ()
-        {
-            ui.showError("Statistics are not yet available.");
-        };
-        item.icon = "/::res/file-icons/text.png";
-        listView.add(item);
-
-        page.push();
+        var page = sh.element(sh.NSPage)
+        .onSwipeBack(function () { page.pop_(); })
+        .header(
+            sh.element(sh.PageHeader).title("Administration")
+            .left(
+                sh.element(sh.IconButton).icon("sh-icon-back")
+                .onClicked(function () { page.pop_(); })
+            )
+        )
+        .add(
+            sh.element(sh.ListView)
+            .add(
+                sh.element(sh.ListItem)
+                .icon("/::res/icons/face.png")
+                .title("Users")
+                .onClicked(function () { openUsersPage(); })
+            )
+            .add(
+                sh.element(sh.ListItem)
+                .icon("/::res/file-icons/text.png")
+                .title("Statistics")
+                .onClicked(function () { ui.showError("Statistics are not yet available."); })
+            )
+        );
+        page.push_();
     }
 
     function openUsersPage()
     {
-        var page = new sh.Page("Users", "");
-        page.setSwipeBack(function () { page.pop(); });
-        page.addToHeaderLeft(new sh.IconButton("sh-icon-back", function () { page.pop(); }));
-        page.addToHeaderRight(new sh.IconButton("sh-icon-add-user", function ()
-        {
-            showCreateUserDialog();
-        }));
+        var page = sh.element(sh.NSPage)
+        .onSwipeBack(function () { page.pop_(); })
+        .header(
+            sh.element(sh.PageHeader).title("Users")
+            .left(
+                sh.element(sh.IconButton).icon("sh-icon-back")
+                .onClicked(function () { page.pop_(); })
+            )
+            .right(
+                sh.element(sh.IconButton).icon("sh-icon-add-user")
+                .onClicked(function () { showCreateUserDialog(); })
+            )
+        )
+        .add(
+            sh.element(sh.ListView).id("listview")
+        );
+        page.push_();
 
-        var listView = new sh.ListView();
-        page.add(listView);
-
-        page.push();
-
-        var busyIndicator = new sh.BusyPopup("Loading");
-        busyIndicator.show();
+        var busyIndicator = sh.element(sh.BusyPopup).text("Loading");
+        busyIndicator.show_();
 
         $.ajax({
             type: "GET",
@@ -59,19 +64,22 @@
             data.users.forEach(function (item)
             {
                 var name = item.name;
-                var listItem = new sh.ListItem();
-                listItem.title = item.name;
-                listItem.subtitle = item.home + " (" + item.permissions.join(" ") + ")";
-                listItem.icon = "/::res/icons/face.png";
-                listItem.action = ["sh-icon-trashcan", function ()
-                {
-                    ui.showQuestion("Delete User", "Delete user " + name + "?", function ()
+
+                page.find("listview")
+                .add(
+                    sh.element(sh.ListItem)
+                    .icon("/::res/icons/face.png")
+                    .title(item.name)
+                    .subtitle(item.home + " (" + item.permissions.join(" ") + ")")
+                    .action(["sh-icon-trashcan", function ()
                     {
-                        deleteUser(name);
-                    },
-                    function () { });
-                }];
-                listView.add(listItem);
+                        ui.showQuestion("Delete User", "Delete user " + name + "?", function ()
+                        {
+                            deleteUser(name);
+                        },
+                        function () { });
+                    }])
+                );
             });
         })
         .fail(function (xhr, status, err)
@@ -80,7 +88,7 @@
         })
         .always(function ()
         {
-            busyIndicator.hide();
+            busyIndicator.hide_();
         });
     }
 

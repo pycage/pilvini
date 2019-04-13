@@ -1072,8 +1072,8 @@ files.predicates = { };
 
     function loadDirectory(uri, pushToHistory)
     {
-        var busyIndicator = new sh.BusyPopup("Loading");
-        busyIndicator.show();
+        var busyIndicator = sh.element(sh.BusyPopup).text("Loading");
+        busyIndicator.show_();
 
         m_scrollPositionsMap[m_currentUri] = $(document).scrollTop();
 
@@ -1105,7 +1105,7 @@ files.predicates = { };
         })
         .always(function ()
         {
-            busyIndicator.hide();
+            busyIndicator.hide_();
         });
 
     }
@@ -1163,7 +1163,7 @@ files.predicates = { };
                 var item = new sh.ListItem();
                 item.title = entry.name;
                 item.subtitle = info;
-                item.callback = function ()
+                item.onClicked = function ()
                 {
                     openFile(entry);
                 };
@@ -1256,17 +1256,17 @@ files.predicates = { };
         var isShare = m_properties.shares.value().find(function (a) { return a.uri === m_currentUri; }) !== undefined;
 
         setupNavBar();
-        m_page.setTitle(decodeURIComponent(data.uri));
-        m_page.setSubtitle(files.length + " items");
+        m_page.header.title = data.uri;
+        m_page.header.subtitle = files.length + " items";
         document.title = "Pilvini - " + decodeURIComponent(data.uri);
 
         if (data.uri === "/")
         {
-            m_backButton.get().css("visibility", "hidden");
+            m_page.header.left[0].visible = false;
         }
         else
         {
-            m_backButton.get().css("visibility", "visible");
+            m_page.header.left[0].visible = true;
         }
 
         if (isFav)
@@ -1388,14 +1388,23 @@ files.predicates = { };
 
     function openClipboardPage()
     {
-        var clipboardPage = new sh.Page("Clipboard", "");
-        clipboardPage.setSwipeBack(function () { clipboardPage.pop(); });
-        clipboardPage.addToHeaderLeft(new sh.IconButton("sh-icon-back", function () { clipboardPage.pop(); }));
-        clipboardPage.push();
+        var amount = sh.binding(0);
 
-        var listView = new sh.ListView();
-        clipboardPage.add(listView);
-
+        var page = sh.element(sh.NSPage)
+        .onSwipeBack(function () { page.pop_(); })
+        .header(
+            sh.element(sh.PageHeader)
+            .title("Clipboard")
+            .subtitle(sh.predicate([amount], function () { return amount.value() + " items"; }))
+            .left(
+                sh.element(sh.IconButton).icon("sh-icon-back")
+                .onClicked(function () { page.pop_(); })
+            )
+        )
+        .add(
+            sh.element(sh.ListView).id("listview")
+        );
+        
         m_properties.clipboard.value().forEach(function (entry)
         {
             var info = "";
@@ -1405,15 +1414,18 @@ files.predicates = { };
             }
             var d = new Date(entry.mtime);
             info += d.toLocaleDateString() + " " + d.toLocaleTimeString();
-            var item = new sh.ListItem();
-            item.title = entry.name;
-            item.subtitle = info;
-            if (entry.icon)
-            {
-                item.icon = entry.icon;
-            }
-            listView.add(item);
+
+            page.find("listview")
+            .add(
+                sh.element(sh.ListItem)
+                .title(entry.name)
+                .subtitle(info)
+                .icon(entry.icon || "")
+            );
+            amount.assign(amount.value() + 1);
         });
+
+        page.push_();
     }
 
     function onDragOver(ev)
@@ -1499,16 +1511,19 @@ files.predicates = { };
     
     }
 
-    m_page = new sh.Page("", "");
-    m_page.get().find("> header > div").on("click", openPathMenu);
-    m_page.setSwipeBack(cdUp);
-    m_backButton = new sh.IconButton("sh-icon-back", cdUp);
-    m_page.addToHeaderLeft(m_backButton);
-    m_page.addToHeaderRight(new sh.IconButton("sh-icon-menu", function (button)
+    m_page = new sh.NSPage();
+    m_page.onSwipeBack = cdUp;
+    var header = new sh.PageHeader();
+    header.left = new sh.IconButton("sh-icon-back", cdUp);
+    header.right = new sh.IconButton("sh-icon-menu", function (button)
     {
-        var menu = m_actionsMenu.get(); //.create();
+        var menu = m_actionsMenu.get();
         menu.popup(button.get());
-    }));
+    });
+    m_page.header = header;
+    
+    m_page.get().find("> header > div").on("click", openPathMenu);
+
     m_page.get().append($(
         sh.tag("footer").class("sh-dropshadow")
         .html()

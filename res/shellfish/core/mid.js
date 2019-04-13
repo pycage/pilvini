@@ -1,5 +1,170 @@
 "use strict";
 
+sh.NSPage = function ()
+{
+    Object.defineProperties(this,{
+        header: { set: setHeader, get: header, enumerable: true },
+        onSwipeBack: { set: setOnSwipeBack, get: onSwipeBack, enumerable: true }  
+    });
+
+    var that = this;
+    var m_header = null;
+    var m_onSwipeBack = null;
+
+    var m_page = $(
+        sh.tag("div").class("sh-page")
+        .content(
+            sh.tag("section")
+            .style("position", "relative")
+        )
+        .html()
+    );
+
+    function setHeader(header)
+    {
+        m_page.find("> header").detach();
+        m_page.append(header.get().get());
+        m_header = header;
+    }
+
+    function header()
+    {
+        return m_header;
+    }
+
+    function setOnSwipeBack(callback)
+    {
+        sh.pageOnSwipe(m_page, callback);
+        m_onSwipeBack = callback;
+    }
+
+    function onSwipeBack()
+    {
+        return m_onSwipeBack;
+    }
+
+    this.get = function ()
+    {
+        return m_page;
+    };
+
+    this.add = function (child)
+    {
+        m_page.find("> section").append(child.get());
+    };
+
+    /* Pushes this page onto the page stack.
+     */
+    this.push = function (callback)
+    {
+        $("#pagestack").append(m_page);
+        sh.pagePush(m_page, callback, $(".sh-page").length === 1);
+    };
+
+    /* Pops this page off the page stack.
+     */
+    this.pop = function (callback)
+    {
+        sh.pagePop(function ()
+        {
+            m_page.detach();
+            if (callback)
+            {
+                callback();
+            }
+        });
+    };
+};
+
+sh.PageHeader = function ()
+{
+    Object.defineProperties(this, {
+        title: { set: setTitle, get: title, enumerable: true },
+        subtitle: { set: setSubtitle, get: subtitle, enumerable: true },
+        left: { set: addLeft, get: left, enumerable: true },
+        right: { set: addRight, get: right, enumerable: true }
+    });
+
+    var m_title = "";
+    var m_subtitle = "";
+    var m_left = [];
+    var m_right = [];
+
+    var m_header = $(
+        sh.tag("header").class("sh-dropshadow")
+        .style("padding-left", "3em")
+        .style("padding-right", "3em")
+        .content(
+            sh.tag("div")
+            .style("line-height", "1.3rem")
+            .style("padding-top", "0.2rem")
+            .content(
+                sh.tag("h1").content("")
+
+            )
+            .content(
+                sh.tag("h2").content("")
+            )
+        )
+        .content(
+            sh.tag("div").class("sh-left")
+        )
+        .content(
+            sh.tag("div").class("sh-right")
+        )
+        .html()
+    );
+
+    function setTitle(title)
+    {
+        m_header.find("> div > h1").html(sh.escapeHtml(title));
+        m_title = title;
+    }
+
+    function title()
+    {
+        return m_title;
+    }
+
+    function setSubtitle(subtitle)
+    {
+        m_header.find("> div > h2").html(sh.escapeHtml(subtitle));
+        m_subtitle = subtitle;
+    }
+
+    function subtitle()
+    {
+        return m_subtitle;
+    }
+
+    function addLeft(child)
+    {
+        m_header.find("> div.sh-left").append(child.get().get());
+        m_left.push(child);
+    }
+
+    function left()
+    {
+        return m_left;
+    }
+
+    function addRight(child)
+    {
+        m_header.find("> div.sh-right").append(child.get().get());
+        m_right.push(child);
+    }
+
+    function right()
+    {
+        return m_right;
+    }
+
+    this.get = function ()
+    {
+        return m_header;
+    };
+};
+
 sh.Page = function (title, subtitle)
 {
     var m_page = $(
@@ -18,7 +183,7 @@ sh.Page = function (title, subtitle)
                 )
                 .content(
                     sh.tag("h2").content(sh.escapeHtml(subtitle))
-                )                    
+                )
             )
             .content(
                 sh.tag("div").class("sh-left")
@@ -470,8 +635,13 @@ sh.Dialog = function ()
     };
 };
 
-sh.BusyPopup = function (title)
+sh.BusyPopup = function ()
 {
+    Object.defineProperties(this, {
+        text: { set: setText, get: text, enumerable: true }
+    });
+
+    var m_text = "";
     var m_popup = $(
         sh.tag("div").class("sh-popup")
         .content(
@@ -486,11 +656,22 @@ sh.BusyPopup = function (title)
             .content(sh.tag("br"))
             .content(sh.tag("br"))
             .content(
-                sh.tag("span").content(sh.escapeHtml(title))
+                sh.tag("span").content("")
             )
         )
         .html()
     );
+
+    function setText(text)
+    {
+        m_popup.find("span").last().html(sh.escapeHtml(text));
+        m_text = text;
+    }
+
+    function text()
+    {
+        return m_text;
+    }
 
     this.show = function ()
     {
@@ -503,7 +684,7 @@ sh.BusyPopup = function (title)
     };
 };
 
-sh.Label = function (t)
+sh.Label = function ()
 {
     Object.defineProperties(this, {
         text: { set: setText, get: text, enumerable: true }
@@ -512,7 +693,7 @@ sh.Label = function (t)
     var m_text = "";
     var m_label = $(
         sh.tag("p")
-        .content(sh.escapeHtml(t || ""))
+        .content("")
         .html()
     );
 
@@ -533,7 +714,7 @@ sh.Label = function (t)
     };
 };
 
-sh.Labeled = function (t, widget)
+sh.Labeled = function ()
 {
     Object.defineProperties(this, {
         text: { set: setText, get: text, enumerable: true }
@@ -544,7 +725,7 @@ sh.Labeled = function (t, widget)
     var m_row = $(
         sh.tag("p")
         .content(
-            sh.tag("label").content(sh.escapeHtml(t || ""))
+            sh.tag("label").content("")
             .style("display", "inline-block")
             .style("min-width", "6em")
         )
@@ -571,16 +752,9 @@ sh.Labeled = function (t, widget)
     {
         return m_row;
     };
-
-    // ---
-
-    if (widget)
-    {
-        m_row.append(widget.get());
-    }
 };
 
-sh.TextInput = function (t, asPassword)
+sh.TextInput = function ()
 {
     Object.defineProperties(this, {
         text: { set: setText, get: text, enumerable: true },
@@ -590,8 +764,8 @@ sh.TextInput = function (t, asPassword)
     var m_password = false;
 
     var m_input = $(
-        sh.tag("input").attr("type", asPassword ? "password" : "text")
-        .attr("value", sh.escapeHtml(t || ""))
+        sh.tag("input").attr("type", "text")
+        .attr("value", "")
         .on("keydown", "event.stopPropagation();")
         .html()
     );
@@ -621,18 +795,6 @@ sh.TextInput = function (t, asPassword)
     {
         return m_password;
     }
-
-    // ---
-
-    this.setValue = function (text)
-    {
-        m_input.val(sh.escapeHtml(text));
-    };
-
-    this.value = function ()
-    {
-        return m_input.val();
-    };
 };
 
 sh.Button = function ()
@@ -693,28 +855,107 @@ sh.Button = function ()
     }
 };
 
-sh.IconButton = function (icon, callback)
+sh.IconButton = function (i, cb)
 {
+    Object.defineProperties(this, {
+        enabled: { set: setEnabled, get: enabled, enumerable: true },
+        visible: { set: setVisible, get: visible, enumerable: true },
+        icon: { set: setIcon, get: icon, enumerable: true },
+        onClicked: { set: setOnClicked, get: onClicked, enumerable: true }
+    });
+
     var that = this;
-    var m_icon = icon;
+    var m_enabled = true;
+    var m_visible = true;
+    var m_icon = "";
+    var m_onClicked = null;
+
     var m_button = $(
         sh.tag("div")
         .style("display", "inline-block")
         .style("width", "3rem")
         .style("height", "100%")
         .content(
-            sh.tag("span").class("sh-fw-icon " + icon)
+            sh.tag("span").class("sh-fw-icon " + (i || ""))
             .style("font-size", "150%")
         )
         .on("click", "")
         .html()
     );
-    m_button.on("click", function (event) { event.stopPropagation(); callback(that); });
+
+    if (cb)
+    {
+        m_button.on("click", function (event) { event.stopPropagation(); cb(that); });
+    }
+
+    function setEnabled(value)
+    {
+        if (value)
+        {
+            m_button.removeClass("sh-disabled");
+        }
+        else
+        {
+            m_button.addClass("sh-disabled");
+        }
+        m_enabled = value;
+    }
+
+    function enabled()
+    {
+        return m_enabled;
+    }
+
+    function setVisible(value)
+    {
+        if (value)
+        {
+            m_button.css("display", "inline-block");
+        }
+        else
+        {
+            m_button.css("display", "none");
+        }
+        m_visible = value;
+    }
+
+    function visible()
+    {
+        return m_visible;
+    }
+
+    function setIcon(icon)
+    {
+        m_button.find("span").removeClass(m_icon).addClass(icon);
+        m_icon = icon;
+    }
+
+    function icon()
+    {
+        return m_icon;
+    }
+
+    function setOnClicked(callback)
+    {
+        m_button.off("click").on("click", function (event)
+        {
+            event.stopPropagation();
+            callback(that);
+        });
+        m_onClicked = callback;
+    }
+
+    function onClicked()
+    {
+        return m_onClicked;
+    }
 
     this.get = function ()
     {
         return m_button;
     };
+
+    // ---
 
     this.setEnabled = function (value)
     {
@@ -735,7 +976,7 @@ sh.IconButton = function (icon, callback)
     };
 };
 
-sh.Switch = function (checked)
+sh.Switch = function ()
 {
     Object.defineProperties(this, {
         checked: { set: setChecked, get: checked, enumerable: true }
@@ -790,19 +1031,19 @@ sh.ListItem = function ()
 {
     Object.defineProperties(this, {
         action: { set: setAction, get: action, enumerable: true },
-        callback: { set: setCallback, get: callback, enumerable: true },
         fillMode: { set: setFillMode, get: fillMode, enumerable: true },
         icon: { set: setIcon, get: icon, enumerable: true },
         subtitle: { set: setSubtitle, get: subtitle, enumerable: true },
-        title: { set: setTitle, get: title, enumerable: true }
+        title: { set: setTitle, get: title, enumerable: true },
+        onClicked: { set: setOnClicked, get: onClicked, enumerable: true }
     });
 
     var m_action = ["", null];
-    var m_callback = null;
     var m_icon = "";
     var m_fillMode = "cover";
     var m_title = "";
     var m_subtitle = "";
+    var m_onClicked = null;
 
     var m_listItem = $(
         sh.tag("li")
@@ -902,6 +1143,7 @@ sh.ListItem = function ()
     {
         var icon = action[0];
         var callback = action[1];
+
         m_labelBox.css("right", "42px");
         m_buttonBox.css("display", "block");
         m_buttonBox.find("span").addClass(icon);
@@ -918,14 +1160,14 @@ sh.ListItem = function ()
         return m_action;
     }
 
-    function setCallback(callback)
+    function setOnClicked(callback)
     {
         m_listItem.off("click").on("click", callback);
-        m_callback = callback;
+        m_onClicked = callback;
     }
 
-    function callback()
+    function onClicked()
     {
-        return callback;
+        return m_onClicked;
     }
 };
