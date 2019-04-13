@@ -743,7 +743,7 @@ function parseId3v2(fd, rev, tags, resultCallback)
         var valueBuffer = buffer.slice(pos, pos + valueSize);
         
         // support compressed tags
-        if (flags & params.flagCompressed)
+        if (flags & params.flagCompressed && key !== "PICTURE")
         {
             valueBuffer = modZlib.inflateSync(valueBuffer.slice(4));
         }
