@@ -18,134 +18,138 @@ sh.escapeHtml = function (text)
     });
 };
 
-sh.Tag = function (t)
+(function ()
 {
-    const NON_CLOSE_TAGS = [
-        "link",
-        "meta",
-        "br",
-        "hr",
-        "img",
-        "input"
-    ];
-
-    var that = this;
-    var m_tag = t;
-    var m_attrs = [];
-    var m_style = [];
-    var m_content = [];
-
-    this.attr = function (key, value)
+    var Tag = function (t)
     {
-        m_attrs.push([key, value]);
-        return that;
-    };
+        const NON_CLOSE_TAGS = [
+            "link",
+            "meta",
+            "br",
+            "hr",
+            "img",
+            "input"
+        ];
     
-    this.style = function (key, value)
-    {
-        m_style.push([key, value]);
-        return that;
-    };
-
-    this.id = function (s)
-    {
-        m_attrs.push(["id", s]);
-        return that;
-    };
+        var that = this;
+        var m_tag = t;
+        var m_attrs = [];
+        var m_style = [];
+        var m_content = [];
     
-    this.class = function (c)
-    {
-        m_attrs.push(["class", c]);
-        return that;
-    };
-
-    this.data = function (d, v)
-    {
-        m_attrs.push(["data-" + d, v]);
-        return that;
-    }
-
-    this.on = function (ev, handler)
-    {
-        m_attrs.push(["on" + ev, handler]);
-        return that;
-    };
-
-    this.content = function (c)
-    {
-        if (typeof c === "string")
+        this.attr = function (key, value)
         {
-            m_content.push(new sh.Data(c));
+            m_attrs.push([key, value]);
+            return that;
+        };
+        
+        this.style = function (key, value)
+        {
+            m_style.push([key, value]);
+            return that;
+        };
+    
+        this.id = function (s)
+        {
+            m_attrs.push(["id", s]);
+            return that;
+        };
+        
+        this.class = function (c)
+        {
+            m_attrs.push(["class", c]);
+            return that;
+        };
+    
+        this.data = function (d, v)
+        {
+            m_attrs.push(["data-" + d, v]);
+            return that;
         }
-        else
+    
+        this.on = function (ev, handler)
         {
-            m_content.push(c);
-        }
-        return that;
-    };
-
-    this.child = function (n)
-    {
-        if (n >= 0)
+            m_attrs.push(["on" + ev, handler]);
+            return that;
+        };
+    
+        this.content = function (c)
         {
-            return m_content[n];
-        }
-        else
-        {
-            return m_content[m_content.length + n];
-        }
-    };
-
-    this.html = function ()
-    {
-        var out = "";
-        if (m_tag !== "")
-        {
-            out += "<" + m_tag;
-            m_attrs.forEach(function (a)
+            if (typeof c === "string")
             {
-                out += " " + a[0] + "=\"" + sh.escapeHtml(a[1]) + "\"";
-            });
-            if (m_style.length > 0)
+                m_content.push(new Data(c));
+            }
+            else
             {
-                out += " style = \"";
-                m_style.forEach(function (s)
+                m_content.push(c);
+            }
+            return that;
+        };
+    
+        this.child = function (n)
+        {
+            if (n >= 0)
+            {
+                return m_content[n];
+            }
+            else
+            {
+                return m_content[m_content.length + n];
+            }
+        };
+    
+        this.html = function ()
+        {
+            var out = "";
+            if (m_tag !== "")
+            {
+                out += "<" + m_tag;
+                m_attrs.forEach(function (a)
                 {
-                    out += s[0] + ": " + s[1] + "; ";
+                    out += " " + a[0] + "=\"" + sh.escapeHtml(a[1]) + "\"";
                 });
-                out += "\"";
+                if (m_style.length > 0)
+                {
+                    out += " style = \"";
+                    m_style.forEach(function (s)
+                    {
+                        out += s[0] + ": " + s[1] + "; ";
+                    });
+                    out += "\"";
+                }
+                out += ">";
             }
-            out += ">";
-        }
-        m_content.forEach(function (c)
-        {
-            out += c.html();
-        });
-        if (m_tag !== "")
-        {
-            if (NON_CLOSE_TAGS.indexOf(m_tag) === -1)
+            m_content.forEach(function (c)
             {
-                out += "</" + m_tag + ">\n";
+                out += c.html();
+            });
+            if (m_tag !== "")
+            {
+                if (NON_CLOSE_TAGS.indexOf(m_tag) === -1)
+                {
+                    out += "</" + m_tag + ">\n";
+                }
             }
-        }
-        return out;
+            return out;
+        };
     };
-};
-
-sh.Data = function (d)
-{
-    var m_data = d;
-
-    this.html = function ()
+    
+    var Data = function (d)
     {
-        return m_data;
+        var m_data = d;
+    
+        this.html = function ()
+        {
+            return m_data;
+        }
     }
-}
+    
+    sh.tag = function (t)
+    {
+        return new Tag(t);
+    };
+})();
 
-sh.tag = function (t)
-{
-    return new sh.Tag(t);
-};
 
 
 

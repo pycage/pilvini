@@ -4,19 +4,37 @@ var ui = { };
 
 ui.showError = function (msg, callback)
 {
-    var dlg = new sh.Dialog("Error");
-    dlg.add(new sh.Label(msg));
-    dlg.addButton("OK", function () { if (callback) callback(); });
-    dlg.show();
+    var dlg = sh.element(sh.Dialog).title("Error")
+    .add(
+        sh.element(sh.Label).text(msg)
+    )
+    .button(
+        sh.element(sh.Button).text("Ok")
+        .action(function ()
+        {
+            dlg.close_();
+            if (callback)
+            {
+                callback();
+            }
+        })
+    );
+    dlg.show_();
 };
 
 ui.showQuestion = function (title, msg, yesCb, noCb)
 {
-    var dlg = new sh.Dialog(title);
-    dlg.add(new sh.Label(msg));
-    dlg.addButton("Yes", yesCb);
-    dlg.addButton("No", noCb);
-    dlg.show();
+    var dlg = sh.element(sh.Dialog).title(title)
+    .add(
+        sh.element(sh.Label).text(msg)
+    )
+    .button(
+        sh.element(sh.Button).text("Yes").action(function () { dlg.close_(); yesCb(); }).isDefault(true)
+    )
+    .button(
+        sh.element(sh.Button).text("No").action(function () { dlg.close_(); noCb(); })
+    );
+    dlg.show_();
 };
 
 ui.StatusItem = function (icon, message)

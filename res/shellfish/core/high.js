@@ -63,12 +63,21 @@
         var that = this;
         var m_element = null;
         var m_children = [];
+        var m_id = "";
     
         this.get = function ()
         {
             return m_element;
         };
     
+        /* Sets the ID of this element.
+         */
+        this.id = function (i)
+        {
+            m_id = i;
+            return that;
+        };
+
         /* Adds a child element to this element.
          */
         this.add = function (element)
@@ -91,6 +100,28 @@
             {
                 return m_children[m_children.length + n];
             }
+        };
+
+        /* Returns the child element with the given ID.
+         */
+        this.find = function (id)
+        {
+            if (id === m_id)
+            {
+                return that;
+            }
+            else
+            {
+                for (var i = 0; i < m_children.length; ++i)
+                {
+                    var obj = m_children[i].find(id);
+                    if (obj)
+                    {
+                        return obj;
+                    }
+                }
+            }
+            return null;
         };
     
         function setProperty(prop, value)
@@ -119,9 +150,16 @@
     
         properties.forEach(function (prop)
         {
-            if (m_element.hasOwnProperty(prop) && typeof m_element[prop] !== "function")
+            if (m_element.hasOwnProperty(prop))
             {
-                that[prop] = function (v) { return setProperty(prop, v); };
+                if (typeof m_element[prop] === "function")
+                {
+                    that[prop + "_"] = m_element[prop];
+                }
+                else
+                {
+                    that[prop] = function (v) { return setProperty(prop, v); };
+                }
             }
         });
     };

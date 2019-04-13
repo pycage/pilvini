@@ -382,8 +382,16 @@ sh.Popup = function ()
     };
 };
 
-sh.Dialog = function (title)
+sh.Dialog = function ()
 {
+    Object.defineProperties(this, {
+        title: { set: setTitle, get: title, enumerable: true },
+        button: { set: addButton, get: buttons, enumerable: true }
+    });
+
+    var m_title = "";
+    var m_buttons = [];
+
     var m_dialog = $(
         sh.tag("form").class("sh-popup")
         .on("click", "event.stopPropagation();")
@@ -397,7 +405,7 @@ sh.Dialog = function (title)
                 sh.tag("header")
                 .content(
                     sh.tag("h1").class("sh-left")
-                    .content(sh.escapeHtml(title))
+                    .content("")
                 )
             )
             .content(
@@ -425,29 +433,34 @@ sh.Dialog = function (title)
         $("body").append(m_dialog);
     };
 
-    /* Adds a button to this dialog.
+    /* Closes this dialog.
      */
-    this.addButton = function (text, callback, asDefault)
+    this.close = function ()
     {
-        var html;
-        if (asDefault)
-        {
-            html = sh.tag("input").attr("type", "submit")
-                   .on("click", "")
-                   .attr("value", sh.escapeHtml(text))
-                   .html();
-        }
-        else
-        {
-            html = sh.tag("input").attr("type", "button")
-                   .on("click", "")
-                   .attr("value", sh.escapeHtml(text))
-                   .html();
-        }
-        var btn = $(html);
-        btn.on("click", function () { m_dialog.remove(); if (callback) callback(); });
-        m_dialog.find("footer > span").append(btn);
-    };
+        m_dialog.detach();
+    }
+
+    function setTitle(title)
+    {
+        m_dialog.find("header h1").html(sh.escapeHtml(title));
+        m_title = title;
+    }
+
+    function title()
+    {
+        return m_title;
+    }
+
+    function addButton(button)
+    {
+        m_buttons.push(button);
+        m_dialog.find("footer > span").append(button.get().get());
+    }
+
+    function buttons()
+    {
+        return m_buttons;
+    }
 
     /* Adds a widget to this dialog.
      */
@@ -490,13 +503,29 @@ sh.BusyPopup = function (title)
     };
 };
 
-sh.Label = function (text)
+sh.Label = function (t)
 {
+    Object.defineProperties(this, {
+        text: { set: setText, get: text, enumerable: true }
+    });
+
+    var m_text = "";
     var m_label = $(
         sh.tag("p")
-        .content(sh.escapeHtml(text))
+        .content(sh.escapeHtml(t || ""))
         .html()
     );
+
+    function setText(text)
+    {
+        m_label.html(sh.escapeHtml(text));
+        m_text = text;
+    }
+
+    function text()
+    {
+        return m_text;
+    }
 
     this.get = function ()
     {
@@ -504,31 +533,65 @@ sh.Label = function (text)
     };
 };
 
-sh.Labeled = function (text, widget)
+sh.Labeled = function (t, widget)
 {
+    Object.defineProperties(this, {
+        text: { set: setText, get: text, enumerable: true }
+    });
+
+    var m_text = "";
+
     var m_row = $(
         sh.tag("p")
         .content(
-            sh.tag("label").content(sh.escapeHtml(text))
+            sh.tag("label").content(sh.escapeHtml(t || ""))
             .style("display", "inline-block")
             .style("min-width", "6em")
         )
         .html()
     );
 
+    function setText(text)
+    {
+        m_row.find("> label").html(sh.escapeHtml(text));
+        m_text = text;
+    }
+
+    function text()
+    {
+        return m_text;
+    }
+
+    this.add = function (widget)
+    {
+        m_row.append(widget.get());
+    }
+
     this.get = function ()
     {
         return m_row;
     };
 
-    m_row.append(widget.get());
+    // ---
+
+    if (widget)
+    {
+        m_row.append(widget.get());
+    }
 };
 
-sh.TextInput = function (text, asPassword)
+sh.TextInput = function (t, asPassword)
 {
+    Object.defineProperties(this, {
+        text: { set: setText, get: text, enumerable: true },
+        password: { set: setPassword, get: password, enumerable: true }
+    });
+
+    var m_password = false;
+
     var m_input = $(
         sh.tag("input").attr("type", asPassword ? "password" : "text")
-        .attr("value", sh.escapeHtml(text || ""))
+        .attr("value", sh.escapeHtml(t || ""))
         .on("keydown", "event.stopPropagation();")
         .html()
     );
@@ -537,6 +600,29 @@ sh.TextInput = function (text, asPassword)
     {
         return m_input;
     };
+
+    function setText(text)
+    {
+        m_input.val(sh.escapeHtml(text));
+    }
+
+    function text()
+    {
+        return m_input.val();
+    }
+
+    function setPassword(value)
+    {
+        m_input.prop("type", value ? "password" : "text");
+        m_password = value;
+    }
+
+    function password()
+    {
+        return m_password;
+    }
+
+    // ---
 
     this.setValue = function (text)
     {
@@ -549,9 +635,62 @@ sh.TextInput = function (text, asPassword)
     };
 };
 
-sh.Button = function (text, callback)
+sh.Button = function ()
 {
+    Object.defineProperties(this, {
+        text: { set: setText, get: text, enumerable: true },
+        action: { set: setAction, get: action, enumerable: true },
+        isDefault: { set: setIsDefault, get: isDefault, enumerable: true }
+    });
 
+    var m_text = "";
+    var m_action = null;
+    var m_isDefault = false;
+
+    var m_button = $(
+        sh.tag("input").attr("type", "button")
+        .on("click", "")
+        .attr("value", "")
+        .html()
+    );
+
+    function setText(text)
+    {
+        m_button.prop("value", sh.escapeHtml(text));
+        m_text = text;
+    }
+
+    function text()
+    {
+        return m_text;
+    }
+
+    function setAction(callback)
+    {
+        m_button.off("click").on("click", callback);
+        m_action = callback;
+    }
+
+    function action()
+    {
+        return m_action;
+    }
+
+    function setIsDefault(value)
+    {
+        m_button.prop("type", value ? "submit" : "button");
+        m_isDefault = value;
+    }
+
+    function isDefault()
+    {
+        return m_isDefault;
+    }
+
+    this.get = function ()
+    {
+        return m_button;
+    }
 };
 
 sh.IconButton = function (icon, callback)

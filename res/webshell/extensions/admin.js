@@ -86,49 +86,83 @@
 
     function showCreateUserDialog()
     {
-        var dlg = new sh.Dialog("Create User");
-        dlg.add(new sh.Label("Create a new user."));
-
-        var nameEntry = new sh.TextInput("user");
-        var passwordEntry = new sh.TextInput("");
-        var homeEntry = new sh.TextInput(files.currentUri());
-
-        var mayCreate = new sh.Switch();
-        mayCreate.checked = true;
-        var mayDelete = new sh.Switch();
-        mayDelete.checked = true;
-        var mayModify = new sh.Switch();
-        mayModify.checked = true;
-        var mayShare = new sh.Switch();
-        mayShare.checked = false;
-        var mayAdmin = new sh.Switch();
-        mayAdmin.checked = false;
-
-        dlg.add(new sh.Labeled("Name:", nameEntry));
-        dlg.add(new sh.Labeled("Password:", passwordEntry));
-        dlg.add(new sh.Labeled("Home:", homeEntry));
-
-        dlg.add(new sh.Label("Permissions:"));
-
-        dlg.add(new sh.Labeled("Create", mayCreate));
-        dlg.add(new sh.Labeled("Delete", mayDelete));
-        dlg.add(new sh.Labeled("Modify", mayModify));
-        dlg.add(new sh.Labeled("Share", mayShare));
-        dlg.add(new sh.Labeled("Administrator", mayAdmin));
-
-        dlg.addButton("Create", function ()
-        {
-            var permissions = [];
-            if (mayCreate.checked) permissions.push("CREATE");
-            if (mayDelete.checked) permissions.push("DELETE");
-            if (mayModify.checked) permissions.push("MODIFY");
-            if (mayShare.checked) permissions.push("SHARE");
-            if (mayAdmin.checked) permissions.push("ADMIN");
-            createUser(nameEntry.value(), passwordEntry.value(), homeEntry.value(), permissions);
-        }, true);
-        dlg.addButton("Cancel");
-
-        dlg.show();
+        var dlg = sh.element(sh.Dialog).title("Create User")
+        .add(
+            sh.element(sh.Label).text("Create a new user.")
+        )
+        .add(
+            sh.element(sh.Labeled).text("Name:")
+            .add(
+                sh.element(sh.TextInput).id("name").text("user")
+            )
+        )
+        .add(
+            sh.element(sh.Labeled).text("Password:")
+            .add(
+                sh.element(sh.TextInput).id("password")
+            )
+        )
+        .add(
+            sh.element(sh.Labeled).text("Home:")
+            .add(
+                sh.element(sh.TextInput).id("home").text(files.currentUri())
+            )
+        )
+        .add(
+            sh.element(sh.Labeled).text("Create")
+            .add(
+                sh.element(sh.Switch).id("mayCreate").checked(true)
+            )
+        )
+        .add(
+            sh.element(sh.Labeled).text("Delete")
+            .add(
+                sh.element(sh.Switch).id("mayDelete").checked(true)
+            )
+        )
+        .add(
+            sh.element(sh.Labeled).text("Modify")
+            .add(
+                sh.element(sh.Switch).id("mayModify").checked(true)
+            )
+        )
+        .add(
+            sh.element(sh.Labeled).text("Share")
+            .add(
+                sh.element(sh.Switch).id("mayShare").checked(false)
+            )
+        )
+        .add(
+            sh.element(sh.Labeled).text("Administrator")
+            .add(
+                sh.element(sh.Switch).id("mayAdmin").checked(false)
+            )
+        )
+        .button(
+            sh.element(sh.Button).text("Create").isDefault(true)
+            .action(function ()
+           {
+               dlg.close_();
+               var permissions = [];
+               if (dlg.find("mayCreate").get().checked) permissions.push("CREATE");
+               if (dlg.find("mayDelete").get().checked) permissions.push("DELETE");
+               if (dlg.find("mayModify").get().checked) permissions.push("MODIFY");
+               if (dlg.find("mayShare").get().checked) permissions.push("SHARE");
+               if (dlg.find("mayAdmin").get().checked) permissions.push("ADMIN");
+               createUser(dlg.find("name").get().text,
+                          dlg.find("password").get().text,
+                          dlg.find("home").get().text,
+                          permissions);
+           })
+        )
+        .button(
+            sh.element(sh.Button).text("Cancel")
+            .action(function ()
+            {
+                dlg.close_();
+            })
+        );
+        dlg.show_();
     }
 
     function createUser(name, password, home, permissions)
@@ -187,10 +221,15 @@
         .visible(files.predicates.permissions("ADMIN"))
         .callback(function ()
         {
-            var dlg = new sh.Dialog("User Agent");
-            dlg.add(new sh.Label(navigator.userAgent));
-            dlg.addButton("Ok");
-            dlg.show();  
+            var dlg = sh.element(sh.Dialog).title("User Agent")
+            .add(
+                sh.element(sh.Label).text(navigator.userAgent)
+            )
+            .button(
+                sh.element(sh.Button).text("Ok")
+                .action(function () { dlg.close_(); })
+            );
+            dlg.show_();
         })
     );
 })();

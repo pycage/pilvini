@@ -414,17 +414,28 @@
     {
         if (! playing)
         {
-            var dlg = new sh.Dialog("Slideshow");
-            dlg.add(new sh.Label("Interval between images:"));
-            var entry = new sh.TextInput("" + slideshowInterval);
-            dlg.add(new sh.Labeled("Seconds", entry));
-            dlg.addButton("Start", function ()
-            {
-                slideshowInterval = Number.parseInt(entry.value()) || 5;
-                slideshowCountdown = 0;
-                runSlideshow();
-            }, true);
-            dlg.show();
+            var dlg = sh.element(sh.Dialog).title("Slideshow")
+            .add(
+                sh.element(sh.Label).text("Interval between images:")
+            )
+            .add(
+                sh.element(sh.Labeled).text("Seconds")
+                .add(
+                    sh.element(sh.TextInput).id("input").text("" + slideshowInterval)
+                )
+            )
+            .button(
+                sh.element(sh.Button).text("Start").isDefault(true)
+                .action(function ()
+                {
+                    dlg.close_();
+                    slideshowInterval = Number.parseInt(dlg.find("input").get().text) || 5;
+                    slideshowCountdown = 0;
+                    runSlideshow();
+                })
+            );
+
+            dlg.show_();
         }
         else
         {

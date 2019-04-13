@@ -154,18 +154,40 @@ files.predicates = { };
 
     function showShareDialog()
     {
-        var dlg = new sh.Dialog("Setup Share");
-        dlg.add(new sh.Label("Share this directory."));
-        var loginEntry = new sh.TextInput("");
-        var passwordEntry = new sh.TextInput("");
-        dlg.add(new sh.Labeled("Share Login:", loginEntry));
-        dlg.add(new sh.Labeled("Share Password:", passwordEntry));
-        dlg.addButton("Share", function ()
-        {
-            share(loginEntry.value(), passwordEntry.value());
-        }, true);
-        dlg.addButton("Cancel");
-        dlg.show();
+        var dlg = sh.element(sh.Dialog).title("Setup Share")
+        .add(
+            sh.element(sh.Label).text("Share this directory.")
+        )
+        .add(
+            sh.element(sh.Labeled).text("Share Login:")
+            .add(
+                sh.element(sh.TextInput).id("login")
+            )
+        )
+        .add(
+            sh.element(sh.Labeled).text("Share Password:")
+            .add(
+                sh.element(sh.TextInput).id("password")
+            )
+        )
+        .button(
+            sh.element(sh.Button).text("Share").isDefault(true)
+            .action(function ()
+            {
+                dlg.close_();
+                share(dlg.find("login").get().text,
+                      dlg.find("password").get().text);
+            })
+        )
+        .button(
+            sh.element(sh.Button).text("Cancel")
+            .action(function ()
+            {
+                dlg.close_();
+            })
+        );
+
+        dlg.show_();
     }
 
     function share(shareId, password)
@@ -204,68 +226,100 @@ files.predicates = { };
 
     function makeNewDirectory()
     {
-        var dlg = new sh.Dialog("New Directory");
-        dlg.add(new sh.Label("Create a new directory."));
-        var entry = new sh.TextInput("");
-        dlg.add(new sh.Labeled("Name:", entry));
-        dlg.addButton("Create", function ()
-        {
-            var name = entry.value();
-            if (name !== "")
+        var dlg = sh.element(sh.Dialog).title("New Directory")
+        .add(
+            sh.element(sh.Label).text("Create a new directory.")
+        )
+        .add(
+            sh.element(sh.Labeled).text("Name:")
+            .add(
+                sh.element(sh.TextInput).id("name")
+            )
+        )
+        .button(
+            sh.element(sh.Button).text("Create").isDefault(true)
+            .action(function ()
             {
-                var targetUri = joinPath(m_currentUri, encodeURIComponent(name));
-                file.mkdir(targetUri, function (ok)
+                dlg.close_();
+                var name = dlg.find("name").get().text;
+                if (name !== "")
                 {
-                    if (ok)
+                    var targetUri = joinPath(m_currentUri, encodeURIComponent(name));
+                    file.mkdir(targetUri, function (ok)
                     {
-                        loadDirectory(m_currentUri, false);    
-                    }
-                    else
-                    {
-                        ui.showError("Failed to create directory: " + name);
-                    }
-                });
-            }
-            else
+                        if (ok)
+                        {
+                            loadDirectory(m_currentUri, false);    
+                        }
+                        else
+                        {
+                            ui.showError("Failed to create directory: " + name);
+                        }
+                    });
+                }
+                else
+                {
+                    ui.showError("Invalid name.");
+                }
+            })
+        )
+        .button(
+            sh.element(sh.Button).text("Cancel")
+            .action(function ()
             {
-                ui.showError("Invalid name.");
-            }
-        }, true);
-        dlg.addButton("Cancel");
-        dlg.show();
+                dlg.close_();
+            })
+        );
+        dlg.show_();
     }
 
     function makeNewFile()
     {
-        var dlg = new sh.Dialog("New File");
-        dlg.add(new sh.Label("Create a new file."));
-        var entry = new sh.TextInput("");
-        dlg.add(new sh.Labeled("Name:", entry));
-        dlg.addButton("Create", function ()
-        {
-            var name = entry.value();
-            if (name !== "")
+        var dlg = sh.element(sh.Dialog).title("New File")
+        .add(
+            sh.element(sh.Label).text("Create a new file.")
+        )
+        .add(
+            sh.element(sh.Labeled).text("Name:")
+            .add(
+                sh.element(sh.TextInput).id("name")
+            )
+        )
+        .button(
+            sh.element(sh.Button).text("Create").isDefault(true)
+            .action(function ()
             {
-                var targetUri = joinPath(m_currentUri, encodeURIComponent(name));
-                file.create(targetUri, function (ok)
+                dlg.close_();
+                var name = dlg.find("name").get().text;
+                if (name !== "")
                 {
-                    if (ok)
+                    var targetUri = joinPath(m_currentUri, encodeURIComponent(name));
+                    file.create(targetUri, function (ok)
                     {
-                        loadDirectory(m_currentUri, false);
-                    }
-                    else
-                    {
-                        ui.showError("Failed to create file: " + name);
-                    }
-                });
-            }
-            else
+                        if (ok)
+                        {
+                            loadDirectory(m_currentUri, false);
+                        }
+                        else
+                        {
+                            ui.showError("Failed to create file: " + name);
+                        }
+                    });
+                }
+                else
+                {
+                    ui.showError("Invalid name.");
+                }
+            })
+        )
+        .button(
+            sh.element(sh.Button).text("Cancel")
+            .action(function ()
             {
-                ui.showError("Invalid name.");
-            }
-        }, true);
-        dlg.addButton("Cancel");
-        dlg.show();
+                dlg.close_();
+            })
+        );
+        dlg.show_();
     }
 
     function loadThumbnails()
@@ -614,31 +668,47 @@ files.predicates = { };
         var meta = $(item).data("meta");
         var name = meta.name;
 
-        var dlg = new sh.Dialog("Rename File");
-        dlg.add(new sh.Label("Rename the file."));
-        var entry = new sh.TextInput(name);
-        dlg.add(new sh.Labeled("Name:", entry));
-        dlg.addButton("Rename", function ()
-        {
-            var newName = entry.value();
-            var targetUri = joinPath(m_currentUri, encodeURIComponent(newName));
-
-            file.move(meta.uri, targetUri, function (ok)
+        var dlg = sh.element(sh.Dialog).title("Rename File")
+        .add(
+            sh.element(sh.Label).text("Rename the file.")
+        )
+        .add(
+            sh.element(sh.Labeled).text("Name:")
+            .add(
+                sh.element(sh.TextInput).id("name").text(name)
+            )
+        )
+        .button(
+            sh.element(sh.Button).text("Rename").isDefault(true)
+            .action(function ()
             {
-                if (ok)
+                dlg.close_();
+                var newName = dlg.find("name").get().text;
+                var targetUri = joinPath(m_currentUri, encodeURIComponent(newName));
+    
+                file.move(meta.uri, targetUri, function (ok)
                 {
-                    console.log("File moved: " + name + " -> " + newName);
-                    $(item).find("h1").html(sh.escapeHtml(newName));
-                    loadDirectory(m_currentUri, false);    
-                }
-                else
-                {
-                    ui.showError("Failed to move: " + name + " to " + newName);
-                }
-            });
-        }, true);
-        dlg.addButton("Cancel");
-        dlg.show();
+                    if (ok)
+                    {
+                        console.log("File moved: " + name + " -> " + newName);
+                        $(item).find("h1").html(sh.escapeHtml(newName));
+                        loadDirectory(m_currentUri, false);    
+                    }
+                    else
+                    {
+                        ui.showError("Failed to move: " + name + " to " + newName);
+                    }
+                }); 
+            })
+        )
+        .button(
+            sh.element(sh.Button).text("Cancel")
+            .action(function ()
+            {
+                dlg.close_();
+            })
+        );
+        dlg.show_();
     }
 
     function removeSelected()

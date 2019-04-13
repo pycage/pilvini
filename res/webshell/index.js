@@ -303,25 +303,38 @@ function initLogin()
 
     function showLoginDialog()
     {
-        var dlg = new sh.Dialog("Login");
-        dlg.add(new sh.Label("Welcome to Pilvini Web Shell."));
-
-        var loginEntry = new sh.TextInput("");
-        var passwordEntry = new sh.TextInput("", true);
-        dlg.add(new sh.Labeled("Login:", loginEntry));
-        dlg.add(new sh.Labeled("Password:", passwordEntry));
-
-        dlg.addButton("Login", function ()
-        {
-            login(loginEntry.value(), passwordEntry.value());
-        }, true);
-
-        dlg.show();
+        var dlg = sh.element(sh.Dialog).title("Login")
+        .add(
+            sh.element(sh.Label).text("Welcome to Pilvini Web Shell.")
+        )
+        .add(
+            sh.element(sh.Labeled).text("Login:")
+            .add(
+                sh.element(sh.TextInput).id("login")
+            )
+        )
+        .add(
+            sh.element(sh.Labeled).text("Password:")
+            .add(
+                sh.element(sh.TextInput).id("password").password(true)
+            )
+        )
+        .button(
+            sh.element(sh.Button).text("Login").isDefault(true)
+            .action(function ()
+            {
+                dlg.close_();
+                login(dlg.find("login").get().text,
+                      dlg.find("password").get().text);
+            })
+        );
+        dlg.show_();
     }
 
     var js = [
         "/::res/shellfish/core/low.js",
         "/::res/shellfish/core/mid.js",
+        "/::res/shellfish/core/high.js",
         "/::res/webshell/ui.js"
     ];
     importJs(js, function ()
