@@ -4,12 +4,15 @@ sh.NSPage = function ()
 {
     Object.defineProperties(this,{
         header: { set: setHeader, get: header, enumerable: true },
-        onSwipeBack: { set: setOnSwipeBack, get: onSwipeBack, enumerable: true }  
+        script: { set: setScript, get: script, enumerable: true },
+        onSwipeBack: { set: setOnSwipeBack, get: onSwipeBack, enumerable: true },
+        onClosed: { set: setOnClosed, get: onClosed, enumerable: true }
     });
 
     var that = this;
     var m_header = null;
     var m_onSwipeBack = null;
+    var m_onClosed = null;
 
     var m_page = $(
         sh.tag("div").class("sh-page")
@@ -32,6 +35,19 @@ sh.NSPage = function ()
         return m_header;
     }
 
+    function setScript(uri)
+    {
+        m_page.append($(
+            sh.tag("script").attr("src", uri)
+            .html()
+        ));
+    }
+
+    function script()
+    {
+        return "";
+    }
+
     function setOnSwipeBack(callback)
     {
         sh.pageOnSwipe(m_page, callback);
@@ -41,6 +57,16 @@ sh.NSPage = function ()
     function onSwipeBack()
     {
         return m_onSwipeBack;
+    }
+
+    function setOnClosed(callback)
+    {
+        m_onClosed = callback;
+    }
+
+    function onClosed()
+    {
+        return m_onClosed;
     }
 
     this.get = function ()
@@ -59,6 +85,14 @@ sh.NSPage = function ()
     {
         $("#pagestack").append(m_page);
         sh.pagePush(m_page, callback, $(".sh-page").length === 1);
+
+        m_page.one("sh-closed", function ()
+        {
+            if (m_onClosed)
+            {
+                m_onClosed();
+            }
+        });
     };
 
     /* Pops this page off the page stack.
