@@ -4,6 +4,8 @@ sh.NSPage = function ()
 {
     Object.defineProperties(this,{
         header: { set: setHeader, get: header, enumerable: true },
+        footer: { set: setFooter, get: footer, enumerable: true },
+        left: { set: setLeft, get: left, enumerable: true },
         script: { set: setScript, get: script, enumerable: true },
         onSwipeBack: { set: setOnSwipeBack, get: onSwipeBack, enumerable: true },
         onClosed: { set: setOnClosed, get: onClosed, enumerable: true }
@@ -11,6 +13,8 @@ sh.NSPage = function ()
 
     var that = this;
     var m_header = null;
+    var m_footer = null;
+    var m_left = null;
     var m_onSwipeBack = null;
     var m_onClosed = null;
 
@@ -25,14 +29,50 @@ sh.NSPage = function ()
 
     function setHeader(header)
     {
-        m_page.find("> header").detach();
-        m_page.append(header.get().get());
+        if (m_header)
+        {
+            m_header.get().detach();
+        }
+        m_page.append(header.get());
         m_header = header;
+        that.updateGeometry();
     }
 
     function header()
     {
         return m_header;
+    }
+
+    function setFooter(footer)
+    {
+        if (m_footer)
+        {
+            m_footer.get().detach();
+        }
+        m_page.append(footer.get());
+        m_footer = footer;
+        that.updateGeometry();
+    }
+
+    function footer()
+    {
+        return m_footer;
+    }
+
+    function setLeft(left)
+    {
+        if (m_left)
+        {
+            m_left.get().detach();
+        }
+        m_page.append(left.get());
+        m_left = left;
+        that.updateGeometry();
+    }
+
+    function left()
+    {
+        return m_left;
     }
 
     function setScript(uri)
@@ -108,6 +148,15 @@ sh.NSPage = function ()
             }
         });
     };
+
+    /* Updates the page geometry.
+     */
+    this.updateGeometry = function ()
+    {
+        m_page.find("> section").css("padding-top", (!! m_header ? m_header.get().height() : 0) + "px");
+        m_page.find("> section").css("padding-bottom", (!! m_footer ? m_footer.get().height() : 0) + "px");
+        m_page.find("> section").css("padding-left", (!! m_left ? m_left.get().width() : 0) + "px");
+    }
 };
 
 sh.PageHeader = function ()
@@ -116,13 +165,15 @@ sh.PageHeader = function ()
         title: { set: setTitle, get: title, enumerable: true },
         subtitle: { set: setSubtitle, get: subtitle, enumerable: true },
         left: { set: addLeft, get: left, enumerable: true },
-        right: { set: addRight, get: right, enumerable: true }
+        right: { set: addRight, get: right, enumerable: true },
+        onClicked: { set: setOnClicked, get: onClicked, enumerable: true }
     });
 
     var m_title = "";
     var m_subtitle = "";
     var m_left = [];
     var m_right = [];
+    var m_onClicked = null;
 
     var m_header = $(
         sh.tag("header").class("sh-dropshadow")
@@ -151,7 +202,7 @@ sh.PageHeader = function ()
 
     function setTitle(title)
     {
-        m_header.find("> div > h1").html(sh.escapeHtml(title));
+        m_header.find("> div > h1").html(sh.resolveIcons(sh.escapeHtml(title)));
         m_title = title;
     }
 
@@ -173,7 +224,7 @@ sh.PageHeader = function ()
 
     function addLeft(child)
     {
-        m_header.find("> div.sh-left").append(child.get().get());
+        m_header.find("> div.sh-left").append(child.get());
         m_left.push(child);
     }
 
@@ -184,13 +235,24 @@ sh.PageHeader = function ()
 
     function addRight(child)
     {
-        m_header.find("> div.sh-right").append(child.get().get());
+        m_header.find("> div.sh-right").append(child.get());
         m_right.push(child);
     }
 
     function right()
     {
         return m_right;
+    }
+
+    function setOnClicked(callback)
+    {
+        m_header.find("> div").first().off("click").on("click", callback);
+        m_onClicked = callback;
+    }
+
+    function onClicked()
+    {
+        return m_onClicked;
     }
 
     this.get = function ()

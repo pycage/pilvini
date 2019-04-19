@@ -6,9 +6,6 @@ files.predicates = { };
 (function ()
 {
     var m_page;
-    var m_backButton;
-    var m_currentUri = "";
-
     var m_actionsMenu;
     var m_properties = { };
    
@@ -21,7 +18,7 @@ files.predicates = { };
      */
     files.currentUri = function ()
     {
-        return m_currentUri;
+        return m_properties.currentUri.value();
     };
 
     /* Returns the actions menu.
@@ -71,12 +68,12 @@ files.predicates = { };
     {
         if (! m_logItem)
         {
-            m_logItem = new ui.StatusItem("", message);
+            m_logItem = sh.element(ui.StatusItem).text(message).get();
             pushStatus(m_logItem)
         }
         else
         {
-            m_logItem.setText(message);
+            m_logItem.text = message;
         }
     }
 
@@ -90,8 +87,8 @@ files.predicates = { };
      */
     function pushStatus(item)
     {
-        $("#statusbox").append(item.get());
-        m_page.get().find("> section").css("padding-bottom", m_page.get().find("#statusbox").height() + "px");
+        m_page.footer.push(item);
+        m_page.updateGeometry();
         updateNavBar();
     }
 
@@ -100,7 +97,7 @@ files.predicates = { };
     function popStatus(item)
     {
         item.get().remove();
-        m_page.get().find("> section").css("padding-bottom", m_page.get().find("#statusbox").height() + "px");
+        m_page.updateGeometry();
         updateNavBar();
     }
 
@@ -116,40 +113,40 @@ files.predicates = { };
                             : "/";
         }
 
-        var name = extractName(m_currentUri);
-        var uri = m_currentUri;
+        var name = extractName(m_properties.currentUri.value());
+        var uri = m_properties.currentUri.value();
         var favs = configuration.get("favorites", []);
         favs.push({ name: name, uri: uri });
         configuration.set("favorites", favs);
-        loadDirectory(m_currentUri, false);
+        loadDirectory(m_properties.currentUri.value(), false);
     }
 
     /* Removes the current location from the favorites menu.
      */
     function removeFavorite()
     {
-        var uri = m_currentUri;
+        var uri = m_properties.currentUri.value();
         var favs = configuration.get("favorites", []);
         favs = favs.filter(function (a)
         {
             return a.uri !== uri;
         });
         configuration.set("favorites", favs);
-        loadDirectory(m_currentUri, false);
+        loadDirectory(m_properties.currentUri.value(), false);
     }
 
     function setSortMode(mode)
     {
         configuration.set("sort-mode", mode);
         m_scrollPositionsMap = { };
-        loadDirectory(m_currentUri, false);
+        loadDirectory(m_properties.currentUri.value(), false);
     }
 
     function setViewMode(mode)
     {
         configuration.set("view-mode", mode);
         m_scrollPositionsMap = { };
-        loadDirectory(m_currentUri, false);
+        loadDirectory(m_properties.currentUri.value(), false);
     }
 
     function showShareDialog()
@@ -192,7 +189,7 @@ files.predicates = { };
 
     function share(shareId, password)
     {
-        var targetUri = m_currentUri;
+        var targetUri = m_properties.currentUri.value();
         $.ajax({
             type: "POST",
             url: "/share/",
@@ -205,13 +202,13 @@ files.predicates = { };
         })
         .done(function (data, status, xhr)
         {
-            loadDirectory(m_currentUri, false);
+            loadDirectory(m_properties.currentUri.value(), false);
         });
     }
 
     function unshare()
     {
-        var targetUri = m_currentUri;
+        var targetUri = m_properties.currentUri.value();
         $.ajax({
             type: "POST",
             url: "/unshare/",
@@ -219,7 +216,7 @@ files.predicates = { };
         })
         .done(function (data, status, xhr)
         {
-            loadDirectory(m_currentUri, false);
+            loadDirectory(m_properties.currentUri.value(), false);
         });
     }
 
@@ -244,12 +241,12 @@ files.predicates = { };
                 var name = dlg.find("name").get().text;
                 if (name !== "")
                 {
-                    var targetUri = joinPath(m_currentUri, encodeURIComponent(name));
+                    var targetUri = joinPath(m_properties.currentUri.value(), encodeURIComponent(name));
                     file.mkdir(targetUri, function (ok)
                     {
                         if (ok)
                         {
-                            loadDirectory(m_currentUri, false);    
+                            loadDirectory(m_properties.currentUri.value(), false);    
                         }
                         else
                         {
@@ -293,12 +290,12 @@ files.predicates = { };
                 var name = dlg.find("name").get().text;
                 if (name !== "")
                 {
-                    var targetUri = joinPath(m_currentUri, encodeURIComponent(name));
+                    var targetUri = joinPath(m_properties.currentUri.value(), encodeURIComponent(name));
                     file.create(targetUri, function (ok)
                     {
                         if (ok)
                         {
-                            loadDirectory(m_currentUri, false);
+                            loadDirectory(m_properties.currentUri.value(), false);
                         }
                         else
                         {
@@ -324,7 +321,7 @@ files.predicates = { };
 
     function loadThumbnails()
     {
-        console.log("Location: " + m_currentUri);
+        console.log("Location: " + m_properties.currentUri.value());
 
         var items = [];
         m_page.get().find(".fileitem").each(function (idx)
@@ -342,7 +339,7 @@ files.predicates = { };
         });
     
         console.log("loadThumbnails: " + items.length + " images");
-        loadNextThumbnail(m_currentUri, items);
+        loadNextThumbnail(m_properties.currentUri.value(), items);
     }
 
     function loadNextThumbnail(forLocation, items)
@@ -383,7 +380,7 @@ files.predicates = { };
         var meta = $(item).data("meta");
         if (! meta)
         {
-            if (m_currentUri === forLocation)
+            if (m_properties.currentUri.value() === forLocation)
             {
                 loadNextThumbnail(forLocation, items);
             }
@@ -395,7 +392,7 @@ files.predicates = { };
         var thumbnailUri = "/::thumbnail" + meta.uri;
     
         var now = Date.now();
-        var statusEntry = new ui.StatusItem("sh-icon-wait", name);
+        var statusEntry = sh.element(ui.StatusItem).icon("sh-icon-wait").text(name).get();
         pushStatus(statusEntry);
     
         var settings = {
@@ -434,7 +431,7 @@ files.predicates = { };
                 var speed = Math.ceil((data.length / 1024) / ((then - now) / 1000.0));
                 console.log("Loading took " + (then - now) + " ms, size: " + data.length + " B (" + speed + " kB/s).");
     
-                if (m_currentUri === forLocation)
+                if (m_properties.currentUri.value() === forLocation)
                 {
                     loadNextThumbnail(forLocation, items);
                 }
@@ -451,7 +448,7 @@ files.predicates = { };
                         {
                             items.unshift(item);
                         }
-                        if (m_currentUri === forLocation)
+                        if (m_properties.currentUri.value() === forLocation)
                         {
                             loadNextThumbnail(forLocation, items);
                         }
@@ -462,7 +459,7 @@ files.predicates = { };
         .fail(function ()
         {
             popStatus(statusEntry);
-            if (m_currentUri === forLocation)
+            if (m_properties.currentUri.value() === forLocation)
             {
                 loadNextThumbnail(forLocation, items);
             }
@@ -684,7 +681,7 @@ files.predicates = { };
             {
                 dlg.close_();
                 var newName = dlg.find("name").get().text;
-                var targetUri = joinPath(m_currentUri, encodeURIComponent(newName));
+                var targetUri = joinPath(m_properties.currentUri.value(), encodeURIComponent(newName));
     
                 file.move(meta.uri, targetUri, function (ok)
                 {
@@ -692,7 +689,7 @@ files.predicates = { };
                     {
                         console.log("File moved: " + name + " -> " + newName);
                         $(item).find("h1").html(sh.escapeHtml(newName));
-                        loadDirectory(m_currentUri, false);    
+                        loadDirectory(m_properties.currentUri.value(), false);    
                     }
                     else
                     {
@@ -827,10 +824,10 @@ files.predicates = { };
     function openPathMenu()
     {
         var favs = configuration.get("favorites", []);
-        var isFav = !! favs.find(function (a) { return a.uri === m_currentUri; });
-        var isShare = !! m_properties.shares.value().find(function (a) { return a.uri === m_currentUri; });
+        var isFav = !! favs.find(function (a) { return a.uri === m_properties.currentUri.value(); });
+        var isShare = !! m_properties.shares.value().find(function (a) { return a.uri === m_properties.currentUri.value(); });
 
-        console.log(JSON.stringify(m_properties.shares.value()) + " current " + m_currentUri);
+        console.log(JSON.stringify(m_properties.shares.value()) + " current " + m_properties.currentUri.value());
 
         var menu = sh.element(sh.Menu)
         .add(
@@ -903,7 +900,7 @@ files.predicates = { };
             })
         );
 
-        var parts = m_currentUri.split("/");
+        var parts = m_properties.currentUri.value().split("/");
         var breadcrumbUri = "";
         for (var i = 0; i < parts.length; ++i)
         {
@@ -926,148 +923,12 @@ files.predicates = { };
             );
         }
 
-        menu.get().popup(m_page.get().find("> header > div"));
-    }
-
-    function setupStatusBox()
-    {
-        var statusBox = $(
-            sh.tag("div").id("statusbox")
-            .style("position", "fixed")
-            .style("bottom", "0")
-            .style("left", "0")
-            .style("right", "0")
-            .style("height", "auto")
-            .style("border", "solid 1px var(--color-border)")
-            .style("background-color", "var(--color-primary-background)")
-            .html()
-        );
-
-        m_page.get().append(statusBox);
-    }
-
-    function setupNavBar()
-    {
-        var navBar = $(sh.tag("div").class("files-navbar")
-                       .style("position", "absolute")
-                       .style("top", "0")
-                       .style("left", "0")
-                       .style("width", "32px")
-                       .style("height", "100%")
-                       .style("background-color", "var(--color-primary)")
-                       .style("color", "var(--color-primary-background)")
-                       .style("text-align", "center")
-                       .style("font-weight", "bold")
-                       .html()
-        );
-
-        m_page.get().find("> section").append(navBar);
-
-        navBar.on("mousedown", function (event)
-        {
-            this.pressed = true;
-    
-            var percents = (event.clientY - $(this).offset().top) /
-                           ($(window).height() - $(this).offset().top);
-            $(document).scrollTop(($(document).height() - $(window).height()) * percents);
-        });
-    
-        navBar.on("mouseup", function (event)
-        {
-            this.pressed = false;
-        });
-    
-        navBar.on("mouseleave", function (event)
-        {
-            this.pressed = false;
-        });
-    
-        navBar.on("mousemove", function (event)
-        {
-            if (this.pressed)
-            {
-                var percents = (event.clientY - $(this).offset().top) /
-                               ($(window).height() - $(this).offset().top);
-                $(document).scrollTop(($(document).height() - $(window).height()) * percents);
-            }
-        });
-
-        // quite an effort to work around quirks in certain touch browsers
-
-        navBar.on("touchstart", function (event)
-        {
-            var scrollBegin = $(document).scrollTop();
-            m_page.get().addClass("sh-page-transitioning");
-            m_page.get().find("> section").scrollTop(scrollBegin);
-            this.touchContext = {
-                top: $(this).offset().top,
-                scrollBegin: scrollBegin,
-                scrollTarget: 0
-            };
-        });
-
-        navBar.on("touchend", function (event)
-        {
-            m_page.get().find("> section").css("margin-top", 0);
-            m_page.get().removeClass("sh-page-transitioning");
-            if (this.touchContext.scrollTarget > 0)
-            {
-                $(document).scrollTop(this.touchContext.scrollTarget);
-            }    
-        });
-
-        navBar.on("touchmove", function (event)
-        {
-            event.preventDefault();
-            
-            var percents = (event.originalEvent.touches[0].clientY - this.touchContext.top) /
-                        ($(window).height() - this.touchContext.top);
-            percents = Math.max(0, Math.min(1, percents));
-
-            var scrollTop = (navBar.height() + m_page.get().find("> header").height() - $(window).height()) * percents;
-
-            m_page.get().find("> section").css("margin-top", (-scrollTop) + "px");
-            this.touchContext.scrollTarget = scrollTop;        
-        });
+        menu.get().popup(m_page.header.get());
     }
 
     function updateNavBar()
     {
-        var navBar = m_page.get().find(".files-navbar");
-        navBar.html("");
-        navBar.height(0);
-
-        var items = m_page.get().find(".fileitem");
-        var currentLetter = "";
-        var previousOffset = -1;
-
-        for (var i = 0; i < items.length; ++i)
-        {
-            var item = $(items[i]);
-            var letter = item.find("h1").html()[0].toUpperCase();
-            var offset = item.offset().top;
-    
-            if (letter !== currentLetter && offset !== previousOffset)
-            {
-                navBar.append(
-                    sh.tag("span")
-                    .style("position", "absolute")
-                    .style("top", (item.offset().top - m_page.get().find("> header").height()) + "px")
-                    .style("left", "0")
-                    .style("right", "0")
-                    .content(letter)
-                    .html()
-                )
-                currentLetter = letter;
-                previousOffset = offset;
-            }
-        }
-
-        var windowHeight = $(window).height() - m_page.get().find("> header").height() - 1;
-        var contentHeight = m_page.get().find("> section").height();
-        var minHeight = Math.max(windowHeight, contentHeight);
-        navBar.height(Math.max(windowHeight, contentHeight));
-        //log("win height: " + $(window).height() + ", content height: " + contentHeight);
+        m_page.left.update();
     }
 
     function loadDirectory(uri, pushToHistory)
@@ -1075,7 +936,7 @@ files.predicates = { };
         var busyIndicator = sh.element(sh.BusyPopup).text("Loading");
         busyIndicator.show_();
 
-        m_scrollPositionsMap[m_currentUri] = $(document).scrollTop();
+        m_scrollPositionsMap[m_properties.currentUri.value()] = $(document).scrollTop();
 
         m_page.get().find("> section").html("");
 
@@ -1149,7 +1010,6 @@ files.predicates = { };
         {
         case "list":
             var listView = new sh.ListView();
-            listView.get().css("margin-left", "32px");
 
             files.forEach(function (entry)
             {
@@ -1189,7 +1049,6 @@ files.predicates = { };
                 .style("flex-direction", "row")
                 .style("flex-wrap", "wrap")
                 .style("justify-content", "flex-start")
-                .style("margin-left", "32px")
                 .html()
             );
             files.forEach(function (entry)
@@ -1248,41 +1107,15 @@ files.predicates = { };
             break;
         }
 
-        m_currentUri = data.uri;
+        m_properties.currentUri.assign(data.uri);
+        m_properties.filesTotal.assign(files.length);
         m_properties.shares.assign(data.shares);
         m_properties.permissions.assign(data.permissions);
 
-        var isFav = configuration.get("favorites", []).find(function (a) { return a.uri === m_currentUri; }) !== undefined;
-        var isShare = m_properties.shares.value().find(function (a) { return a.uri === m_currentUri; }) !== undefined;
-
-        setupNavBar();
-        m_page.header.title = data.uri;
-        m_page.header.subtitle = files.length + " items";
+        //setupNavBar();
         document.title = "Pilvini - " + decodeURIComponent(data.uri);
 
-        if (data.uri === "/")
-        {
-            m_page.header.left[0].visible = false;
-        }
-        else
-        {
-            m_page.header.left[0].visible = true;
-        }
-
-        if (isFav)
-        {
-            m_page.get().find("> header h1").prepend($(
-                sh.tag("span").class("sh-fw-icon sh-icon-star-circle").content(" ").html()
-            ));
-        }
-        if (isShare)
-        {
-            m_page.get().find("> header h1").prepend($(
-                sh.tag("span").class("sh-fw-icon sh-icon-share").content(" ").html()
-            ));
-        }
-
-        $(document).scrollTop(m_scrollPositionsMap[m_currentUri] || 0);
+        $(document).scrollTop(m_scrollPositionsMap[m_properties.currentUri.value()] || 0);
 
         setTimeout(function () { loadThumbnails(); }, 500);
         updateNavBar();
@@ -1290,7 +1123,7 @@ files.predicates = { };
 
     function cdUp()
     {
-        var parts = m_currentUri.split("/");
+        var parts = m_properties.currentUri.value().split("/");
         var parentUri = parts.slice(0, parts.length - 1).join("/");
         loadDirectory(parentUri, true);
     }
@@ -1324,7 +1157,7 @@ files.predicates = { };
         var sourceUri = meta.uri;
         var targetUri = "/.pilvini/clipboard/" + encodeURIComponent(meta.name);
 
-        var statusEntry = new ui.StatusItem("sh-icon-clipboard", "Copying " + meta.name);
+        var statusEntry = sh.element(ui.StatusItem).icon("sh-icon-clipboard").text("Copying " + meta.name).get();
         pushStatus(statusEntry);
 
         file.copy(sourceUri, targetUri, function (ok)
@@ -1350,7 +1183,7 @@ files.predicates = { };
         m_properties.clipboard.value().forEach(function (meta)
         {
             var sourceUri = meta.uri;
-            var targetUri = joinPath(m_currentUri, encodeURIComponent(meta.name));
+            var targetUri = joinPath(m_properties.currentUri.value(), encodeURIComponent(meta.name));
 
             file.move(sourceUri, targetUri, function (ok)
             {
@@ -1363,7 +1196,7 @@ files.predicates = { };
                 if (count === 0)
                 {
                     m_properties.clipboard.assign([]);
-                    loadDirectory(m_currentUri, false);
+                    loadDirectory(m_properties.currentUri.value(), false);
                 }
             });
         });
@@ -1449,7 +1282,7 @@ files.predicates = { };
             if (progress === 0)
             {
                 var icon = type === "directory" ? "sh-icon-folder" : "sh-icon-cloud-upload";
-                ctx.statusEntry = new ui.StatusItem(icon, amount + "/" + total + " " + name);
+                ctx.statusEntry = sh.element(ui.StatusItem).icon(icon).text(amount + "/" + total + " " + name).get();
                 pushStatus(ctx.statusEntry);
             }
             else if (progress === -1)
@@ -1470,19 +1303,19 @@ files.predicates = { };
             }
             else
             {
-                ctx.statusEntry.setProgress(progress * 100);
+                ctx.statusEntry.progress = progress * 100;
             }
         }
 
         function finishedCallback()
         {
-            if (m_currentUri === rootUri)
+            if (m_properties.currentUri.value() === rootUri)
             {
-                loadDirectory(m_currentUri, false);
+                loadDirectory(m_properties.currentUri.value(), false);
             }
         }
 
-        var rootUri = m_currentUri;
+        var rootUri = m_properties.currentUri.value();
         var amount = 0;
         var total = 0;
 
@@ -1496,48 +1329,75 @@ files.predicates = { };
             var item = items[i];
             if (item.webkitGetAsEntry)
             {
-                uploadHierarchy(item.webkitGetAsEntry(), m_currentUri, fileCallback, progressCallback, finishedCallback);
+                uploadHierarchy(item.webkitGetAsEntry(), m_properties.currentUri.value(), fileCallback, progressCallback, finishedCallback);
             }
             else if (ev.dataTransfer.getAsEntry)
             {
-                uploadHierarchy(item.getAsEntry(), m_currentUri, fileCallback, progressCallback, finishedCallback);
+                uploadHierarchy(item.getAsEntry(), m_properties.currentUri.value(), fileCallback, progressCallback, finishedCallback);
             }
             else
             {
-                uploadFiles(ev.dataTransfer.files, m_currentUri, fileCallback, progressCallback, finishedCallback);
+                uploadFiles(ev.dataTransfer.files, m_properties.currentUri.value(), fileCallback, progressCallback, finishedCallback);
                 break;
             }
         }
     
     }
 
-    m_page = new sh.NSPage();
-    m_page.onSwipeBack = cdUp;
-    var header = new sh.PageHeader();
-    header.left = new sh.IconButton("sh-icon-back", cdUp);
-    header.right = new sh.IconButton("sh-icon-menu", function (button)
-    {
-        var menu = m_actionsMenu.get();
-        menu.popup(button.get());
-    });
-    m_page.header = header;
-    
-    m_page.get().find("> header > div").on("click", openPathMenu);
-
-    m_page.get().append($(
-        sh.tag("footer").class("sh-dropshadow")
-        .html()
-    ));
-
-    m_page.push();
-
-
     /* setup properties */
+    m_properties.currentUri = sh.binding("");
     m_properties.filesSelected = sh.binding(0);
+    m_properties.filesTotal = sh.binding(0);
     m_properties.clipboard = sh.binding([]);
     m_properties.clipboardFilled = sh.binding(false);
     m_properties.shares = sh.binding([]);
     m_properties.permissions = sh.binding([]);
+
+    var page = sh.element(sh.NSPage)
+    .onSwipeBack(cdUp)
+    .header(
+        sh.element(sh.PageHeader)
+        .title(sh.predicate([m_properties.currentUri, m_properties.shares], function ()
+        {
+            var isFav = configuration.get("favorites", []).find(function (a) { return a.uri === m_properties.currentUri.value(); }) !== undefined;
+            var isShare = m_properties.shares.value().find(function (a) { return a.uri === m_properties.currentUri.value(); }) !== undefined;
+    
+            return (isFav ? "[icon:star-circle] " : "") +
+                   (isShare ? "[icon:share] " : "") +
+                   decodeURIComponent(m_properties.currentUri.value());
+        }))
+        .subtitle(sh.predicate([m_properties.filesTotal], function ()
+        {
+            return m_properties.filesTotal.value() + " items";
+        }))
+        .onClicked(openPathMenu)
+        .left(
+            sh.element(sh.IconButton).icon("sh-icon-back")
+            .visible(sh.predicate([m_properties.currentUri], function () { return m_properties.currentUri.value() !== "/"; }))
+            .onClicked(cdUp)
+        )
+        .right(
+            sh.element(sh.IconButton).icon("sh-icon-menu")
+            .onClicked(function ()
+            {
+                var menu = m_actionsMenu.get();
+                menu.popup(page.get().header.right[0].get());
+            })
+        )
+    )
+    .left(
+        sh.element(ui.NavBar)
+    )
+    .footer(
+        sh.element(ui.StatusBox)
+    );
+    m_page = page.get();
+
+    m_page.left.page = m_page;
+    m_page.footer.push(sh.element(ui.StatusItem).icon("sh-icon-bug").text("Test").get());
+
+    m_page.push();
+
 
 
     /* setup actions menu */
@@ -1651,14 +1511,13 @@ files.predicates = { };
     $("#upload").on("change", function (event)
     {
         // TODO: proper callbacks!
-        uploadFiles(event.target.files, m_currentUri, function () { }, function () { }, function () { });
+        uploadFiles(event.target.files, m_properties.currentUri.value(), function () { }, function () { }, function () { });
     });
 
     /* setup drag and drop for external files */
     $("body").on("dragover", onDragOver);
     $("body").on("drop", onDrop);
 
-    setupStatusBox();
     loadDirectory("/", true);
     loadClipboard();
 

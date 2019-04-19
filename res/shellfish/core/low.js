@@ -18,6 +18,37 @@ sh.escapeHtml = function (text)
     });
 };
 
+/* Resolves icons in the given text.
+ * Icons are encoded by [icon:<name>].
+ */
+sh.resolveIcons = function (text)
+{
+    var out = "";
+    var lastPos = 0;
+    var pos = text.indexOf("[icon:");
+    while (pos !== -1)
+    {
+        // copy everything up to the icon
+        out += text.substring(lastPos, pos);
+
+        // find icon name
+        var endPos = text.indexOf("]", pos);
+        var iconName = text.substring(pos + 6, endPos);
+
+        // make icon
+        out += sh.tag("span").class("sh-fw-icon sh-icon-" + iconName).html();
+
+        // advance
+        lastPos = endPos + 1;
+        pos = text.indexOf("[icon:", lastPos);
+    }
+
+    // copy what's left
+    out += text.substring(lastPos);
+
+    return out;
+};
+
 (function ()
 {
     var Tag = function (t)

@@ -131,6 +131,10 @@
                 value.watch(function (v) { m_element[prop] = v; });
                 m_element[prop] = value.value();
             }
+            else if (typeof value.get === "function")
+            {
+                m_element[prop] = value.get();
+            }
             else
             {
                 m_element[prop] = value;

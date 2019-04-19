@@ -8,7 +8,7 @@
     left: 0;
     width: 100%;
     min-height: 100%;
-    padding-top: 3rem;
+    /*padding-top: 3rem;*/
 }
 
 .sh-page.sh-visible {
@@ -30,7 +30,6 @@
     left: 0;
     right: 0;
     bottom: 0;
-    visibility: hidden;
 }
 
 .sh-page.sh-page-fullscreen > header {
