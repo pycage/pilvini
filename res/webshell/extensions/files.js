@@ -5,8 +5,9 @@ files.predicates = { };
 
 (function ()
 {
-    var m_page;
-    var m_actionsMenu;
+    var m_page = null;
+    var m_listView = null;
+    var m_actionsMenu = null;
     var m_properties = { };
    
     var m_scrollPositionsMap = { };
@@ -32,37 +33,35 @@ files.predicates = { };
      */
     files.filesByMimetype = function (pattern)
     {
-        var result = [];
-        var items = m_page.get().find(".fileitem");
-
-        for (var i = 0; i < items.length; ++i)
+        return m_properties.files.value().filter(function (meta)
         {
-            var item = items[i];
-            var mimeType = $(item).data("meta").mimeType;
-            var uri = $(item).data("meta").uri;
-            if (mimeType.startsWith(pattern))
-            {
-                result.push(uri);
-            }
-        }
-
-        return result;
+            return meta.mimeType.startsWith(pattern);
+        })
+        .map(function (meta)
+        {
+            return meta.uri;
+        });
     };
 
     files.eachSelected = function (callback)
     {
         return eachSelected(callback);
-    }
+    };
 
     files.pushStatus = function (item)
     {
         pushStatus(item);
-    }
+    };
 
     files.popStatus = function (item)
     {
         popStatus(item);
-    }
+    };
+
+    files.properties = function ()
+    {
+        return m_properties;
+    };
 
     function log(message)
     {
@@ -324,20 +323,19 @@ files.predicates = { };
         console.log("Location: " + m_properties.currentUri.value());
 
         var items = [];
-        m_page.get().find(".fileitem").each(function (idx)
+        for (var idx = 0; idx < m_properties.files.value().length; ++idx)
         {
-            var item = $(this);
-            var mimeType = item.data("meta").mimeType;
-    
+            var mimeType = m_properties.files.value()[idx].mimeType;
+
             if (mimeType.startsWith("image/") ||
                 mimeType.startsWith("audio/") ||
                 mimeType === "video/mp4" ||
                 mimeType === "video/webm")
             {
-                items.push(this);
+                items.push(idx);
             }
-        });
-    
+        }
+   
         console.log("loadThumbnails: " + items.length + " images");
         loadNextThumbnail(m_properties.currentUri.value(), items);
     }
@@ -355,10 +353,13 @@ files.predicates = { };
     
         items.sort(function (a, b)
         {
-            var aPos = $(a).offset().top;
-            var bPos = $(b).offset().top;
-            var aHeight = $(a).height();
-            var bHeight = $(b).height();
+            var itemA = m_listView.item(a);
+            var itemB = m_listView.item(b);
+
+            var aPos = itemA.get().offset().top;
+            var bPos = itemB.get().offset().top;
+            var aHeight = itemA.get().height();
+            var bHeight = itemB.get().height();
             var aVisible = aPos < bottomPos && aPos + aHeight > topPos;
             var bVisible = bPos < bottomPos && bPos + bHeight > topPos;
     
@@ -376,8 +377,8 @@ files.predicates = { };
             }
         });
     
-        var item = items.shift();
-        var meta = $(item).data("meta");
+        var idx = items.shift();
+        var meta = m_properties.files.value()[idx];
         if (! meta)
         {
             if (m_properties.currentUri.value() === forLocation)
@@ -387,8 +388,6 @@ files.predicates = { };
             return;
         }
         var name = meta.name;
-        var img = $(item).hasClass("icon") ? item
-                                           : $(item).find(".icon");
         var thumbnailUri = "/::thumbnail" + meta.uri;
     
         var now = Date.now();
@@ -425,8 +424,8 @@ files.predicates = { };
                 var pic = "data:" + contentType + ";base64," + btoa(buffer);
         
                 var then = Date.now();
-                $(img).css("background-image", "url(" + pic + ")");
-                $(img).css("background-size", "cover");
+                m_listView.item(idx).icon = pic;
+                m_listView.item(idx).fillMode = "cover";
         
                 var speed = Math.ceil((data.length / 1024) / ((then - now) / 1000.0));
                 console.log("Loading took " + (then - now) + " ms, size: " + data.length + " B (" + speed + " kB/s).");
@@ -439,14 +438,14 @@ files.predicates = { };
             else if (xhr.status === 204)
             {
                 // create thumbnail client-side, send to server, and retry           
-                generateThumbnail(item, function (data)
+                generateThumbnail(meta, function (data)
                 {
-                    var thumbnailUri = "/::thumbnail" + $(item).data("meta").uri;
+                    var thumbnailUri = "/::thumbnail" + meta.uri;
                     submitThumbnail("image/jpeg", data, thumbnailUri, function (ok)
                     {
                         if (ok)
                         {
-                            items.unshift(item);
+                            items.unshift(idx);
                         }
                         if (m_properties.currentUri.value() === forLocation)
                         {
@@ -468,12 +467,12 @@ files.predicates = { };
 
     /* Generates a client-side thumbnail.
     */
-    function generateThumbnail(item, callback)
+    function generateThumbnail(meta, callback)
     {
-        var mimeType = $(item).data("meta").mimeType;
+        var mimeType = meta.mimeType;
         if (mimeType.indexOf("video/") === 0)
         {
-            var sourceUri = $(item).data("meta").uri;
+            var sourceUri = meta.uri;
             generateVideoThumbnail(sourceUri, callback);
         }
         else
@@ -640,9 +639,9 @@ files.predicates = { };
         });
     }
 
-    function downloadItem(item)
+    function downloadItem(idx)
     {
-        var meta = $(item).data("meta");
+        var meta = m_properties.files.value()[idx];
     
         var downloader = $("#download");
         downloader.attr("href", meta.uri);
@@ -660,9 +659,9 @@ files.predicates = { };
         }
     }
 
-    function renameItem(item)
+    function renameItem(idx)
     {
-        var meta = $(item).data("meta");
+        var meta = m_properties.files.value()[idx];
         var name = meta.name;
 
         var dlg = sh.element(sh.Dialog).title("Rename File")
@@ -688,7 +687,7 @@ files.predicates = { };
                     if (ok)
                     {
                         console.log("File moved: " + name + " -> " + newName);
-                        $(item).find("h1").html(sh.escapeHtml(newName));
+                        m_listView.item(idx).title = newName;
                         loadDirectory(m_properties.currentUri.value(), false);    
                     }
                     else
@@ -723,9 +722,9 @@ files.predicates = { };
         ui.showQuestion("Delete", "Delete these entries?", yesCb, noCb);
     }
 
-    function removeItem(item)
+    function removeItem(idx)
     {
-        var meta = $(item).data("meta");
+        var meta = m_properties.files.value()[idx];
         var name = meta.name;
         var targetUri = meta.uri;
     
@@ -733,7 +732,7 @@ files.predicates = { };
         {
             if (ok)
             {
-                $(item).remove();
+                m_listView.item(idx).get().remove();
                 updateNavBar();
             }
             else
@@ -745,52 +744,22 @@ files.predicates = { };
 
     function selectAll()
     {
-        m_page.get().find(".fileitem > div.selector").addClass("sh-selected");
-        m_properties.filesSelected.assign(files.predicates.filesSelected());
+        var sel = [];
+        for (var idx = 0; idx < m_properties.files.value().length; ++idx)
+        {
+            sel.push(idx);
+            m_listView.item(idx).selected = true;
+        }
+        m_properties.selection.assign(sel);
     }
 
     function unselectAll()
     {
-        m_page.get().find(".fileitem > div.selector").removeClass("sh-selected");
-        m_properties.filesSelected.assign(files.predicates.filesSelected());
-    }
-
-    function toggleSelect(item)
-    {
-        $(item).toggleClass("sh-selected");
-        m_properties.filesSelected.assign(files.predicates.filesSelected());
-    }
-
-    files.predicates.filesSelected = function ()
-    {
-        var size = m_page.get().find(".fileitem > div.selector.sh-selected").length;
-        return size;
-    }
-
-    files.predicates.oneFileSelected = function ()
-    {
-        var size = m_page.get().find(".fileitem > div.selector.sh-selected").length;
-        return size === 1;
-    }
-
-    files.predicates.clipboardFilled = function ()
-    {
-        return m_properties.clipboard.value().length > 0;
-    }
-
-    files.predicates.permissions = function (ps)
-    {
-        var permissions = [];
-        for (var i = 0; i < arguments.length; ++i)
+        m_properties.selection.value().forEach(function (idx)
         {
-            permissions.push(arguments[i]);
-        }
-        return function ()
-        {
-            return permissions
-            .map(function (p) { return m_properties.permissions.value().indexOf(p) !== -1; })
-            .reduce(function (a, b) { return a && b; }, true);
-        };
+            m_listView.item(idx).selected = false;
+        });
+        m_properties.selection.assign([]);
     }
 
     files.predicates.mimeTypeSelected = function (mimeType)
@@ -798,10 +767,9 @@ files.predicates = { };
         return function ()
         {
             var v = false;
-            var items = m_page.get().find(".fileitem > div.selector.sh-selected");
-            items.each(function ()
+            m_properties.selection.value().forEach(function (idx)
             {
-                var meta = $(this).parent().data("meta");
+                var meta = m_properties.files.value()[idx];
                 v |= meta.mimeType === mimeType;
             });
             return v;
@@ -812,10 +780,11 @@ files.predicates = { };
     {
         return function ()
         {
-            var items = m_page.get().find(".fileitem > div.selector.sh-selected");
-            items.each(function ()
+            var sel = m_properties.selection.value().slice();
+            sel.sort();
+            sel.forEach(function (idx)
             {
-                callback($(this).parent());
+                callback(idx);
             });
             unselectAll();
         };
@@ -848,7 +817,7 @@ files.predicates = { };
         )
         .add(
             sh.element(sh.SubMenu).text("Shares")
-            .visible(files.predicates.permissions("SHARE"))
+            .visible(sh.predicate([m_properties.permissions], function () { return m_properties.permissions.value().indexOf("SHARE") !== -1; }))
             .add(
                 sh.element(sh.MenuItem).text("Unshare This")
                 .visible(isShare)
@@ -1004,13 +973,12 @@ files.predicates = { };
             }
         });
     
-        var filesBox = m_page.get().find("> section");
-
         switch (configuration.get("view-mode", "list"))
         {
         case "list":
             var listView = new sh.ListView();
 
+            var count = 0;
             files.forEach(function (entry)
             {
                 var info = "";
@@ -1027,88 +995,84 @@ files.predicates = { };
                 {
                     openFile(entry);
                 };
-                item.get().addClass("fileitem");
-                item.get().data("meta", entry);
+
+                var idx = count;
                 item.action = ["sh-icon-checked-circle", function ()
                 {
-                    toggleSelect(item.get().find(".selector"));
+                    item.selected = ! item.selected;
+                    var sel = m_properties.selection.value().slice();
+                    if (item.selected)
+                    {
+                        sel.push(idx);
+                    }
+                    else
+                    {
+                        var pos = sel.indexOf(idx);
+                        if (pos !== -1)
+                        {
+                            sel.splice(pos, 1);
+                        }
+                    }
+                    m_properties.selection.assign(sel);
                 }];
                 if (entry.icon)
                 {
                     item.icon = entry.icon;
                 }
                 listView.add(item);
+                ++count;
             });
             m_page.add(listView);
+            m_listView = listView;
             break;
 
         case "grid":
-            var gridView = $(
-                sh.tag("div")
-                .style("display", "flex")
-                .style("flex-direction", "row")
-                .style("flex-wrap", "wrap")
-                .style("justify-content", "flex-start")
-                .html()
-            );
+            var gridView = new sh.GridView();
+
+            var count = 0;
             files.forEach(function (entry)
             {
-                var item = $(
-                    sh.tag("div").class("fileitem icon")
-                    .style("position", "relative")
-                    .style("width", "160px")
-                    .style("height", "160px")
-                    .style("padding", "0").style("margin", "0")
-                    .style("margin-top", "2px")
-                    .style("margin-left", "2px")
-                    .style("background-repeat", "no-repeat")
-                    .style("background-position", "50% 50%")
-                    .style("background-image", "url(" + entry.icon + ")")
-                    .content(
-                        sh.tag("h1")
-                        .style("position", "absolute")
-                        .style("background-color", "var(--color-primary-background-translucent)")
-                        .style("padding", "0")
-                        .style("left", "0")
-                        .style("right", "0")
-                        .style("bottom", "0")
-                        .style("font-size", "80%")
-                        .style("text-align", "center")
-                        .content(entry.name)
-                    )
-                    .content(
-                        sh.tag("div").class("selector")
-                        .style("position", "absolute")
-                        .style("top", "0")
-                        .style("right", "0")
-                        .style("width", "42px")
-                        .style("height", "42px")
-                        .style("text-align", "center")
-                        .content(
-                            sh.tag("span").class("sh-fw-icon sh-icon-checked-circle")
-                            .style("line-height", "42px")
-                        )
-                    )
-                    .html()
-                );
-                item.data("meta", entry);
-                item.on("click", function ()
+                var item = new sh.GridItem();
+                item.title = entry.name;
+                item.onClicked = function ()
                 {
                     openFile(entry);
-                });
-                item.find(".selector").on("click", function (event)
+                };
+
+                var idx = count;
+                item.action = ["sh-icon-checked-circle", function ()
                 {
-                    event.stopPropagation();
-                    toggleSelect(item.find(".selector"));
-                });
-                gridView.append(item);
+                    item.selected = ! item.selected;
+                    var sel = m_properties.selection.value().slice();
+                    if (item.selected)
+                    {
+                        sel.push(idx);
+                    }
+                    else
+                    {
+                        var pos = sel.indexOf(idx);
+                        if (pos !== -1)
+                        {
+                            sel.splice(pos, 1);
+                        }
+                    }
+                    m_properties.selection.assign(sel);
+                }];
+                if (entry.icon)
+                {
+                    item.icon = entry.icon;
+                }
+                gridView.add(item);
+                ++count;
             });
-            filesBox.append(gridView);
+            m_page.add(gridView);
+            m_listView = gridView;
             break;
         }
 
         m_properties.currentUri.assign(data.uri);
-        m_properties.filesTotal.assign(files.length);
+        m_properties.files.assign(files);
+        m_properties.selection.assign([]);
         m_properties.shares.assign(data.shares);
         m_properties.permissions.assign(data.permissions);
 
@@ -1128,9 +1092,9 @@ files.predicates = { };
         loadDirectory(parentUri, true);
     }
 
-    function cutToClipboard(item)
+    function cutToClipboard(idx)
     {
-        var meta = $(item).data("meta");
+        var meta = m_properties.files.value()[idx];
         var sourceUri = meta.uri;
         var targetUri = "/.pilvini/clipboard/" + encodeURIComponent(meta.name);
     
@@ -1141,7 +1105,9 @@ files.predicates = { };
                 var targetMeta = JSON.parse(JSON.stringify(meta));
                 targetMeta.uri = targetUri;
                 m_properties.clipboard.push(targetMeta);
-                $(item).remove();
+                
+                m_listView.item(idx).get().remove();
+                //$(item).remove();
                 updateNavBar();
             }
             else
@@ -1151,9 +1117,9 @@ files.predicates = { };
         });
     }
 
-    function copyToClipboard(item)
+    function copyToClipboard(idx)
     {
-        var meta = $(item).data("meta");
+        var meta = m_properties.files.value()[idx];
         var sourceUri = meta.uri;
         var targetUri = "/.pilvini/clipboard/" + encodeURIComponent(meta.name);
 
@@ -1346,8 +1312,8 @@ files.predicates = { };
 
     /* setup properties */
     m_properties.currentUri = sh.binding("");
-    m_properties.filesSelected = sh.binding(0);
-    m_properties.filesTotal = sh.binding(0);
+    m_properties.files = sh.binding([]);
+    m_properties.selection = sh.binding([]);
     m_properties.clipboard = sh.binding([]);
     m_properties.clipboardFilled = sh.binding(false);
     m_properties.shares = sh.binding([]);
@@ -1366,9 +1332,9 @@ files.predicates = { };
                    (isShare ? "[icon:share] " : "") +
                    decodeURIComponent(m_properties.currentUri.value());
         }))
-        .subtitle(sh.predicate([m_properties.filesTotal], function ()
+        .subtitle(sh.predicate([m_properties.files], function ()
         {
-            return m_properties.filesTotal.value() + " items";
+            return m_properties.files.value().length + " items";
         }))
         .onClicked(openPathMenu)
         .left(
@@ -1442,12 +1408,12 @@ files.predicates = { };
         .visible(sh.predicate([m_properties.permissions], function () { return m_properties.permissions.value().indexOf("CREATE") !== -1; }))
         .add(
             sh.element(sh.MenuItem).text("Cut").icon("sh-icon-clipboard-cut")
-            .enabled(sh.predicate([m_properties.filesSelected], function () { return m_properties.filesSelected.value() > 0; }))
+            .enabled(sh.predicate([m_properties.selection], function () { return m_properties.selection.value().length > 0; }))
             .callback(eachSelected(cutToClipboard))
         )
         .add(
             sh.element(sh.MenuItem).text("Copy").icon("sh-icon-clipboard-copy")
-            .enabled(sh.predicate([m_properties.filesSelected], function () { return m_properties.filesSelected.value() > 0; }))
+            .enabled(sh.predicate([m_properties.selection], function () { return m_properties.selection.value().length > 0; }))
             .callback(eachSelected(copyToClipboard))
         )
         .add(
@@ -1470,19 +1436,19 @@ files.predicates = { };
         )
         .add(
             sh.element(sh.MenuItem).text("Download").icon("sh-icon-download")
-            .enabled(sh.predicate([m_properties.filesSelected], function () { return m_properties.filesSelected.value() > 0; }))
+            .enabled(sh.predicate([m_properties.selection], function () { return m_properties.selection.value().length > 0; }))
             .callback(eachSelected(downloadItem))
         )
         .add(
             sh.element(sh.MenuItem).text("Rename...").icon("sh-icon-rename")
             .visible(sh.predicate([m_properties.permissions], function () { return m_properties.permissions.value().indexOf("MODIFY") !== -1; }))
-            .enabled(sh.predicate([m_properties.filesSelected], function () { return m_properties.filesSelected.value() === 1; }))
+            .enabled(sh.predicate([m_properties.selection], function () { return m_properties.selection.value().length === 1; }))
             .callback(eachSelected(renameItem))
         )
         .add(
             sh.element(sh.MenuItem).text("Delete").icon("sh-icon-trashcan")
             .visible(sh.predicate([m_properties.permissions], function () { return m_properties.permissions.value().indexOf("DELETE") !== -1; }))
-            .enabled(sh.predicate([m_properties.filesSelected], function () { return m_properties.filesSelected.value() > 0; }))
+            .enabled(sh.predicate([m_properties.selection], function () { return m_properties.selection.value().length > 0; }))
             .callback(removeSelected)
         )
     )
@@ -1492,7 +1458,7 @@ files.predicates = { };
     )
     .add(
         sh.element(sh.MenuItem).text("Unselect All")
-        .enabled(sh.predicate([m_properties.filesSelected], function () { return m_properties.filesSelected.value() > 0; }))
+        .enabled(sh.predicate([m_properties.selection], function () { return m_properties.selection.value().length > 0; }))
         .callback(unselectAll)
     );
     

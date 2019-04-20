@@ -1107,6 +1107,8 @@ sh.Switch = function ()
 
 sh.ListView = function ()
 {
+    var m_items = [];
+
     var m_listView = $(
         sh.tag("ul").class("sh-listview")
         .html()
@@ -1119,7 +1121,13 @@ sh.ListView = function ()
 
     this.add = function (item)
     {
+        m_items.push(item);
         m_listView.append(item.get());
+    };
+
+    this.item = function (n)
+    {
+        return m_items[n];
     };
 };
 
@@ -1131,6 +1139,7 @@ sh.ListItem = function ()
         icon: { set: setIcon, get: icon, enumerable: true },
         subtitle: { set: setSubtitle, get: subtitle, enumerable: true },
         title: { set: setTitle, get: title, enumerable: true },
+        selected: { set: setSelected, get: selected, enumerable: true },
         onClicked: { set: setOnClicked, get: onClicked, enumerable: true }
     });
 
@@ -1139,6 +1148,7 @@ sh.ListItem = function ()
     var m_fillMode = "cover";
     var m_title = "";
     var m_subtitle = "";
+    var m_isSelected = false;
     var m_onClicked = null;
 
     var m_listItem = $(
@@ -1235,6 +1245,24 @@ sh.ListItem = function ()
         return m_subtitle;
     }
 
+    function setSelected(value)
+    {
+        if (value)
+        {
+            m_listItem.addClass("sh-selected");
+        }
+        else
+        {
+            m_listItem.removeClass("sh-selected");
+        }
+        m_isSelected = value;
+    }
+
+    function selected()
+    {
+        return m_isSelected;
+    }
+
     function setAction(action)
     {
         var icon = action[0];
@@ -1259,6 +1287,184 @@ sh.ListItem = function ()
     function setOnClicked(callback)
     {
         m_listItem.off("click").on("click", callback);
+        m_onClicked = callback;
+    }
+
+    function onClicked()
+    {
+        return m_onClicked;
+    }
+};
+
+sh.GridView = function ()
+{
+    var m_items = [];
+
+    var m_gridView = $(
+        sh.tag("div")
+        .style("display", "flex")
+        .style("flex-direction", "row")
+        .style("flex-wrap", "wrap")
+        .style("justify-content", "flex-start")
+        .html()
+    );
+
+    this.get = function ()
+    {
+        return m_gridView;
+    };
+
+    this.add = function (item)
+    {
+        m_items.push(item);
+        m_gridView.append(item.get());
+    };
+
+    this.item = function (n)
+    {
+        return m_items[n];
+    };
+};
+
+sh.GridItem = function ()
+{
+    Object.defineProperties(this, {
+        action: { set: setAction, get: action, enumerable: true },
+        fillMode: { set: setFillMode, get: fillMode, enumerable: true },
+        icon: { set: setIcon, get: icon, enumerable: true },
+        title: { set: setTitle, get: title, enumerable: true },
+        selected: { set: setSelected, get: selected, enumerable: true },
+        onClicked: { set: setOnClicked, get: onClicked, enumerable: true }
+    });
+
+    var m_action = ["", null];
+    var m_icon = "";
+    var m_fillMode = "cover";
+    var m_title = "";
+    var m_isSelected = false;
+    var m_onClicked = null;
+
+    var m_gridItem = $(
+        sh.tag("div")
+        .style("position", "relative")
+        .style("width", "160px")
+        .style("height", "160px")
+        .style("padding", "0").style("margin", "0")
+        .style("margin-top", "2px")
+        .style("margin-left", "2px")
+        .style("background-repeat", "no-repeat")
+        .style("background-position", "50% 50%")
+        .content(
+            sh.tag("h1")
+            .style("position", "absolute")
+            .style("background-color", "var(--color-primary-background-translucent)")
+            .style("padding", "0")
+            .style("left", "0")
+            .style("right", "0")
+            .style("bottom", "0")
+            .style("font-size", "80%")
+            .style("text-align", "center")
+            .content("")
+        )
+        .html()
+    );
+
+    var m_iconBox = m_gridItem;
+    var m_buttonBox = m_gridItem.find("> div").eq(2);
+
+    this.get = function ()
+    {
+        return m_gridItem;
+    };
+
+    function setIcon(url)
+    {
+        m_iconBox.css("background-image", "url(" + url + ")");
+        m_icon = url;
+    }
+    
+    function icon()
+    {
+        return m_icon;
+    }
+    
+    function setFillMode(fillMode)
+    {
+        m_iconBox.css("background-size", fillMode || "auto");
+        m_fillMode = fillMode;
+    }
+
+    function fillMode()
+    {
+        return m_fillMode;
+    }
+
+    function setTitle(title)
+    {
+        m_gridItem.find("h1").html(sh.escapeHtml(title));
+        m_title = title;
+    }
+
+    function title()
+    {
+        return m_title;
+    }
+
+    function setSelected(value)
+    {
+        if (value)
+        {
+            m_gridItem.addClass("sh-selected");
+        }
+        else
+        {
+            m_gridItem.removeClass("sh-selected");
+        }
+        m_isSelected = value;
+    }
+
+    function selected()
+    {
+        return m_isSelected;
+    }
+
+    function setAction(action)
+    {
+        var icon = action[0];
+        var callback = action[1];
+
+        var box = $(
+            sh.tag("div")
+            .style("position", "absolute")
+            .style("top", "0")
+            .style("right", "0")
+            .style("width", "42px")
+            .style("height", "42px")
+            .style("text-align", "center")
+            .content(
+                sh.tag("span").class("sh-fw-icon " + icon)
+                .style("line-height", "42px")
+            )
+            .html()
+        );
+        box.on("click", function (event)
+        {
+            event.stopPropagation();
+            callback();
+        });
+
+        m_gridItem.append(box);
+        m_action = action;
+    }
+
+    function action()
+    {
+        return m_action;
+    }
+
+    function setOnClicked(callback)
+    {
+        m_gridItem.off("click").on("click", callback);
         m_onClicked = callback;
     }
 

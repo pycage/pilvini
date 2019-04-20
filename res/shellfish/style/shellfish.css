@@ -215,10 +215,12 @@ span.sh-busy-indicator:before {
     pointer-events: none;
 }
 
+/*
 .sh-selected {
     background-color: var(--color-primary);
     color: var(--color-primary-background);
 }
+*/
 
 .sh-visible {
     visibility: visible;

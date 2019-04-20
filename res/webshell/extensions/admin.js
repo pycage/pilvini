@@ -221,12 +221,12 @@
     files.actionsMenu()
     .add(
         sh.element(sh.MenuItem).text("Administration")
-        .visible(files.predicates.permissions("ADMIN"))
+        .visible(sh.predicate([files.properties().permissions], function () { return files.properties().permissions.value().indexOf("ADMIN") !== -1; }))
         .callback(openPage)
     )
     .add(
         sh.element(sh.MenuItem).text("User Agent")
-        .visible(files.predicates.permissions("ADMIN"))
+        .visible(sh.predicate([files.properties().permissions], function () { return files.properties().permissions.value().indexOf("ADMIN") !== -1; }))
         .callback(function ()
         {
             var dlg = sh.element(sh.Dialog).title("User Agent")
