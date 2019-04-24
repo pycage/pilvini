@@ -19,7 +19,7 @@
             box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 
     color: var(--color-primary);
-    background-color: var(--color-primary-background);
+    background-color: var(--color-content-background);
 }
 
 .sh-menu h1 {
@@ -30,11 +30,11 @@
     padding-left: 0.5rem;
     padding-right: 0.5rem;
     line-height: 2rem;
-    background-color: var(--color-content-background);
     list-style: none;
 }
 
 h1.sh-submenu {
+    background-color: var(--color-primary-background);
     border-bottom: solid 0.25rem var(--color-border);
 }
 

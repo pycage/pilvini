@@ -417,7 +417,8 @@ sh.MenuItem = function ()
         enabled: { set: setEnabled, get: enabled, enumerable: true },
         icon: { set: setIcon, get: icon, enumerable: true },
         text: { set: setText, get: text, enumerable: true },
-        visible: { set: setVisible, get: visible, enumerable: true }
+        visible: { set: setVisible, get: visible, enumerable: true },
+        onClicked: { set: setCallback, get: callback, enumerable: true }
     });
 
     var m_item;
@@ -955,6 +956,7 @@ sh.IconButton = function (i, cb)
 {
     Object.defineProperties(this, {
         enabled: { set: setEnabled, get: enabled, enumerable: true },
+        checked: { set: setChecked, get: checked, enumerable: true },
         visible: { set: setVisible, get: visible, enumerable: true },
         icon: { set: setIcon, get: icon, enumerable: true },
         onClicked: { set: setOnClicked, get: onClicked, enumerable: true }
@@ -963,6 +965,7 @@ sh.IconButton = function (i, cb)
     var that = this;
     var m_enabled = true;
     var m_visible = true;
+    var m_checked = false;
     var m_icon = "";
     var m_onClicked = null;
 
@@ -971,6 +974,7 @@ sh.IconButton = function (i, cb)
         .style("display", "inline-block")
         .style("width", "3rem")
         .style("height", "100%")
+        .style("text-align", "center")
         .content(
             sh.tag("span").class("sh-fw-icon " + (i || ""))
             .style("font-size", "150%")
@@ -1018,6 +1022,24 @@ sh.IconButton = function (i, cb)
     function visible()
     {
         return m_visible;
+    }
+
+    function setChecked(value)
+    {
+        if (value)
+        {
+            m_button.css("background-color", "var(--color-highlight-background)")
+        }
+        else
+        {
+            m_button.css("background-color", "")
+        }
+        m_checked = value;
+    }
+
+    function checked()
+    {
+        return m_checked;
     }
 
     function setIcon(icon)
@@ -1177,7 +1199,7 @@ sh.ListItem = function ()
             )
         )
         .content(
-            sh.tag("div").class("sh-right selector")
+            sh.tag("div").class("sh-right sh-selection-box")
             .style("display", "none")
             .style("width", "42px")
             .style("text-align", "center")
@@ -1434,13 +1456,14 @@ sh.GridItem = function ()
         var callback = action[1];
 
         var box = $(
-            sh.tag("div")
+            sh.tag("div").class("sh-selection-box")
             .style("position", "absolute")
             .style("top", "0")
             .style("right", "0")
             .style("width", "42px")
             .style("height", "42px")
             .style("text-align", "center")
+            .style("border-radius", "calc(42px / 2)")
             .content(
                 sh.tag("span").class("sh-fw-icon " + icon)
                 .style("line-height", "42px")

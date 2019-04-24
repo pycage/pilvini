@@ -184,7 +184,7 @@ ui.StatusBox = function ()
 {
     var that = this;
     var m_box = $(
-        sh.tag("footer")
+        sh.tag("footer").class("sh-dropshadow")
         /*
         .style("position", "fixed")
         .style("bottom", "0")
@@ -193,7 +193,7 @@ ui.StatusBox = function ()
         */
         .style("height", "auto")
         .style("text-align", "left")
-        .style("border", "solid 1px var(--color-border)")
+        //.style("border", "solid 1px var(--color-border)")
         .style("background-color", "var(--color-primary-background)")
         .html()
     );
@@ -224,6 +224,7 @@ ui.StatusItem = function ()
     var m_item = $(
         sh.tag("div")
         .style("position", "relative")
+        .style("border-top", "solid 1px var(--color-border)")
         .content(
             sh.tag("div")
             .style("position", "absolute")

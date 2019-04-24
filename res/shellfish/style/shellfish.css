@@ -60,16 +60,19 @@ label {
     font-weight: bold;
 }
 
+/*
 header {
     height: 2rem;
     line-height: 2rem;
     background-color: var(--color-primary-background);
     color: var(--color-primary);
-    /*border-bottom: solid 1px var(--color-border);*/
+    / *border-bottom: solid 1px var(--color-border);* /
     
     text-align: center;
 }
+*/
 
+/*
 footer {
     height: 2rem;
     line-height: 2rem;
@@ -79,6 +82,7 @@ footer {
     
     text-align: center;
 }
+*/
 
 
 div[onclick]:hover, span[onclick]:hover, li[onclick]:hover, h1[onclick]:hover, h2[onclick]:hover {
@@ -91,6 +95,11 @@ div[onclick]:active, span[onclick]:active, li[onclick]:active, h1[onclick]:activ
     background-color: var(--color-highlight-background);
 }
 
+
+.sh-selected .sh-selection-box, .sh-selected.sh-selection-box {
+    background-color: var(--color-primary);
+    color: var(--color-primary-background);
+}
 
 /* Text Input */
 

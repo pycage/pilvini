@@ -1,7 +1,6 @@
 "use strict";
 
 var files = { };
-files.predicates = { };
 
 (function ()
 {
@@ -117,6 +116,7 @@ files.predicates = { };
         var favs = configuration.get("favorites", []);
         favs.push({ name: name, uri: uri });
         configuration.set("favorites", favs);
+        m_properties.configuration.update();
         loadDirectory(m_properties.currentUri.value(), false);
     }
 
@@ -131,12 +131,14 @@ files.predicates = { };
             return a.uri !== uri;
         });
         configuration.set("favorites", favs);
+        m_properties.configuration.update();
         loadDirectory(m_properties.currentUri.value(), false);
     }
 
     function setSortMode(mode)
     {
         configuration.set("sort-mode", mode);
+        m_properties.configuration.update();
         m_scrollPositionsMap = { };
         loadDirectory(m_properties.currentUri.value(), false);
     }
@@ -144,6 +146,7 @@ files.predicates = { };
     function setViewMode(mode)
     {
         configuration.set("view-mode", mode);
+        m_properties.configuration.update();
         m_scrollPositionsMap = { };
         loadDirectory(m_properties.currentUri.value(), false);
     }
@@ -762,20 +765,6 @@ files.predicates = { };
         m_properties.selection.assign([]);
     }
 
-    files.predicates.mimeTypeSelected = function (mimeType)
-    {
-        return function ()
-        {
-            var v = false;
-            m_properties.selection.value().forEach(function (idx)
-            {
-                var meta = m_properties.files.value()[idx];
-                v |= meta.mimeType === mimeType;
-            });
-            return v;
-        };
-    }
-
     function eachSelected(callback)
     {
         return function ()
@@ -1318,6 +1307,7 @@ files.predicates = { };
     m_properties.clipboardFilled = sh.binding(false);
     m_properties.shares = sh.binding([]);
     m_properties.permissions = sh.binding([]);
+    m_properties.configuration = sh.binding(configuration);
 
     var page = sh.element(sh.NSPage)
     .onSwipeBack(cdUp)
@@ -1369,27 +1359,29 @@ files.predicates = { };
     /* setup actions menu */
     var m_actionsMenu = sh.element(sh.Menu)
     .add(
-        sh.element(sh.SubMenu).text("View")
-        .add(
-            sh.element(sh.MenuItem).icon("sh-icon-view-as-list").text("As List")
-            .callback(function () { setViewMode("list"); })
-        )
-        .add(
-            sh.element(sh.MenuItem).icon("sh-icon-view-as-grid").text("As Grid")
-            .callback(function () { setViewMode("grid"); })
-        )
-        .add(
-            sh.element(sh.MenuItem).icon("sh-icon-alphabet")
-            .callback(function () { setSortMode("name"); })
-        )
-        .add(
-            sh.element(sh.MenuItem).icon("sh-icon-clock")
-            .callback(function () { setSortMode("date"); })
-        )
-        .add(
-            sh.element(sh.MenuItem).icon("sh-icon-number")
-            .callback(function () { setSortMode("number"); })
-        )
+        sh.element(sh.IconButton).icon("sh-icon-view-as-list")
+        .checked(sh.predicate([m_properties.configuration], function () { return configuration.get("view-mode", "list") === "list"; }))
+        .onClicked(function () { setViewMode("list"); })
+    )
+    .add(
+        sh.element(sh.IconButton).icon("sh-icon-view-as-grid")
+        .checked(sh.predicate([m_properties.configuration], function () { return configuration.get("view-mode") === "grid"; }))
+        .onClicked(function () { setViewMode("grid"); })
+    )
+    .add(
+        sh.element(sh.IconButton).icon("sh-icon-alphabet")
+        .checked(sh.predicate([m_properties.configuration], function () { return configuration.get("sort-mode", "name") === "name"; }))
+        .onClicked(function () { setSortMode("name"); })
+    )
+    .add(
+        sh.element(sh.IconButton).icon("sh-icon-number")
+        .checked(sh.predicate([m_properties.configuration], function () { return configuration.get("sort-mode") === "number"; }))
+        .onClicked(function () { setSortMode("number"); })
+    )
+    .add(
+        sh.element(sh.IconButton).icon("sh-icon-clock")
+        .checked(sh.predicate([m_properties.configuration], function () { return configuration.get("sort-mode") === "date"; }))
+        .onClicked(function () { setSortMode("date"); })
     )
     .add(
         sh.element(sh.SubMenu).text("New")

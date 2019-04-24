@@ -903,10 +903,10 @@ var Audio = function ()
         m_playlist.add(uri, m_playlist.size() === 0);
     };
 
-    this.enqueue = function (item)
+    this.enqueue = function (idx)
     {
-        var uri = $(item).data("meta").uri;
-        m_playlist.add(uri, false);
+        var meta = files.properties().files.value()[idx];
+        m_playlist.add(meta.uri, false);
     };
 
     this.updatePullerState = updatePullerState;
@@ -938,11 +938,16 @@ var audio;
     files.actionsMenu().add(
         sh.element(sh.MenuItem).text("Add to Playlist")
         .visible(
-            or(
-                files.predicates.mimeTypeSelected("audio/flac"),
-                files.predicates.mimeTypeSelected("audio/mp3"),
-                files.predicates.mimeTypeSelected("audio/ogg")
-            )
+            sh.predicate([files.properties().selection], function ()
+            {
+                return files.properties().selection.value().filter(function (idx)
+                {
+                    var meta = files.properties().files.value()[idx];
+                    return meta.mimeType === "audio/flac" ||
+                           meta.mimeType === "audio/mp3" ||
+                           meta.mimeType === "audio/ogg";
+                }).length > 0;
+            })
         )
         .callback(files.eachSelected(audio.enqueue))
     );

@@ -4,12 +4,13 @@
 {
     var Binding = function (value)
     {
+        var that = this;
         var m_value = value;
         var m_watchers = [];
     
         /* Notifies the watchers of this binding about an update.
          */
-        function update()
+        this.update = function ()
         {
             m_watchers.forEach(function (watchCallback)
             {
@@ -38,7 +39,7 @@
             if (m_value !== value)
             {
                 m_value = value;
-                update();
+                that.update();
             }
         };
     
@@ -54,7 +55,7 @@
         this.push = function (v)
         {
             m_value.push(v);
-            update();
+            that.update();
         };
     };
     

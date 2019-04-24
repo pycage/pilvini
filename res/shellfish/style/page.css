@@ -23,6 +23,12 @@
     z-index: 1;
     height: 3rem;
     line-height: 3rem;
+
+    background-color: var(--color-primary-background);
+    color: var(--color-primary);
+    border-bottom: solid 1px var(--color-border);
+    
+    text-align: center;
 }
 
 .sh-page > footer {
