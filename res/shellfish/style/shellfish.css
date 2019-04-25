@@ -60,31 +60,6 @@ label {
     font-weight: bold;
 }
 
-/*
-header {
-    height: 2rem;
-    line-height: 2rem;
-    background-color: var(--color-primary-background);
-    color: var(--color-primary);
-    / *border-bottom: solid 1px var(--color-border);* /
-    
-    text-align: center;
-}
-*/
-
-/*
-footer {
-    height: 2rem;
-    line-height: 2rem;
-    background-color: var(--color-primary-background);
-    color: var(--color-primary);
-    border-top: solid 1px var(--color-border);
-    
-    text-align: center;
-}
-*/
-
-
 div[onclick]:hover, span[onclick]:hover, li[onclick]:hover, h1[onclick]:hover, h2[onclick]:hover {
     color: var(--color-highlight);
     background-color: var(--color-highlight-background);
@@ -223,13 +198,6 @@ span.sh-busy-indicator:before {
     color: var(--color-disabled);
     pointer-events: none;
 }
-
-/*
-.sh-selected {
-    background-color: var(--color-primary);
-    color: var(--color-primary-background);
-}
-*/
 
 .sh-visible {
     visibility: visible;

@@ -222,12 +222,12 @@
     .add(
         sh.element(sh.MenuItem).text("Administration")
         .visible(sh.predicate([files.properties().permissions], function () { return files.properties().permissions.value().indexOf("ADMIN") !== -1; }))
-        .callback(openPage)
+        .onClicked(openPage)
     )
     .add(
         sh.element(sh.MenuItem).text("User Agent")
         .visible(sh.predicate([files.properties().permissions], function () { return files.properties().permissions.value().indexOf("ADMIN") !== -1; }))
-        .callback(function ()
+        .onClicked(function ()
         {
             var dlg = sh.element(sh.Dialog).title("User Agent")
             .add(

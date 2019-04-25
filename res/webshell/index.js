@@ -258,7 +258,7 @@ function init()
         )
         .add(
             sh.element(sh.MenuItem).text("Logout")
-            .callback(logout)
+            .onClicked(logout)
         );
     });
 }

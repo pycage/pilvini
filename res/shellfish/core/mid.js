@@ -124,6 +124,7 @@ sh.NSPage = function ()
     this.push = function (callback)
     {
         $("#pagestack").append(m_page);
+        that.updateGeometry();
         sh.pagePush(m_page, callback, $(".sh-page").length === 1);
 
         m_page.one("sh-closed", function ()
@@ -153,6 +154,8 @@ sh.NSPage = function ()
      */
     this.updateGeometry = function ()
     {
+        if (!! m_header)
+            console.log("header: " + m_header.get().height());
         m_page.find("> section").css("padding-top", (!! m_header ? m_header.get().height() : 0) + "px");
         m_page.find("> section").css("padding-bottom", (!! m_footer ? m_footer.get().height() : 0) + "px");
         m_page.find("> section").css("padding-left", (!! m_left ? m_left.get().width() : 0) + "px");
@@ -413,12 +416,11 @@ sh.Menu = function ()
 sh.MenuItem = function ()
 {
     Object.defineProperties(this, {
-        callback: { set: setCallback, get: callback, enumerable: true },
         enabled: { set: setEnabled, get: enabled, enumerable: true },
         icon: { set: setIcon, get: icon, enumerable: true },
         text: { set: setText, get: text, enumerable: true },
         visible: { set: setVisible, get: visible, enumerable: true },
-        onClicked: { set: setCallback, get: callback, enumerable: true }
+        onClicked: { set: setOnClicked, get: onClicked, enumerable: true }
     });
 
     var m_item;
@@ -426,7 +428,7 @@ sh.MenuItem = function ()
     var m_text = "";
     var m_enabled = true;
     var m_visible = true;
-    var m_callback = null;
+    var m_onClicked = null;
 
     function setIcon(icon)
     {
@@ -450,15 +452,15 @@ sh.MenuItem = function ()
         return m_text;
     }
 
-    function setCallback(callback)
+    function setOnClicked(callback)
     {
-        m_callback = callback;
+        m_onClicked = callback;
         m_item.off("click").on("click", callback);
     }
 
-    function callback()
+    function onClicked()
     {
-        return m_callback;
+        return m_onClicked;
     }
 
     function setEnabled(value)
@@ -1463,7 +1465,7 @@ sh.GridItem = function ()
             .style("width", "42px")
             .style("height", "42px")
             .style("text-align", "center")
-            .style("border-radius", "calc(42px / 2)")
+            .style("border-radius", "3px")
             .content(
                 sh.tag("span").class("sh-fw-icon " + icon)
                 .style("line-height", "42px")

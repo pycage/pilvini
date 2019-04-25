@@ -793,12 +793,12 @@ var files = { };
             .add(
                 sh.element(sh.MenuItem).text("Remove from Favorites")
                 .visible(isFav)
-                .callback(removeFavorite)
+                .onClicked(removeFavorite)
             )
             .add(
                 sh.element(sh.MenuItem).text("Add to Favorites")
                 .visible(! isFav)
-                .callback(addFavorite)
+                .onClicked(addFavorite)
             )
             .add(
                 sh.element(sh.Separator)
@@ -810,12 +810,12 @@ var files = { };
             .add(
                 sh.element(sh.MenuItem).text("Unshare This")
                 .visible(isShare)
-                .callback(unshare)
+                .onClicked(unshare)
             )
             .add(
                 sh.element(sh.MenuItem).text("Share This")
                 .visible(! isShare)
-                .callback(showShareDialog)
+                .onClicked(showShareDialog)
             )
             .add(
                 sh.element(sh.Separator)
@@ -829,7 +829,7 @@ var files = { };
         {
             menu.child(0).add(
                 sh.element(sh.MenuItem).text(f.name).icon("sh-icon-star-circle")
-                .callback(function ()
+                .onClicked(function ()
                 {
                     m_scrollPositionsMap = { };
                     loadDirectory(f.uri, true);
@@ -841,7 +841,7 @@ var files = { };
         {
             menu.child(1).add(
                 sh.element(sh.MenuItem).text(s.share + " " + s.uri).icon("sh-icon-share")
-                .callback(function ()
+                .onClicked(function ()
                 {
                     m_scrollPositionsMap = { };
                     loadDirectory(s.uri, true);
@@ -851,7 +851,7 @@ var files = { };
 
         menu.add(
             sh.element(sh.MenuItem).text("/")
-            .callback(function ()
+            .onClicked(function ()
             {
                 m_scrollPositionsMap = { };
                 loadDirectory("/", true);
@@ -870,7 +870,7 @@ var files = { };
             breadcrumbUri += "/" + parts[i];
             menu.add(
                 sh.element(sh.MenuItem).text(decodeURIComponent(parts[i]))
-                .callback(function (uri)
+                .onClicked(function (uri)
                 {
                     return function ()
                     {
@@ -1388,11 +1388,11 @@ var files = { };
         .visible(sh.predicate([m_properties.permissions], function () { return m_properties.permissions.value().indexOf("CREATE") !== -1; }))
         .add(
             sh.element(sh.MenuItem).icon("sh-icon-folder").text("Directory...")
-            .callback(makeNewDirectory)
+            .onClicked(makeNewDirectory)
         )
         .add(
             sh.element(sh.MenuItem).icon("sh-icon-file").text("File...")
-            .callback(makeNewFile)
+            .onClicked(makeNewFile)
         )
     )
     .add(
@@ -1401,22 +1401,22 @@ var files = { };
         .add(
             sh.element(sh.MenuItem).text("Cut").icon("sh-icon-clipboard-cut")
             .enabled(sh.predicate([m_properties.selection], function () { return m_properties.selection.value().length > 0; }))
-            .callback(eachSelected(cutToClipboard))
+            .onClicked(eachSelected(cutToClipboard))
         )
         .add(
             sh.element(sh.MenuItem).text("Copy").icon("sh-icon-clipboard-copy")
             .enabled(sh.predicate([m_properties.selection], function () { return m_properties.selection.value().length > 0; }))
-            .callback(eachSelected(copyToClipboard))
+            .onClicked(eachSelected(copyToClipboard))
         )
         .add(
             sh.element(sh.MenuItem).text("Paste").icon("sh-icon-clipboard-paste")
             .enabled(sh.predicate([m_properties.clipboard], function () { return m_properties.clipboard.value().length > 0; }))
-            .callback(pasteFromClipboard)
+            .onClicked(pasteFromClipboard)
         )
         .add(
             sh.element(sh.MenuItem).text("Show").icon("sh-icon-clipboard")
             .enabled(sh.predicate([m_properties.clipboard], function () { return m_properties.clipboard.value().length > 0; }))
-            .callback(openClipboardPage)
+            .onClicked(openClipboardPage)
         )
     )
     .add(
@@ -1424,34 +1424,34 @@ var files = { };
         .add(
             sh.element(sh.MenuItem).text("Upload...").icon("sh-icon-cloud-upload")
             .visible(sh.predicate([m_properties.permissions], function () { return m_properties.permissions.value().indexOf("CREATE") !== -1; }))
-            .callback(function () { $("#upload").click(); })
+            .onClicked(function () { $("#upload").click(); })
         )
         .add(
             sh.element(sh.MenuItem).text("Download").icon("sh-icon-download")
             .enabled(sh.predicate([m_properties.selection], function () { return m_properties.selection.value().length > 0; }))
-            .callback(eachSelected(downloadItem))
+            .onClicked(eachSelected(downloadItem))
         )
         .add(
             sh.element(sh.MenuItem).text("Rename...").icon("sh-icon-rename")
             .visible(sh.predicate([m_properties.permissions], function () { return m_properties.permissions.value().indexOf("MODIFY") !== -1; }))
             .enabled(sh.predicate([m_properties.selection], function () { return m_properties.selection.value().length === 1; }))
-            .callback(eachSelected(renameItem))
+            .onClicked(eachSelected(renameItem))
         )
         .add(
             sh.element(sh.MenuItem).text("Delete").icon("sh-icon-trashcan")
             .visible(sh.predicate([m_properties.permissions], function () { return m_properties.permissions.value().indexOf("DELETE") !== -1; }))
             .enabled(sh.predicate([m_properties.selection], function () { return m_properties.selection.value().length > 0; }))
-            .callback(removeSelected)
+            .onClicked(removeSelected)
         )
     )
     .add(
         sh.element(sh.MenuItem).text("Select All")
-        .callback(selectAll)
+        .onClicked(selectAll)
     )
     .add(
         sh.element(sh.MenuItem).text("Unselect All")
         .enabled(sh.predicate([m_properties.selection], function () { return m_properties.selection.value().length > 0; }))
-        .callback(unselectAll)
+        .onClicked(unselectAll)
     );
     
     /* setup history navigation */

@@ -1,5 +1,6 @@
 (function ()
 {
+    /*
     var dlg = sh.element(sh.Dialog).title("Tip of the Day")
     .add(
         sh.element(sh.Label).text("Did you know..?")
@@ -12,4 +13,5 @@
         .action(function () { dlg.close_(); })
     );
     dlg.show_();
+    */
 })();

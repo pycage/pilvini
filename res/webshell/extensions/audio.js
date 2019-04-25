@@ -949,7 +949,7 @@ var audio;
                 }).length > 0;
             })
         )
-        .callback(files.eachSelected(audio.enqueue))
+        .onClicked(files.eachSelected(audio.enqueue))
     );
 
     $(window).scroll(function ()
