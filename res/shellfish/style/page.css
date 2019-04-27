@@ -36,6 +36,11 @@
     left: 0;
     right: 0;
     bottom: 0;
+    
+    background-color: var(--color-primary-background);
+    color: var(--color-primary);
+    border-top: solid 1px var(--color-border);
+
 }
 
 .sh-page.sh-page-fullscreen > header {

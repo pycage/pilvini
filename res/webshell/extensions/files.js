@@ -1350,7 +1350,6 @@ var files = { };
     m_page = page.get();
 
     m_page.left.page = m_page;
-    m_page.footer.push(sh.element(ui.StatusItem).icon("sh-icon-bug").text("Test").get());
 
     m_page.push();
 

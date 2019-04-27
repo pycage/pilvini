@@ -1,13 +1,47 @@
 "use strict";
 
-var Audio = function ()
+(function ()
 {
-    var that = this;
-    var m_isSeeking = false;
-    var m_statusItem = null;
-
     var m_metaDataCache = { };
 
+    var m_statusItem = null;
+    var m_playerItem = null;
+    var m_player = null;
+    var m_playlist = null;
+
+    var m_properties = {
+        status: sh.binding("paused"), // playing | paused | buffering | stalled
+        position: sh.binding(0),
+        total: sh.binding(0),
+        title: sh.binding(""),
+        artist: sh.binding(""),
+        cover: sh.binding("")
+    };
+
+    /* Formats the given time in seconds to look pretty.
+     */
+    function formatTime(seconds)
+    {
+        var t = seconds;
+        var secs = Math.floor(t) % 60;
+        t /= 60;
+        var minutes = Math.floor(t) % 60;
+        t /= 60;
+        var hours = Math.floor(t);
+
+        var h = hours.toFixed(0);
+        var m = minutes.toFixed(0);
+        var s = secs.toFixed(0);
+
+        if (h.length === 1) { h = "0" + h; }
+        if (m.length === 1) { m = "0" + m; }
+        if (s.length === 1) { s = "0" + s; }
+
+        return (hours > 0 ? h + ":" : "") + m + ":" + s;
+    }
+
+    /* Class representing a playlist.
+     */
     var Playlist = function (playCallback)
     {
         var m_keyCounter = 0;
@@ -109,47 +143,472 @@ var Audio = function ()
         };
     };
 
-    function mayUseFixedBackground()
+    /* Class representing the status item content.
+     */
+    var StatusContent = function ()
     {
-        return false;
-        /*
-        var ua = navigator.userAgent;
-        if (! ua)
+        Object.defineProperties(this, {
+            title: { set: setTitle, get: title, enumerable: true },
+            artist: { set: setArtist, get: artist, enumerable: true },
+            cover: { set: setCover, get: cover, enumerable: true }
+        });
+
+        var m_title = "";
+        var m_artist = "";
+        var m_cover = "";
+
+        var m_item = $(
+            sh.tag("div")
+            .style("display", "flex")
+            .content(
+                sh.tag("div")
+                .style("width", "64px")
+                .style("height", "64px")
+                .style("background-repeat", "no-repeat")
+                .style("background-position", "50% 50%")
+                .style("background-size", "cover")
+            )
+            .content(
+                sh.tag("div")
+                .style("flex-grow", "1")
+                .content(
+                    sh.tag("h1")
+                )
+                .content(
+                    sh.tag("h2")
+                )
+            )
+            .html()
+        );
+
+        function setTitle(title)
         {
-            return true;
+            m_item.find("h1").html(sh.escapeHtml(title));
+            m_title = title;
         }
-        else if (ua.indexOf("SailfishBrowser") !== -1)
+
+        function title()
         {
-            return false;
+            return m_title;
         }
-        else
+
+        function setArtist(artist)
         {
-            return true;
+            m_item.find("h2").html(sh.escapeHtml(artist));
+            m_artist = artist;
         }
-        */
+
+        function artist()
+        {
+            return m_artist;
+        }
+
+        function setCover(cover)
+        {
+            m_item.find("> div:nth-child(1)").css("background-image", "url(" + cover + ")");
+            m_cover = cover;
+        }
+
+        function cover()
+        {
+            return m_cover;
+        }
+
+        this.get = function ()
+        {
+            return m_item;
+        };
+    };
+
+    /* Class representing the cover image.
+     */
+    var CoverImage = function ()
+    {
+        Object.defineProperties(this, {
+            source: { set: setSource, get: source, enumerable: true }
+        });
+
+        var m_source = "";
+        var m_image = $(
+            sh.tag("img")
+            .style("width", "100%")
+            .html()
+        );
+
+        function setSource(src)
+        {
+            m_image.prop("src", src);
+            m_source = src;
+        }
+
+        function source()
+        {
+            return m_source;
+        }
+
+        this.get = function ()
+        {
+            return m_image;
+        };
+    };
+
+    /* Class representing a WakeLock holder to not get playback killed on
+     * Android devices.
+     */
+    var WakeLocker = function ()
+    {
+        Object.defineProperties(this, {
+            locked: { set: setLocked, get: locked, enumerable: true }
+        });
+
+        var m_isLocked = false;
+        var m_locker = $(
+            sh.tag("video")
+            .style("display", "none")
+            .attr("muted", "true")
+            .attr("loop", "true")
+            .attr("src", "/::res/webshell/extensions/audio/null.mp4")
+            .html()
+        );
+
+        function setLocked(value)
+        {
+            if (value)
+            {
+                m_locker.trigger("play");
+            }
+            else
+            {
+                m_locker.trigger("pause");
+            }
+            m_isLocked = value;
+        }
+
+        function locked()
+        {
+            return m_isLocked;
+        }
+
+        this.get = function ()
+        {
+            return m_locker;
+        };
     }
 
-    function formatTime(seconds)
+    /* Class representing the player controls.
+     */
+    var PlayerControls = function ()
     {
-        var t = seconds;
-        var secs = Math.floor(t) % 60;
-        t /= 60;
-        var minutes = Math.floor(t) % 60;
-        t /= 60;
-        var hours = Math.floor(t);
+        Object.defineProperties(this, {
+            position: { set: setPosition, get: position, enumerable: true },
+            total: { set: setTotal, get: total, enumerable: true },
+            status: { set: setStatus, get: status, enumerable: true },
+            onSeeked: { set: setOnSeeked, get: onSeeked, enumerable: true },
+            onPreviousClicked: { set: setOnPreviousClicked, get: onPreviousClicked, enumerable: true },
+            onNextClicked: { set: setOnNextClicked, get: onNextClicked, enumerable: true },
+            onPlayClicked: { set: setOnPlayClicked, get: onPlayClicked, enumerable: true }
+        });
 
-        var h = hours.toFixed(0);
-        var m = minutes.toFixed(0);
-        var s = secs.toFixed(0);
+        var m_isSeeking = false;
+        var m_position = 0;
+        var m_total = 0;
+        var m_status = "paused";
+        var m_onSeeked = null;
+        var m_onPreviousClicked = null;
+        var m_onNextClicked = null;
+        var m_onPlayClicked = null;
 
-        if (h.length === 1) { h = "0" + h; }
-        if (m.length === 1) { m = "0" + m; }
-        if (s.length === 1) { s = "0" + s; }
+        var m_controls = $(
+            sh.tag("footer").class("sh-dropshadow")
+            .style("height", "160px")
+            .style("text-align", "center")
+            .content(
+                sh.tag("div")
+                .style("position", "absolute")
+                .style("top", "0")
+                .style("left", "0")
+                .style("right", "0")
+                .style("height", "16px")
+                .content(
+                    sh.tag("div")
+                    .style("position", "absolute")
+                    .style("top", "0")
+                    .style("left", "0")
+                    .style("width", "0%")
+                    .style("height", "100%")
+                    .style("background-color", "red")
+                )
+                .content(
+                    sh.tag("div")
+                    .style("position", "absolute")
+                    .style("top", "0")
+                    .style("left", "0")
+                    .style("width", "0%")
+                    .style("height", "100%")
+                    .style("background-color", "var(--color-highlight-background)")
+                )
+            )
+            .content(
+                sh.tag("div")
+                .style("position", "absolute")
+                .style("top", "16px")
+                .style("left", "0")
+                .style("right", "0")
+                .content("0:42 / 1:23")
+            )
+            .content(
+                sh.tag("div")
+                .style("position", "relative")
+                .style("margin-top", "48px")
+                .style("font-size", "80px")
+                .content(
+                    sh.tag("span").class("sh-fw-icon sh-icon-media-play-circle")
+                )
+                .content(
+                    sh.tag("span").class("sh-left sh-fw-icon sh-icon-media-previous")
+                )
+                .content(
+                    sh.tag("span").class("sh-right sh-fw-icon sh-icon-media-next")
+                )
+            )
+            .html()
+        );
 
-        return (hours > 0 ? h + ":" : "") + m + ":" + s;
-    }
+        var m_progressBar = m_controls.find("> div:nth-child(1)");
+        var m_progressLabel = m_controls.find("> div:nth-child(2)");
+        var m_buttonBox = m_controls.find("> div:nth-child(3)");
 
-    /* Fetches metadata for the current track.
+        m_buttonBox.find("> span:nth-child(2)")
+        .on("click", function ()
+        {
+            if (m_onPreviousClicked)
+            {
+                m_onPreviousClicked();
+            }
+        });
+
+        m_buttonBox.find("> span:nth-child(3)")
+        .on("click", function ()
+        {
+            if (m_onNextClicked)
+            {
+                m_onNextClicked();
+            }
+        });
+
+        m_buttonBox.find("> span:nth-child(1)")
+        .on("click", function ()
+        {
+            if (m_onPlayClicked)
+            {
+                m_onPlayClicked();
+            }
+        });
+
+
+
+        // setup seek mechanics
+
+        m_progressBar.on("mousedown", function (event)
+        {
+            m_isSeeking = true;
+        });
+
+        m_progressBar.on("mousemove", function (event)
+        {
+            if (m_isSeeking)
+            {
+                var p = event.offsetX / $(this).width();
+                if (m_total > 0)
+                {
+                    m_progressLabel.html(formatTime(Math.floor(p * m_total)) + " / " + formatTime(m_total));
+                    m_progressBar.find("> div:nth-child(2)").css("width", (p * 100.0) + "%");
+                }
+            }
+        });
+
+        m_progressBar.on("mouseup", function (event)
+        {
+            if (m_isSeeking)
+            {
+                m_isSeeking = false;
+                var p = event.offsetX / $(this).width();
+                if (m_onSeeked)
+                {
+                    m_onSeeked(p * m_total);
+                }
+            }
+        });
+
+        m_progressBar.on("mouseleave", function (event)
+        {
+            m_isSeeking = false;
+        });
+
+        m_progressBar.on("touchstart", function (event)
+        {
+            event.preventDefault();
+            event.stopPropagation();
+            m_isSeeking = true;
+            var p = event.originalEvent.touches[0].clientX / $(this).width();
+            this.lastTouchPos = p;
+        });
+
+        m_progressBar.on("touchmove", function (event)
+        {
+            event.preventDefault();
+            event.stopPropagation();
+            if (m_isSeeking)
+            {
+                var p = event.originalEvent.touches[0].clientX / $(this).width();
+                if (m_total > 0)
+                {
+                    m_progressLabel.html(formatTime(Math.floor(p * m_total)) + " / " + formatTime(m_total));
+                    m_progressBar.find("> div:nth-child(2)").css("width", (p * 100.0) + "%");
+                }
+                this.lastTouchPos = p;
+            }
+        });
+
+        m_progressBar.on("touchend", function (event)
+        {
+            event.preventDefault();
+            event.stopPropagation();
+            if (m_isSeeking)
+            {
+                m_isSeeking = false;
+                if (m_onSeeked)
+                {
+                    m_onSeeked(this.lastTouchPos * m_total);
+                }
+            }
+        });
+
+        m_progressBar.on("touchcancel", function (event)
+        {
+            event.preventDefault();
+            event.stopPropagation();
+            m_isSeeking = false;
+        });
+
+
+        function setPosition(pos)
+        {
+            if (m_total > 0 && ! m_isSeeking)
+            {
+                var p = 100.0 * pos / m_total;
+                m_progressBar.find("> div:nth-child(2)").css("width", p + "%");
+                m_progressLabel.html(formatTime(m_position) + " / " + formatTime(m_total));
+            }
+            m_position = pos;
+        }
+
+        function position()
+        {
+            return m_position;
+        }
+
+        function setTotal(total)
+        {
+            m_total = total;
+        }
+
+        function total()
+        {
+            return m_total;
+        }
+
+        function setStatus(status)
+        {
+            var btn = m_buttonBox.find("> span:nth-child(1)");
+
+            switch (m_status)
+            {
+            case "playing":
+                btn.removeClass("sh-icon-media-pause-circle");
+                break;
+            case "paused":
+                btn.removeClass("sh-icon-media-play-circle");
+                break;
+            case "buffering":
+                btn.removeClass("sh-busy-indicator");
+                break;
+            case "stalled":
+                btn.removeClass("sh-busy-indicator");
+                break;
+            }
+
+            switch (status)
+            {
+            case "playing":
+                btn.addClass("sh-icon-media-pause-circle");
+                break;
+            case "paused":
+                btn.addClass("sh-icon-media-play-circle");
+                break;
+            case "buffering":
+                btn.addClass("sh-busy-indicator");
+                break;
+            case "stalled":
+                btn.addClass("sh-busy-indicator");
+                break;
+            }
+
+            m_status = status;
+        }
+
+        function status()
+        {
+            return m_status;
+        }
+
+        function setOnSeeked(callback)
+        {
+            m_onSeeked = callback;
+        }
+
+        function onSeeked()
+        {
+            return m_onSeeked;
+        }
+
+        function setOnPreviousClicked(callback)
+        {
+            m_onPreviousClicked = callback;
+        }
+
+        function onPreviousClicked()
+        {
+            return m_onPreviousClicked;
+        }
+
+        function setOnNextClicked(callback)
+        {
+            m_onNextClicked = callback;
+        }
+
+        function onNextClicked()
+        {
+            return m_onNextClicked;
+        }
+
+        function setOnPlayClicked(callback)
+        {
+            m_onPlayClicked = callback;
+        }
+
+        function onPlayClicked()
+        {
+            return m_onPlayClicked;
+        }
+
+        this.get = function ()
+        {
+            return m_controls;
+        };
+    };
+
+    /* Fetches metadata for the given track.
      */
     function fetchMetadata(uri, callback)
     {
@@ -217,747 +676,323 @@ var Audio = function ()
         callback(title, artist, pic);
     }
 
-    /* Updates the current player position.
+    /* Filters the current file selection for audio files.
      */
-    function updatePosition()
+    function audioSelection()
     {
-        if (! m_isSeeking)
+        return files.properties().selection.value().filter(function (idx)
         {
-            var total = audio.prop("duration") || 0;
-            var pos = audio.prop("currentTime") || 0;
-            $(".audio-progress-label").html(formatTime(pos) + " / " + formatTime(total));
-            $(".audio-progress-bar > div:nth-child(2)").css("width", (pos / total * 100.0) + "%");
-        }
-        updateBuffering();
-    }
-
-    /* Updates the current buffering progress.
-     */
-    function updateBuffering()
-    {
-        var buffered = audio.prop("buffered");
-        var total = audio.prop("duration");
-
-        $(".audio-progress-bar > div:nth-child(1)").each(function (i)
-        {
-            var box = $(this);
-            while (box.find("> div").length > buffered.length)
-            {
-                box.find("> div").last().remove();
-            }
-            while (box.find("> div").length < buffered.length)
-            {
-                box.append(
-                    sh.tag("div")
-                    .style("position", "absolute")
-                    .style("background-color", "red")
-                    .style("top", "0")
-                    .style("bottom", "0")
-                    .html()
-                );
-            }
-
-            var gauges = box.find("> div");
-            for (var i = 0; i < buffered.length; ++i)
-            {
-                console.log("buffered " + i + ": " + buffered.start(i) + " - " + buffered.end(i));
-                gauges.eq(i)
-                .css("left", (buffered.start(i) / total * 100) + "%")
-                .css("right", (100 - buffered.end(i) / total * 100) + "%");
-            }
+            var meta = files.properties().files.value()[idx];
+            return meta.mimeType === "audio/flac" ||
+                   meta.mimeType === "audio/mp3" ||
+                   meta.mimeType === "audio/ogg";
         });
     }
 
-    /* Updates the play status.
+    /* Adds the given file to the playlist.
      */
-    function updatePlayStatus()
+    function addToPlaylist(uri)
     {
-        if (audio.prop("paused"))
-        {
-            $(".audio-play-button")
-            .removeClass("sh-busy-indicator")
-            .removeClass("sh-icon-media-pause-circle")
-            .addClass("sh-icon-media-play-circle");
-        }
-        else
-        {
-            $(".audio-play-button")
-            .removeClass("sh-busy-indicator")
-            .removeClass("sh-icon-media-play-circle")
-            .addClass("sh-icon-media-pause-circle");
-        }
-
-        $(".audio-playlist-indicator").css("visibility", "hidden");
-        $(".audio-playlist-indicator").eq(m_playlist.position()).css("visibility", "visible");
+        m_playlist.add(uri, m_playlist.size() === 0);
     }
 
-    /* Updates the wait status.
+    /* Creates the player status item.
      */
-    function updateWaitStatus()
+    function createPlayerItem()
     {
-        $(".audio-play-button")
-        .removeClass("sh-icon-media-pause-circle")
-        .removeClass("sh-icon-media-play-circle")
-        .addClass("sh-busy-indicator");
-    }
-
-    /* Updates the meta data.
-     */
-    function updateMetadata()
-    {
-        if (! m_playlist.current())
+        return sh.element(ui.StatusItem)
+        .text(sh.predicate([m_properties.position, m_properties.total], function ()
         {
-            return;
-        }
-
-        fetchMetadata(m_playlist.current()[1], function (uri, data)
+            return formatTime(m_properties.position.value()) + " / " + formatTime(m_properties.total.value());
+        }))
+        .progress(sh.predicate([m_properties.position, m_properties.total], function ()
         {
-            parseMetadata(uri, data, function (title, artist, pic)
+            if (m_properties.total.value() > 0)
             {
-                $(".audio-title").html(sh.escapeHtml(title));
-                $(".audio-artist").html(sh.escapeHtml(artist));
-                if (pic !== "")
+                return 100.0 * m_properties.position.value() / m_properties.total.value();
+            }
+        }))
+        .onClicked(pushPlayerPage)
+        .left(
+            sh.element(sh.IconButton)
+            .icon(sh.predicate([m_properties.status], function ()
+            {
+                switch (m_properties.status.value())
                 {
-                    $(".audio-cover").css("background-image", "url(" + pic + ")");
+                case "playing":
+                    return "sh-icon-media-pause";
+                case "paused":
+                    return "sh-icon-media-play";
+                default:
+                    return "sh-busy-indicator";
+                }
+            }))
+            .onClicked(function ()
+            {
+                if (m_player.prop("paused"))
+                {
+                    m_player.trigger("play");
                 }
                 else
                 {
-                    $(".audio-cover").css("background-image", "");
+                    m_player.trigger("pause");
                 }
-            });
-        })
+            })
+        )
+        .left(
+            sh.element(sh.IconButton).icon("sh-icon-media-next")
+            .onClicked(function ()
+            {
+                m_playlist.next();
+            })
+        )
+        .right(
+            sh.element(sh.IconButton).icon("sh-icon-close")
+            .onClicked(function ()
+            {
+                m_playlist.clear();
+            })
+        )
+        .add(
+            sh.element(StatusContent)
+            .title(m_properties.title)
+            .artist(m_properties.artist)
+            .cover(m_properties.cover)
+        )
+        .get();
     }
 
-    /* Updates the playlist puller state.
+    /* Creates and pushes the player page.
      */
-    function updatePullerState()
+    function pushPlayerPage()
     {
-        var puller = $(".audio-playlist-puller");
-        if (puller.length)
+        var page = sh.element(sh.NSPage)
+        .onSwipeBack(function ()
         {
-            if ($(document).scrollTop() > 0)
+            page.pop_();
+        })
+        .header(
+            sh.element(sh.PageHeader)
+            .title(m_properties.title)
+            .subtitle(m_properties.artist)
+            .left(
+                sh.element(sh.IconButton).icon("sh-icon-back")
+                .onClicked(function ()
+                {
+                    page.pop_();
+                })
+            )
+        )
+        .footer(
+            sh.element(PlayerControls)
+            .position(m_properties.position)
+            .total(m_properties.total)
+            .status(m_properties.status)
+            .onSeeked(function (pos)
             {
-                puller.removeClass("sh-icon-move-up").addClass("sh-icon-move-down");
-            }
-            else
+                m_player.prop("currentTime", pos);
+            })
+            .onPreviousClicked(m_playlist.previous)
+            .onNextClicked(m_playlist.next)
+            .onPlayClicked(function ()
             {
-                puller.removeClass("sh-icon-move-down").addClass("sh-icon-move-up");
-            }
-        }
-    }
-
-    /* Pushes the status item.
-     */
-    function pushStatusItem()
-    {
-        var item = $(
-            sh.tag("div")
-            .style("position", "relative")
-            .style("height", "64px")
-            .content(
-                sh.tag("div").class("sh-left audio-cover")
-                .style("width", "64px")
-                .style("height", "80px")
-                .style("background-size", "64px 64px")
-                .style("background-repeat", "no-repeat")
-                .style("text-align", "center")
-                .style("font-size", "200%")
-                .style("line-height", "64px")
-                .content(
-                    sh.tag("span").class("sh-fw-icon sh-icon-media-play-circle audio-play-button")
-                    .style("color", "white")
-                    .style("text-shadow", "#000 0px 0px 1px")
-                )
-            )
-            .content(
-                sh.tag("div").class("audio-progress-bar")
-                .style("position", "absolute")
-                .style("top", "0")
-                .style("left", "64px")
-                .style("right", "42px")
-                .style("height", "4px")
-                .content(
-                    sh.tag("div")
-                    .style("position", "absolute")
-                    .style("top", "0")
-                    .style("left", "0")
-                    .style("width", "100%")
-                    .style("height", "1px")
-                )
-                .content(
-                    sh.tag("div")
-                    .style("position", "absolute")
-                    .style("top", "0")
-                    .style("left", "0")
-                    .style("width", "0%")
-                    .style("height", "100%")
-                    .style("background-color", "var(--color-primary)")
-                )
-            )
-            .content(
-                sh.tag("div")
-                .style("margin-left", "64px")
-                .style("margin-right", "42px")
-                .style("margin-top", "4px")
-                .style("padding-top", "0.5em")
-                .style("padding-left", "0.5em")
-                .style("text-align", "left")
-                .content(
-                    sh.tag("h1").class("audio-title")
-                    .style("line-height", "1.2em")
-                    .content("-")
-                )
-                .content(
-                    sh.tag("h2").class("sh-font-small audio-artist")
-                    .style("line-height", "1.2em")
-                    .content("-")
-                )
-            )
-            .content(
-                sh.tag("div").class("sh-right audio-close-button")
-                .style("width", "42px")
-                .style("text-align", "center")
-                .style("border-left", "solid 1px var(--color-border)")
-                .style("line-height", "80px")
-                .content(
-                    sh.tag("span").class("sh-fw-icon sh-icon-close")
-                )
-            )
-            .content(
-                sh.tag("video")
-                .style("display", "none")
-                /*
-                .style("position", "absolute")
-                .style("width", "64px")
-                .style("height", "64px")
-                .style("top", "0")
-                .style("right", "0")
-                */
-                //.attr("src", "/Videos/video2.mp4")
-                .attr("src", "/::res/webshell/extensions/audio/null.mp4")
-            )
-            .html()
+                if (m_player.prop("paused"))
+                {
+                    m_player.trigger("play");
+                }
+                else
+                {
+                    m_player.trigger("pause");
+                }
+            })
+        )
+        .add(
+            sh.element(WakeLocker)
+            .locked(sh.predicate([m_properties.status], function ()
+            {
+                return m_properties.status.value() === "playing";
+            }))
+        )
+        .add(
+            sh.element(CoverImage).source(m_properties.cover)
+        )
+        .add(
+            sh.element(sh.ListView).id("listview")
         );
 
-        item.on("click", openPage);
-        item.find(".audio-close-button").on("click", function (event)
-        {
-            event.stopPropagation();
-            item.close();
-        });
-        
-        item.find(".audio-play-button").on("click", function (event)
-        {
-            event.stopPropagation();
-            if (audio.prop("paused"))
-            {
-                audio.trigger("play");
-                item.wakeLock();
-            }
-            else
-            {
-                audio.trigger("pause");
-                item.wakeUnlock();
-            }
-        });
-
-        // acquire wake lock to not get playback killed on Android devices
-        var wakeLocker = item.find("video");
-        wakeLocker.prop("muted", true);
-        wakeLocker.prop("loop", true);
-        wakeLocker.trigger("load");
-
-        item.wakeLock = function ()
-        {
-            console.log("Acquiring Wakelock");
-            wakeLocker.trigger("play");
-        };
-
-        item.wakeUnlock = function ()
-        {
-            console.log("Releasing Wakelock");
-            wakeLocker.trigger("pause");
-        };
-
-        item.close = function ()
-        {
-            m_playlist.clear();
-            var obj = {
-                get: function () { return item; }
-            };
-            files.popStatus(obj);
-            m_statusItem = null;
-        };
-
-        var obj = {
-            get: function () { return item; }
-        };
-
-        files.pushStatus(obj);
-
-        return item;
-    }
-
-    /* Creates the playlist UI.
-     */
-    function makePlaylistUi()
-    {
-        var t = sh.tag("ul").class("sh-listview")
-                .style("text-align", "left")
-                .style("background-color", "var(--color-primary-background-translucent)")
-        for (var i = 0; i < m_playlist.size(); ++i)
-        {
-            t.content(
-                sh.tag("li").class("audio-playlist-item")
-                .data("playlist-key", m_playlist.itemAt(i)[0])
-                .style("height", "80px")
-                .style("background-color", "var(--color-primary-background-translucent)")
-                //.style("color", "#fff")
-                .on("click", "")
-                .content(
-                    sh.tag("div").class("sh-left")
-                    .style("width", "80px")
-                    .style("height", "80px")
-                    .style("background-size", "cover")
-                    .style("background-color", "#666")
-                )
-                .content(
-                    sh.tag("div").class("sh-left")
-                    .style("margin-left", "80px")
-                    .style("padding-left", "1rem")
-                    .style("line-height", "80px")
-                    .style("font-size", "200%")
-                    .content(
-                        sh.tag("span").class("sh-fw-icon sh-icon-media-play audio-playlist-indicator")
-                        .style("visibility", "hidden")
-                    )
-                )
-                .content(
-                    sh.tag("h1").content("-")
-                    .style("margin-left", "80px")
-                    .style("margin-right", "42px")
-                    .style("padding-top", "1rem")
-                    .style("padding-left" ,"3rem")
-                )
-                .content(
-                    sh.tag("h2").content("-")
-                    .style("margin-left", "80px")
-                    .style("margin-right", "42px")
-                    .style("padding-left" ,"3rem")
-                )
-                .content(
-                    sh.tag("div").class("sh-right audio-playlist-delete-button")
-                    .style("width", "42px")
-                    .style("text-align", "center")
-                    .style("border-left", "solid 1px var(--color-border)")
-                    .style("line-height", "80px")
-                    .content(
-                        sh.tag("span").class("sh-fw-icon sh-icon-close")
-                    )
-                )
-            );
-        }
-
-        return t;
-    }
-
-    /* Opens the player page.
-     */
-    function openPage()
-    {
-        var t = sh.tag("div").class("audio-cover")
-                .style("background-size", "cover")
-                .style("background-position", "50% 0%")
-                .style("background-attachment", mayUseFixedBackground() ? "fixed" : "scroll")
-                .style("color", "var(--primary-color)")
-                .content(
-                    sh.tag("div").class("audio-scroll-gap audio-cover")
-                    .style("position", "relative")
-                    .style("background-size", "contain")
-                    .style("background-position", "50% 0%")
-                    .style("background-repeat", "no-repeat")
-                    .style("background-color", "var(--color-primary-background-translucent)")
-                    .style("height", "100vh")
-                    .content(
-                        sh.tag("div")
-                        .style("position", "absolute")
-                        .style("left", "0")
-                        .style("right", "0")
-                        .style("bottom", "0")
-                        .style("text-align", "center")
-                        .style("text-shadow", "var(--color-primary-background) 0px 0px 1px")
-                        .style("background-color", "var(--color-primary-background-translucent)")
-                        .content(
-                            sh.tag("div").class("audio-progress-bar")
-                            .style("position", "relative")
-                            .style("height", "1rem")
-                            .style("margin", "0")
-                            .content(
-                                sh.tag("div")
-                                .style("position", "absolute")
-                                .style("top", "0")
-                                .style("left", "0")
-                                .style("width", "100%")
-                                .style("height", "1px")
-                            )
-                            .content(
-                                sh.tag("div")
-                                .style("position", "absolute")
-                                .style("top", "0")
-                                .style("left", "0")
-                                .style("width", "0%")
-                                .style("height", "100%")
-                                .style("background-color", "var(--color-primary)")
-                            )
-                        )
-                        .content(
-                            sh.tag("div")
-                            .style("margin-bottom", "1rem")
-                            .content(
-                                sh.tag("span").class("audio-progress-label")
-                                .style("line-height", "1.2em")
-                                .content("00:00 / 00:00")
-                            )
-                        )
-                        .content(
-                            sh.tag("span").class("sh-fw-icon sh-icon-media-play-circle audio-play-button")
-                            .style("font-size", "4rem")
-                        )
-                        .content(
-                            sh.tag("span").class("sh-left sh-fw-icon sh-icon-media-previous audio-previous-button")
-                            .style("font-size", "4rem")
-                            .style("margin-top", "3rem")
-                        )
-                        .content(
-                            sh.tag("span").class("sh-right sh-fw-icon sh-icon-media-next audio-next-button")
-                            .style("font-size", "4rem")
-                            .style("margin-top", "3rem")
-                        )
-                        .content(
-                            sh.tag("h1").class("audio-title").content("-")
-                            .style("font-size", "1.5rem")
-                            .style("margin-top", "1rem")
-                            .style("margin-left", "1rem")
-                            .style("margin-right", "1rem")
-                            .style("line-height", "1.2em")
-                        )
-                        .content(
-                            sh.tag("h2").class("audio-artist").content("-")
-                            .style("font-size", "1.2rem")
-                            .style("margin-left", "1rem")
-                            .style("margin-right", "1rem")
-                            .style("margin-bottom", "1rem")
-                            .style("line-height", "1.2em")
-                        )
-                        .content(
-                            sh.tag("span").class("sh-fw-icon sh-icon-move-up audio-playlist-puller")
-                            .style("font-size", "2rem")
-                        )
-
-                    )
-                )
-                .content(
-                    sh.tag("div")
-                    .style("background-color", "var(--color-primary-background-translucent)")
-                    .content(
-                        sh.tag("div")
-                        .style("background-color", "var(--color-primary-background-translucent)")
-                        .style("padding", "1rem")
-                        .style("text-align", "center")
-                        .content(
-                            "&nbsp;"
-                        )
-                    )
-                )
-                .content(
-                    makePlaylistUi()
-                );
-
-        var page = new sh.Page("", "");
-        page.setSwipeBack(function () { page.pop(); });
-        page.get().addClass("sh-theme-dark");
-        page.addToHeaderLeft(new sh.IconButton("sh-icon-back", function () { page.pop(); }));
-
-        page.get().css("padding-top", "0");
-        page.get().find("> header")
+        page.get().get().find("> header")
         .css("background-color", "var(--color-primary-background-translucent)");
-        page.get().find("> section").html(t.html());
-        var pageSection = page.get().find("> section");
 
-        pageSection.find(".audio-play-button").on("click", function ()
+        page.get().get().find("> footer")
+        .css("background-color", "var(--color-primary-background-translucent)");
+
+        page.push_(function ()
         {
-            if (audio.prop("paused"))
+            for (var i = 0; i < m_playlist.size(); ++i)
             {
-                audio.trigger("play");
-                m_statusItem.wakeLock();
-            }
-            else
-            {
-                audio.trigger("pause");
-                m_statusItem.wakeUnlock();
-            }
-        });
+                var item = m_playlist.itemAt(i);
 
-        pageSection.find(".audio-previous-button").on("click", function ()
-        {
-            if (audio.prop("currentTime") > 3 || m_playlist.position() === 0)
-            {
-                audio.prop("currentTime", 0);
-            }
-            else
-            {
-                m_playlist.previous();
-            }
-        });
-        pageSection.find(".audio-next-button").on("click", m_playlist.next);
+                var trackTitle = sh.binding(item[1]);
+                var trackArtist = sh.binding("");
+                var trackCover = sh.binding("");
 
-
-        // setup seek mechanics
-
-        pageSection.find(".audio-progress-bar").on("mousedown", function (event)
-        {
-            m_isSeeking = true;
-        });
-
-        pageSection.find(".audio-progress-bar").on("mousemove", function (event)
-        {
-            if (m_isSeeking)
-            {
-                var p = event.offsetX / $(this).width();
-                var total = audio.prop("duration") || 0;
-                if (total > 0)
+                // closure
+                (function (trackNo, trackTitle, trackArtist, trackCover)
                 {
-                    $(".audio-progress-label").html(formatTime(Math.floor(p * total)) + " / " + formatTime(total));
-                    $(".audio-progress-bar > div:nth-child(2)").css("width", (p * 100.0) + "%");
-                }
-            }
-        });
-
-        pageSection.find(".audio-progress-bar").on("mouseup", function (event)
-        {
-            if (m_isSeeking)
-            {
-                m_isSeeking = false;
-                var p = event.offsetX / $(this).width();
-                audio.prop("currentTime", p * audio.prop("duration"));
-            }
-        });
-
-        pageSection.find(".audio-progress-bar").on("mouseleave", function (event)
-        {
-            m_isSeeking = false;
-        });
-
-        pageSection.find(".audio-progress-bar").on("touchstart", function (event)
-        {
-            event.preventDefault();
-            event.stopPropagation();
-            m_isSeeking = true;
-            var p = event.originalEvent.touches[0].clientX / $(this).width();
-            this.lastTouchPos = p;
-        });
-
-        pageSection.find(".audio-progress-bar").on("touchmove", function (event)
-        {
-            event.preventDefault();
-            event.stopPropagation();
-            if (m_isSeeking)
-            {
-                var p = event.originalEvent.touches[0].clientX / $(this).width();
-                var total = audio.prop("duration") || 0;
-                if (total > 0)
-                {
-                    $(".audio-progress-label").html(formatTime(Math.floor(p * total)) + " / " + formatTime(total));
-                    $(".audio-progress-bar > div:nth-child(2)").css("width", (p * 100.0) + "%");
-                }
-                this.lastTouchPos = p;
-            }
-        });
-
-        pageSection.find(".audio-progress-bar").on("touchend", function (event)
-        {
-            event.preventDefault();
-            event.stopPropagation();
-            if (m_isSeeking)
-            {
-                m_isSeeking = false;
-                audio.prop("currentTime", this.lastTouchPos * audio.prop("duration"));
-            }
-        });
-
-        pageSection.find(".audio-progress-bar").on("touchcancel", function (event)
-        {
-            event.preventDefault();
-            event.stopPropagation();
-            m_isSeeking = false;
-        });
-
-
-        // setup playlist puller button
-
-        pageSection.find(".audio-playlist-puller").on("click", function ()
-        {
-            var scrollTarget = 0;
-            if ($(document).scrollTop() === 0)
-            {
-                scrollTarget = $(this).offset().top;
-            }
-            else
-            {
-                scrollTarget = 0;
-            }
-
-            $("html, body").animate({
-                scrollTop: scrollTarget
-            }, "slow", function () { });
-        });
-
-        var pos = pageSection.find("ul").offset().top;
-        console.log("ul offset " + pos);
-        console.log("window height: " + $(window).height());
-
-        page.push(function ()
-        {
-            updatePlayStatus();
-            updatePosition();
-            updateMetadata();
-
-            // load metadata in playlist
-            pageSection.find(".audio-playlist-item").each(function (i, item)
-            {
-                var playlistKey = $(item).data("playlist-key");
-                var playlistIndex = m_playlist.indexOf(playlistKey);
-                var playlistUri = m_playlist.itemAt(playlistIndex)[1];
-
-                fetchMetadata(playlistUri, function (uri, data)
-                {
-                    parseMetadata(uri, data, function (title, artist, pic)
+                    fetchMetadata(item[1], function (uri, data)
                     {
-                        $(item).find("h1").html(sh.escapeHtml(title));
-                        $(item).find("h2").html(sh.escapeHtml(artist));
-                        if (pic !== "")
+                        parseMetadata(uri, data, function (title, artist, pic)
                         {
-                            $(item).find("div:nth-child(1)").css("background-image", "url(" + pic + ")");
-                        }
+                            trackTitle.assign(title);
+                            trackArtist.assign(artist);
+                            trackCover.assign(pic);
+                        });
                     });
-                });
 
-                var playlistKey = $(item).data("playlist-key");
-
-                $(item).on("click", function ()
-                {
-                    var idx = m_playlist.indexOf(playlistKey);
-                    m_playlist.goto(idx);
-                });
-
-                $(item).find(".audio-playlist-delete-button").on("click", function ()
-                {
-                    var idx = m_playlist.indexOf(playlistKey);
-                    $(item).remove();
-                    m_playlist.removeAt(idx);
-                });
-            });
+                    page.find("listview").add(
+                        sh.element(sh.ListItem).id("listitem-" + trackNo)
+                        .title(trackTitle)
+                        .subtitle(trackArtist)
+                        .icon(trackCover)
+                        .fillMode("cover")
+                        .onClicked(function ()
+                        {
+                            m_playlist.goto(trackNo);
+                        })
+                        .action(["sh-icon-close", function ()
+                        {
+                            m_playlist.removeAt(trackNo);
+                            page.find("listitem-" + trackNo).get().get().remove();
+                        }])
+                    );
+                }) (i, trackTitle, trackArtist, trackCover);
+            }
         });
     }
 
-    /* Plays the given URI.
-     */
-    function play(uri)
-    {
-        audio.prop("src", uri);
-        audio.trigger("load");
-        audio.trigger("play");
-        updateMetadata();
-        m_statusItem.wakeLock();
-    }
+    // setup selection watcher
 
-
-    var m_playlist = new Playlist(function (entry)
+    files.properties().selection.watch(function ()
     {
-        if (! m_statusItem)
+        var selection = audioSelection();
+
+        if (selection.length > 0 && ! m_statusItem)
         {
-            m_statusItem = pushStatusItem();
-        }
+            m_statusItem = sh.element(ui.StatusItem)
+            .text(sh.predicate([files.properties().selection], function ()
+            {
+                return "Add " + audioSelection().length + " audio files to playlist";
+            }))
+            .left(
+                sh.element(sh.IconButton).icon("sh-icon-media-add-to-playlist")
+                .onClicked(function ()
+                {
+                    audioSelection()
+                    .map(function (idx)
+                    {
+                        return files.properties().files.value()[idx].uri;
+                    })
+                    .forEach(addToPlaylist);
+                    files.properties().selection.assign([]);
+                })
+            );
 
+            files.pushStatus(m_statusItem.get());
+        }
+        else if (selection.length === 0 && m_statusItem)
+        {
+            files.popStatus(m_statusItem.get());
+            m_statusItem = null;
+        }
+    });
+
+
+    // setup audio player
+
+    var m_player = $(
+        sh.tag("audio").style("display", "none")
+        .html()
+    );
+
+    m_player.on("pause", function ()
+    {
+        m_properties.status.assign("paused");
+    });
+    m_player.on("play", function ()
+    {
+        m_properties.status.assign("playing");
+    });
+    m_player.on("playing", function ()
+    {
+        m_properties.status.assign("playing");
+    });
+    m_player.on("durationchange", function ()
+    {
+        m_properties.total.assign(m_player.prop("duration"));
+    });
+    m_player.on("timeupdate", function ()
+    {
+        m_properties.position.assign(m_player.prop("currentTime"));
+    });
+    m_player.on("progress", function () { });
+    m_player.on("waiting", function ()
+    {
+        m_properties.status.assign("buffering");
+    });
+    m_player.on("ended", function ()
+    {
+        m_properties.status.assign("paused");
+        m_playlist.next();
+    });
+    m_player.on("stalled", function ()
+    {
+        m_properties.status.assign("stalled");
+    });
+
+
+    // setup playlist
+
+    m_playlist = new Playlist(function (entry)
+    {       
         if (entry)
         {
-            play(entry[1]);
+            if (! m_playerItem)
+            {
+                m_playerItem = createPlayerItem();
+                files.pushStatus(m_playerItem);
+            }
+
+            // play
+            m_player.prop("src", entry[1]);
+            m_player.trigger("load");
+            m_player.trigger("play");
+
+            fetchMetadata(entry[1], function (uri, data)
+            {
+                parseMetadata(uri, data, function (title, artist, pic)
+                {
+                    m_properties.title.assign(title);
+                    m_properties.artist.assign(artist);                   
+                    m_properties.cover.assign(pic);
+                });
+            });
         }
         else
         {
-            // force-stop buffering
-            audio.prop("src", "");
-            audio.trigger("load");
-            m_statusItem.wakeUnlock();
-        }
-
-        updatePlayStatus();
-        updatePosition();
-        updateBuffering();
-        updateMetadata();
-    });
-
-
-    this.add = function (uri)
-    {
-        m_playlist.add(uri, m_playlist.size() === 0);
-    };
-
-    this.enqueue = function (idx)
-    {
-        var meta = files.properties().files.value()[idx];
-        m_playlist.add(meta.uri, false);
-    };
-
-    this.updatePullerState = updatePullerState;
-
-    $("body").append("<audio id='audio-player' style='display: none;'></audio>");
-    var audio = $("#audio-player");
-    audio.on("pause", updatePlayStatus);
-    audio.on("play", updatePlayStatus);
-    audio.on("playing", updatePlayStatus);
-    audio.on("durationchange", updatePosition);
-    audio.on("timeupdate", updatePosition);
-    audio.on("progress", updateBuffering);
-    audio.on("waiting", updateWaitStatus);
-    audio.on("ended", m_playlist.next);
-
-    audio.on("stalled", function ()
-    {
-        ui.showError("Media data is not available.");
-    });
-};
-
-
-
-var audio;
-(function ()
-{
-    audio = new Audio();
-
-    files.actionsMenu().add(
-        sh.element(sh.MenuItem).text("Add to Playlist")
-        .visible(
-            sh.predicate([files.properties().selection], function ()
+            if (m_playerItem)
             {
-                return files.properties().selection.value().filter(function (idx)
-                {
-                    var meta = files.properties().files.value()[idx];
-                    return meta.mimeType === "audio/flac" ||
-                           meta.mimeType === "audio/mp3" ||
-                           meta.mimeType === "audio/ogg";
-                }).length > 0;
-            })
-        )
-        .onClicked(files.eachSelected(audio.enqueue))
-    );
+                files.popStatus(m_playerItem);
+                m_playerItem = null;
+            }
 
-    $(window).scroll(function ()
-    {
-        audio.updatePullerState();
+            // force-stop buffering
+            m_player.prop("src", "");
+            m_player.trigger("load");
+        }
     });
 
-    mimeRegistry.register("audio/flac", audio.add);
-    mimeRegistry.register("audio/mp3", audio.add);
-    mimeRegistry.register("audio/ogg", audio.add);
+
+    mimeRegistry.register("audio/flac", addToPlaylist);
+    mimeRegistry.register("audio/mp3", addToPlaylist);
+    mimeRegistry.register("audio/ogg", addToPlaylist);
 })();

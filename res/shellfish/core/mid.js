@@ -954,7 +954,7 @@ sh.Button = function ()
     }
 };
 
-sh.IconButton = function (i, cb)
+sh.IconButton = function ()
 {
     Object.defineProperties(this, {
         enabled: { set: setEnabled, get: enabled, enumerable: true },
@@ -978,17 +978,21 @@ sh.IconButton = function (i, cb)
         .style("height", "100%")
         .style("text-align", "center")
         .content(
-            sh.tag("span").class("sh-fw-icon " + (i || ""))
+            sh.tag("span").class("sh-fw-icon")
             .style("font-size", "150%")
         )
         .on("click", "")
         .html()
     );
 
-    if (cb)
+    m_button.on("click", function (event)
     {
-        m_button.on("click", function (event) { event.stopPropagation(); cb(that); });
-    }
+        event.stopPropagation();
+        if (m_onClicked)
+        {
+            m_onClicked(that);
+        }
+    });
 
     function setEnabled(value)
     {
@@ -1057,11 +1061,6 @@ sh.IconButton = function (i, cb)
 
     function setOnClicked(callback)
     {
-        m_button.off("click").on("click", function (event)
-        {
-            event.stopPropagation();
-            callback(that);
-        });
         m_onClicked = callback;
     }
 

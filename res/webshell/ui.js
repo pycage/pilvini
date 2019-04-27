@@ -212,38 +212,100 @@ ui.StatusBox = function ()
 ui.StatusItem = function ()
 {
     Object.defineProperties(this, {
+        left: { set: addLeft, get: left, enumerable: true },
+        right: { set: addRight, get: right, enumerable: true },
         icon: { set: setIcon, get: icon, enumerable: true },
         text: { set: setText, get: text, enumerable: true },
-        progress: { set: setProgress, get: progress, enumerable: true }
+        progress: { set: setProgress, get: progress, enumerable: true },
+        onClicked: { set: setOnClicked, get: onClicked, enumerable: true }
     });
 
+    var m_left = [];
+    var m_right = [];
     var m_icon = "";
     var m_text = "";
     var m_progress = 0;
+    var m_onClicked = null;
 
     var m_item = $(
         sh.tag("div")
         .style("position", "relative")
         .style("border-top", "solid 1px var(--color-border)")
         .content(
+            // box
             sh.tag("div")
-            .style("position", "absolute")
-            .style("background-color", "var(--color-highlight-background)")
-            .style("width", "0%")
-            .style("height", "100%")
+            .style("position", "relative")
+            .style("display", "flex")
+            .style("align-items", "center")
+            .style("width", "100%")
+            .content(
+                // progress bar
+                sh.tag("div")
+                .style("position", "absolute")
+                .style("background-color", "var(--color-highlight-background)")
+                .style("width", "0%")
+                .style("height", "100%")
+            )
+            .content(
+                // left content area
+                sh.tag("div")
+                .style("position", "relative")
+            )
+            .content(
+                // text
+                sh.tag("h1")
+                .style("position", "relative")
+                .style("flex-grow", "1")
+                .style("line-height", "100%")
+                .content(
+                    sh.tag("span").class("sh-fw-icon")
+                )
+                .content(
+                    sh.tag("span")
+                )
+            )
+            .content(
+                // right content area
+                sh.tag("div")
+                .style("position", "relative")
+            )
         )
         .content(
-            sh.tag("h1")
-            .style("position", "relative")
-            .content(
-                sh.tag("span").class("sh-fw-icon")
-            )
-            .content(
-                sh.tag("span")
-            )
+            // custom content area
+            sh.tag("div")
         )
         .html()
     );
+
+    m_item.on("click", function ()
+    {
+        if (m_onClicked)
+        {
+            m_onClicked();
+        }
+    })
+
+    function addLeft(child)
+    {
+        m_item.find("> div:nth-child(1) > div:nth-child(2)").append(child.get());
+        m_left.push(child);
+    }
+
+    function left()
+    {
+        return m_left;
+    }
+
+    function addRight(child)
+    {
+        m_item.find("> div:nth-child(1) > div:nth-child(4)").append(child.get());
+        m_right.push(child);
+    }
+
+    function right()
+    {
+        return m_right;
+    }
 
     function setIcon(icon)
     {
@@ -269,7 +331,7 @@ ui.StatusItem = function ()
 
     function setProgress(progress)
     {
-        m_item.find("> div").css("width", progress + "%");
+        m_item.find("> div:nth-child(1) > div:nth-child(1)").css("width", progress + "%");
         m_progress = progress;
     }
 
@@ -278,8 +340,23 @@ ui.StatusItem = function ()
         return m_progress;
     }
 
+    function setOnClicked(callback)
+    {
+        m_onClicked = callback;
+    }
+
+    function onClicked()
+    {
+        return m_onClicked;
+    }
+
     this.get = function ()
     {
         return m_item;
+    };
+
+    this.add = function (child)
+    {
+        m_item.find("> div:nth-child(2)").append(child.get());
     };
 };

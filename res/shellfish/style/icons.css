@@ -98,6 +98,10 @@
     font-family: Material; content: "\f351";
 }
 
+.sh-icon-media-add-to-playlist:before {
+    font-family: Material; content: "\f3ac";
+}
+
 .sh-icon-media-fwd:before {
     font-family: Material; content: "\f39f";
 }
