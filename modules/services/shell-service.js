@@ -38,7 +38,7 @@ var Service = function (contentRoot)
                 uri = "/";
             }
             
-            if (urlObj.search.indexOf("json") !== -1)
+            if (urlObj.search && urlObj.search.indexOf("json") !== -1)
             {
                 modBrowser.makeJson(uri, m_contentRoot, userContext, shares, cb);
             }

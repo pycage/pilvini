@@ -1,8 +1,9 @@
 "use strict";
 
-const modFs = require("fs"),
-      modLwip = require("lwip");
+const attempt = require("../attempt.js").attempt;
 
+const modFs = require("fs"),
+      modLwip = attempt(function () {return require("lwip"); });
 
 const modId3Tags = require("./id3tags"),
       modVfs = require("./vfs.js");
@@ -36,6 +37,12 @@ exports.makeThumbnail = function (mimeType, file, thumbFile, maxWidth, maxHeight
 
 function makeAudioThumbnail(file, thumbFile, maxWidth, maxHeight, callback)
 {
+    if (! modLwip)
+    {
+        callback("<clientside>");
+        return;
+    }
+
     var tagParser = new modId3Tags.Tags(file);
     tagParser.read(function (err)
     {
@@ -99,6 +106,12 @@ function makeAudioThumbnail(file, thumbFile, maxWidth, maxHeight, callback)
 
 function makeImageThumbnail(imageFile, thumbFile, maxWidth, maxHeight, callback)
 {
+    if (! modLwip)
+    {
+        callback("<clientside>");
+        return;
+    }
+    
     if (imageFile.toLowerCase().endsWith(".svg"))
     {
         modVfs.createReadStream(imageFile, function (reader)
