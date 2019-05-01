@@ -1,14 +1,12 @@
 "use strict";
 
-const attempt = require("../attempt.js").attempt;
-
 const modCrypto = require("crypto"),
       modPath = require("path"),
       modUrl = require("url");
 
 const modMime = require("../mime.js"),
       modUtils = require("../utils.js"),
-      modThumbnail = attempt(function () {return require("../thumbnail.js"); }),
+      modThumbnail = require("../thumbnail.js"),
       modVfs = require("../vfs.js");
 
 

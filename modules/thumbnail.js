@@ -1,9 +1,9 @@
 "use strict";
 
-const attempt = require("../attempt.js").attempt;
+const attempt = require("./attempt.js").attempt;
 
 const modFs = require("fs"),
-      modLwip = attempt(function () {return require("lwip"); });
+      modLwip = attempt(function () { return require("lwip"); });
 
 const modId3Tags = require("./id3tags"),
       modVfs = require("./vfs.js");
@@ -111,7 +111,7 @@ function makeImageThumbnail(imageFile, thumbFile, maxWidth, maxHeight, callback)
         callback("<clientside>");
         return;
     }
-    
+
     if (imageFile.toLowerCase().endsWith(".svg"))
     {
         modVfs.createReadStream(imageFile, function (reader)
