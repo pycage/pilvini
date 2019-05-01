@@ -88,7 +88,7 @@ text editor:
    as you like.
    * `name` The login name of the user.
    * `password_hash` A MD5 hash of the user's login name, realm, and password.
-     You can obtain one easily with `echo -n "<user>:<realm>:<password>" | md5`,
+     You can obtain one easily with `echo -n "<user>:<realm>:<password>" | md5sum`,
      or use an online MD5 hash generator, such as
      [http://www.adamek.biz/md5-generator.php].
    * `home` This is the path that *pilvini* confines the user to. This path is relative to the `root` path configured for the server.

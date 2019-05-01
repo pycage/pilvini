@@ -1,11 +1,9 @@
 {
     "server": {
         "listen": "0.0.0.0",
-        "port": 7443,
-        "use_ssl": true,
-        "ssl_certificate": "cert/www.example.com.cert",
-        "ssl_key": "cert/www.example.com.key",
-        "root": "/data/cloud"
+        "port": 8000,
+        "use_ssl": false,
+        "root": "/"
     },
 
     "authentication": {
@@ -15,9 +13,10 @@
 
     "users": [
         {
-            "name": "user",
-            "password_hash": "cec87dbff57453376e76e84fa17ab292",
-            "home": "/home/user"
+            "name": "admin",
+            "password_hash": "03f07bc2191ffa8f6e3cad73446015f3",
+            "home": "",
+            "permissions": ["ADMIN"]
         }
     ],
 
