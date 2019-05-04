@@ -67,13 +67,18 @@ function readStats(path, callback)
         }
 
         var result = [];
+        var count = files.length;
         for (var i = 0; i < files.length; ++i)
         {
             var file = files[i];
             modVfs.stat(modPath.join(path, file), function (file) { return function (err, stat)
             {
-                result.push([file, stat]);
-                if (result.length === files.length)
+                --count;
+                if (! err)
+                {
+                    result.push([file, stat]);
+                }
+                if (count === 0)
                 {
                     var r = result
                     .filter(function (a)

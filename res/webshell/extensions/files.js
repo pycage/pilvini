@@ -896,8 +896,6 @@ var files = { };
 
         m_scrollPositionsMap[m_properties.currentUri.value()] = $(document).scrollTop();
 
-        m_page.get().find("> section").html("");
-
         $.ajax({
             type: "GET",
             url: "/::shell" + uri + "?json",
@@ -905,6 +903,7 @@ var files = { };
         })
         .done(function (data, status, xhr)
         {
+            m_page.get().find("> section").html("");
             if (pushToHistory)
             {
                 window.history.pushState({ "uri": uri }, uri, "/::shell" + uri);
@@ -919,7 +918,7 @@ var files = { };
             }
             else
             {
-                ui.showError("Failed to load directory.");
+                ui.showError("Failed to read directory.");
             }
         })
         .always(function ()
