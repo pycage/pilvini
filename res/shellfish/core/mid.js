@@ -900,12 +900,13 @@ sh.Button = function ()
 {
     Object.defineProperties(this, {
         text: { set: setText, get: text, enumerable: true },
-        action: { set: setAction, get: action, enumerable: true },
+        action: { set: setOnClicked, get: onClicked, enumerable: true },
+        onClicked: { set: setOnClicked, get: onClicked, enumerable: true },
         isDefault: { set: setIsDefault, get: isDefault, enumerable: true }
     });
 
     var m_text = "";
-    var m_action = null;
+    var m_onClicked = null;
     var m_isDefault = false;
 
     var m_button = $(
@@ -926,15 +927,15 @@ sh.Button = function ()
         return m_text;
     }
 
-    function setAction(callback)
+    function setOnClicked(callback)
     {
         m_button.off("click").on("click", callback);
-        m_action = callback;
+        m_onClicked = callback;
     }
 
-    function action()
+    function onClicked()
     {
-        return m_action;
+        return m_onClicked;
     }
 
     function setIsDefault(value)

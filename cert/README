@@ -1,5 +1,7 @@
-Put your SSL certificate and private key in this directory.
+Put your SSL certificate and private key in this directory as
 
-The files 'www.example.com.cert' and 'www.example.com.key' are just examples
-to get you started quickly. They are not intended for daily use.
+* server.cert
+* server.key
 
+The provided files 'www.example.com.cert' and 'www.example.com.key' are just
+examples to get you started quickly. They are not intended for daily use.

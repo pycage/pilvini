@@ -1,6 +1,7 @@
 "use strict";
 
 const modCrypto = require("crypto"),
+      modProcess = require("process"),
       modUrl = require("url");
 
 exports.Service = function (config)
@@ -30,7 +31,12 @@ exports.Service = function (config)
 
         if (request.method === "GET")
         {
-            if (uri === "/users")
+            if (uri === "/server")
+            {
+                var obj = m_config.root.server;
+                send(response, JSON.stringify(obj), callback);
+            }
+            else if (uri === "/users")
             {
                 var obj = { };
                 obj.users = m_config.root.users.map(function (item)
@@ -52,7 +58,37 @@ exports.Service = function (config)
         }
         else if (request.method === "POST")
         {
-            if (uri === "/create-user")
+            if (uri === "/configure-server")
+            {
+                var json = "";
+                request.on("data", function (chunk) { json += chunk; });
+                request.on("end", function ()
+                {
+                    var config = JSON.parse(json);
+                    console.log(json);
+                    if (config.listen) m_config.root.server.listen = config.listen;
+                    if (config.port) m_config.root.server.port = config.port;
+                    if (config.use_ssl) m_config.root.server.use_ssl = config.use_ssl;
+                    if (config.root) m_config.root.server.root = config.root;
+                    m_config.write(function (err)
+                    {
+                        if (err)
+                        {
+                            response.writeHeadLogged(500, "Internal Server Error");
+                            response.end();
+                            callback();
+                        }
+                        else
+                        {
+                            response.writeHeadLogged(201, "Created");
+                            response.end();
+                            callback();
+                            modProcess.exit(0);
+                        }
+                    });
+                });
+            }
+            else if (uri === "/create-user")
             {
                 var user = request.headers["x-pilvini-user"] || "";
                 var password = request.headers["x-pilvini-password"] || "";

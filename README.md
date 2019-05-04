@@ -6,13 +6,12 @@
 > **pilvi** *(n.)* cloud<br>
 > **pilvini** my cloud
 
-*pilvini* is a cloud drive service implementing the WebDAV protoctol running on
-Node.js. But this is not all: *pilvini* also features a fancy HTML5 web interface in case you cannot or want not use a WebDAV client.
+*pilvini* is a cloud drive server implementing the WebDAV protoctol running on
+Node.js and featuring a slick HTML5 web interface for easy access.
 
-The purpose of *pilvini* is to make your home filesystem accessible to you worldwide
-in a secure way, SSL-encrypted and guarded by authorization.
+*pilvini* is there to make your home filesystem accessible to you worldwide in a
+secure way and runs on whatever platform Node.js is running.
 
-*pilvini* runs on whatever platform Node.js is running.
 
 ## Features:
 
@@ -25,7 +24,7 @@ in a secure way, SSL-encrypted and guarded by authorization.
      * Recursively open archives inside archives
 
  * Full-featured HTML5 web shell
-   * For desktop, mobile, and TV screen
+   * Designed for use on desktop, mobile, and TV screen
    * File operations (new file / directory, copy, rename, delete, upload, download)
    * Upload data by dragging files or directories from outside the browser window
    * Download directory hierarchies as ZIP files
@@ -41,6 +40,7 @@ in a secure way, SSL-encrypted and guarded by authorization.
      * PDF
      * image
      * video
+     * VCard contacts
    * Preview thumbnails for images, videos, and music files with embedded cover art
    * Create and revoke password-protected directory shares
 
@@ -60,76 +60,61 @@ Run
 # npm install
 ```
 
-to install the `lwip` image processing library and `jszip`.
+to install the package dependencies.
 
-## Configuration
-
-*pilvini* is configured with a JSON file `config.json`. Copy the file
-`config.json.example` over to `config.json` and modify it to your needs with a
-text editor:
-
- * `server` This is the server configuration section.
-   * `listen` This is the listening interface of the server. In most cases, the
-     default value of `0.0.0.0` is just fine.
-   * `port` This is the port where the server listens. Note that privileged
-     ports (below 1024) are only available if *pilvini* is started as super-user
-     (which we do not recommended).
-   * `use_ssl` Set this value to `true` to enable SSL secure connections.
-     For SSL, you will also have to supply a server certificate.
-   * `ssl_certificate` The path to the SSL server certificate if SSL is enabled.
-   * `ssl_key` The path to the SSL server private key if SSL is enabled.
-   * `root` The root path served by *pilvini*. Files outside this path cannot be accessed by any user.
-
- * `authentication` This is the authentication configuration section.
-   * `method` The HTTP authentication method to use. Either `basic` or `digest`.
-   * `realm` The name of the HTTP authentication realm.
-
- * `users` This is the users configuration section. You can add as many users
-   as you like.
-   * `name` The login name of the user.
-   * `password_hash` A MD5 hash of the user's login name, realm, and password.
-     You can obtain one easily with `echo -n "<user>:<realm>:<password>" | md5sum`,
-     or use an online MD5 hash generator, such as
-     [http://www.adamek.biz/md5-generator.php].
-   * `home` This is the path that *pilvini* confines the user to. This path is relative to the `root` path configured for the server.
-   * `fingerprints` An optional list of fingerprints that may be used to identify the user. See **Login via Fingerprint** for details.
-   * `permissions` A list of permissions given to the user. Available permissions are: `CREATE`, `DELETE`, `MODIFY`, `SHARE`, `ADMIN`.
-
- * `global` This is the section for global settings.
-   * `debug` Set this value to true to enable verbose debug logging.
-
-If you are giving other users access to *pilvini*, you should make sure that
-none of them can access its `config.json` file. While the hashed passwords
-cannot be used to reconstruct the password, it is possible to find a matching
-string by brute-force or to construct one mathematically!
-
-## Running
+## First Setup
 
 Start the server with
 ```
 # node pilvini.js
 ```
-and *pilvini* welcomes you and is ready for incoming connections:
+and *pilvini* welcomes you with:
 ```
-                   | Version 0.1.0
+No configuration found. Using initial configuration.
+
+                   | Version 0.2.0
    .-------.       |
-  ( Pilvini ).--.  | (c) 2017 Martin Grimme
+  ( Pilvini ).--.  | (c) 2017 - 2019 Martin Grimme
  (  Cloud Drive  ) | https://github.com/pycage/pilvini
   ```````````````  |
-Listening....      | Port 7443 (SSL)
+Listening....      | Port 8000
+```
+Since you have not configured *pilvini* yet, it uses its built-in initial configuration.
+Connect your webbrowser to port 8000 on the server where *pilvini* is running,
+e.g.
+```
+http://localhost:8000/::shell/
+```
+![](doc/shell-login.jpg)
+
+By default, there is an administrator user created with login name `admin`
+and password `admin`. Login and click the menu button in the top-right corner.
+
+![](doc/shell-menu.png)
+
+Select `Administration` from the menu to enter the administration interface.
+
+Here you can change the server settings and create new users. It is highly recommended
+to create a new user with `ADMIN` permission and delete the default user `admin`.
+
+![](doc/shell-create-user.png)
+
+*pilvini* stores its configuration in the file `config.json` in its installation directory.
+
+If you are giving other users access to *pilvini*, you should make sure that
+none of them can access this directory. While the hashed passwords
+cannot be used to reconstruct the password, it is possible to find a matching
+string by brute-force or to construct one mathematically!
+
+## Access via WebDAV
+
+*pilvini* is a WebDAV server. Point your WebDAV client of choice to where *pilvini*
+is listening for connections, e.g.:
+```
+https://pilvini.mydomain.org/index.html
 ```
 
-## Usage
-
-After the *pilvini* server is started, you can use a WebDAV client to connect
-to the port you configured and login as the user you configured.
-
-To use the HTML5 shell, open the `/::shell/` document in a web browser supporting HTML5 (which is pretty much any recent browser).
-```
-https://<address>:<port>/::shell/
-```
-
-## Windows Explorer and WebDAV
+### Known Issues with Windows Explorer and WebDAV
 
 While Windows Explorer theoretically supports the WebDAV protocol for mounting
 remote shares, it is in practise very picky.
@@ -148,35 +133,16 @@ remote shares, it is in practise very picky.
    As a consequence of this it sends every request twice. First unauthorized,
    then authorized.
 
-## Login via Fingerprint
+## Access via the Web Shell
 
-Client fingerprints may be used as an alternative authentication method for password-less
-user login. *pilvini* determines a unique fingerprint of the client and if the fingerprint
-matches one in its registry of fingerprints, the user is authenticated automatically.
-Users are allowed to have multiple fingerprints in the registry in order to give them access
-from different clients.
+![](doc/shell.png)
 
-There are two types of fingerprints. Address-bound fingerprints are tied to a certain IP address,
-while roaming fingerprints are not tied to an IP address. Roaming fingerprints are useful for
-mobile users which get new IP address often.
+The web shell lets you access *pilvini* in a web browser, so you don't need a
+WebDAV client.
 
-Watch the server log to find the normal and roaming fingerprints of a client connection.
-
-**Note:** Clients identified by fingerprint cannot log out or log in to another user account.
-
-**Note:** Fingerprint-based authentication may pose a security risk as it is not ruled out that
-fingerprints (especially roaming fingerprints) can be spoofed with some effort. Do not configure
-fingerprint login if you believe this could be a security issue.
-
-
-
-## The Shell
-
-![](apple-touch-icon.png)
-
-The shell is *pilvini*'s snappy HTML5 web interface. Open the `/::shell/` document in a web browser and login with a user name and password.
+Open the `/::shell/` document in a web browser supporting HTML5 (which is pretty much any recent browser), e.g.:
 ```
-https://<address>:<port>/::shell/
+https://pilvini.mydomain.org/::shell/
 ```
 
 ### Navigation

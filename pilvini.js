@@ -5,6 +5,7 @@ const modCrypto = require("crypto"),
       modHttp = require("http"),
       modHttps = require("https"),
       modPath = require("path"),
+      modProcess = require("process"),
       modUrl = require("url");
 
 const modCodeAuth = require("./modules/codeauth.js"),
@@ -602,9 +603,17 @@ var services = {
 var server;
 if (CONFIG.root.server.use_ssl)
 {
-    var sslServerKey = modFs.readFileSync(modPath.join(__dirname, CONFIG.root.server.ssl_key), "utf8");
-    var sslServerCert = modFs.readFileSync(modPath.join(__dirname, CONFIG.root.server.ssl_certificate), "utf8");
-    server = modHttps.createServer({ key: sslServerKey, cert: sslServerCert });
+    try
+    {
+        var sslServerKey = modFs.readFileSync(modPath.join(__dirname, CONFIG.root.server.ssl_key), "utf8");
+        var sslServerCert = modFs.readFileSync(modPath.join(__dirname, CONFIG.root.server.ssl_certificate), "utf8");
+        server = modHttps.createServer({ key: sslServerKey, cert: sslServerCert });
+    }
+    catch (err)
+    {
+        console.error("Invalid or missing server certificate or key: " + err);
+        modProcess.exit(1);
+    }
 }
 else
 {
