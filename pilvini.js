@@ -479,7 +479,8 @@ function handleRequest(request, response)
         readRequest(request, function(xml)
         {
             console.debug(xml);
-            response.setHeader("DAV", "2");
+            response.setHeader("DAV", "1, 2");
+            response.writeHeadLogged(200, "OK");
             response.end();
         });
     }

@@ -310,7 +310,7 @@ function initLogin()
         .add(
             sh.element(sh.Labeled).text("Login:")
             .add(
-                sh.element(sh.TextInput).id("login")
+                sh.element(sh.TextInput).id("login").focus(true)
             )
         )
         .add(

@@ -260,7 +260,6 @@ function makeJson(uri, contentRoot, userContext, shares, callback)
         };
 
         var json = JSON.stringify(obj, 4);
-        console.log(json);
         callback(true, json);
     });
 

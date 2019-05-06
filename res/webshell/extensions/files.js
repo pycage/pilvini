@@ -160,7 +160,7 @@ var files = { };
         .add(
             sh.element(sh.Labeled).text("Share Login:")
             .add(
-                sh.element(sh.TextInput).id("login")
+                sh.element(sh.TextInput).id("login").focus(true)
             )
         )
         .add(
@@ -232,7 +232,7 @@ var files = { };
         .add(
             sh.element(sh.Labeled).text("Name:")
             .add(
-                sh.element(sh.TextInput).id("name")
+                sh.element(sh.TextInput).id("name").focus(true)
             )
         )
         .button(
@@ -281,7 +281,7 @@ var files = { };
         .add(
             sh.element(sh.Labeled).text("Name:")
             .add(
-                sh.element(sh.TextInput).id("name")
+                sh.element(sh.TextInput).id("name").focus(true)
             )
         )
         .button(
@@ -674,7 +674,7 @@ var files = { };
         .add(
             sh.element(sh.Labeled).text("Name:")
             .add(
-                sh.element(sh.TextInput).id("name").text(name)
+                sh.element(sh.TextInput).id("name").text(name).focus(true)
             )
         )
         .button(

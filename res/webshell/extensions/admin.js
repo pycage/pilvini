@@ -70,7 +70,7 @@
         .add(
             sh.element(sh.Labeled).text("Listen Address:")
             .add(
-                sh.element(sh.TextInput).id("listen").text(listenAddress)
+                sh.element(sh.TextInput).id("listen").text(listenAddress).focus(true)
             )
         )
         .add(
@@ -189,7 +189,7 @@
         .add(
             sh.element(sh.Labeled).text("Name:")
             .add(
-                sh.element(sh.TextInput).id("name").text("user")
+                sh.element(sh.TextInput).id("name").text("user").focus(true)
             )
         )
         .add(

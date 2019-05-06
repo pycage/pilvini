@@ -659,6 +659,7 @@ sh.Dialog = function ()
     var m_dialog = $(
         sh.tag("form").class("sh-popup")
         .on("click", "event.stopPropagation();")
+        .on("submit", "return false;")
         .content(
             sh.tag("div").class("sh-dropshadow")
             .style("background-color", "var(--color-primary-background)")
@@ -668,7 +669,7 @@ sh.Dialog = function ()
             .content(
                 sh.tag("header")
                 .content(
-                    sh.tag("h1").class("sh-left")
+                    sh.tag("h1")
                     .content("")
                 )
             )
@@ -857,10 +858,12 @@ sh.TextInput = function ()
 {
     Object.defineProperties(this, {
         text: { set: setText, get: text, enumerable: true },
-        password: { set: setPassword, get: password, enumerable: true }
+        password: { set: setPassword, get: password, enumerable: true },
+        focus: { set: setFocus, get: focus, enumerable: true }
     });
 
     var m_password = false;
+    var m_focus = false;
 
     var m_input = $(
         sh.tag("input").attr("type", "text")
@@ -893,6 +896,17 @@ sh.TextInput = function ()
     function password()
     {
         return m_password;
+    }
+
+    function setFocus(value)
+    {
+        m_input.prop("autofocus", value);
+        m_focus = value;
+    }
+
+    function focus()
+    {
+        return m_focus;
     }
 };
 
