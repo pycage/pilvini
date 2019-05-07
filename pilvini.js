@@ -18,12 +18,7 @@ const modCodeAuth = require("./modules/codeauth.js"),
       modUserContext = require("./modules/usercontext.js"),
       modUtils = require("./modules/utils.js");
 
-const svcAdmin = require("./modules/services/admin-service.js"),
-      svcImageOfTheDay = require("./modules/services/image-of-the-day-service.js"),
-      svcLogin = require("./modules/services/login-service.js"),
-      svcRes = require("./modules/services/res-service.js"),
-      svcShell = require("./modules/services/shell-service.js"),
-      svcThumbnail = require("./modules/services/thumbnail-service.js");
+const svcLogin = require("./modules/services/login-service.js");
 
 const VERSION = "0.2.0rc";
 
@@ -32,7 +27,14 @@ const VERSION = "0.2.0rc";
 exports.requireShared = function (name)
 {
     return require(modPath.join(__dirname, "modules", name + ".js"));
-}
+};
+
+/* Returns the server's home directory.
+ */
+exports.serverHome = function ()
+{
+    return __dirname;
+};
 
 
 
@@ -607,19 +609,19 @@ CONFIG.root.users.forEach(function (u)
 
 // setup services
 var services = {
-    "admin": new svcAdmin.Service(CONFIG),
-    "image-of-the-day": new svcImageOfTheDay.Service(CONFIG.root.server.root),
-    "login": new svcLogin.Service(codeAuthenticator),
-    "res": new svcRes.Service(CONFIG.root.server.root, modPath.join(__dirname, "res")),
-    "shell": new svcShell.Service(CONFIG.root.server.root),
-    "thumbnail": new svcThumbnail.Service(CONFIG.root.server.root)
+    "login": new svcLogin.Service(codeAuthenticator)
 };
 
 var servicesDirs = [
-    modPath.join(__dirname, "services")
+    modPath.join(__dirname, "services"),
+    modPath.join(__dirname, "services-nonfree")
 ];
 servicesDirs.forEach(function (path)
 {
+    if (! modFs.existsSync(path))
+    {
+        return;
+    }
     var items = modFs.readdirSync(path);
     items.forEach(function (item)
     {

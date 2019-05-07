@@ -1,14 +1,15 @@
 "use strict";
 
+var requireShared = require.main.exports.requireShared;
+
 const modPath = require("path"),
       modUrl = require("url");
 
-const modUtils = require("../utils.js");
+const modUtils = requireShared("utils");
 
-var Service = function (contentRoot, resourceRoot)
+var Service = function (config)
 {
-    var m_contentRoot = contentRoot;
-    var m_resourceRoot = resourceRoot;
+    var m_resourceRoot = modPath.join(require.main.exports.serverHome(), "res");
 
     this.handleRequest = function (request, response, userContext, shares, callback)
     {

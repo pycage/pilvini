@@ -3,7 +3,7 @@
 var modHttp = require("http"),
     modUrl = require("url");
 
-var Service = function (contentRoot)
+var Service = function (config)
 {
     var m_currentBackground = null;
     var m_currentDescription = "";

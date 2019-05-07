@@ -1,10 +1,12 @@
 "use strict";
 
+var requireShared = require.main.exports.requireShared;
+
 const modPath = require("path"),
-      modHtml = require("./html.js"),
-      modMime = require("./mime.js"),
-      modUtils = require("./utils.js"),
-      modVfs = require("./vfs.js");
+      modHtml = requireShared("html"),
+      modMime = requireShared("mime"),
+      modUtils = requireShared("utils"),
+      modVfs = requireShared("vfs");
 
 const MIME_INFO = {
     "application/java-archive": { "icon": "package.png" },

@@ -1,13 +1,15 @@
 "use strict";
 
+var requireShared = require.main.exports.requireShared;
+
 const modCrypto = require("crypto"),
       modPath = require("path"),
       modUrl = require("url");
 
-const modMime = require("../mime.js"),
-      modUtils = require("../utils.js"),
-      modThumbnail = require("../thumbnail.js"),
-      modVfs = require("../vfs.js");
+const modMime = requireShared("mime"),
+      modUtils = requireShared("utils"),
+      modThumbnail = require("./thumbnail/thumbnail.js"),
+      modVfs = requireShared("vfs");
 
 
 function loadOrCreateThumbnail(targetFile, thumbDir, thumbFile, maxWidth, maxHeight, response, callback)
@@ -97,10 +99,10 @@ function writeThumbnail(thumbDir, thumbFile, stream, response, callback)
 }
 
 
-var Service = function (contentRoot)
+var Service = function (config)
 {
-    var m_contentRoot = contentRoot;
-    var m_thumbDir = modPath.join(contentRoot, ".pilvini", "thumbnails");
+    var m_contentRoot = config.root.server.root;
+    var m_thumbDir = modPath.join(m_contentRoot, ".pilvini", "thumbnails");
 
     this.handleRequest = function (request, response, userContext, shares, callback)
     {

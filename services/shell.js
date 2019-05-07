@@ -1,12 +1,14 @@
 "use strict";
 
+var requireShared = require.main.exports.requireShared;
+
 const modUrl = require("url");
 
-const modBrowser = require("../browser.js");
+const modBrowser = require("./shell/browser.js");
 
-var Service = function (contentRoot)
+var Service = function (config)
 {
-    var m_contentRoot = contentRoot;
+    var m_contentRoot = config.root.server.root;
 
     this.handleRequest = function (request, response, userContext, shares, callback)
     {

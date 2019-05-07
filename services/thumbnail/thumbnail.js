@@ -1,12 +1,21 @@
 "use strict";
 
-const attempt = require("./attempt.js").attempt;
+var requireShared = require.main.exports.requireShared;
 
-const modFs = require("fs"),
-      modLwip = attempt(function () { return require("lwip"); });
+const modFs = require("fs");
 
-const modId3Tags = require("./id3tags"),
-      modVfs = require("./vfs.js");
+const modId3Tags = requireShared("id3tags"),
+      modVfs = requireShared("vfs");
+
+try
+{
+    const modLwip = require("lwip");
+}
+catch (err)
+{
+    const modLwip = null;
+}
+
 
 exports.makeThumbnail = function (mimeType, file, thumbFile, maxWidth, maxHeight, callback)
 {
