@@ -4,7 +4,7 @@ var requireShared = require.main.exports.requireShared;
 
 const modUrl = require("url");
 
-const modId3Tags = require("./tags/id3tags.js"),
+const modId3Tags = requireShared("id3tags"),
       modUtils = requireShared("utils");
 
 var Service = function (config)
