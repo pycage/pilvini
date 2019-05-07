@@ -15,7 +15,7 @@ exports.Config = function (configFile)
         },
     
         "authentication": {
-            "method": "basic",
+            "method": "digest",
             "realm": "pilvini"
         },
     
