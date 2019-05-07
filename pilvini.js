@@ -23,10 +23,18 @@ const svcAdmin = require("./modules/services/admin-service.js"),
       svcLogin = require("./modules/services/login-service.js"),
       svcRes = require("./modules/services/res-service.js"),
       svcShell = require("./modules/services/shell-service.js"),
-      svcTags = require("./modules/services/tags-service.js"),
       svcThumbnail = require("./modules/services/thumbnail-service.js");
 
 const VERSION = "0.2.0rc";
+
+/* Loads a shared module by name.
+ */
+exports.requireShared = function (name)
+{
+    return require(modPath.join(__dirname, "modules", name + ".js"));
+}
+
+
 
 console.debug = function(msg)
 {
@@ -551,6 +559,14 @@ function handleRequest(request, response)
 }
 
 
+// say hello!
+console.log("                   | Version " + VERSION)
+console.log("   .-------.       |");
+console.log("  ( Pilvini ).--.  | (c) 2017 - 2019 Martin Grimme");
+console.log(" (  Cloud Drive  ) | https://github.com/pycage/pilvini");
+console.log("  ```````````````  |");
+console.log("                   |")
+
 // read configuration
 var configPath = modPath.join(__dirname, "config.json");
 var CONFIG = new modConfig.Config(configPath);
@@ -596,9 +612,38 @@ var services = {
     "login": new svcLogin.Service(codeAuthenticator),
     "res": new svcRes.Service(CONFIG.root.server.root, modPath.join(__dirname, "res")),
     "shell": new svcShell.Service(CONFIG.root.server.root),
-    "tags": new svcTags.Service(CONFIG.root.server.root),
     "thumbnail": new svcThumbnail.Service(CONFIG.root.server.root)
 };
+
+var servicesDirs = [
+    modPath.join(__dirname, "services")
+];
+servicesDirs.forEach(function (path)
+{
+    var items = modFs.readdirSync(path);
+    items.forEach(function (item)
+    {
+        if (item.endsWith(".js"))
+        {
+            var name = item.replace(/\.js$/, "");
+            try
+            {
+                var module = require(modPath.join(path, item));
+                services[name] = new module.Service(CONFIG);
+            }
+            catch (err)
+            {
+                console.error("Failed to load service: " + name + " (" + err + ")");
+            }
+        }
+    });
+});
+for (var svc in services)
+{
+    console.log("Service loaded     | " + svc);
+}
+console.log("                   |");
+
 
 // setup HTTP server
 var server;
@@ -625,10 +670,5 @@ else
 server.on("request", handleRequest);
 server.listen(CONFIG.root.server.port, CONFIG.root.server.listen);
 
-console.log("                   | Version " + VERSION)
-console.log("   .-------.       |");
-console.log("  ( Pilvini ).--.  | (c) 2017 - 2019 Martin Grimme");
-console.log(" (  Cloud Drive  ) | https://github.com/pycage/pilvini");
-console.log("  ```````````````  |");
 console.log("Listening....      | Port " + CONFIG.root.server.port + " " + (CONFIG.root.server.use_ssl ? "(SSL)" : ""));
 console.log("");

@@ -1,13 +1,15 @@
 "use strict";
 
+var requireShared = require.main.exports.requireShared;
+
 const modUrl = require("url");
 
-const modId3Tags = require("../id3tags.js"),
-      modUtils = require("../utils.js");
+const modId3Tags = require("./tags/id3tags.js"),
+      modUtils = requireShared("utils");
 
-var Service = function (contentRoot)
+var Service = function (config)
 {
-    var m_contentRoot = contentRoot;
+    var m_contentRoot = config.root.server.root;
 
     this.handleRequest = function (request, response, userContext, shares, callback)
     {

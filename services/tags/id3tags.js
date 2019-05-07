@@ -1,8 +1,10 @@
 "use strict";
 
+var requireShared = require.main.exports.requireShared;
+
 const modZlib = require("zlib");
 
-const modVfs = require("./vfs.js");
+const modVfs = requireShared("vfs");
 
 const TAGS_MAP = {
     "APIC": "PICTURE",
