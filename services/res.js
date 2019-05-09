@@ -31,8 +31,16 @@ function Service(config)
         {
             if (res.startsWith(prefix))
             {
-                var targetFile = m_resourceMap[prefix] + res.substr(res.indexOf("/"));
-                modUtils.getFile(response, targetFile);
+                var targetFile = modPath.normalize(m_resourceMap[prefix] + res.substr(res.indexOf("/")));
+                if (targetFile.startsWith(m_resourceMap[prefix]))
+                {
+                    modUtils.getFile(response, targetFile);
+                }
+                else
+                {
+                    response.writeHeadLogged(403, "Forbidden");
+                    response.end();
+                }
                 callback();
                 return;
             }
