@@ -232,23 +232,23 @@ function logout()
 function init()
 {
     var js = [
-        "/::res/shellfish/core/low.js",
-        "/::res/shellfish/core/mid.js",
-        "/::res/shellfish/core/high.js",
-        "/::res/webshell/file.js",
-        "/::res/webshell/ui.js",
-        "/::res/webshell/upload.js",
+        "/::res/shell/shellfish/core/low.js",
+        "/::res/shell/shellfish/core/mid.js",
+        "/::res/shell/shellfish/core/high.js",
+        "/::res/shell/file.js",
+        "/::res/shell/ui.js",
+        "/::res/shell/upload.js",
 
-        "/::res/webshell/extensions/files.js",
-        "/::res/webshell/extensions/admin.js",
-        "/::res/webshell/extensions/audio.js",
-        "/::res/webshell/extensions/image.js",
-        "/::res/webshell/extensions/markdown.js",
-        "/::res/webshell/extensions/pdf.js",
-        "/::res/webshell/extensions/text.js",
-        "/::res/webshell/extensions/tips.js",
-        "/::res/webshell/extensions/vcard.js",
-        "/::res/webshell/extensions/video.js"
+        "/::res/shell/extensions/files.js",
+        "/::res/shell/extensions/admin.js",
+        "/::res/shell/extensions/audio.js",
+        "/::res/shell/extensions/image.js",
+        "/::res/shell/extensions/markdown.js",
+        "/::res/shell/extensions/pdf.js",
+        "/::res/shell/extensions/text.js",
+        "/::res/shell/extensions/tips.js",
+        "/::res/shell/extensions/vcard.js",
+        "/::res/shell/extensions/video.js"
     ];
     importJs(js, function ()
     {
@@ -332,10 +332,10 @@ function initLogin()
     }
 
     var js = [
-        "/::res/shellfish/core/low.js",
-        "/::res/shellfish/core/mid.js",
-        "/::res/shellfish/core/high.js",
-        "/::res/webshell/ui.js"
+        "/::res/shell/shellfish/core/low.js",
+        "/::res/shell/shellfish/core/mid.js",
+        "/::res/shell/shellfish/core/high.js",
+        "/::res/shell/ui.js"
     ];
     importJs(js, function ()
     {

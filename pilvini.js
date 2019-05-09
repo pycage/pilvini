@@ -42,6 +42,21 @@ exports.registerService = function (name, handler)
     services[name] = handler;
 };
 
+/* Registers a resource.
+ */
+exports.registerResource = function (prefix, location)
+{
+    if (! resourceMap[prefix])
+    {
+        resourceMap[prefix] = location;
+    }
+    else
+    {
+        console.error("Cannot register resource location '" + location + "'. " +
+                      "Prefix '" + prefix + "' is already in use.");
+    }
+};
+
 
 
 console.debug = function(msg)
@@ -54,6 +69,7 @@ console.debug = function(msg)
     }
 };
 
+var resourceMap = { };
 
 var TransferTracker = function (url)
 {
@@ -645,6 +661,10 @@ servicesDirs.forEach(function (path)
             if (name === "login")
             {
                 services[name].setAuthenticator(codeAuthenticator);
+            }
+            else if (name === "res")
+            {
+                services[name].setResourceMap(resourceMap);
             }
         }
     });

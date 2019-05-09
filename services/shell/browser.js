@@ -45,11 +45,11 @@ function getIcon(mimeType)
     var info = MIME_INFO[mimeType];
     if (info)
     {
-        return "/::res/file-icons/" + info.icon;
+        return "/::res/shell/file-icons/" + info.icon;
     }
     else
     {
-        return "/::res/file-icons/text.png"
+        return "/::res/shell/file-icons/text.png"
     }
 }
 
@@ -161,32 +161,32 @@ function makeHtmlHead(initFunction)
                 .attr("rel", "icon")
                 .attr("type", "image/png")
                 .attr("sizes", "192x192")
-                .attr("href", "/::res/favicon.png")
+                .attr("href", "/::res/shell/favicon.png")
             )
             .content(
                 tag("link")
                 .attr("rel", "icon")
                 .attr("type", "image/png")
                 .attr("sizes", "32x32")
-                .attr("href", "/::res/favicon-32x32.png")
+                .attr("href", "/::res/shell/favicon-32x32.png")
             )
             .content(
                 tag("link")
                 .attr("rel", "apple-touch-icon")
                 .attr("type", "image/png")
                 .attr("sizes", "180x180")
-                .attr("href", "/::res/apple-touch-icon.png")
+                .attr("href", "/::res/shell/apple-touch-icon.png")
             )
             .content(
                 tag("link")
                 .attr("rel", "stylesheet")
-                .attr("href", "/::res/shellfish/style/shellfish.css")
+                .attr("href", "/::res/shell/shellfish/style/shellfish.css")
             )
             .content(
-                tag("script").attr("src", "/::res/jquery-2.1.4.min.js")
+                tag("script").attr("src", "/::res/shell/jquery-2.1.4.min.js")
             )
             .content(
-                tag("script").attr("src", "/::res/webshell/index.js")
+                tag("script").attr("src", "/::res/shell/index.js")
             )
             .content(
                 tag("script")

@@ -14,14 +14,32 @@ exports.init = function (config)
 
 function Service(config)
 {
-    var m_resourceRoot = modPath.join(require.main.exports.serverHome(), "res");
+    //var m_resourceRoot = modPath.join(require.main.exports.serverHome(), "res");
+    var m_resourceMap = { };
+
+    this.setResourceMap = function (map)
+    {
+        m_resourceMap = map;
+    };
 
     this.handleRequest = function (request, response, userContext, shares, callback)
     {
         var urlObj = modUrl.parse(request.url, true);
         var res = urlObj.pathname.substr(7);
-        var targetFile = modPath.join(m_resourceRoot, res);
-        modUtils.getFile(response, targetFile);
+
+        for (var prefix in m_resourceMap)
+        {
+            if (res.startsWith(prefix))
+            {
+                var targetFile = m_resourceMap[prefix] + res.substr(res.indexOf("/"));
+                modUtils.getFile(response, targetFile);
+                callback();
+                return;
+            }
+        }
+
+        response.writeHeadLogged(404, "Not found");
+        response.end();
         callback();
     };
 }

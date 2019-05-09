@@ -2,13 +2,15 @@
 
 var requireShared = require.main.exports.requireShared;
 
-const modUrl = require("url");
+const modPath = require("path"),
+      modUrl = require("url");
 
 const modBrowser = require("./shell/browser.js");
 
 exports.init = function (config)
 {
     require.main.exports.registerService("shell", new Service(config));
+    require.main.exports.registerResource("shell", modPath.join(__dirname, "shell", "www"));
 };
 
 function Service(config)
