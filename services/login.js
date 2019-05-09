@@ -1,8 +1,18 @@
 "use strict";
 
-var Service = function (authenticator)
+exports.init = function (config)
 {
-    var m_authenticator = authenticator;
+    require.main.exports.registerService("login", new Service(config));
+};
+
+function Service(config)
+{
+    var m_authenticator = null;
+
+    this.setAuthenticator = function (authenticator)
+    {
+        m_authenticator = authenticator;
+    }
 
     this.handleRequest = function (request, response, authUsers, authCode)
     {
@@ -41,4 +51,4 @@ var Service = function (authenticator)
         }
     };
 }
-exports.Service = Service;
+

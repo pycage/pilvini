@@ -7,7 +7,12 @@ const modUrl = require("url");
 const modId3Tags = requireShared("id3tags"),
       modUtils = requireShared("utils");
 
-var Service = function (config)
+exports.init = function (config)
+{
+    require.main.exports.registerService("tags", new Service(config));
+};
+
+function Service(config)
 {
     var m_contentRoot = config.root.server.root;
 
@@ -48,5 +53,4 @@ var Service = function (config)
             }
         });
     };
-};
-exports.Service = Service;
+}

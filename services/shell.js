@@ -6,7 +6,12 @@ const modUrl = require("url");
 
 const modBrowser = require("./shell/browser.js");
 
-var Service = function (config)
+exports.init = function (config)
+{
+    require.main.exports.registerService("shell", new Service(config));
+};
+
+function Service(config)
 {
     var m_contentRoot = config.root.server.root;
 
@@ -81,5 +86,4 @@ var Service = function (config)
 
         modBrowser.makeLoginPage(cb);
     };
-};
-exports.Service = Service;
+}

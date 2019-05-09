@@ -11,6 +11,10 @@ const modMime = requireShared("mime"),
       modThumbnail = require("./thumbnail/thumbnail.js"),
       modVfs = requireShared("vfs");
 
+exports.init = function (config)
+{
+    require.main.exports.registerService("thumbnail", new Service(config));
+};
 
 function loadOrCreateThumbnail(targetFile, thumbDir, thumbFile, maxWidth, maxHeight, response, callback)
 {
@@ -99,7 +103,7 @@ function writeThumbnail(thumbDir, thumbFile, stream, response, callback)
 }
 
 
-var Service = function (config)
+function Service(config)
 {
     var m_contentRoot = config.root.server.root;
     var m_thumbDir = modPath.join(m_contentRoot, ".pilvini", "thumbnails");
@@ -138,5 +142,4 @@ var Service = function (config)
             });
         }
     };
-};
-exports.Service = Service;
+}

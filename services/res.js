@@ -7,7 +7,12 @@ const modPath = require("path"),
 
 const modUtils = requireShared("utils");
 
-var Service = function (config)
+exports.init = function (config)
+{
+    require.main.exports.registerService("res", new Service(config));
+};
+
+function Service(config)
 {
     var m_resourceRoot = modPath.join(require.main.exports.serverHome(), "res");
 
@@ -19,5 +24,4 @@ var Service = function (config)
         modUtils.getFile(response, targetFile);
         callback();
     };
-};
-exports.Service = Service;
+}

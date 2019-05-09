@@ -4,7 +4,12 @@ const modCrypto = require("crypto"),
       modProcess = require("process"),
       modUrl = require("url");
 
-exports.Service = function (config)
+exports.init = function (config)
+{
+    return require.main.exports.registerService("admin", new Service(config));
+}
+
+function Service(config)
 {
     var m_config = config;
 
@@ -136,4 +141,4 @@ exports.Service = function (config)
             }
         }
     };
-};
+}

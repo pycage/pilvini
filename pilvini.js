@@ -18,7 +18,6 @@ const modCodeAuth = require("./modules/codeauth.js"),
       modUserContext = require("./modules/usercontext.js"),
       modUtils = require("./modules/utils.js");
 
-const svcLogin = require("./modules/services/login-service.js");
 
 const VERSION = "0.2.0rc";
 
@@ -34,6 +33,13 @@ exports.requireShared = function (name)
 exports.serverHome = function ()
 {
     return __dirname;
+};
+
+/* Registers a service.
+ */
+exports.registerService = function (name, handler)
+{
+    services[name] = handler;
 };
 
 
@@ -198,6 +204,7 @@ function handleRequest(request, response)
     var contentRoot = CONFIG.root.server.root;
     var urlObj = modUrl.parse(request.url, true);
     var shares = new modShares.Shares(contentRoot);
+    var serviceName = serviceOf(urlObj.pathname);
 
     // setup users
     var authUsers = { };
@@ -217,7 +224,7 @@ function handleRequest(request, response)
     var authCookie = modCookies.getCookie(request, "AuthCode");
     console.debug("Auth Cookie: " + authCookie.name() + " = " + authCookie.value());
     var authenticator;
-    if (authCookie.name() === "AuthCode" || urlObj.pathname.indexOf("/::shell/") === 0)
+    if (authCookie.name() === "AuthCode") // || serviceName === "shell")
     {
         authenticator = codeAuthenticator;
     }
@@ -336,7 +343,6 @@ function handleRequest(request, response)
     } ());
 
 
-    var serviceName = serviceOf(urlObj.pathname);
     if (serviceName === "login")
     {
         services[serviceName].handleRequest(request, response, authUsers, authCookie.value());
@@ -608,9 +614,7 @@ CONFIG.root.users.forEach(function (u)
 });
 
 // setup services
-var services = {
-    "login": new svcLogin.Service(codeAuthenticator)
-};
+var services = { };
 
 var servicesDirs = [
     modPath.join(__dirname, "services"),
@@ -631,11 +635,16 @@ servicesDirs.forEach(function (path)
             try
             {
                 var module = require(modPath.join(path, item));
-                services[name] = new module.Service(CONFIG);
+                module.init(CONFIG);
             }
             catch (err)
             {
                 console.error("Failed to load service: " + name + " (" + err + ")");
+            }
+
+            if (name === "login")
+            {
+                services[name].setAuthenticator(codeAuthenticator);
             }
         }
     });

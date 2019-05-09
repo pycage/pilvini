@@ -3,7 +3,12 @@
 var modHttp = require("http"),
     modUrl = require("url");
 
-var Service = function (config)
+exports.init = function (config)
+{
+    require.main.exports.registerService("image-of-the-day", new Service(config));
+};
+
+function Service(config)
 {
     var m_currentBackground = null;
     var m_currentDescription = "";
@@ -113,5 +118,4 @@ var Service = function (config)
 
         req.end();
     };
-};
-exports.Service = Service;
+}
