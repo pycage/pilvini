@@ -141,7 +141,7 @@ function makeFilesJson(uri, stats)
 }
 
 
-function makeHtmlHead(initFunction)
+function makeHtmlHead(initFunction, extensions)
 {
     var tag = modHtml.tag;
     var t = tag("head")
@@ -178,20 +178,25 @@ function makeHtmlHead(initFunction)
                 .attr("href", "/::res/shell/apple-touch-icon.png")
             )
             .content(
-                tag("link")
-                .attr("rel", "stylesheet")
-                .attr("href", "/::res/shell/shellfish/style/shellfish.css")
-            )
-            .content(
                 tag("script").attr("src", "/::res/shell/jquery-2.1.4.min.js")
             )
             .content(
                 tag("script").attr("src", "/::res/shell/index.js")
-            )
-            .content(
-                tag("script")
-                .content("$(document).ready(" + initFunction + ");")
             );
+
+    /*
+    extensions.forEach(function (uri)
+    {
+        t.content(
+            tag("script").attr("src", uri)
+        );
+    });
+    */
+
+    t.content(
+        tag("script")
+        .content("$(document).ready(function () { " + initFunction + "(" + JSON.stringify(extensions) + "); });") 
+    );
 
     return t;
 }
@@ -217,12 +222,12 @@ function makeSharesJson(userHome, shares)
     return result;
 }
 
-function makeHtml()
+function makeHtml(extensions)
 {
     var tag = modHtml.tag;
     var t = tag("html")
             .content(
-                makeHtmlHead("init")
+                makeHtmlHead("init", extensions)
             )
             .content(
                 tag("body").class("sh-theme-default")
@@ -269,9 +274,9 @@ function makeJson(uri, contentRoot, userContext, shares, callback)
 exports.makeJson = makeJson;
 
 
-function makeIndex(callback)
+function makeIndex(extensions, callback)
 {
-    var html = "<!DOCTYPE html>\n" + makeHtml().html();
+    var html = "<!DOCTYPE html>\n" + makeHtml(extensions).html();
     callback(true, html);
 }
 exports.makeIndex = makeIndex;
@@ -282,7 +287,7 @@ function makeLoginPage(callback)
     var tag = modHtml.tag;
     var t = tag("html")
             .content(
-                makeHtmlHead("initLogin")
+                makeHtmlHead("initLogin", [])
             )
             .content(
                 tag("body").class("sh-theme-default")

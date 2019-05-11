@@ -29,7 +29,7 @@ function Service(config)
 
         for (var prefix in m_resourceMap)
         {
-            if (res.startsWith(prefix))
+            if (res.startsWith(prefix + "/"))
             {
                 var targetFile = modPath.normalize(m_resourceMap[prefix] + res.substr(res.indexOf("/")));
                 if (targetFile.startsWith(m_resourceMap[prefix]))

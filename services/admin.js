@@ -1,13 +1,17 @@
 "use strict";
 
 const modCrypto = require("crypto"),
+      modPath = require("path"),
       modProcess = require("process"),
       modUrl = require("url");
 
 exports.init = function (config)
 {
-    return require.main.exports.registerService("admin", new Service(config));
-}
+    require.main.exports.registerService("admin", new Service(config));
+    require.main.exports.registerResource("admin", modPath.join(__dirname, "admin"));
+
+    require.main.exports.registerShellExtension("/::res/admin/admin.js");
+};
 
 function Service(config)
 {

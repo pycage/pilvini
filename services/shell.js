@@ -11,11 +11,19 @@ exports.init = function (config)
 {
     require.main.exports.registerService("shell", new Service(config));
     require.main.exports.registerResource("shell", modPath.join(__dirname, "shell", "www"));
+
+    require.main.exports.registerShellExtension("/::res/shell/extensions/tips.js");
 };
 
 function Service(config)
 {
     var m_contentRoot = config.root.server.root;
+    var m_extensions = [];
+
+    this.setExtensions = function (ext)
+    {
+        m_extensions = ext;
+    };
 
     this.handleRequest = function (request, response, userContext, shares, callback)
     {
@@ -53,7 +61,7 @@ function Service(config)
             }
             else
             {
-                modBrowser.makeIndex(cb);
+                modBrowser.makeIndex(m_extensions, cb);
             }
         }
         else if (request.method === "POST")

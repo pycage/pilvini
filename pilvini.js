@@ -57,6 +57,13 @@ exports.registerResource = function (prefix, location)
     }
 };
 
+/* Registers a shell extension.
+ */
+exports.registerShellExtension = function (uri)
+{
+    shellExtensions.push(uri);
+};
+
 
 
 console.debug = function(msg)
@@ -70,6 +77,7 @@ console.debug = function(msg)
 };
 
 var resourceMap = { };
+var shellExtensions = [];
 
 var TransferTracker = function (url)
 {
@@ -657,15 +665,6 @@ servicesDirs.forEach(function (path)
             {
                 console.error("Failed to load service: " + name + " (" + err + ")");
             }
-
-            if (name === "login")
-            {
-                services[name].setAuthenticator(codeAuthenticator);
-            }
-            else if (name === "res")
-            {
-                services[name].setResourceMap(resourceMap);
-            }
         }
     });
 });
@@ -674,6 +673,10 @@ for (var svc in services)
     console.log("Service loaded     | " + svc);
 }
 console.log("                   |");
+
+services["login"].setAuthenticator(codeAuthenticator);
+services["res"].setResourceMap(resourceMap);
+services["shell"].setExtensions(shellExtensions);
 
 
 // setup HTTP server

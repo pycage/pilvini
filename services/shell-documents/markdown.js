@@ -163,7 +163,7 @@
         var name = decodeURI(parts[parts.length - 1]);
     
         var page = sh.element(sh.NSPage)
-        .script("/::res/webshell/extensions/markdown/showdown.js")
+        .script("/::res/shell-documents/markdown/showdown.js")
         .onSwipeBack(function () { page.pop_(); })
         .onClosed(function ()
         {

@@ -17,19 +17,19 @@
             sh.element(sh.ListView)
             .add(
                 sh.element(sh.ListItem)
-                .icon("/::res/icons/server.png")
+                .icon("/::res/shell/icons/server.png")
                 .title("Server")
                 .onClicked(function () { openServerPage(); })
             )
             .add(
                 sh.element(sh.ListItem)
-                .icon("/::res/icons/face.png")
+                .icon("/::res/shell/icons/face.png")
                 .title("Users")
                 .onClicked(function () { openUsersPage(); })
             )
             .add(
                 sh.element(sh.ListItem)
-                .icon("/::res/file-icons/text.png")
+                .icon("/::res/shell/file-icons/text.png")
                 .title("Statistics")
                 .onClicked(function () { ui.showError("Statistics are not yet available."); })
             )
@@ -156,7 +156,7 @@
                 page.find("listview")
                 .add(
                     sh.element(sh.ListItem)
-                    .icon("/::res/icons/face.png")
+                    .icon("/::res/shell/icons/face.png")
                     .title(item.name)
                     .subtitle(item.home + " (" + item.permissions.join(" ") + ")")
                     .action(["sh-icon-trashcan", function ()

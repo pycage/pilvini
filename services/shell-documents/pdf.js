@@ -38,7 +38,7 @@
         var popup = sh.element(sh.Popup)
         .add(
             sh.element(IFrame)
-            .source("/::res/webshell/extensions/pdfjs/web/viewer.html?file=" + encodeURI(href))
+            .source("/::res/shell-documents/pdfjs/web/viewer.html?file=" + encodeURI(href))
         );
         
         popup.show_();

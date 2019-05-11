@@ -6,7 +6,10 @@ function importJs(uris, callback)
 {
     if (uris.length === 0)
     {
-        callback();
+        if (callback)
+        {
+            callback();
+        }
         return;
     }
 
@@ -19,6 +22,24 @@ function importJs(uris, callback)
         importJs(uris, callback);
     };
     document.head.appendChild(script);
+}
+
+/* Loads the given stylesheet.
+ */
+function loadStyle(uri, callback)
+{
+    var link = document.createElement("link");
+    link.setAttribute("type", "text/css");
+    link.setAttribute("rel", "stylesheet");
+    link.setAttribute("href", uri);
+    link.onload = function ()
+    {
+        if (callback)
+        {
+            callback();
+        }
+    }
+    document.head.appendChild(link);
 }
 
 var MimeRegistry = function ()
@@ -229,27 +250,28 @@ function logout()
     });
 }
 
-function init()
+function init(extensions)
 {
     var js = [
-        "/::res/shell/shellfish/core/low.js",
-        "/::res/shell/shellfish/core/mid.js",
-        "/::res/shell/shellfish/core/high.js",
+        "/::res/shellfish/core/low.js",
+        "/::res/shellfish/core/mid.js",
+        "/::res/shellfish/core/high.js",
         "/::res/shell/file.js",
         "/::res/shell/ui.js",
         "/::res/shell/upload.js",
+        "/::res/shell/files.js",
 
-        "/::res/shell/extensions/files.js",
-        "/::res/shell/extensions/admin.js",
+        //"/::res/shell/extensions/admin.js",
         "/::res/shell/extensions/audio.js",
         "/::res/shell/extensions/image.js",
-        "/::res/shell/extensions/markdown.js",
-        "/::res/shell/extensions/pdf.js",
-        "/::res/shell/extensions/text.js",
-        "/::res/shell/extensions/tips.js",
-        "/::res/shell/extensions/vcard.js",
+        //"/::res/shell/extensions/markdown.js",
+        //"/::res/shell/extensions/pdf.js",
+        //"/::res/shell/extensions/text.js",
+        //"/::res/shell/extensions/tips.js",
+        //"/::res/shell/extensions/vcard.js",
         "/::res/shell/extensions/video.js"
-    ];
+    ].concat(extensions);
+    loadStyle("/::res/shellfish/style/shellfish.css");
     importJs(js, function ()
     {
         files.actionsMenu()
@@ -332,11 +354,12 @@ function initLogin()
     }
 
     var js = [
-        "/::res/shell/shellfish/core/low.js",
-        "/::res/shell/shellfish/core/mid.js",
-        "/::res/shell/shellfish/core/high.js",
+        "/::res/shellfish/core/low.js",
+        "/::res/shellfish/core/mid.js",
+        "/::res/shellfish/core/high.js",
         "/::res/shell/ui.js"
     ];
+    loadStyle("/::res/shellfish/style/shellfish.css");
     importJs(js, function ()
     {
         var page = sh.element(sh.NSPage)
