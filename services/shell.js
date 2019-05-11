@@ -11,8 +11,6 @@ exports.init = function (config)
 {
     require.main.exports.registerService("shell", new Service(config));
     require.main.exports.registerResource("shell", modPath.join(__dirname, "shell", "www"));
-
-    require.main.exports.registerShellExtension("/::res/shell/extensions/tips.js");
 };
 
 function Service(config)

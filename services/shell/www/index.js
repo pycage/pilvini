@@ -260,16 +260,7 @@ function init(extensions)
         "/::res/shell/ui.js",
         "/::res/shell/upload.js",
         "/::res/shell/files.js",
-
-        //"/::res/shell/extensions/admin.js",
-        "/::res/shell/extensions/audio.js",
-        "/::res/shell/extensions/image.js",
-        //"/::res/shell/extensions/markdown.js",
-        //"/::res/shell/extensions/pdf.js",
-        //"/::res/shell/extensions/text.js",
-        //"/::res/shell/extensions/tips.js",
-        //"/::res/shell/extensions/vcard.js",
-        "/::res/shell/extensions/video.js"
+        "/::res/shell/tips.js"
     ].concat(extensions);
     loadStyle("/::res/shellfish/style/shellfish.css");
     importJs(js, function ()
