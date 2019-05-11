@@ -178,24 +178,12 @@ function makeHtmlHead(initFunction, extensions)
                 .attr("href", "/::res/shell/apple-touch-icon.png")
             )
             .content(
-                tag("script").attr("src", "/::res/shell/jquery-2.1.4.min.js")
-            )
-            .content(
                 tag("script").attr("src", "/::res/shell/index.js")
             );
 
-    /*
-    extensions.forEach(function (uri)
-    {
-        t.content(
-            tag("script").attr("src", uri)
-        );
-    });
-    */
-
     t.content(
         tag("script")
-        .content("$(document).ready(function () { " + initFunction + "(" + JSON.stringify(extensions) + "); });") 
+        .content(initFunction + "(" + JSON.stringify(extensions) + ");")
     );
 
     return t;

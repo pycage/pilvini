@@ -253,6 +253,7 @@ function logout()
 function init(extensions)
 {
     var js = [
+        "/::res/shellfish/jquery-2.1.4.min.js",
         "/::res/shellfish/core/low.js",
         "/::res/shellfish/core/mid.js",
         "/::res/shellfish/core/high.js",
@@ -345,6 +346,7 @@ function initLogin()
     }
 
     var js = [
+        "/::res/shellfish/jquery-2.1.4.min.js",
         "/::res/shellfish/core/low.js",
         "/::res/shellfish/core/mid.js",
         "/::res/shellfish/core/high.js",
