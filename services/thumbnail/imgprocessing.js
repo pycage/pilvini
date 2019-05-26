@@ -2,10 +2,19 @@
 
 /* Wrapper for image processing stuff. */
 
-const modJimp = require("jimp");
+const modSharp = require("sharp");
+//const modJimp = require("jimp");
 //const modLwip = require("lwip");
 
 exports.scale = function (buffer, mimeType, width, height, callback)
+{
+    modSharp(buffer).resize(width, height).png().toBuffer(function (err, buffer)
+    {
+        callback(err, buffer);
+    });
+};
+
+exports.scaleJimp = function (buffer, mimeType, width, height, callback)
 {
     modJimp.read(buffer)
     .then(function (image)
@@ -21,7 +30,6 @@ exports.scale = function (buffer, mimeType, width, height, callback)
     });
 };
 
-/*
 exports.scaleLwip = function (buffer, mimeType, width, height, callback)
 {
     var imageType = {
@@ -49,4 +57,4 @@ exports.scaleLwip = function (buffer, mimeType, width, height, callback)
         }
     });
 };
-*/
+

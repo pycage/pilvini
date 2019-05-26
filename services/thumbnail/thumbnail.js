@@ -7,15 +7,7 @@ const modFs = require("fs");
 const modId3Tags = requireShared("id3tags"),
       modVfs = requireShared("vfs");
 
-
-try
-{
-    const modImgProcessing = require("./imgprocessing.js")
-}
-catch (err)
-{
-    const modImgProcessing = null;
-}
+const modImgProcessing = require("./imgprocessing.js");
 
 
 exports.makeThumbnail = function (mimeType, file, thumbFile, maxWidth, maxHeight, callback)
@@ -73,14 +65,6 @@ function makeAudioThumbnail(file, thumbFile, maxWidth, maxHeight, callback)
 
             console.log("mimetype: " + apic.mimeType);
             var imageData = new Buffer(apic.data, "binary");
-            /*
-            var imageType = {
-                "image/png": "png",
-                "image/jpeg": "jpg",
-                "PNG": "png",
-                "JPG": "jpg"
-            }[apic.mimeType];
-            */
 
             var begin = Date.now();
             modImgProcessing.scale(imageData, apic.mimeType, maxWidth, maxHeight, function (err, image)
@@ -99,35 +83,6 @@ function makeAudioThumbnail(file, thumbFile, maxWidth, maxHeight, callback)
                     });
                 }
             });
-
-            /*
-            try
-            {
-                modImgProcessing.open(imageData, imageType, function (err, image)
-                {
-                    if (! err)
-                    {
-                        var scale = Math.max(maxWidth / image.width(), maxHeight / image.height());
-
-                        var begin = Date.now();
-                        image.batch().scale(scale).writeFile(thumbFile, imageType, function (err)
-                        {
-                            console.debug("Thumbnailing " + file + " -> " + thumbFile +
-                                          " took " + (Date.now() - begin) + " ms");
-                            callback(err);
-                        });
-                    }
-                    else
-                    {
-                        callback(err);
-                    }
-                });
-            }
-            catch (err)
-            {
-                callback(err);
-            }
-            */
         }
         else
         {
@@ -198,34 +153,12 @@ function makeImageThumbnail(imageFile, thumbFile, maxWidth, maxHeight, callback)
                 {
                     modFs.writeFile(thumbFile, image, function (err)
                     {
-                        console.debug("Thumbnailing " + file + " -> " + thumbFile +
+                        console.debug("Thumbnailing " + imageFile + " -> " + thumbFile +
                                     " took " + (Date.now() - begin) + " ms");
                         callback(err);
                     });
                 }
             });
-
-            /*
-            modImgProcessing.open(buffer, type, function (err, image)
-            {
-                if (! err)
-                {
-                    var scale = Math.max(maxWidth / image.width(), maxHeight / image.height());
-
-                    var begin = Date.now();
-                    image.batch().scale(scale).writeFile(thumbFile, "jpg", function (err)
-                    {
-                        console.debug("Thumbnailing " + imageFile + " -> " + thumbFile +
-                                      " took " + (Date.now() - begin) + " ms");
-                        callback(err);
-                    });
-                }
-                else
-                {
-                    callback(err);
-                }
-            });
-            */
         });
     }
 }
