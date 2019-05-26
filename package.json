@@ -3,6 +3,6 @@
   "version": "0.2.0",
   "dependencies": {
     "jszip": "^3.1.4",
-    "lwip": "0.0.9"
+    "sharp": "^0.22.1"
   }
 }

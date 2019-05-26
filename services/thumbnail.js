@@ -114,8 +114,8 @@ function Service(config)
         var href = urlObj.pathname.substr(12);
         var targetFile = modUtils.uriToPath(href, m_contentRoot + userContext.home());
 
-        var maxWidth = request.headers["x-pilvini-width"] || 10;
-        var maxHeight = request.headers["x-pilvini-height"] || 10;
+        var maxWidth = Number.parseInt(request.headers["x-pilvini-width"] || "10");
+        var maxHeight = Number.parseInt(request.headers["x-pilvini-height"] || "10");
 
         console.log("HREF: " + href + ", contentRoot: " + m_contentRoot + ", userHome: " + userContext.home());
         console.log("Thumbnail target file: " + targetFile);
