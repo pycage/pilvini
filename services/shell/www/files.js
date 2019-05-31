@@ -1235,13 +1235,12 @@ var files = { };
         {
             if (progress === 0)
             {
-                var icon = type === "directory" ? "sh-icon-folder" : "sh-icon-cloud-upload";
-                ctx.statusEntry = sh.element(ui.StatusItem).icon(icon).text(amount + "/" + total + " " + name).get();
-                pushStatus(ctx.statusEntry);
+                statusEntry.progress = 0;
+                statusEntry.text = amount + "/" + total + " " + name;
             }
             else if (progress === -1)
             {
-                popStatus(ctx.statusEntry);
+                popStatus(statusEntry);
                 if (type === "directory")
                 {
                     ui.showError("Failed to create directory: " + name);
@@ -1251,23 +1250,23 @@ var files = { };
                     ui.showError("Failed to upload file: " + name);
                 }
             }
-            else if (progress === 1)
-            {
-                popStatus(ctx.statusEntry);
-            }
             else
             {
-                ctx.statusEntry.progress = progress * 100;
+                statusEntry.progress = progress * 100;
             }
         }
 
         function finishedCallback()
         {
+            popStatus(statusEntry);
             if (m_properties.currentUri.value() === rootUri)
             {
                 loadDirectory(m_properties.currentUri.value(), false);
             }
         }
+
+        var statusEntry = sh.element(ui.StatusItem).icon("sh-icon-cloud-upload").get();
+        pushStatus(statusEntry);
 
         var rootUri = m_properties.currentUri.value();
         var amount = 0;
@@ -1278,25 +1277,16 @@ var files = { };
         ev.preventDefault();
     
         var items = ev.dataTransfer.items;
-        for (var i = 0; i < items.length; ++i)
+        if (items)
         {
-            var item = items[i];
-            if (item.webkitGetAsEntry)
-            {
-                uploadHierarchy(item.webkitGetAsEntry(), m_properties.currentUri.value(), fileCallback, progressCallback, finishedCallback);
-            }
-            else if (ev.dataTransfer.getAsEntry)
-            {
-                uploadHierarchy(item.getAsEntry(), m_properties.currentUri.value(), fileCallback, progressCallback, finishedCallback);
-            }
-            else
-            {
-                uploadFiles(ev.dataTransfer.files, m_properties.currentUri.value(), fileCallback, progressCallback, finishedCallback);
-                break;
-            }
+            uploadFileItems(items, m_properties.currentUri.value(), fileCallback, progressCallback, finishedCallback);
         }
-    
+        else
+        {
+            uploadFiles(ev.dataTransfer.files, m_properties.currentUri.value(), fileCallback, progressCallback, finishedCallback);
+        }   
     }
+
 
     /* setup properties */
     m_properties.currentUri = sh.binding("");
@@ -1466,8 +1456,54 @@ var files = { };
     /* setup file upload */
     $("#upload").on("change", function (event)
     {
-        // TODO: proper callbacks!
-        uploadFiles(event.target.files, m_properties.currentUri.value(), function () { }, function () { }, function () { });
+        function progressCallback(a, b)
+        {
+            amount = a;
+            total = b;
+        }
+
+        function fileCallback(type, name, progress, ctx)
+        {
+            if (progress === 0)
+            {
+                statusEntry.progress = 0;
+                statusEntry.text = amount + "/" + total + " " + name;
+            }
+            else if (progress === -1)
+            {
+                popStatus(statusEntry);
+                if (type === "directory")
+                {
+                    ui.showError("Failed to create directory: " + name);
+                }
+                else
+                {
+                    ui.showError("Failed to upload file: " + name);
+                }
+            }
+            else
+            {
+                statusEntry.progress = progress * 100;
+            }
+        }
+
+        function finishedCallback()
+        {
+            popStatus(statusEntry);
+            if (m_properties.currentUri.value() === rootUri)
+            {
+                loadDirectory(m_properties.currentUri.value(), false);
+            }
+        }
+
+        var statusEntry = sh.element(ui.StatusItem).icon("sh-icon-cloud-upload").get();
+        pushStatus(statusEntry);
+
+        var rootUri = m_properties.currentUri.value();
+        var amount = 0;
+        var total = 0;
+
+        uploadFiles(event.target.files, m_properties.currentUri.value(), fileCallback, progressCallback, finishedCallback);
     });
 
     /* setup drag and drop for external files */

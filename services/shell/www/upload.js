@@ -75,32 +75,79 @@ function upload(file, target, cbContext, fileCallback, finishedCallback)
  */
 function uploadFiles(files, rootUri, fileCallback, progressCallback, finishedCallback)
 {
-    if (files.length == 0)
+    function uploadFile(n)
     {
-        finishedCallback();
-        return;
-    }
-
-    var count = files.length;
-
-    for (var i = 0; i < files.length; ++i)
-    {
-        var file = files[i];
+        var file = files[n];
         var targetUri = rootUri +
                         (rootUri !== "/" ? "/" : "") +
                         encodeURIComponent(file.name);
 
-        progressCallback(i, files.length);
+        progressCallback(n + 1, files.length);
         
         var cbContext = { };
         upload(file, targetUri, cbContext, fileCallback, function ()
         {
-            --count;
-            if (count === 0)
+            if (n === files.length - 1)
             {
                 finishedCallback();
             }
+            else
+            {
+                uploadFile(n + 1);
+            }
         });
+    }
+
+    if (files.length == 0)
+    {
+        finishedCallback();
+    }
+    else
+    {
+        uploadFile(0);
+    }
+}
+
+/* Uploads the given list of files represented by HTML5 FileEntry objects.
+ */
+function uploadFileItems(items, rootUri, fileCallback, progressCallback, finishedCallback)
+{
+    function uploadItem(n)
+    {
+        var item = items[n];
+
+        progressCallback(n + 1, items.length);
+
+        var entry;
+        if (item.webkitGetAsEntry)
+        {
+            entry = item.webkitGetAsEntry();
+        }
+        else
+        {
+            entry = item.getAsEntry();
+        }
+
+        uploadHierarchy(entry, rootUri, fileCallback, progressCallback, function ()
+        {
+            if (n === items.length - 1)
+            {
+                finishedCallback();
+            }
+            else
+            {
+                uploadItem(n + 1);
+            }
+        });
+    }
+
+    if (items.length == 0)
+    {
+        finishedCallback();
+    }
+    else
+    {
+        uploadItem(0);
     }
 }
 
