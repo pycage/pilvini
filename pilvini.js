@@ -248,7 +248,7 @@ function handleRequest(request, response)
     var authCookie = modCookies.getCookie(request, "AuthCode");
     console.debug("Auth Cookie: " + authCookie.name() + " = " + authCookie.value());
     var authenticator;
-    if (authCookie.name() === "AuthCode") // || serviceName === "shell")
+    if (authCookie.name() === "AuthCode" || serviceName === "shell")
     {
         authenticator = codeAuthenticator;
     }
