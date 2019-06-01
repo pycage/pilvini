@@ -87,6 +87,7 @@ input[type=text], input[type=password] {
     padding-bottom: 2px;
     font-family: inherit;
     font-size: 100%;
+    color: var(--color-primary)
 }
 
 /* Toggle switch */
