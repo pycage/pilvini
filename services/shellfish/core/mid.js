@@ -187,11 +187,11 @@ sh.PageHeader = function ()
             .style("line-height", "1.3rem")
             .style("padding-top", "0.2rem")
             .content(
-                sh.tag("h1").content("")
+                sh.tag("h1").style("overflow", "none").content("")
 
             )
             .content(
-                sh.tag("h2").content("")
+                sh.tag("h2").style("overflow", "none").content("")
             )
         )
         .content(
@@ -399,8 +399,10 @@ sh.Menu = function ()
         sh.tag("div").class("sh-menu")
         .content(
             sh.tag("div")
+            .style("border-radius", "0.25rem")
             .content(
                 sh.tag("ul")
+                .style("white-space", "nowrap")
             )
         )
         .html()
@@ -617,6 +619,7 @@ sh.Popup = function ()
         .content(
             sh.tag("div").class("sh-dropshadow")
             .style("position", "relative")
+            .style("border-radius", "0.25rem")
             .style("background-color", "black")
             .style("overflow", "hidden")
         )
@@ -662,6 +665,7 @@ sh.Dialog = function ()
         .on("submit", "return false;")
         .content(
             sh.tag("div").class("sh-dropshadow")
+            .style("border-radius", "0.25rem")
             .style("background-color", "var(--color-primary-background)")
             .style("max-width", "calc(100vw - 2rem)")
             .style("max-height", "calc(100vh - 2rem)")
@@ -678,6 +682,7 @@ sh.Dialog = function ()
             )
             .content(
                 sh.tag("footer")
+                .style("background-color", "var(--color-primary-background)")
                 .content(
                     sh.tag("span").class("sh-right")
                 )

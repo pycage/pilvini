@@ -820,12 +820,6 @@
             sh.element(sh.ListView).id("listview")
         );
 
-        page.get().get().find("> header")
-        .css("background-color", "var(--color-primary-background-translucent)");
-
-        page.get().get().find("> footer")
-        .css("background-color", "var(--color-primary-background-translucent)");
-
         page.push_(function ()
         {
             for (var i = 0; i < m_playlist.size(); ++i)

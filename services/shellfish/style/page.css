@@ -24,7 +24,7 @@
     height: 3rem;
     line-height: 3rem;
 
-    background-color: var(--color-primary-background);
+    background-color: var(--color-primary-background-translucent);
     color: var(--color-primary);
     border-bottom: solid 1px var(--color-border);
     
@@ -37,7 +37,7 @@
     right: 0;
     bottom: 0;
     
-    background-color: var(--color-primary-background);
+    background-color: var(--color-primary-background-translucent);
     color: var(--color-primary);
     border-top: solid 1px var(--color-border);
 

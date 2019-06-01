@@ -365,7 +365,7 @@ function initLogin()
         page.get().get()
         .css("background-size", "cover")
         .css("background-repeat", "no-repeat");
-
+        
         page.get().get().append($(
             sh.tag("p").class("sh-font-small")
             .style("position", "absolute")

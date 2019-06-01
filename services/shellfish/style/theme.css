@@ -2,7 +2,8 @@
     --color-primary: #404040;
     --color-primary-background: #f0f0f0;
     --color-primary-background-translucent: rgba(240, 240, 240, 0.8); /* #f0f0f0a0;*/
-    --color-highlight: #000000;
+    --color-secondary-background: #c0c0c0;
+    --color-highlight: #404040;
     --color-highlight-background: #7faac7;
     --color-content-background: white;
     --color-content-alt-background: #f0f0f0;
@@ -15,12 +16,13 @@
 
 
 .sh-theme-dark {
-    --color-primary: #ffffff;
+    --color-primary: #909090;
     --color-primary-background: #404040;
     --color-primary-background-translucent: rgba(64, 64, 64, 0.8); /* #404040a0;*/
-    --color-highlight: #ffff00;
-    --color-highlight-background: #0000ff;
-    --color-content-background: #000000;
+    --color-secondary-background: #606060;
+    --color-highlight: #909090;
+    --color-highlight-background: #2f5a77;
+    --color-content-background: #303030;
     --color-content-alt-background: #404040;
     --color-disabled: #808080;
     --color-border: #a0a0a0;

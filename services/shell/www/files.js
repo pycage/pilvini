@@ -323,6 +323,309 @@ var files = { };
 
     function loadThumbnails()
     {
+        function loadNextThumbnail(forContext, items)
+        {
+            if (items.length === 0)
+            {
+                popStatus(statusEntry);
+                return;
+            }
+        
+            // sort images by visibility to load those in view first
+            var topPos = $(document).scrollTop();
+            var bottomPos = topPos + $(window).height();
+        
+            items.sort(function (a, b)
+            {
+                var itemA = m_listView.item(a);
+                var itemB = m_listView.item(b);
+    
+                var aPos = itemA.get().offset().top;
+                var bPos = itemB.get().offset().top;
+                var aHeight = itemA.get().height();
+                var bHeight = itemB.get().height();
+                var aVisible = aPos < bottomPos && aPos + aHeight > topPos;
+                var bVisible = bPos < bottomPos && bPos + bHeight > topPos;
+        
+                if (aVisible && ! bVisible)
+                {
+                    return -1;
+                }
+                else if (! aVisible && bVisible)
+                {
+                    return 1;
+                }
+                else
+                {
+                    return aPos - bPos;
+                }
+            });
+        
+            var idx = items.shift();
+            var meta = m_properties.files.value()[idx];
+            if (! meta)
+            {
+                if (m_properties.currentContext.value() === forContext)
+                {
+                    loadNextThumbnail(forContext, items);
+                }
+                return;
+            }
+            var name = meta.name;
+            var thumbnailUri = "/::thumbnail" + meta.uri;
+        
+            var now = Date.now();
+            statusEntry.text = "Preview: " + name;
+            statusEntry.progress = 100 * (totalItems - items.length - 1) / totalItems;
+        
+            var settings = {
+                beforeSend: function (xhr)
+                {
+                     xhr.overrideMimeType("text/plain; charset=x-user-defined");
+                     xhr.setRequestHeader("x-pilvini-width", 80);
+                     xhr.setRequestHeader("x-pilvini-height", 80);
+                }
+            };
+        
+            $.ajax(thumbnailUri, settings)
+            .done(function (data, status, xhr)
+            {
+                if (m_properties.currentContext.value() !== forContext)
+                {
+                    return;
+                }
+
+                if (xhr.status === 200)
+                {
+                    var contentType = "image/jpeg"; //xhr.getResponseHeader("Content-Type");
+                    if (thumbnailUri.toLowerCase().endsWith(".svg"))
+                    {
+                        contentType = "image/svg+xml";
+                    }
+            
+                    var buffer = "";
+                    for (var i = 0; i < data.length; ++i)
+                    {
+                        buffer += String.fromCharCode(data.charCodeAt(i) & 0xff);
+                    }
+                    var pic = "data:" + contentType + ";base64," + btoa(buffer);
+            
+                    var then = Date.now();
+                    m_listView.item(idx).icon = pic;
+                    m_listView.item(idx).fillMode = "cover";
+            
+                    var speed = Math.ceil((data.length / 1024) / ((then - now) / 1000.0));
+                    console.log("Loading took " + (then - now) + " ms, size: " + data.length + " B (" + speed + " kB/s).");
+        
+                    if (m_properties.currentContext.value() === forContext)
+                    {
+                        loadNextThumbnail(forContext, items);
+                    }
+                }
+                else if (xhr.status === 204)
+                {
+                    // create thumbnail client-side, send to server, and retry           
+                    generateThumbnail(meta, function (data)
+                    {
+                        var thumbnailUri = "/::thumbnail" + meta.uri;
+                        submitThumbnail("image/jpeg", data, thumbnailUri, function (ok)
+                        {
+                            if (ok)
+                            {
+                                items.unshift(idx);
+                            }
+                            if (m_properties.currentContext.value() === forContext)
+                            {
+                                loadNextThumbnail(forContext, items);
+                            }
+                        });
+                    });
+                }
+            })
+            .fail(function ()
+            {
+                if (m_properties.currentContext.value() === forContext)
+                {
+                    loadNextThumbnail(forContext, items);
+                }
+            });
+        }
+
+        /* Generates a client-side thumbnail.
+         */
+        function generateThumbnail(meta, callback)
+        {
+            var mimeType = meta.mimeType;
+            if (mimeType.indexOf("video/") === 0)
+            {
+                var sourceUri = meta.uri;
+                generateVideoThumbnail(sourceUri, callback);
+            }
+            else
+            {
+                callback("");
+            }
+        }
+
+        /* Generates a video thumbnail.
+         */
+        function generateVideoThumbnail(url, callback)
+        {
+            function extractImage(data)
+            {
+                var pos = data.indexOf(",");
+                var b64 = data.substr(pos + 1);
+                return atob(b64);
+            }
+
+            if (navigator.userAgent.indexOf("Mobile") !== -1)
+            {
+                callback("");
+                return;
+            }
+
+
+            var videoPlayer = document.createElement("video");
+            videoPlayer.autoplay = true;
+            videoPlayer.muted = true;
+
+            var canvas = document.createElement("canvas");
+            canvas.width = 80;
+            canvas.height = 80;
+
+            var ctx = canvas.getContext("2d");
+            
+            $(videoPlayer).on("canplay", function ()
+            {
+                //alert("canplay");
+                $(videoPlayer).off("canplay");
+                videoPlayer.currentTime = videoPlayer.duration * 0.2;
+                //videoPlayer.play();
+            });
+
+            $(videoPlayer).on("seeked", function ()
+            {
+                //alert("seeked");
+                $(videoPlayer).off("seeked");
+                var w = videoPlayer.videoWidth;
+                var h = videoPlayer.videoHeight;
+
+                // crop viewport
+                var cw = Math.min(w, h);
+                var ch = cw;
+                var cx = (w - cw) / 2;
+                var cy = (h - ch) / 2;
+
+                ctx.fillStyle = "#000";
+                ctx.fillRect(0, 0, 80, 80);
+
+                // capturing the image can go wrong and we don't want to upload a
+                // broken thumbnail in these cases
+                //  - Mobile Firefox does not allow capturing at all
+                //  - Silk on Fire TV treats mp4 as copy-protected and captures all black
+                //    (webm is fine, though)
+                var data = "";
+                try
+                {
+                    ctx.drawImage(videoPlayer, cx, cy, cw, ch, 0, 0, 80, 80);
+
+                    // check if we got a valid image, as some browsers silently give us a black screen
+                    // for copy-protection
+                    var buffer = ctx.getImageData(0, 0, 80, 1);    
+                    var allBlack = true;
+                    for (var i = 0; i < buffer.data.length; i += 4)
+                    {
+                        if (buffer.data[i] !== 0 || buffer.data[i + 1] !== 0 || buffer.data[i + 2] !== 0)
+                        {
+                            allBlack = false;
+                            break;
+                        }
+                    }
+                    if (allBlack)
+                    {
+                        throw "No content";
+                    }
+
+                    // prettify
+
+                    ctx.fillStyle = "#666";
+                    ctx.fillRect(0, 0, 10, 80);
+                    ctx.fillRect(80 - 10, 0, 16, 80);
+
+                    ctx.fillStyle = "#fff";
+                    for (var y = 0; y < 80; y += 10)
+                    {
+                        ctx.fillRect(2, y + 3, 6, 4);
+                        ctx.fillRect(80 - 8, y + 3, 6, 4);
+                    }
+
+                    data = extractImage(canvas.toDataURL("image/jpeg"));
+                }
+                catch (err)
+                {
+                    //alert(err);
+                    console.error("Failed to thumbnail video " + url + ": " + err);
+                }
+
+                $(videoPlayer).off("error");
+                videoPlayer.src = "";
+                videoPlayer.load();
+                $(videoPlayer).remove();
+
+                callback(data);
+            });
+
+            $(videoPlayer).on("error", function ()
+            {
+                console.error("Failed to thumbnail video " + url + ": read error");
+                callback("");
+            });
+
+            videoPlayer.src = url;
+            videoPlayer.load();
+        }
+
+        /* Submits a client-side-generated thumbnail to the server.
+         */
+        function submitThumbnail(mimeType, data, url, callback)
+        {
+            if (data === "")
+            {
+                callback(false);
+                return;
+            }
+
+            // fill binary buffer
+            var buffer = new ArrayBuffer(data.length);
+            var writer = new Uint8Array(buffer);
+            for (var i = 0; i < data.length; ++i)
+            {
+                writer[i] = data.charCodeAt(i);
+            }
+
+            $.ajax({
+                url: url,
+                type: "PUT",
+                data: buffer,
+                processData: false,
+                beforeSend: function (xhr)
+                {
+                    xhr.overrideMimeType(mimeType);
+                    xhr.setRequestHeader("x-pilvini-width", 80);
+                    xhr.setRequestHeader("x-pilvini-height", 80);
+                }
+            })
+            .done(function ()
+            {
+                callback(true);
+            })
+            .fail(function (xhr, status, err)
+            {
+                callback(false);
+            });
+        }
+
+
         console.log("Location: " + m_properties.currentUri.value());
 
         var items = [];
@@ -340,307 +643,19 @@ var files = { };
         }
    
         console.log("loadThumbnails: " + items.length + " images");
-        loadNextThumbnail(m_properties.currentUri.value(), items);
-    }
 
-    function loadNextThumbnail(forLocation, items)
-    {
-        if (items.length === 0)
-        {
-            return;
-        }
-    
-        // sort images by visibility to load those in view first
-        var topPos = $(document).scrollTop();
-        var bottomPos = topPos + $(window).height();
-    
-        items.sort(function (a, b)
-        {
-            var itemA = m_listView.item(a);
-            var itemB = m_listView.item(b);
-
-            var aPos = itemA.get().offset().top;
-            var bPos = itemB.get().offset().top;
-            var aHeight = itemA.get().height();
-            var bHeight = itemB.get().height();
-            var aVisible = aPos < bottomPos && aPos + aHeight > topPos;
-            var bVisible = bPos < bottomPos && bPos + bHeight > topPos;
-    
-            if (aVisible && ! bVisible)
-            {
-                return -1;
-            }
-            else if (! aVisible && bVisible)
-            {
-                return 1;
-            }
-            else
-            {
-                return aPos - bPos;
-            }
-        });
-    
-        var idx = items.shift();
-        var meta = m_properties.files.value()[idx];
-        if (! meta)
-        {
-            if (m_properties.currentUri.value() === forLocation)
-            {
-                loadNextThumbnail(forLocation, items);
-            }
-            return;
-        }
-        var name = meta.name;
-        var thumbnailUri = "/::thumbnail" + meta.uri;
-    
-        var now = Date.now();
-        var statusEntry = sh.element(ui.StatusItem).icon("sh-icon-wait").text(name).get();
+        var totalItems = items.length;
+        var statusEntry = sh.element(ui.StatusItem).icon("sh-icon-wait").get();
         pushStatus(statusEntry);
-    
-        var settings = {
-            beforeSend: function (xhr)
-            {
-                 xhr.overrideMimeType("text/plain; charset=x-user-defined");
-                 xhr.setRequestHeader("x-pilvini-width", 80);
-                 xhr.setRequestHeader("x-pilvini-height", 80);
-            }
-        };
-    
-        $.ajax(thumbnailUri, settings)
-        .done(function (data, status, xhr)
+        m_properties.currentContext.watch(function ()
         {
             popStatus(statusEntry);
-
-            if (xhr.status === 200)
-            {
-                var contentType = "image/jpeg"; //xhr.getResponseHeader("Content-Type");
-                if (thumbnailUri.toLowerCase().endsWith(".svg"))
-                {
-                    contentType = "image/svg+xml";
-                }
-        
-                var buffer = "";
-                for (var i = 0; i < data.length; ++i)
-                {
-                    buffer += String.fromCharCode(data.charCodeAt(i) & 0xff);
-                }
-                var pic = "data:" + contentType + ";base64," + btoa(buffer);
-        
-                var then = Date.now();
-                m_listView.item(idx).icon = pic;
-                m_listView.item(idx).fillMode = "cover";
-        
-                var speed = Math.ceil((data.length / 1024) / ((then - now) / 1000.0));
-                console.log("Loading took " + (then - now) + " ms, size: " + data.length + " B (" + speed + " kB/s).");
-    
-                if (m_properties.currentUri.value() === forLocation)
-                {
-                    loadNextThumbnail(forLocation, items);
-                }
-            }
-            else if (xhr.status === 204)
-            {
-                // create thumbnail client-side, send to server, and retry           
-                generateThumbnail(meta, function (data)
-                {
-                    var thumbnailUri = "/::thumbnail" + meta.uri;
-                    submitThumbnail("image/jpeg", data, thumbnailUri, function (ok)
-                    {
-                        if (ok)
-                        {
-                            items.unshift(idx);
-                        }
-                        if (m_properties.currentUri.value() === forLocation)
-                        {
-                            loadNextThumbnail(forLocation, items);
-                        }
-                    });
-                });
-            }
-        })
-        .fail(function ()
-        {
-            popStatus(statusEntry);
-            if (m_properties.currentUri.value() === forLocation)
-            {
-                loadNextThumbnail(forLocation, items);
-            }
         });
+        
+        loadNextThumbnail(m_properties.currentContext.value(), items);
     }
 
-    /* Generates a client-side thumbnail.
-    */
-    function generateThumbnail(meta, callback)
-    {
-        var mimeType = meta.mimeType;
-        if (mimeType.indexOf("video/") === 0)
-        {
-            var sourceUri = meta.uri;
-            generateVideoThumbnail(sourceUri, callback);
-        }
-        else
-        {
-            callback("");
-        }
-    }
 
-    /* Generates a video thumbnail.
-    */
-    function generateVideoThumbnail(url, callback)
-    {
-        function extractImage(data)
-        {
-            var pos = data.indexOf(",");
-            var b64 = data.substr(pos + 1);
-            return atob(b64);
-        }
-
-        if (navigator.userAgent.indexOf("Mobile") !== -1)
-        {
-            callback("");
-            return;
-        }
-
-
-        var videoPlayer = document.createElement("video");
-        videoPlayer.autoplay = true;
-        videoPlayer.muted = true;
-
-        var canvas = document.createElement("canvas");
-        canvas.width = 80;
-        canvas.height = 80;
-
-        var ctx = canvas.getContext("2d");
-        
-        $(videoPlayer).on("canplay", function ()
-        {
-            //alert("canplay");
-            $(videoPlayer).off("canplay");
-            videoPlayer.currentTime = videoPlayer.duration * 0.2;
-            //videoPlayer.play();
-        });
-
-        $(videoPlayer).on("seeked", function ()
-        {
-            //alert("seeked");
-            $(videoPlayer).off("seeked");
-            var w = videoPlayer.videoWidth;
-            var h = videoPlayer.videoHeight;
-
-            // crop viewport
-            var cw = Math.min(w, h);
-            var ch = cw;
-            var cx = (w - cw) / 2;
-            var cy = (h - ch) / 2;
-
-            ctx.fillStyle = "#000";
-            ctx.fillRect(0, 0, 80, 80);
-
-            // capturing the image can go wrong and we don't want to upload a
-            // broken thumbnail in these cases
-            //  - Mobile Firefox does not allow capturing at all
-            //  - Silk on Fire TV treats mp4 as copy-protected and captures all black
-            //    (webm is fine, though)
-            var data = "";
-            try
-            {
-                ctx.drawImage(videoPlayer, cx, cy, cw, ch, 0, 0, 80, 80);
-
-                // check if we got a valid image, as some browsers silently give us a black screen
-                // for copy-protection
-                var buffer = ctx.getImageData(0, 0, 80, 1);    
-                var allBlack = true;
-                for (var i = 0; i < buffer.data.length; i += 4)
-                {
-                    if (buffer.data[i] !== 0 || buffer.data[i + 1] !== 0 || buffer.data[i + 2] !== 0)
-                    {
-                        allBlack = false;
-                        break;
-                    }
-                }
-                if (allBlack)
-                {
-                    throw "No content";
-                }
-
-                // prettify
-
-                ctx.fillStyle = "#666";
-                ctx.fillRect(0, 0, 10, 80);
-                ctx.fillRect(80 - 10, 0, 16, 80);
-
-                ctx.fillStyle = "#fff";
-                for (var y = 0; y < 80; y += 10)
-                {
-                    ctx.fillRect(2, y + 3, 6, 4);
-                    ctx.fillRect(80 - 8, y + 3, 6, 4);
-                }
-
-                data = extractImage(canvas.toDataURL("image/jpeg"));
-            }
-            catch (err)
-            {
-                //alert(err);
-                console.error("Failed to thumbnail video " + url + ": " + err);
-            }
-
-            $(videoPlayer).off("error");
-            videoPlayer.src = "";
-            videoPlayer.load();
-            $(videoPlayer).remove();
-
-            callback(data);
-        });
-
-        $(videoPlayer).on("error", function ()
-        {
-            console.error("Failed to thumbnail video " + url + ": read error");
-            callback("");
-        });
-
-        videoPlayer.src = url;
-        videoPlayer.load();
-    }
-
-    /* Submits a client-side-generated thumbnail to the server.
-    */
-    function submitThumbnail(mimeType, data, url, callback)
-    {
-        if (data === "")
-        {
-            callback(false);
-            return;
-        }
-
-        // fill binary buffer
-        var buffer = new ArrayBuffer(data.length);
-        var writer = new Uint8Array(buffer);
-        for (var i = 0; i < data.length; ++i)
-        {
-            writer[i] = data.charCodeAt(i);
-        }
-
-        $.ajax({
-            url: url,
-            type: "PUT",
-            data: buffer,
-            processData: false,
-            beforeSend: function (xhr)
-            {
-                xhr.overrideMimeType(mimeType);
-                xhr.setRequestHeader("x-pilvini-width", 80);
-                xhr.setRequestHeader("x-pilvini-height", 80);
-            }
-        })
-        .done(function ()
-        {
-            callback(true);
-        })
-        .fail(function (xhr, status, err)
-        {
-            callback(false);
-        });
-    }
 
     function downloadItem(idx)
     {
@@ -1008,6 +1023,7 @@ var files = { };
                     item.icon = entry.icon;
                 }
                 listView.add(item);
+                item.get().addClass("fileitem");
                 ++count;
             });
             m_page.add(listView);
@@ -1051,6 +1067,7 @@ var files = { };
                     item.icon = entry.icon;
                 }
                 gridView.add(item);
+                item.get().addClass("fileitem");
                 ++count;
             });
             m_page.add(gridView);
@@ -1058,7 +1075,9 @@ var files = { };
             break;
         }
 
+
         m_properties.currentUri.assign(data.uri);
+        m_properties.currentContext.assign(m_properties.currentContext.value() + 1);
         m_properties.files.assign(files);
         m_properties.selection.assign([]);
         m_properties.shares.assign(data.shares);
@@ -1290,6 +1309,7 @@ var files = { };
 
     /* setup properties */
     m_properties.currentUri = sh.binding("");
+    m_properties.currentContext = sh.binding(0);
     m_properties.files = sh.binding([]);
     m_properties.selection = sh.binding([]);
     m_properties.clipboard = sh.binding([]);
@@ -1370,6 +1390,23 @@ var files = { };
         sh.element(sh.IconButton).icon("sh-icon-clock")
         .checked(sh.predicate([m_properties.configuration], function () { return configuration.get("sort-mode") === "date"; }))
         .onClicked(function () { setSortMode("date"); })
+    )
+    .add(
+        sh.element(sh.SubMenu).text("Tools").id("tools-menu")
+        .add(
+            sh.element(sh.MenuItem).text("Toggle Dark Mode")
+            .onClicked(function ()
+            {
+                if ($("body").hasClass("sh-theme-dark"))
+                {
+                    $("body").removeClass("sh-theme-dark").addClass("sh-theme-default");
+                }
+                else
+                {
+                    $("body").removeClass("sh-theme-default").addClass("sh-theme-dark");
+                }
+            })
+        )
     )
     .add(
         sh.element(sh.SubMenu).text("New")

@@ -330,8 +330,9 @@
         });
     }
 
-    files.actionsMenu()
+    files.actionsMenu().find("tools-menu")
     .add(
+        //sh.element(sh.IconButton).icon("sh-icon-gear")
         sh.element(sh.MenuItem).text("Administration")
         .visible(sh.predicate([files.properties().permissions], function () { return files.properties().permissions.value().indexOf("ADMIN") !== -1; }))
         .onClicked(openPage)
