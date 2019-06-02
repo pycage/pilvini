@@ -543,7 +543,7 @@ sh.menuOpen = function (menu, parent, callback)
         }
 
         content.css("left", l + "px");
-        content.css("top", p.offset().top - $(document).scrollTop() + h + "px");
+        content.css("top", p.offset().top - $(document).scrollTop() + (h * 0.75) + "px");
 
         menu.addClass("sh-visible");
     }
@@ -553,9 +553,9 @@ sh.menuOpen = function (menu, parent, callback)
  */
 sh.fullscreenStatus = function ()
 {
-    var state = document.fullScreen ||
+    var state = document.webkitIsFullScreen || 
                 document.mozFullScreen ||
-                document.webkitIsFullScreen;
+                document.fullScreen;
 
     return (state === true);
 };
@@ -565,21 +565,21 @@ sh.fullscreenStatus = function ()
 sh.fullscreenEnter = function (target)
 {
     var e = $(target).get(0);
-    if (e.requestFullscreen)
+    if (e.webkitRequestFullscreen)
     {
-        e.requestFullscreen();
-    }
-    else if (e.msRequestFullscreen)
-    {
-        e.msRequestFullscreen();
+        e.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
     }
     else if (e.mozRequestFullScreen)
     {
-        e.mozRequestFullScreen();
+        e.mozRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
     }
-    else if (e.webkitRequestFullscreen)
+    else if (e.msRequestFullscreen)
     {
-        e.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
+        e.msRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
+    }
+    else if (e.requestFullscreen)
+    {
+        e.requestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
     }
 };
 
@@ -587,11 +587,7 @@ sh.fullscreenEnter = function (target)
  */
 sh.fullscreenExit = function ()
 {
-    if (document.exitFullscreen)
-    {
-        document.exitFullscreen();
-    }
-    else if (document.webkitExitFullscreen)
+    if (document.webkitExitFullscreen)
     {
         document.webkitExitFullscreen();
     }
@@ -602,5 +598,9 @@ sh.fullscreenExit = function ()
     else if (document.msExitFullscreen)
     {
         document.msExitFullscreen();
+    }
+    else if (document.exitFullscreen)
+    {
+        document.exitFullscreen();
     }
 };

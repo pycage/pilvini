@@ -87,18 +87,31 @@
                 .style("color", "#fff")
             )
             .content(
+                sh.tag("header")
+                .style("top", "-80px")
+                .style("visibility", "hidden")
+                .content(
+                    sh.tag("h1")
+                    .style("font-size", "1rem")
+                    .style("position", "absolute")
+                    .style("margin", "0")
+                    .style("padding", "0")
+                    .style("white-space", "nowrap")
+                    .style("text-overflow", "ellipsis")
+                    .style("overflow", "hidden")
+                    .style("left", "0.25em")
+                    .style("right", "0.25em")
+                )
+            )
+            .content(
                 sh.tag("footer")
-                .style("background-color", "rgba(1, 1, 1, 0.6)")
-                .style("color", "#fff")
                 .style("font-size", "200%")
-                .style("position", "absolute")
                 .style("margin", "0")
-                .style("left", "0")
-                .style("right", "0")
-                .style("bottom", "0")
+                .style("bottom", "-80px")
+                .style("height", "80px")
                 .style("min-height", "80px")
                 .style("line-height", "80px")
-                .style("visibility", "visible")
+                .style("visibility", "hidden")
                 .on("click", "event.stopPropagation();")
                 .content(
                     sh.tag("div").class("image-progress-label")
@@ -126,22 +139,6 @@
                         .style("padding-left", "0.25em")
                         .style("font-size", "80%")
                     )
-                )
-                .content(
-                    sh.tag("h1")
-                    .style("font-size", "1rem")
-                    .style("position", "absolute")
-                    .style("margin", "0")
-                    .style("padding", "0")
-                    .style("padding-top", "1em")
-                    .style("margin-left", "8em")
-                    .style("margin-right", "8em")
-                    .style("white-space", "nowrap")
-                    .style("text-overflow", "ellipsis")
-                    .style("overflow", "hidden")
-                    .style("left", "0.25em")
-                    .style("right", "0.25em")
-                    .style("color", "#fff")
                 )
                 .content(
                     sh.tag("span").class("sh-right sh-fw-icon sh-icon-fullscreen image-fullscreen-button")
@@ -237,6 +234,28 @@
         popup.get().find("> div > div").on("click", function (event)
         {
             event.stopPropagation();
+
+            var header = popup.get().find("> div > div > header");
+            if (header.css("visibility") === "visible")
+            {
+                header.animate({
+                    top: "-80px"
+                }, 350, function ()
+                {
+                    header.css("visibility", "hidden");
+                });
+            }
+            else
+            {
+                header
+                .css("visibility", "visible")
+                .animate({
+                    top: "0px"
+                }, 350, function ()
+                {
+        
+                });
+            }
 
             var footer = popup.get().find("> div > div > footer");
             if (footer.css("visibility") === "visible")

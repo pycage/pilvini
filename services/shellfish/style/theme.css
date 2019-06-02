@@ -16,15 +16,15 @@
 
 
 .sh-theme-dark {
-    --color-primary: #909090;
-    --color-primary-background: #404040;
-    --color-primary-background-translucent: rgba(64, 64, 64, 0.8); /* #404040a0;*/
-    --color-secondary-background: #606060;
-    --color-highlight: #909090;
-    --color-highlight-background: #2f5a77;
+    --color-primary: #a0a0a0;
+    --color-primary-background: #202020;
+    --color-primary-background-translucent: rgba(32, 32, 32, 0.8); /* #202020a0;*/
+    --color-secondary-background: #404040;
+    --color-highlight: #a0a0a0;
+    --color-highlight-background: #1f4a67;
     --color-content-background: #303030;
     --color-content-alt-background: #404040;
-    --color-disabled: #808080;
+    --color-disabled: #707070;
     --color-border: #a0a0a0;
 
     font-family: Arial, Helvetica, sans-serif;

@@ -135,7 +135,7 @@
                 box.append(
                     sh.tag("div")
                     .style("position", "absolute")
-                    .style("background-color", "red")
+                    .style("background-color", "rgba(255, 0, 0, 0.3)")
                     .style("top", "0")
                     .style("bottom", "0")
                     .html()
@@ -155,7 +155,17 @@
 
     function slideIn()
     {
-        var videoDiv = popup.get().find("> div > div > div");
+        var videoDiv = popup.get().find("> div > div");
+        
+        videoDiv.find("header")
+        .css("visibility", "visible")
+        .animate({
+            top: "0px"
+        }, 350, function ()
+        {
+
+        });
+
         videoDiv.find("footer")
         .css("visibility", "visible")
         .animate({
@@ -168,7 +178,15 @@
 
     function slideOut()
     {
-        var videoDiv = popup.get().find("> div > div > div");
+        var videoDiv = popup.get().find("> div > div");
+
+        videoDiv.find("header").animate({
+            top: "-80px"
+        }, 350, function ()
+        {
+            videoDiv.find("header").css("visibility", "hidden");
+        });
+
         videoDiv.find("footer").animate({
             bottom: "-80px"
         }, 350, function ()
@@ -192,7 +210,7 @@
 
     function toggleFullscreen()
     {
-        var videoDiv = popup.get().find("> div > div > div");
+        var videoDiv = popup.get().find("> div > div");
 
         var fullscreenButton = videoDiv.find(".video-fullscreen-button");
         if (sh.fullscreenStatus())
@@ -233,7 +251,8 @@
         .css("min-width", w2 + "px")
         .css("min-height", h2 + "px")
         .css("max-width", viewWidth + "px")
-        .css("max-height", viewHeight + "px");
+        .css("max-height", viewHeight + "px")
+        .css("margin", sh.fullscreenStatus() ? "0" : "0.2rem");
 
         if ((w2 < viewWidth || h2 < viewHeight) && sh.fullscreenStatus())
         {
@@ -260,99 +279,98 @@
                 .content(
                     sh.tag("video")
                 )
+            )
+            .content(
+                sh.tag("header")
+                .style("font-size", "200%")
+                .style("top", "-80px")
+                .style("visibility", "hidden")
                 .content(
-                    sh.tag("footer")
-                    .style("background-color", "rgba(1, 1, 1, 0.6)")
-                    .style("color", "#fff")
-                    .style("font-size", "200%")
+                    sh.tag("h1")
+                    .style("font-size", "1rem")
                     .style("position", "absolute")
                     .style("margin", "0")
+                    .style("padding", "0")
+                    .style("white-space", "nowrap")
+                    .style("text-overflow", "ellipsis")
+                    .style("overflow", "hidden")
+                    .style("left", "0.25em")
+                    .style("right", "0.25em")
+                )
+            )
+            .content(
+                sh.tag("footer")
+                .style("font-size", "200%")
+                .style("bottom", "-80px")
+                .style("min-height", "80px")
+                .style("line-height", "80px")
+                .style("visibility", "hidden")
+                .content(
+                    sh.tag("div").class("video-progress-label")
+                    .style("position", "absolute")
+                    .style("top", "1.1rem")
                     .style("left", "0")
                     .style("right", "0")
-                    .style("bottom", "-80px")
-                    .style("min-height", "80px")
-                    .style("line-height", "80px")
-                    .style("visibility", "hidden")
+                    .style("text-align", "center")
+                    .style("line-height", "1rem")
+                    .style("font-size", "1rem")
+                    .content("0:00 | 1:23")
+                )
+                .content(
+                    sh.tag("span").class("sh-left")
+                    .style("padding-top", "0.5rem")
                     .content(
-                        sh.tag("div").class("video-progress-label")
-                        .style("position", "absolute")
-                        .style("top", "6px")
-                        .style("left", "0")
-                        .style("right", "0")
-                        .style("text-align", "center")
-                        .style("line-height", "1rem")
-                        .style("font-size", "1rem")
-                        .content("0:00 | 1:23")
+                        sh.tag("span").class("sh-fw-icon sh-icon-media-rwd10 video-rewind-button")
+                        .style("padding-left", "0.5em")
+                        .style("font-size", "80%")
                     )
                     .content(
-                        sh.tag("span").class("sh-left")
-                        .content(
-                            sh.tag("span").class("sh-fw-icon sh-icon-media-rwd10 video-rewind-button")
-                            .style("padding-left", "0.5em")
-                            .style("font-size", "80%")
-                        )
-                        .content(
-                            sh.tag("span").class("sh-fw-icon video-play-button")
-                            .style("padding-left", "0.25em")
-                        )
-                        .content(
-                            sh.tag("span").class("sh-fw-icon sh-icon-media-fwd30 video-forward-button")
-                            .style("padding-left", "0.25em")
-                            .style("font-size", "80%")
-                        )
+                        sh.tag("span").class("sh-fw-icon video-play-button")
+                        .style("padding-left", "0.25em")
                     )
                     .content(
-                        sh.tag("h1")
-                        .style("font-size", "1rem")
-                        .style("position", "absolute")
-                        .style("margin", "0")
-                        .style("padding", "0")
-                        .style("padding-top", "1em")
-                        .style("margin-left", "8em")
-                        .style("margin-right", "8em")
-                        .style("white-space", "nowrap")
-                        .style("text-overflow", "ellipsis")
-                        .style("overflow", "hidden")
-                        .style("left", "0.25em")
-                        .style("right", "0.25em")
-                        .style("color", "#fff")
+                        sh.tag("span").class("sh-fw-icon sh-icon-media-fwd30 video-forward-button")
+                        .style("padding-left", "0.25em")
+                        .style("font-size", "80%")
                     )
+                )
+                .content(
+                    sh.tag("span").class("sh-right sh-fw-icon sh-icon-fullscreen video-fullscreen-button")
+                    .style("padding-top", "0.5rem")
+                )
+                .content(
+                    sh.tag("div").class("video-progress-bar")
+                    .style("position", "absolute")
+                    .style("top", "0")
+                    .style("left", "0")
+                    .style("right", "0")
+                    .style("height", "1rem")
+                    .style("background-color", "rgba(0, 0, 0, 0.2)")
                     .content(
-                        sh.tag("span").class("sh-right sh-fw-icon sh-icon-fullscreen video-fullscreen-button")
-                    )
-                    .content(
-                        sh.tag("div").class("video-progress-bar")
+                        sh.tag("div")
                         .style("position", "absolute")
                         .style("top", "0")
                         .style("left", "0")
-                        .style("right", "0")
-                        .style("height", "1rem")
-                        .content(
-                            sh.tag("div")
-                            .style("position", "absolute")
-                            .style("top", "0")
-                            .style("left", "0")
-                            .style("width", "100%")
-                            .style("height", "1px")
-                        )
-                        .content(
-                            sh.tag("div")
-                            .style("position", "absolute")
-                            .style("top", "0")
-                            .style("left", "0")
-                            .style("width", "0%")
-                            .style("height", "4px")
-                            .style("background-color", "var(--color-primary-background)")
-                        )
+                        .style("width", "100%")
+                        .style("height", "100%")
                     )
-                    /*
                     .content(
-                        sh.tag("img").class("sh-right")
-                        .style("width: 100px")
-                        .style("height: 80px")
-                        )
-                    */
+                        sh.tag("div")
+                        .style("position", "absolute")
+                        .style("top", "0")
+                        .style("left", "0")
+                        .style("width", "0%")
+                        .style("height", "100%")
+                        .style("background-color", "var(--color-highlight-background)")
+                    )
                 )
+                /*
+                .content(
+                    sh.tag("img").class("sh-right")
+                    .style("width: 100px")
+                    .style("height: 80px")
+                    )
+                */
             )
             .html()
         );
@@ -372,7 +390,7 @@
         setTimeout(hack, 500);
         */
     
-        var videoDiv = popup.get().find("> div > div > div");
+        var videoDiv = popup.get().find("> div > div");
         var video = popup.get().find("video");
         var btnPlay = popup.get().find(".video-play-button");
     
