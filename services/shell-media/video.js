@@ -138,6 +138,8 @@
                     .style("background-color", "rgba(255, 0, 0, 0.3)")
                     .style("top", "0")
                     .style("bottom", "0")
+                    .style("pointer-events", "none")
+                    .style("touch-action", "none")
                     .html()
                 );
             }
