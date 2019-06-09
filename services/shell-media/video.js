@@ -115,7 +115,7 @@
         updateBuffering();
     }
 
-        /* Updates the current buffering progress.
+    /* Updates the current buffering progress.
      */
     function updateBuffering()
     {

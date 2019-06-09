@@ -267,7 +267,7 @@
             .style("display", "none")
             .attr("muted", "true")
             .attr("loop", "true")
-            .attr("src", "/::res/webshell/extensions/audio/null.mp4")
+            .attr("src", "/::res/shell-media/audio/null.mp4")
             .html()
         );
 
