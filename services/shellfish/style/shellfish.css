@@ -91,6 +91,13 @@ input[type=text], input[type=password] {
     color: var(--color-primary)
 }
 
+textarea {
+    background-color: transparent;
+    border: none;
+    color: var(--color-primary);
+    font-size: 100%;
+}
+
 /* Toggle switch */
 
 label.sh-switch {
