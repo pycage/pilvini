@@ -204,7 +204,7 @@ sh.pageFreeze = function (page, where)
     var scrollTop = where;
     page.prop("rememberedScrollTop",  scrollTop);
     page.addClass("sh-page-transitioning");
-    page.find("> section").css("margin-top", (-scrollTop) + "px");
+    page.find("> section, > div").css("margin-top", (-scrollTop) + "px");
 };
 
 /* Unfreezes the given page, restoring the frozen scroll position.
@@ -212,7 +212,7 @@ sh.pageFreeze = function (page, where)
 sh.pageUnfreeze = function (page)
 {
     page.removeClass("sh-page-transitioning");
-    page.find("> section").css("margin-top", "0");
+    page.find("> section, > div").css("margin-top", "0");
     $(document).scrollTop(page.prop("rememberedScrollTop") || 0);
 };
 
@@ -259,6 +259,7 @@ sh.pagePush = function (page, callback, immediate)
             if (prevPage.length)
             {
                 prevPage.css("display", "none");
+                prevPage.trigger("hidden");
             }
             sh.pageUnfreeze(page);
             if (callback)
@@ -277,6 +278,7 @@ sh.pagePush = function (page, callback, immediate)
         if (prevPage.length)
         {
             prevPage.css("display", "none");
+            prevPage.trigger("hidden");
         }
         sh.pageUnfreeze(page);
         if (callback)
@@ -313,6 +315,7 @@ sh.pagePop = function (callback, reverse, immediate)
                 page.removeClass("sh-visible");
                 sh.pageUnfreeze(page);
                 sh.pageUnfreeze(prevPage);
+                prevPage.trigger("visible");
 
                 page.css("left", "0").css("right", "0");
                 page.trigger("sh-closed");
@@ -336,6 +339,7 @@ sh.pagePop = function (callback, reverse, immediate)
             page.removeClass("sh-visible");
             sh.pageUnfreeze(page);
             sh.pageUnfreeze(prevPage);
+            prevPage.trigger("visible");
 
             page.css("left", "0").css("right", "0");
             page.find("> header").css("left", "0").css("right", "0");

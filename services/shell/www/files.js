@@ -328,6 +328,7 @@ var files = { };
             if (items.length === 0)
             {
                 popStatus(statusEntry);
+                statusEntry = null;
                 return;
             }
         
@@ -641,15 +642,22 @@ var files = { };
                 items.push(idx);
             }
         }
-   
+
+        if (items.length === 0)
+        {
+            return;
+        }
         console.log("loadThumbnails: " + items.length + " images");
 
         var totalItems = items.length;
         var statusEntry = sh.element(ui.StatusItem).icon("sh-icon-wait").get();
         pushStatus(statusEntry);
-        m_properties.currentContext.watch(function ()
+        m_properties.currentContext.watchOnce(function ()
         {
-            popStatus(statusEntry);
+            if (statusEntry)
+            {
+                popStatus(statusEntry);
+            }
         });
         
         loadNextThumbnail(m_properties.currentContext.value(), items);
@@ -901,7 +909,10 @@ var files = { };
 
     function updateNavBar()
     {
-        m_page.left.update();
+        if (m_page.get().is(":visible"))
+        {
+            m_page.left.update();
+        }
     }
 
     function loadDirectory(uri, pushToHistory)
@@ -1083,7 +1094,6 @@ var files = { };
         m_properties.shares.assign(data.shares);
         m_properties.permissions.assign(data.permissions);
 
-        //setupNavBar();
         document.title = "Pilvini - " + decodeURIComponent(data.uri);
 
         $(document).scrollTop(m_scrollPositionsMap[m_properties.currentUri.value()] || 0);
@@ -1489,6 +1499,7 @@ var files = { };
     }, false);
 
     $(window).resize(updateNavBar);
+    m_page.get().on("visible", updateNavBar);
 
     /* setup file upload */
     $("#upload").on("change", function (event)

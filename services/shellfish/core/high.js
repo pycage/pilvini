@@ -7,6 +7,7 @@
         var that = this;
         var m_value = value;
         var m_watchers = [];
+        var m_onceWatchers = [];
     
         /* Notifies the watchers of this binding about an update.
          */
@@ -23,6 +24,19 @@
                     console.error("Binding error: " + err);
                 }
             });
+
+            m_onceWatchers.forEach(function (watchCallback)
+            {
+                try
+                {
+                    watchCallback(m_value);
+                }
+                catch (err)
+                {
+                    console.error("Binding error: " + err);
+                }
+            });
+            m_onceWatchers = [];
         }
     
         /* Registers a callback for watching this binding.
@@ -30,6 +44,13 @@
         this.watch = function (watchCallback)
         {
             m_watchers.push(watchCallback);
+        };
+
+        /* Registers a one-shot callback for watching this binding.
+         */
+        this.watchOnce = function (watchCallback)
+        {
+            m_onceWatchers.push(watchCallback);
         };
     
         /* Assigns a new value to this binding.

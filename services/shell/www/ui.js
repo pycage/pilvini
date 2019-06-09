@@ -154,13 +154,13 @@ ui.NavBar = function ()
             var item = $(items[i]);
             var letter = item.find("h1").html()[0].toUpperCase();
             var offset = item.offset().top;
-    
+            
             if (letter !== currentLetter && offset !== previousOffset)
             {
                 m_navBar.append(
                     sh.tag("span")
                     .style("position", "absolute")
-                    .style("top", (item.offset().top - m_page.header.get().height()) + "px")
+                    .style("top", (offset - m_page.header.get().height()) + "px")
                     .style("left", "0")
                     .style("right", "0")
                     .content(letter)
