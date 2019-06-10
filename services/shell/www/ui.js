@@ -2,6 +2,27 @@
 
 var ui = { };
 
+ui.showInfo = function (title, msg, callback)
+{
+    var dlg = sh.element(sh.Dialog).title(title)
+    .add(
+        sh.element(sh.Label).text(msg)
+    )
+    .button(
+        sh.element(sh.Button).text("Ok")
+        .action(function ()
+        {
+            dlg.close_();
+            if (callback)
+            {
+                callback();
+            }
+        })
+    );
+    dlg.show_();
+};
+
+
 ui.showError = function (msg, callback)
 {
     var dlg = sh.element(sh.Dialog).title("Error")

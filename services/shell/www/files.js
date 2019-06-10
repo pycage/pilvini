@@ -813,10 +813,12 @@ var files = { };
                 var startAt = Number.parseInt(dlg.find("startAt").get().text);
 
                 var sel = m_properties.selection.value().slice();
-                sel.sort();
+                sel.sort(function (a, b) { return Number.parseInt("" + a) - Number.parseInt("" + b); });
+                
                 var n = startAt;
                 var remaining = sel.length;
                 var failures = 0;
+
                 sel.forEach(function (idx)
                 {
                     var meta = m_properties.files.value()[idx];
@@ -902,7 +904,7 @@ var files = { };
         return function ()
         {
             var sel = m_properties.selection.value().slice();
-            sel.sort();
+            sel.sort(function (a, b) { return Number.parseInt("" + a) - Number.parseInt("" + b); });
             sel.forEach(function (idx)
             {
                 callback(idx);

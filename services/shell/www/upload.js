@@ -64,7 +64,7 @@ function upload(file, target, cbContext, fileCallback, finishedCallback)
         reader.abort();
         console.log(reader.error);
         fileCallback("file", file.name, -1, cbContext);
-        //ui.showError("Failed to upload: " + file.name);
+        //ui.showError("Failed to upload: " + file.name + " " + reader.error);
         //statusEntry.remove();
         finishedCallback();
     };

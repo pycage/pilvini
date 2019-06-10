@@ -220,7 +220,7 @@ function makeHtml(extensions)
             .content(
                 tag("body").class("sh-theme-default")
                 .content(
-                    tag("input").id("upload").attr("type", "file").attr("multiple", "").style("display", "none")
+                    tag("input").id("upload").attr("type", "file").attr("multiple", "multiple").style("display", "none")
                 )
                 .content(
                     tag("a").id("download").data("ajax", "false").attr("href", "#").attr("download", "name").style("display", "none")
