@@ -608,3 +608,23 @@ sh.fullscreenExit = function ()
         document.exitFullscreen();
     }
 };
+
+(function ()
+{
+    var mql = window.matchMedia("(prefers-color-scheme: dark)");
+    if (mql.matches)
+    {
+        $("body").removeClass("sh-theme-default").addClass("sh-theme-dark");
+    }
+    mql.addListener(function (ev)
+    {
+        if (ev.matches)
+        {
+            $("body").removeClass("sh-theme-default").addClass("sh-theme-dark");
+        }
+        else
+        {
+            $("body").removeClass("sh-theme-dark").addClass("sh-theme-default");
+        }
+    });
+}) ();

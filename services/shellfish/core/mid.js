@@ -401,6 +401,8 @@ sh.Menu = function ()
             sh.tag("div")
             .content(
                 sh.tag("ul")
+                .style("max-height", "75vh")
+                .style("overflow", "hidden auto")
                 .style("white-space", "nowrap")
             )
         )
@@ -889,7 +891,7 @@ sh.TextInput = function ()
 
     function setText(text)
     {
-        m_input.val(sh.escapeHtml(text));
+        m_input.val(text);
     }
 
     function text()

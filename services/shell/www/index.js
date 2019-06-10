@@ -274,23 +274,6 @@ function init(extensions)
             sh.element(sh.MenuItem).text("Logout")
             .onClicked(logout)
         );
-
-        var mql = window.matchMedia("(prefers-color-scheme: dark)");
-        if (mql.matches)
-        {
-            $("body").removeClass("sh-theme-default").addClass("sh-theme-dark");
-        }
-        mql.addListener(function (ev)
-        {
-            if (ev.matches)
-            {
-                $("body").removeClass("sh-theme-default").addClass("sh-theme-dark");
-            }
-            else
-            {
-                $("body").removeClass("sh-theme-dark").addClass("sh-theme-default");
-            }
-        });
     });
 }
 
@@ -406,23 +389,6 @@ function initLogin()
             var pic = "data:image/jpeg;base64," + data.image;
             page.get().get().css("background-image", "url(" + pic + ")");
             page.get().get().find("p").html("Background image powered by bing.com<hr style='border: solid 1px #fff;'>" + sh.escapeHtml(atob(data.description)));
-        });
-
-        var mql = window.matchMedia("(prefers-color-scheme: dark)");
-        if (mql.matches)
-        {
-            $("body").removeClass("sh-theme-default").addClass("sh-theme-dark");
-        }
-        mql.addListener(function (ev)
-        {
-            if (ev.matches)
-            {
-                $("body").removeClass("sh-theme-default").addClass("sh-theme-dark");
-            }
-            else
-            {
-                $("body").removeClass("sh-theme-dark").addClass("sh-theme-default");
-            }
         });
 
         showLoginDialog();

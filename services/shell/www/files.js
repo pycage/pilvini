@@ -768,6 +768,115 @@ var files = { };
         });
     }
 
+    function bulkRename()
+    {
+        function padZero(n, amount)
+        {
+            var s = "" + n;
+            while (s.length < amount) s = "0" + s;
+            return s;
+        }
+
+        var dlg = sh.element(sh.Dialog).title("Bulk-Rename")
+        .add(
+            sh.element(sh.Label).text("Rename the selected files.")
+        )
+        .add(
+            sh.element(sh.Label).text("- <N>: Number (prepend 0 for leading zeros, e.g. <00N>)")
+        )
+        .add(
+            sh.element(sh.Label).text("- <NAME>: File name without extension")
+        )
+        .add(
+            sh.element(sh.Label).text("- <EXT>: File extension")
+        )
+        .add(
+            sh.element(sh.Labeled).text("Pattern:")
+            .add(
+                sh.element(sh.TextInput).id("pattern").focus(true)
+                .text("<00N> <NAME>.<EXT>")
+            )
+        )
+        .add(
+            sh.element(sh.Labeled).text("Start N at:")
+            .add(
+                sh.element(sh.TextInput).id("startAt")
+                .text("1")
+            )
+        )
+        .button(
+            sh.element(sh.Button).text("Rename").isDefault(true)
+            .action(function ()
+            {
+                dlg.close_();
+                var pattern = dlg.find("pattern").get().text;
+                var startAt = Number.parseInt(dlg.find("startAt").get().text);
+
+                var sel = m_properties.selection.value().slice();
+                sel.sort();
+                var n = startAt;
+                var remaining = sel.length;
+                var failures = 0;
+                sel.forEach(function (idx)
+                {
+                    var meta = m_properties.files.value()[idx];
+
+                    var fullName = meta.name;
+                    var name = fullName;
+                    var ext = "";
+
+                    var pos = fullName.lastIndexOf(".");
+                    if (pos !== -1)
+                    {
+                        name = fullName.substr(0, pos);
+                        ext = fullName.substr(pos + 1);
+                    }
+                    
+                    var newName = pattern.replace(/<N>/g, padZero(n, 1))
+                                         .replace(/<0N>/g, padZero(n, 2))
+                                         .replace(/<00N>/g, padZero(n, 3))
+                                         .replace(/<000N>/g, padZero(n, 4))
+                                         .replace(/<0000N>/g, padZero(n, 5))
+                                         .replace(/<NAME>/g, name)
+                                         .replace(/<EXT>/g, ext);
+
+                    ++n;
+                    var targetUri = joinPath(m_properties.currentUri.value(), encodeURIComponent(newName));
+    
+                    file.move(meta.uri, targetUri, function (ok)
+                    {
+                        if (ok)
+                        {
+                            console.log("File moved: " + name + " -> " + newName);
+                            m_listView.item(idx).title = newName;
+                        }
+                        else
+                        {
+                            ++failures;
+                            //ui.showError("Failed to move: " + name + " to " + newName);
+                        }
+                        
+                        --remaining;
+                        if (remaining === 0)
+                        {
+                            loadDirectory(m_properties.currentUri.value(), false);
+                        }
+
+                    }); 
+                });
+            unselectAll();
+            })
+        )
+        .button(
+            sh.element(sh.Button).text("Cancel")
+            .action(function ()
+            {
+                dlg.close_();
+            })
+        )
+        dlg.show_();
+    }
+
     function selectAll()
     {
         var sel = [];
@@ -1471,6 +1580,12 @@ var files = { };
             .visible(sh.predicate([m_properties.permissions], function () { return m_properties.permissions.value().indexOf("MODIFY") !== -1; }))
             .enabled(sh.predicate([m_properties.selection], function () { return m_properties.selection.value().length === 1; }))
             .onClicked(eachSelected(renameItem))
+        )
+        .add(
+            sh.element(sh.MenuItem).text("Bulk-Rename...").icon("sh-icon-rename")
+            .visible(sh.predicate([m_properties.permissions], function () { return m_properties.permissions.value().indexOf("MODIFY") !== -1; }))
+            .enabled(sh.predicate([m_properties.selection], function () { return m_properties.selection.value().length > 0; }))
+            .onClicked(bulkRename)
         )
         .add(
             sh.element(sh.MenuItem).text("Delete").icon("sh-icon-trashcan")
