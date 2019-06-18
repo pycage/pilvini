@@ -527,6 +527,42 @@
         function setBuffered(buffered)
         {
             m_buffered = buffered;
+
+            if (m_duration === 0)
+            {
+                return;
+            }
+
+            m_item.find("> div:nth-child(1)").each(function (i)
+            {
+                var box = $(this);
+                while (box.find("> div").length > buffered.length)
+                {
+                    box.find("> div").last().remove();
+                }
+                while (box.find("> div").length < buffered.length)
+                {
+                    box.append(
+                        sh.tag("div")
+                        .style("position", "absolute")
+                        .style("background-color", "rgba(255, 0, 0, 0.3)")
+                        .style("top", "0")
+                        .style("bottom", "0")
+                        .style("pointer-events", "none")
+                        .style("touch-action", "none")
+                        .html()
+                    );
+                }
+    
+                var gauges = box.find("> div");
+                for (var i = 0; i < buffered.length; ++i)
+                {
+                    console.log("buffered " + i + ": " + buffered.start(i) + " - " + buffered.end(i));
+                    gauges.eq(i)
+                    .css("left", (buffered.start(i) / m_duration * 100) + "%")
+                    .css("right", (100 - buffered.end(i) / m_duration * 100) + "%");
+                }
+            });
         }
 
         function buffered()
@@ -670,50 +706,6 @@
         m_uri.assign(uri);
     }
 
-
-
-
-    /* Updates the current buffering progress.
-     */
-    /*
-    function updateBuffering()
-    {
-        var video = popup.get().find("video");
-        var buffered = video.prop("buffered");
-        var total = video.prop("duration");
-
-        popup.get().find(".video-progress-bar > div:nth-child(1)").each(function (i)
-        {
-            var box = $(this);
-            while (box.find("> div").length > buffered.length)
-            {
-                box.find("> div").last().remove();
-            }
-            while (box.find("> div").length < buffered.length)
-            {
-                box.append(
-                    sh.tag("div")
-                    .style("position", "absolute")
-                    .style("background-color", "rgba(255, 0, 0, 0.3)")
-                    .style("top", "0")
-                    .style("bottom", "0")
-                    .style("pointer-events", "none")
-                    .style("touch-action", "none")
-                    .html()
-                );
-            }
-
-            var gauges = box.find("> div");
-            for (var i = 0; i < buffered.length; ++i)
-            {
-                console.log("buffered " + i + ": " + buffered.start(i) + " - " + buffered.end(i));
-                gauges.eq(i)
-                .css("left", (buffered.start(i) / total * 100) + "%")
-                .css("right", (100 - buffered.end(i) / total * 100) + "%");
-            }
-        });
-    }
-    */
 
 
     $(window).resize(function ()
