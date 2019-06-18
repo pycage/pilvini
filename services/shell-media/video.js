@@ -2,121 +2,680 @@
 
 (function ()
 {
-    var isSeeking = false;
+    var m_uri = sh.binding("");
+    var m_size = sh.binding(0);
+    var m_position = sh.binding(0);
+    var m_duration = sh.binding(0);
+    var m_buffered = sh.binding(null);
+    var m_status = sh.binding("paused"); // playing | paused | buffering | stalled
+    var m_isFullscreen = sh.binding(false);
 
-    function formatTime(seconds)
+    function VideoPopup()
     {
-        var t = seconds;
-        var secs = Math.floor(t) % 60;
-        t /= 60;
-        var minutes = Math.floor(t) % 60;
-        t /= 60;
-        var hours = Math.floor(t);
+        Object.defineProperties(this, {
+            header: { set: setHeader, get: header, enumerable: true },
+            footer: { set: setFooter, get: footer, enumerable: true },
+            uri: { set: setUri, get: uri, enumerable: true },
+            size: { set: setSize, enumerable: true }
+        });
 
-        var h = hours.toFixed(0);
-        var m = minutes.toFixed(0);
-        var s = secs.toFixed(0);
+        var m_header = null;
+        var m_footer = null;
+        var m_uri = "";
 
-        if (h.length === 1) { h = "0" + h; }
-        if (m.length === 1) { m = "0" + m; }
-        if (s.length === 1) { s = "0" + s; }
+        var m_item = $(
+            sh.tag("div")
+            .style("position", "relative")
+            .content(
+                sh.tag("div")
+                .style("background-color", "black")
+                .content(
+                    sh.tag("video")
+                )
+            )
+            .content(
+                sh.tag("header")
+                .style("font-size", "200%")
+                .style("top", "0")
+            )
+            .content(
+                sh.tag("footer")
+                .style("font-size", "200%")
+                .style("bottom", "0")
+                .style("min-height", "80px")
+                .style("line-height", "80px")
+            )
+            .html()
+        );
 
-        return (hours > 0 ? h + ":" : "") + m + ":" + s;
+        m_item.on("click", function (event)
+        {
+            event.stopPropagation();
+        });
+
+        m_item.find("video")
+        .prop("autoplay", true)
+        .removeProp("controls")
+        .on("canplay", updateSizeConstraints)
+        .on("pause", function ()
+        {
+            m_status.assign("paused");
+        })
+        .on("play", function ()
+        {
+            m_status.assign("playing");
+        })
+        .on("playing", function ()
+        {
+            m_status.assign("playing");
+        })
+        .on("waiting", function ()
+        {
+            m_status.assign("buffering");
+        })
+        .on("ended", function ()
+        {
+            m_status.assign("paused");
+        })
+        .on("stalled", function ()
+        {
+            m_status.assign("stalled");
+        })
+        .on("durationchange", function ()
+        {
+            m_duration.assign(this.duration || 0);
+        })
+        .on("timeupdate", function ()
+        {
+            m_position.assign(this.currentTime || 0);
+        })
+        .on("progress", function ()
+        {
+            m_buffered.assign(this.buffered);
+        })
+        .on("click", function (event)
+        {
+            if (m_item.find("footer").css("visibility") === "visible")
+            {
+                slideOut();
+            }
+            else
+            {
+                slideIn();
+            }
+        })
+        .on("dblclick", toggleFullscreen);
+
+
+        /* Updates the video size constraints.
+        */
+        function updateSizeConstraints()
+        {
+            var video = m_item.find("video");
+            var w = video.width();
+            var h = video.height();
+            var ratio = w / h;
+
+            var margin = sh.fullscreenStatus() ? 0 : 80;
+            var viewWidth = $(window).width() - margin;
+            var viewHeight = $(window).height() - margin;
+
+            var w2 = viewHeight * ratio;
+            var h2 = viewHeight;
+            if (w2 > viewWidth)
+            {
+                w2 = viewWidth;
+                h2 = viewWidth / ratio;
+            }
+
+            video
+            .css("min-width", w2 + "px")
+            .css("min-height", h2 + "px")
+            .css("max-width", viewWidth + "px")
+            .css("max-height", viewHeight + "px")
+            .css("margin", sh.fullscreenStatus() ? "0" : "0.2rem");
+
+            if ((w2 < viewWidth || h2 < viewHeight) && sh.fullscreenStatus())
+            {
+                video.css("transform",
+                        "translateX(" + ((viewWidth - w2) / 2) + "px) " +
+                        "translateY(" + ((viewHeight - h2) / 2)  + "px)");
+            }
+            else
+            {
+                video.css("transform", "initial");
+            }
+        }
+
+        function slideIn()
+        {            
+            m_item.find("header")
+            .css("visibility", "visible")
+            .animate({
+                top: "0px"
+            }, 350, function ()
+            {
+    
+            });
+    
+            m_item.find("footer")
+            .css("visibility", "visible")
+            .animate({
+                bottom: "0px"
+            }, 350, function ()
+            {
+    
+            });
+        }
+    
+        function slideOut()
+        {
+            var headerHeight = m_item.find("header").height();
+            var footerHeight = m_item.find("footer").height();
+
+            m_item.find("header").animate({
+                top: "-" + headerHeight + "px" // "-80px"
+            }, 350, function ()
+            {
+                m_item.find("header").css("visibility", "hidden");
+            });
+    
+            m_item.find("footer").animate({
+                bottom: "-" + footerHeight + "px" // "-80px"
+            }, 350, function ()
+            {
+                m_item.find("footer").css("visibility", "hidden");
+            });
+        }
+
+        function toggleFullscreen()
+        {    
+            if (sh.fullscreenStatus())
+            {
+                sh.fullscreenExit();
+                m_isFullscreen.assign(false);
+            }
+            else
+            {
+                sh.fullscreenEnter(m_item);
+                m_isFullscreen.assign(true);
+            }
+            setTimeout(updateSizeConstraints, 300);
+        }
+
+        function setHeader(header)
+        {
+            if (m_header)
+            {
+                m_header.get().detach();
+            }
+            m_item.find("header").append(header.get());
+            m_header = header;
+        }
+
+        function header()
+        {
+            return m_header;
+        }
+
+        function setFooter(footer)
+        {
+            if (m_footer)
+            {
+                m_footer.get().detach();
+            }
+            m_item.find("footer").append(footer.get());
+            m_footer = footer;
+        }
+
+        function footer()
+        {
+            return m_footer;
+        }
+
+        function setUri(uri)
+        {
+            console.log("set URI: " + uri);
+            m_uri = uri;
+            m_item.find("video").prop("src", uri).trigger("load");
+        }
+
+        function uri()
+        {
+            return m_uri;
+        }
+
+        function setSize(s)
+        {
+            updateSizeConstraints();
+        }
+
+        this.get = function ()
+        {
+            return m_item;
+        };
+
+        this.play = function ()
+        {
+            m_item.find("video").trigger("play");
+        };
+
+        this.pause = function ()
+        {
+            m_item.find("video").trigger("pause");
+        };
+
+        this.seek = function (s)
+        {
+            m_item.find("video").prop("currentTime", s);
+        };
+
+        this.fullscreen = function ()
+        {
+            toggleFullscreen();
+        };
     }
 
-    /* Sets up the progress bar behavior.
-     */
-    function setupProgressBar(progressBar, draggingCallback, seekCallback)
+    function Header()
     {
-        var isDragging = false;
-
-        progressBar.on("mousedown", function (event)
-        {
-            isDragging = true;
-            var p = Math.max(0, Math.min(1, event.offsetX / $(this).width()));
-            progressBar.find("> div:nth-child(2)").css("width", (p * 100.0) + "%");
-            draggingCallback(p, true);
+        Object.defineProperties(this, {
+            title: { set: setTitle, get: title, enumerable: true }
         });
-        progressBar.on("mousemove", function (event)
+
+        var m_title = "";
+        var m_item = $(
+            sh.tag("h1")
+            .style("font-size", "1rem")
+            .style("position", "absolute")
+            .style("margin", "0")
+            .style("padding", "0")
+            .style("white-space", "nowrap")
+            .style("text-overflow", "ellipsis")
+            .style("overflow", "hidden")
+            .style("left", "0.25em")
+            .style("right", "0.25em")
+            .html()
+        );
+
+        function setTitle(title)
         {
-            if (isDragging)
+            m_title = title;
+            m_item.html(sh.escapeHtml(title));
+        }
+
+        function title()
+        {
+            return m_title;
+        }
+
+        this.get = function ()
+        {
+            return m_item;
+        };
+    }
+
+    function Footer()
+    {
+        Object.defineProperties(this, {
+
+        });
+
+        var m_item = $(
+            sh.tag("div")
+            .html()
+        );
+
+        this.get = function ()
+        {
+            return m_item;
+        };
+
+        this.add = function (child)
+        {
+            m_item.append(child.get());
+        };
+    }
+
+    function ProgressBar()
+    {
+        Object.defineProperties(this, {
+            position: { set: setPosition, get: position, enumerable: true },
+            duration: { set: setDuration, get: duration, enumerable: true },
+            buffered: { set: setBuffered, get: buffered, enumerable: true },
+            onSeeked: { set: setOnSeeked, get: onSeeked, enumerable: true }
+        });
+
+        var m_position = 0;
+        var m_duration = 0;
+        var m_buffered = null;
+        var m_onSeeked = null;
+        var m_isDragging = false;
+
+        var m_item = $(
+            sh.tag("div")
+            .style("position", "relative")
+            .style("height", "2rem")
+            .style("line-height", "2rem")
+            .style("background-color", "rgba(0, 0, 0, 0.2)")
+            .content(
+                sh.tag("div")
+                .style("position", "absolute")
+                .style("top", "0")
+                .style("left", "0")
+                .style("width", "100%")
+                .style("height", "100%")
+            )
+            .content(
+                sh.tag("div")
+                .style("position", "absolute")
+                .style("top", "0")
+                .style("left", "0")
+                .style("width", "0%")
+                .style("height", "100%")
+                .style("background-color", "var(--color-highlight-background)")
+            )
+            .content(
+                sh.tag("div")
+                .style("position", "absolute")
+                .style("top", "0")
+                .style("left", "0")
+                .style("bottom", "0")
+                .style("right", "0")
+                .content(
+                    sh.tag("h1")
+                    .style("text-align", "center")
+                    .style("font-size", "1.5rem")
+                )
+            )
+            .html()
+        );
+
+        m_item.on("mousedown", function (event)
+        {
+            m_isDragging = true;
+            var p = Math.max(0, Math.min(1, event.offsetX / $(this).width()));
+            m_item.find("> div:nth-child(2)").css("width", (p * 100.0) + "%");
+            draggingCallback(p);
+        });
+        m_item.on("mousemove", function (event)
+        {
+            if (m_isDragging)
             {
                 var p = Math.max(0, Math.min(1, event.offsetX / $(this).width()));
-                progressBar.find("> div:nth-child(2)").css("width", (p * 100.0) + "%");
-                draggingCallback(p, true);
+                m_item.find("> div:nth-child(2)").css("width", (p * 100.0) + "%");
+                draggingCallback(p);
             }
         });
-        progressBar.on("mouseup", function (event)
+        m_item.on("mouseup", function (event)
         {
-            if (isDragging)
+            if (m_isDragging)
             {
-                isDragging = false;
+                m_isDragging = false;
                 var p = event.offsetX / $(this).width();
-                seekCallback(p);
+                if (m_onSeeked)
+                {
+                    m_onSeeked(p);
+                }
             }
         });
-        progressBar.on("mouseleave", function (event)
+        m_item.on("mouseleave", function (event)
         {
-            isDragging = false;
-            draggingCallback(0, false);
+            m_isDragging = false;
         });
 
-        progressBar.on("touchstart", function (event)
+        m_item.on("touchstart", function (event)
         {
             event.preventDefault();
-            isDragging = true;
+            m_isDragging = true;
             var x = event.originalEvent.touches[0].clientX - $(this).offset().left;
             var p = Math.max(0, Math.min(1, x / $(this).width()));
-            progressBar.find("> div:nth-child(2)").css("width", (p * 100.0) + "%");
+            m_item.find("> div:nth-child(2)").css("width", (p * 100.0) + "%");
             this.lastTouchPos = p;
-            draggingCallback(p, true);
+            draggingCallback(p);
         });
-        progressBar.on("touchmove", function (event)
+        m_item.on("touchmove", function (event)
         {
             event.preventDefault();
-            if (isDragging)
+            if (m_isDragging)
             {
                 var x = event.originalEvent.touches[0].clientX - $(this).offset().left;
                 var p = Math.max(0, Math.min(1, x / $(this).width()));
-                progressBar.find("> div:nth-child(2)").css("width", (p * 100.0) + "%");
+                m_item.find("> div:nth-child(2)").css("width", (p * 100.0) + "%");
                 this.lastTouchPos = p;
-                draggingCallback(p, true);
+                draggingCallback(p);
             }
         });
-        progressBar.on("touchend", function (event)
+        m_item.on("touchend", function (event)
         {
             event.preventDefault();
-            if (isDragging)
+            if (m_isDragging)
             {
-                isDragging = false;
-                seekCallback(this.lastTouchPos);
+                m_isDragging = false;
+                if (m_onSeeked)
+                {
+                    m_onSeeked(event.lastTouchPos);
+                }
             }
         });
-        progressBar.on("touchcancel", function (event)
+        m_item.on("touchcancel", function (event)
         {
             event.preventDefault();
-            isDragging = false;
-            draggingCallback(0, false);
+            m_isDragging = false;
         });
+
+
+        function formatTime(seconds)
+        {
+            var t = seconds;
+            var secs = Math.floor(t) % 60;
+            t /= 60;
+            var minutes = Math.floor(t) % 60;
+            t /= 60;
+            var hours = Math.floor(t);
+    
+            var h = hours.toFixed(0);
+            var m = minutes.toFixed(0);
+            var s = secs.toFixed(0);
+    
+            if (h.length === 1) { h = "0" + h; }
+            if (m.length === 1) { m = "0" + m; }
+            if (s.length === 1) { s = "0" + s; }
+    
+            return (hours > 0 ? h + ":" : "") + m + ":" + s;
+        }
+
+        function draggingCallback(p)
+        {
+            if (m_duration > 0)
+            {
+                var pos = p * m_duration;
+                m_item.find("> div:nth-child(2)").last().css("width", (pos / m_duration * 100.0) + "%");
+                m_item.find("h1").html(formatTime(pos) + " / " + formatTime(m_duration));
+            }
+        }
+
+        function setPosition(pos)
+        {
+            var m_position = pos;
+            if (m_duration > 0 && ! m_isDragging)
+            {
+                m_item.find("> div:nth-child(2)").last().css("width", (m_position / m_duration * 100.0) + "%");
+                m_item.find("h1").html(formatTime(m_position) + " / " + formatTime(m_duration));
+            }
+        }
+
+        function position()
+        {
+            return m_position;
+        }
+
+        function setDuration(duration)
+        {
+            m_duration = duration;
+            if (m_duration > 0 && ! m_isDragging)
+            {
+                m_item.find("> div:nth-child(2)").last().css("width", (m_position / m_duration * 100.0) + "%");
+                m_item.find("h1").html(formatTime(m_position) + " / " + formatTime(m_duration));
+            }
+        }
+
+        function duration()
+        {
+            return m_duration;
+        }
+
+        function setBuffered(buffered)
+        {
+            m_buffered = buffered;
+        }
+
+        function buffered()
+        {
+            return m_buffered;
+        }
+
+        function setOnSeeked(onSeeked)
+        {
+            m_onSeeked = onSeeked;
+        }
+
+        function onSeeked()
+        {
+            return m_onSeeked;
+        }
+
+        this.get = function ()
+        {
+            return m_item;
+        };
     }
 
-    /* Updates the current player position.
-     */
-    function updatePosition()
+
+
+    function openVideo(uri)
     {
-        if (! isSeeking)
+        var popup = sh.element(sh.Popup)
+        .add(
+            sh.element(VideoPopup).id("video")
+            .header(
+                sh.element(Header)
+                .title(sh.predicate([m_uri], function ()
+                {
+                    var uri = m_uri.value();
+                    var idx = uri.lastIndexOf("/");
+                    return decodeURIComponent(idx !== -1 ? uri.substr(idx + 1)
+                                                         : uri);
+                }))
+            )
+            .footer(
+                sh.element(Footer)
+                .add(
+                    sh.element(ProgressBar)
+                    .position(m_position)
+                    .duration(m_duration)
+                    .buffered(m_buffered)
+                    .onSeeked(function (p)
+                    {
+                        popup.find("video").seek_(p * m_duration.value());
+                    })
+                )
+                .add(
+                    sh.element(sh.Toolbar)
+                    .add(
+                        sh.element(sh.IconButton)
+                        .icon(sh.predicate([m_status], function ()
+                        {
+                            switch (m_status.value())
+                            {
+                            case "playing":
+                                return "sh-icon-media-pause";
+                            case "paused":
+                                return "sh-icon-media-play";
+                            default:
+                                return "sh-busy-indicator";
+                            }
+                        }))
+                        .onClicked(function ()
+                        {
+                            if (m_status.value() === "playing")
+                            {
+                                popup.find("video").pause_();
+                            }
+                            else
+                            {
+                                popup.find("video").play_();
+                            }
+                        })
+                    )
+                    .add(
+                        sh.element(sh.IconButton)
+                        .icon("sh-icon-media-rwd10")
+                        .onClicked(function ()
+                        {
+                            popup.find("video")
+                            .seek_(m_position.value() > 10 ? m_position.value() - 10
+                                                           : 0);
+                        })
+                    )
+                    .add(
+                        sh.element(sh.IconButton)
+                        .icon("sh-icon-media-fwd30")
+                        .onClicked(function ()
+                        {
+                            popup.find("video")
+                            .seek_(m_position.value() + 30 < m_duration.value() ? m_position.value() + 30
+                                                                                : m_duration.value());
+                        })
+                    )
+                    .right(
+                        sh.element(sh.IconButton)
+                        .icon("sh-icon-edit")
+                    )
+                    .right(
+                        sh.element(sh.IconButton)
+                        .icon(sh.predicate([m_isFullscreen], function ()
+                        {
+                            return m_isFullscreen.value() ? "sh-icon-unfullscreen"
+                                                          : "sh-icon-fullscreen"
+                        }))
+                        .onClicked(function ()
+                        {
+                            popup.find("video").fullscreen_();
+                        })
+                    )
+                )
+                /*
+                .add(
+                    sh.element(sh.Toolbar)
+                    .add(
+                        sh.element(sh.IconButton).icon("sh-icon-bug")
+                    )
+                )
+                */
+            )
+            .uri(m_uri)
+            .size(m_size)
+        );
+
+        popup.get().get().one("sh-closed", function ()
         {
-            var video = popup.get().find("video");
-            var total = video.prop("duration") || 0;
-            var pos = video.prop("currentTime") || 0;
-            popup.get().find(".video-progress-label").html(formatTime(pos) + " / " + formatTime(total));
-            popup.get().find(".video-progress-bar > div:nth-child(2)").last().css("width", (pos / total * 100.0) + "%");
-        }
-        updateBuffering();
+            // force-stop buffering
+            m_uri.assign("");
+            popup.dispose();
+            popup = null;
+        });
+
+        popup.show_();
+
+        m_uri.assign(uri);
     }
+
+
+
 
     /* Updates the current buffering progress.
      */
+    /*
     function updateBuffering()
     {
         var video = popup.get().find("video");
@@ -154,376 +713,16 @@
             }
         });
     }
+    */
 
-    function slideIn()
-    {
-        var videoDiv = popup.get().find("> div > div");
-        
-        videoDiv.find("header")
-        .css("visibility", "visible")
-        .animate({
-            top: "0px"
-        }, 350, function ()
-        {
-
-        });
-
-        videoDiv.find("footer")
-        .css("visibility", "visible")
-        .animate({
-            bottom: "0px"
-        }, 350, function ()
-        {
-
-        });
-    }
-
-    function slideOut()
-    {
-        var videoDiv = popup.get().find("> div > div");
-
-        videoDiv.find("header").animate({
-            top: "-80px"
-        }, 350, function ()
-        {
-            videoDiv.find("header").css("visibility", "hidden");
-        });
-
-        videoDiv.find("footer").animate({
-            bottom: "-80px"
-        }, 350, function ()
-        {
-            videoDiv.find("footer").css("visibility", "hidden");
-        });
-    }
-
-    function togglePlay()
-    {
-        var video = popup.get().find("video");
-        if (video.prop("paused"))
-        {
-            video.trigger("play");
-        }
-        else
-        {
-            video.trigger("pause");
-        }
-    }
-
-    function toggleFullscreen()
-    {
-        var videoDiv = popup.get().find("> div > div");
-
-        var fullscreenButton = videoDiv.find(".video-fullscreen-button");
-        if (sh.fullscreenStatus())
-        {
-            sh.fullscreenExit();
-            fullscreenButton.removeClass("sh-icon-unfullscreen").addClass("sh-icon-fullscreen");
-        }
-        else
-        {
-            sh.fullscreenEnter(videoDiv);
-            fullscreenButton.removeClass("sh-icon-fullscreen").addClass("sh-icon-unfullscreen");
-        }
-        setTimeout(updateSizeConstraints, 300);
-    }
-
-    /* Updates the video size constraints.
-     */
-    function updateSizeConstraints()
-    {
-        var video = popup.get().find("video");
-        var w = video.width();
-        var h = video.height();
-        var ratio = w / h;
-
-        var margin = sh.fullscreenStatus() ? 0 : 80;
-        var viewWidth = $(window).width() - margin;
-        var viewHeight = $(window).height() - margin;
-
-        var w2 = viewHeight * ratio;
-        var h2 = viewHeight;
-        if (w2 > viewWidth)
-        {
-            w2 = viewWidth;
-            h2 = viewWidth / ratio;
-        }
-
-        video
-        .css("min-width", w2 + "px")
-        .css("min-height", h2 + "px")
-        .css("max-width", viewWidth + "px")
-        .css("max-height", viewHeight + "px")
-        .css("margin", sh.fullscreenStatus() ? "0" : "0.2rem");
-
-        if ((w2 < viewWidth || h2 < viewHeight) && sh.fullscreenStatus())
-        {
-            video.css("transform",
-                      "translateX(" + ((viewWidth - w2) / 2) + "px) " +
-                      "translateY(" + ((viewHeight - h2) / 2)  + "px)");
-        }
-        else
-        {
-            video.css("transform", "initial");
-        }
-    }
-
-    function viewVideo(href)
-    {  
-        popup = new sh.Popup();
-    
-        popup.get().find("> div").html(
-            sh.tag("div")
-            .style("position", "relative")
-            .content(
-                sh.tag("div")
-                .style("background-color", "black")
-                .content(
-                    sh.tag("video")
-                )
-            )
-            .content(
-                sh.tag("header")
-                .style("font-size", "200%")
-                .style("top", "-80px")
-                .style("visibility", "hidden")
-                .content(
-                    sh.tag("h1")
-                    .style("font-size", "1rem")
-                    .style("position", "absolute")
-                    .style("margin", "0")
-                    .style("padding", "0")
-                    .style("white-space", "nowrap")
-                    .style("text-overflow", "ellipsis")
-                    .style("overflow", "hidden")
-                    .style("left", "0.25em")
-                    .style("right", "0.25em")
-                )
-            )
-            .content(
-                sh.tag("footer")
-                .style("font-size", "200%")
-                .style("bottom", "-80px")
-                .style("min-height", "80px")
-                .style("line-height", "80px")
-                .style("visibility", "hidden")
-                .content(
-                    sh.tag("div").class("video-progress-label")
-                    .style("position", "absolute")
-                    .style("top", "1.1rem")
-                    .style("left", "0")
-                    .style("right", "0")
-                    .style("text-align", "center")
-                    .style("line-height", "1rem")
-                    .style("font-size", "1rem")
-                    .content("0:00 | 1:23")
-                )
-                .content(
-                    sh.tag("span").class("sh-left")
-                    .style("padding-top", "0.5rem")
-                    .content(
-                        sh.tag("span").class("sh-fw-icon sh-icon-media-rwd10 video-rewind-button")
-                        .style("padding-left", "0.5em")
-                        .style("font-size", "80%")
-                    )
-                    .content(
-                        sh.tag("span").class("sh-fw-icon video-play-button")
-                        .style("padding-left", "0.25em")
-                    )
-                    .content(
-                        sh.tag("span").class("sh-fw-icon sh-icon-media-fwd30 video-forward-button")
-                        .style("padding-left", "0.25em")
-                        .style("font-size", "80%")
-                    )
-                )
-                .content(
-                    sh.tag("span").class("sh-right sh-fw-icon sh-icon-fullscreen video-fullscreen-button")
-                    .style("padding-top", "0.5rem")
-                )
-                .content(
-                    sh.tag("div").class("video-progress-bar")
-                    .style("position", "absolute")
-                    .style("top", "0")
-                    .style("left", "0")
-                    .style("right", "0")
-                    .style("height", "1rem")
-                    .style("background-color", "rgba(0, 0, 0, 0.2)")
-                    .content(
-                        sh.tag("div")
-                        .style("position", "absolute")
-                        .style("top", "0")
-                        .style("left", "0")
-                        .style("width", "100%")
-                        .style("height", "100%")
-                    )
-                    .content(
-                        sh.tag("div")
-                        .style("position", "absolute")
-                        .style("top", "0")
-                        .style("left", "0")
-                        .style("width", "0%")
-                        .style("height", "100%")
-                        .style("background-color", "var(--color-highlight-background)")
-                    )
-                )
-                /*
-                .content(
-                    sh.tag("img").class("sh-right")
-                    .style("width: 100px")
-                    .style("height: 80px")
-                    )
-                */
-            )
-            .html()
-        );
-    
-        /*
-        // test video capturing capability
-        function hack()
-        {
-            var canvas = document.createElement("canvas");
-            canvas.width = 100;
-            canvas.height = 80;
-            var ctx = canvas.getContext("2d");
-            ctx.drawImage(video.get(0), 0, 0, 80, 80);
-            videoDiv.find("footer > img").attr("src", canvas.toDataURL());
-            setTimeout(hack, 1000);
-        }
-        setTimeout(hack, 500);
-        */
-    
-        var videoDiv = popup.get().find("> div > div");
-        var video = popup.get().find("video");
-        var btnPlay = popup.get().find(".video-play-button");
-    
-        video.prop("autoplay", true);
-        video.removeProp("controls");
-    
-        videoDiv.on("click", function (event) { event.stopPropagation(); });
-    
-        video.on("canplay", updateSizeConstraints);
-        video.on("durationchange", updatePosition);
-        video.on("timeupdate", updatePosition);
-    
-        btnPlay.on("click", togglePlay);
-    
-        videoDiv.find(".video-rewind-button").on("click", function (event)
-        {
-            var currentTime = video.prop("currentTime");
-            if (currentTime - 10 > 0)
-            {
-                video.prop("currentTime", currentTime - 10);
-            }
-            else
-            {
-                video.prop("currentTime", 0);
-            }
-        });
-    
-        videoDiv.find(".video-forward-button").on("click", function (event)
-        {
-            var duration = video.prop("duration");
-            var currentTime = video.prop("currentTime");
-            if (currentTime + 30 < duration)
-            {
-                video.prop("currentTime", currentTime + 30);
-            }
-            else
-            {
-                video.prop("currentTime", duration);
-            }
-        });
-    
-        videoDiv.find(".video-fullscreen-button").on("click", toggleFullscreen);
-    
-        video.on("click", function (event)
-        {     
-            if (videoDiv.find("footer").css("visibility") === "visible")
-            {
-                slideOut();
-            }
-            else
-            {
-                slideIn();
-            }
-        });
-    
-        video.on("dblclick", toggleFullscreen);
-    
-        video.on("playing", function ()
-        {
-            btnPlay.removeClass("sh-icon-media-play-circle").addClass("sh-icon-media-pause-circle");
-        });
-    
-        video.on("pause", function ()
-        {
-            btnPlay.removeClass("sh-icon-media-pause-circle").addClass("sh-icon-media-play-circle");
-        });
-    
-        video.on("waiting", function ()
-        {
-            
-        });
-    
-        video.on("progress", updateBuffering);
-    
-        setupProgressBar(popup.get().find(".video-progress-bar"), function (p, dragging)
-        {
-            isSeeking = dragging;
-            if (dragging)
-            {
-                var total = video.prop("duration") || 0;
-                if (total > 0)
-                {
-                    popup.get().find(".video-progress-label").html(formatTime(Math.floor(p * total)) + " / " + formatTime(total));
-                }
-            }
-        },
-        function (p)
-        {
-            isSeeking = false;
-            video.prop("currentTime", p * video.prop("duration"));
-        });
-    
-    
-        video.attr("src", href);
-        video.trigger("load");
-    
-        popup.get().one("sh-closed", function ()
-        {
-            // force-stop buffering
-            video.attr("src", "");
-            video.trigger("load");
-            popup = null;
-    
-            //popup.find("> div").html("");
-        });
-    
-        var idx = href.lastIndexOf("/");
-        var name;
-        if (idx !== -1)
-        {
-            name = href.substr(idx + 1);
-        }
-        else
-        {
-            name = href;
-        }
-        popup.get().find("h1").html(decodeURIComponent(name));
-        popup.show();
-    }
-    
-
-    var popup = null;
 
     $(window).resize(function ()
     {
-        if (popup)
-        {
-            updateSizeConstraints();
-        }
+        m_size.assign($(window).width() * $(window).height());
     });
 
-    mimeRegistry.register("video/mp4", viewVideo);
-    mimeRegistry.register("video/webm", viewVideo);
+    mimeRegistry.register("video/mp4", openVideo);
+    mimeRegistry.register("video/webm", openVideo);
+
+    importJs(["/::res/shell-media/video-editor.js"], function () { });
 })();

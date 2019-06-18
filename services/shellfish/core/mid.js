@@ -922,6 +922,64 @@ sh.TextInput = function ()
     }
 };
 
+sh.Toolbar = function ()
+{
+    Object.defineProperties(this, {
+        left: { set: addLeft, get: left, enumerable: true },
+        right: { set: addRight, get: right, enumerable: true }
+    });
+
+    var m_left = [];
+    var m_right = [];
+
+    var m_item = $(
+        sh.tag("div")
+        .style("position", "relative")
+        .style("height", "3rem")
+        .style("line-height", "3rem")
+        .style("background-color", "var(--color-primary-background)")
+        .content(
+            sh.tag("div").class("sh-left")
+        )
+        .content(
+            sh.tag("div").class("sh-right")
+        )
+        .html()
+    );
+
+    function addLeft(child)
+    {
+        m_left.push(child);
+        m_item.find("> div:nth-child(1)").append(child.get());
+    }
+
+    function left()
+    {
+        return m_left;
+    }
+
+    function addRight(child)
+    {
+        m_right.push(child);
+        m_item.find("> div:nth-child(2)").append(child.get());
+    }
+
+    function right()
+    {
+        return m_right;
+    }
+
+    this.get = function ()
+    {
+        return m_item;
+    };
+
+    this.add = function (child)
+    {
+        addLeft(child);
+    };
+};
+
 sh.Button = function ()
 {
     Object.defineProperties(this, {
@@ -1006,7 +1064,7 @@ sh.IconButton = function ()
         .style("text-align", "center")
         .content(
             sh.tag("span").class("sh-fw-icon")
-            .style("font-size", "150%")
+            .style("font-size", "2rem")
         )
         .on("click", "")
         .html()

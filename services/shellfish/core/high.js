@@ -5,25 +5,26 @@
     var Binding = function (value)
     {
         var that = this;
+        var m_idCounter = 0;
         var m_value = value;
-        var m_watchers = [];
+        var m_watchers = { };
         var m_onceWatchers = [];
     
         /* Notifies the watchers of this binding about an update.
          */
         this.update = function ()
         {
-            m_watchers.forEach(function (watchCallback)
+            for (var watchId in m_watchers)
             {
                 try
                 {
-                    watchCallback(m_value);
+                    m_watchers[watchId](m_value);
                 }
                 catch (err)
                 {
                     console.error("Binding error: " + err);
                 }
-            });
+            }
 
             m_onceWatchers.forEach(function (watchCallback)
             {
@@ -39,11 +40,20 @@
             m_onceWatchers = [];
         }
     
-        /* Registers a callback for watching this binding.
+        /* Registers a callback for watching this binding and returns the
+         * watch handle.
          */
         this.watch = function (watchCallback)
         {
-            m_watchers.push(watchCallback);
+            var watchId = m_idCounter;
+            ++m_idCounter;
+            m_watchers[watchId] = watchCallback;
+            return {
+                unwatch: function ()
+                {
+                    delete m_watchers[watchId];
+                }
+            }
         };
 
         /* Registers a one-shot callback for watching this binding.
@@ -86,12 +96,30 @@
         var m_element = null;
         var m_children = [];
         var m_id = "";
+        var m_watchHandles = [];
     
         this.get = function ()
         {
             return m_element;
         };
     
+        /* Disposes of this element and all its child element.
+         * This will release references for garbage collecting.
+         */
+        this.dispose = function ()
+        {
+            m_watchHandles.forEach(function (handle)
+            {
+                handle.unwatch();
+            });
+            m_children.forEach(function (child)
+            {
+                child.dispose();
+            });
+            m_element = null;
+            m_children = [];
+        }
+
         /* Sets the ID of this element.
          */
         this.id = function (i)
@@ -150,8 +178,14 @@
         {           
             if (value instanceof Binding)
             {
-                value.watch(function (v) { m_element[prop] = v; });
+                var handle = value.watch(function (v) { m_element[prop] = v; });
+                m_watchHandles.push(handle);
                 m_element[prop] = value.value();
+            }
+            else if (value instanceof Element)
+            {
+                m_children.push(value);
+                m_element[prop] = value.get();
             }
             else if (typeof value.get === "function")
             {
