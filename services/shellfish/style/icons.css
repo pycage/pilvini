@@ -10,6 +10,15 @@
     font-weight: 100;
 }
 
+.sh-icon-accept:before {
+    font-family: Material; content: "\f26b";
+}
+
+
+.sh-icon-add:before {
+    font-family: Material; content: "\f278";
+}
+
 .sh-icon-add-user:before {
     font-family: Material; content: "\f1ff";
 }
@@ -82,6 +91,14 @@
     font-family: Material; content: "\f223";
 }
 
+.sh-icon-flip-horizontal:before {
+    font-family: Material; content: "\f30d";
+}
+
+.sh-icon-flip-vertical:before {
+    font-family: Material; content: "\f30c";
+}
+
 .sh-icon-folder:before {
     font-family: Material; content: "\f228";
 }
@@ -102,8 +119,16 @@
     font-family: Material; content: "\f3ac";
 }
 
+.sh-icon-media-cut:before {
+    font-family: Material; content: "\f1bc";
+}
+
 .sh-icon-media-fwd:before {
     font-family: Material; content: "\f39f";
+}
+
+.sh-icon-media-fwd1:before {
+    font-family: Material; content: "\f3c5";
 }
 
 .sh-icon-media-fwd30:before {
@@ -146,6 +171,11 @@
     font-family: Material; content: "\f3a0";
 }
 
+.sh-icon-media-rwd1:before {
+    font-family: Material; content: "\f3c3";
+}
+
+
 .sh-icon-media-rwd10:before {
     font-family: Material; content: "\f3af";
 }
@@ -176,6 +206,10 @@
 
 .sh-icon-number:before {
     content: "09";
+}
+
+.sh-icon-remove:before {
+    font-family: Material; content: "\f273";
 }
 
 .sh-icon-rename:before {

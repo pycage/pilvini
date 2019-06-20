@@ -1,5 +1,15 @@
 "use strict";
 
+sh.extend = function (target, base)
+{
+    var descriptors = Object.getOwnPropertyDescriptors(base);
+
+    Object.keys(descriptors).forEach(function (key)
+    {
+        Object.defineProperty(target, key, descriptors[key]);
+    });
+};
+
 sh.NSPage = function ()
 {
     Object.defineProperties(this,{
@@ -414,6 +424,41 @@ sh.Menu = function ()
         event.stopPropagation();
         m_menu.detach();
     });
+};
+
+sh.Box = function ()
+{
+    Object.defineProperties(this, {
+        visible: { set: setVisible, get: visible, enumerable: true }
+    });
+
+    var m_isVisible = true;
+
+    var m_item = $(
+        sh.tag("div")
+        .html()
+    );
+
+    function setVisible(v)
+    {
+        m_isVisible = v;
+        m_item.css("display", v ? "block" : "none");
+    }
+
+    function visible()
+    {
+        return m_isVisible;
+    }
+
+    this.get = function ()
+    {
+        return m_item;
+    };
+
+    this.add = function (child)
+    {
+        m_item.append(child.get());
+    };
 };
 
 sh.MenuItem = function ()
@@ -925,10 +970,12 @@ sh.TextInput = function ()
 sh.Toolbar = function ()
 {
     Object.defineProperties(this, {
+        visible: { set: setVisible, get: visible, enumerable: true },
         left: { set: addLeft, get: left, enumerable: true },
         right: { set: addRight, get: right, enumerable: true }
     });
 
+    var m_isVisible = true;
     var m_left = [];
     var m_right = [];
 
@@ -937,7 +984,6 @@ sh.Toolbar = function ()
         .style("position", "relative")
         .style("height", "3rem")
         .style("line-height", "3rem")
-        .style("background-color", "var(--color-primary-background)")
         .content(
             sh.tag("div").class("sh-left")
         )
@@ -946,6 +992,24 @@ sh.Toolbar = function ()
         )
         .html()
     );
+
+    function setVisible(v)
+    {
+        m_isVisible = v;
+        if (v)
+        {
+            m_item.css("display", "block");
+        }
+        else
+        {
+            m_item.css("display", "none");
+        }
+    }
+
+    function visible()
+    {
+        return m_isVisible;
+    }
 
     function addLeft(child)
     {
@@ -979,6 +1043,22 @@ sh.Toolbar = function ()
         addLeft(child);
     };
 };
+
+sh.Gap = function ()
+{
+    var m_item = $(
+        sh.tag("div")
+        .style("display", "inline-block")
+        .style("width", "3rem")
+        .style("height", "100%")
+        .html()
+    );
+
+    this.get = function ()
+    {
+        return m_item;
+    };
+}
 
 sh.Button = function ()
 {

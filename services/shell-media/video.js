@@ -1,5 +1,9 @@
 "use strict";
 
+var shellMedia = {
+    videoExtensions: []
+};
+
 (function ()
 {
     var m_uri = sh.binding("");
@@ -341,13 +345,13 @@
         Object.defineProperties(this, {
             position: { set: setPosition, get: position, enumerable: true },
             duration: { set: setDuration, get: duration, enumerable: true },
-            buffered: { set: setBuffered, get: buffered, enumerable: true },
+            ranges: { set: setRanges, get: ranges, enumerable: true },
             onSeeked: { set: setOnSeeked, get: onSeeked, enumerable: true }
         });
 
         var m_position = 0;
         var m_duration = 0;
-        var m_buffered = null;
+        var m_ranges = [];
         var m_onSeeked = null;
         var m_isDragging = false;
 
@@ -467,6 +471,7 @@
         function formatTime(seconds)
         {
             var t = seconds;
+            var hsecs = Math.floor(t * 100) % 100;
             var secs = Math.floor(t) % 60;
             t /= 60;
             var minutes = Math.floor(t) % 60;
@@ -476,12 +481,14 @@
             var h = hours.toFixed(0);
             var m = minutes.toFixed(0);
             var s = secs.toFixed(0);
+            var hs = hsecs.toFixed(0);
     
             if (h.length === 1) { h = "0" + h; }
             if (m.length === 1) { m = "0" + m; }
             if (s.length === 1) { s = "0" + s; }
+            if (hs.length === 1) { hs = "0" + hs; }
     
-            return (hours > 0 ? h + ":" : "") + m + ":" + s;
+            return (hours > 0 ? h + ":" : "") + m + ":" + s + "." + hs;
         }
 
         function draggingCallback(p)
@@ -496,7 +503,7 @@
 
         function setPosition(pos)
         {
-            var m_position = pos;
+            m_position = pos;
             if (m_duration > 0 && ! m_isDragging)
             {
                 m_item.find("> div:nth-child(2)").last().css("width", (m_position / m_duration * 100.0) + "%");
@@ -524,9 +531,9 @@
             return m_duration;
         }
 
-        function setBuffered(buffered)
+        function setRanges(ranges)
         {
-            m_buffered = buffered;
+            m_ranges = ranges;
 
             if (m_duration === 0)
             {
@@ -536,11 +543,11 @@
             m_item.find("> div:nth-child(1)").each(function (i)
             {
                 var box = $(this);
-                while (box.find("> div").length > buffered.length)
+                while (box.find("> div").length > ranges.length)
                 {
                     box.find("> div").last().remove();
                 }
-                while (box.find("> div").length < buffered.length)
+                while (box.find("> div").length < ranges.length)
                 {
                     box.append(
                         sh.tag("div")
@@ -555,19 +562,19 @@
                 }
     
                 var gauges = box.find("> div");
-                for (var i = 0; i < buffered.length; ++i)
+                for (var i = 0; i < ranges.length; ++i)
                 {
-                    console.log("buffered " + i + ": " + buffered.start(i) + " - " + buffered.end(i));
+                    console.log("range " + i + ": " + ranges[i][0] + " - " + ranges[i][1]);
                     gauges.eq(i)
-                    .css("left", (buffered.start(i) / m_duration * 100) + "%")
-                    .css("right", (100 - buffered.end(i) / m_duration * 100) + "%");
+                    .css("left", (ranges[i][0] / m_duration * 100) + "%")
+                    .css("right", (100 - ranges[i][1] / m_duration * 100) + "%");
                 }
             });
         }
 
-        function buffered()
+        function ranges()
         {
-            return m_buffered;
+            return m_ranges;
         }
 
         function setOnSeeked(onSeeked)
@@ -609,10 +616,34 @@
                     sh.element(ProgressBar)
                     .position(m_position)
                     .duration(m_duration)
-                    .buffered(m_buffered)
+                    .ranges(sh.predicate([m_buffered], function ()
+                    {
+                        var ranges = [];
+                        var buffered = m_buffered.value();
+                        if (! buffered)
+                        {
+                            return [];
+                        }
+                        for (var i = 0; i < buffered.length; ++i)
+                        {
+                            ranges.push([buffered.start(i), buffered.end(i)]);
+                        }
+                        return ranges;
+                    }))
                     .onSeeked(function (p)
                     {
                         popup.find("video").seek_(p * m_duration.value());
+                    })
+                )
+                .add(
+                    sh.element(shellMedia.VideoEditor).id("editToolbar")
+                    .visible(false)
+                    .uri(m_uri)
+                    .position(m_position)
+                    .duration(m_duration)
+                    .onSeeked(function (seconds)
+                    {
+                        popup.find("video").seek_(seconds);
                     })
                 )
                 .add(
@@ -665,7 +696,12 @@
                     )
                     .right(
                         sh.element(sh.IconButton)
-                        .icon("sh-icon-edit")
+                        .icon("sh-icon-media-cut")
+                        .onClicked(function ()
+                        {
+                            var editToolbar = popup.find("editToolbar").get();
+                            editToolbar.visible = ! editToolbar.visible;
+                        })
                     )
                     .right(
                         sh.element(sh.IconButton)
@@ -680,14 +716,6 @@
                         })
                     )
                 )
-                /*
-                .add(
-                    sh.element(sh.Toolbar)
-                    .add(
-                        sh.element(sh.IconButton).icon("sh-icon-bug")
-                    )
-                )
-                */
             )
             .uri(m_uri)
             .size(m_size)
