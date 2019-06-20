@@ -97,6 +97,14 @@
             url: "/::video-editor/cut",
             data: JSON.stringify(data)
         })
+        .done(function (data, status, xhr)
+        {
+            var statusItem = new ui.StatusItem();
+            statusItem.icon = "sh-icon-media-cut";
+            statusItem.text = "Waiting...";
+            files.pushStatus(statusItem);
+            getStatus(statusItem);
+        })
         .fail(function (xhr, status, err)
         {
             ui.showError("Could not submit to server: " + err);
@@ -105,6 +113,36 @@
         {
             busyIndicator.hide_();
         })
+    }
+
+    function getStatus(statusItem)
+    {
+        $.ajax({
+            type: "GET",
+            url: "/::video-editor/status",
+            dataType: "json"
+        })
+        .done(function (data, status, xhr)
+        {
+            if (data.name)
+            {
+                statusItem.text = "Cutting Video: " + data.name;
+                statusItem.progress = data.seconds / data.total * 100;
+                setTimeout(function () { getStatus(statusItem); }, 1000);
+            }
+            else
+            {
+                files.popStatus(statusItem);
+            }
+        })
+        .fail(function (xhr, status, err)
+        {
+            files.popStatus(statusItem);
+        })
+        .always(function ()
+        {
+            
+        });
     }
 
     function MarkersBar()
