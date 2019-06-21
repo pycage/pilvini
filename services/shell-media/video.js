@@ -35,6 +35,8 @@ var shellMedia = {
                 .style("background-color", "black")
                 .content(
                     sh.tag("video")
+                    .style("max-width", "320px")
+                    .style("max-height", "240px")
                 )
             )
             .content(
@@ -178,14 +180,14 @@ var shellMedia = {
             var footerHeight = m_item.find("footer").height();
 
             m_item.find("header").animate({
-                top: "-" + headerHeight + "px" // "-80px"
+                top: "-" + headerHeight + "px"
             }, 350, function ()
             {
                 m_item.find("header").css("visibility", "hidden");
             });
     
             m_item.find("footer").animate({
-                bottom: "-" + footerHeight + "px" // "-80px"
+                bottom: "-" + footerHeight + "px"
             }, 350, function ()
             {
                 m_item.find("footer").css("visibility", "hidden");
@@ -251,7 +253,10 @@ var shellMedia = {
 
         function setSize(s)
         {
-            updateSizeConstraints();
+            if (m_item.find("video").prop("duration") > 0)
+            {
+                updateSizeConstraints();
+            }
         }
 
         this.get = function ()
@@ -457,7 +462,7 @@ var shellMedia = {
                 m_isDragging = false;
                 if (m_onSeeked)
                 {
-                    m_onSeeked(event.lastTouchPos);
+                    m_onSeeked(this.lastTouchPos);
                 }
             }
         });
