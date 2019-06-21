@@ -752,7 +752,14 @@ sh.Dialog = function ()
      */
     this.show = function ()
     {
-        $("body").append(m_dialog);
+        if (document.fullscreenElement)
+        {
+            $(document.fullscreenElement).append(m_dialog);
+        }
+        else
+        {
+            $("body").append(m_dialog);
+        }
     };
 
     /* Closes this dialog.
@@ -984,6 +991,8 @@ sh.Toolbar = function ()
         .style("position", "relative")
         .style("height", "3rem")
         .style("line-height", "3rem")
+        .style("overflow", "hidden")
+        .style("white-space", "nowrap")
         .content(
             sh.tag("div").class("sh-left")
         )
@@ -1050,7 +1059,7 @@ sh.Gap = function ()
         sh.tag("div")
         .style("display", "inline-block")
         .style("width", "3rem")
-        .style("height", "100%")
+        .style("height", "1px")
         .html()
     );
 

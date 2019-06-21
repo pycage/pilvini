@@ -385,7 +385,7 @@
         this.add(m_toolbar);
 
         var btn = new sh.IconButton();
-        btn.icon = "sh-icon-add";
+        btn.icon = "sh-icon-scissors";
         btn.onClicked = function ()
         {
             m_markersBar.addMarker();
@@ -393,12 +393,15 @@
         m_toolbar.add(btn);
 
         btn = new sh.IconButton();
-        btn.icon = "sh-icon-remove";
+        btn.icon = "sh-icon-trashcan";
         btn.onClicked = function ()
         {
             m_markersBar.removeMarker();
         };
         m_toolbar.add(btn);
+
+        var gap = new sh.Gap();
+        m_toolbar.add(gap);
 
         btn = new sh.IconButton();
         btn.icon = "sh-icon-flip-horizontal";
@@ -408,8 +411,8 @@
         };
         m_toolbar.add(btn);
 
-        //var gap = new sh.Gap();
-        //m_toolbar.add(gap);
+        gap = new sh.Gap();
+        m_toolbar.add(gap);
 
         btn = new sh.IconButton();
         btn.icon = "sh-icon-media-rwd1";

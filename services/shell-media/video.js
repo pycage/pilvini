@@ -350,12 +350,14 @@ var shellMedia = {
         Object.defineProperties(this, {
             position: { set: setPosition, get: position, enumerable: true },
             duration: { set: setDuration, get: duration, enumerable: true },
+            highResolution: { set: setHighResolution, get: highResolution, enumerable: true },
             ranges: { set: setRanges, get: ranges, enumerable: true },
             onSeeked: { set: setOnSeeked, get: onSeeked, enumerable: true }
         });
 
         var m_position = 0;
         var m_duration = 0;
+        var m_highResolution = false;
         var m_ranges = [];
         var m_onSeeked = null;
         var m_isDragging = false;
@@ -493,7 +495,14 @@ var shellMedia = {
             if (s.length === 1) { s = "0" + s; }
             if (hs.length === 1) { hs = "0" + hs; }
     
-            return (hours > 0 ? h + ":" : "") + m + ":" + s + "." + hs;
+            if (m_highResolution)
+            {
+                return (hours > 0 ? h + ":" : "") + m + ":" + s + "." + hs;
+            }
+            else
+            {
+                return (hours > 0 ? h + ":" : "") + m + ":" + s;
+            }
         }
 
         function draggingCallback(p)
@@ -534,6 +543,20 @@ var shellMedia = {
         function duration()
         {
             return m_duration;
+        }
+
+        function setHighResolution(v)
+        {
+            m_highResolution = v;
+            if (m_duration > 0 && ! m_isDragging)
+            {
+                m_item.find("h1").html(formatTime(m_position) + " / " + formatTime(m_duration));
+            }
+        }
+
+        function highResolution()
+        {
+            return m_highResolution;
         }
 
         function setRanges(ranges)
@@ -618,7 +641,7 @@ var shellMedia = {
             .footer(
                 sh.element(Footer)
                 .add(
-                    sh.element(ProgressBar)
+                    sh.element(ProgressBar).id("progressBar")
                     .position(m_position)
                     .duration(m_duration)
                     .ranges(sh.predicate([m_buffered], function ()
@@ -706,6 +729,8 @@ var shellMedia = {
                         {
                             var editToolbar = popup.find("editToolbar").get();
                             editToolbar.visible = ! editToolbar.visible;
+                            var progressBar = popup.find("progressBar").get();
+                            progressBar.highResolution = editToolbar.visible;
                         })
                     )
                     .right(

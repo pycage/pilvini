@@ -70,7 +70,7 @@ function cutVideo(contentRoot, data, progressCallback, finishCallback)
             totalDuration += (range[1] - range[0]);
             ++counter;
         });
-        
+
         for (i = 1; i <= ranges.length; ++i)
         {
             filter += "[v" + i + "][a" + i + "]";
@@ -84,7 +84,9 @@ function cutVideo(contentRoot, data, progressCallback, finishCallback)
 
         var args = ["-nostdin",
                     "-i", sourceFile, "-filter_complex", filter,
-                    "-map", "[v]", "-map", "[a]", targetFile];
+                    "-map", "[v]", "-map", "[a]",
+                    "-movflags", "faststart",
+                    targetFile];
 
         batch.push({
             name: targetName,
