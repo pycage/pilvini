@@ -9,6 +9,7 @@
         var m_value = value;
         var m_watchers = { };
         var m_onceWatchers = [];
+        var m_onUnwatched = null;
     
         /* Notifies the watchers of this binding about an update.
          */
@@ -52,6 +53,10 @@
                 unwatch: function ()
                 {
                     delete m_watchers[watchId];
+                    if (Object.keys(m_watchers).length === 0 && m_onUnwatched)
+                    {
+                        m_onUnwatched();
+                    }
                 }
             }
         };
@@ -61,6 +66,13 @@
         this.watchOnce = function (watchCallback)
         {
             m_onceWatchers.push(watchCallback);
+        };
+
+        /* Registers a callback for when the last watcher was removed.
+         */
+        this.unwatched = function (callback)
+        {
+            m_onUnwatched = callback;
         };
     
         /* Assigns a new value to this binding.
@@ -243,10 +255,19 @@
      */
     sh.predicate = function (dependencies, pred)
     {
+        var handles = [];
         var b = sh.binding(pred());
         dependencies.forEach(function (dep)
         {
-            dep.watch(function (v) { b.assign(pred()); });
+            var handle = dep.watch(function (v) { b.assign(pred()); });
+            handles.push(handle);
+        });
+        b.unwatched(function ()
+        {
+            handles.forEach(function (handle)
+            {
+                handle.unwatch();
+            });
         });
         return b;
     };
