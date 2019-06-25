@@ -1273,9 +1273,11 @@ sh.IconButton = function ()
 sh.Switch = function ()
 {
     Object.defineProperties(this, {
-        checked: { set: setChecked, get: checked, enumerable: true }
+        checked: { set: setChecked, get: checked, enumerable: true },
+        onToggled: { set: setOnToggled, get: onToggled, enumerable: true }
     });
 
+    var m_onToggled = null;
     var m_swtch = $(
         sh.tag("label").class("sh-switch")
         .content(
@@ -1286,6 +1288,14 @@ sh.Switch = function ()
         )
         .html()
     );
+
+    m_swtch.find("input").on("click", function ()
+    {
+        if (m_onToggled)
+        {
+            m_onToggled(!! m_swtch.find("input").prop("checked"));
+        }
+    });
 
     this.get = function ()
     {
@@ -1300,6 +1310,16 @@ sh.Switch = function ()
     function checked()
     {
         return !! m_swtch.find("input").prop("checked");
+    }
+
+    function setOnToggled(cb)
+    {
+        m_onToggled = cb;
+    }
+
+    function onToggled()
+    {
+        return m_onToggled;
     }
 };
 
