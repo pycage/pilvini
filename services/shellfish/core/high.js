@@ -101,6 +101,16 @@
             that.update();
         };
     };
+
+    var Ref = function (elem, id, prop)
+    {
+        /* Resolves this reference by returning a binding.
+         */
+        this.resolve = function ()
+        {
+            return elem.find(id).binding(prop);
+        };
+    };
     
     var Element = function (type)
     {
@@ -109,10 +119,24 @@
         var m_children = [];
         var m_id = "";
         var m_watchHandles = [];
+        var m_inits = [];
+        var m_bindings = [];
     
+        /* Returns the underlying mid-level element.
+         */
         this.get = function ()
         {
             return m_element;
+        };
+
+        /* Initializes this element and its children.
+         */
+        this.init = function ()
+        {
+            m_inits.forEach(function (init) { init(); });
+            m_inits = [];
+
+            m_children.forEach(function (child) { child.init(); });
         };
     
         /* Disposes of this element and all its child element.
@@ -185,22 +209,64 @@
             }
             return null;
         };
+
+        /* Returns a binding for the given property.
+         */
+        this.binding = function (prop)
+        {
+            if (m_bindings[prop])
+            {
+                return m_bindings[prop];
+            }
+
+            var blocked = false;
+            var b = sh.binding(m_element[prop]);
+
+            var uprop = prop[0].toUpperCase() + prop.substr(1);
+            m_element["on" + uprop + "Changed"] = function ()
+            {
+                blocked = true;
+                b.assign(m_element[prop]);
+                blocked = false;
+            };
+            
+            b.watch(function ()
+            {
+                if (! blocked)
+                {
+                    m_element[prop] = b.value();
+                }
+            });
+
+            m_bindings[prop] = b;
+            return b;
+        };
     
         function setProperty(prop, value)
         {           
             if (value instanceof Binding)
             {
+                // watch binding for value changes to apply
                 var handle = value.watch(function (v) { m_element[prop] = v; });
                 m_watchHandles.push(handle);
                 m_element[prop] = value.value();
             }
+            else if (value instanceof Ref)
+            {
+                // setup binding on initialization
+                m_inits.push(function ()
+                {
+                    var b = value.resolve();
+                    // watch binding for value changes to apply
+                    var handle = b.watch(function (v) { m_element[prop] = v; });
+                    m_watchHandles.push(handle);
+                    m_element[prop] = b.value();
+                });
+            }
             else if (value instanceof Element)
             {
+                // nest another element and assign mid-level element to the property
                 m_children.push(value);
-                m_element[prop] = value.get();
-            }
-            else if (typeof value.get === "function")
-            {
                 m_element[prop] = value.get();
             }
             else
@@ -212,11 +278,10 @@
     
         function getProperty(prop)
         {
-            var getter = m_element[prop];        
-            return getter(prop);
+            return m_element[prop];        
         }
     
-        // initialize
+        // setup properties
         m_element = new type();
         var properties = Object.keys(m_element);
     
@@ -230,13 +295,14 @@
                 }
                 else
                 {
-                    that[prop] = function (v) { return setProperty(prop, v); };
+                    // build property setter and getter function
+                    that[prop] = function (v) { return v !== undefined ? setProperty(prop, v) : getProperty(prop); };
                 }
             }
         });
     };
     
-    /* Creates and returns an element of the given type.
+    /* Creates and returns a high-level element of the given type.
      */
     sh.element = function (type)
     {
@@ -270,5 +336,12 @@
             });
         });
         return b;
+    };
+
+    /* Creates and returns a binding that references another high-level element's property.
+     */
+    sh.ref = function (elem, id, prop)
+    {
+        return new Ref(elem, id, prop);
     };
 })();

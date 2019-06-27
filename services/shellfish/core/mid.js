@@ -1,5 +1,7 @@
 "use strict";
 
+/* Extends from a base object.
+ */
 sh.extend = function (target, base)
 {
     var descriptors = Object.getOwnPropertyDescriptors(base);
@@ -10,9 +12,48 @@ sh.extend = function (target, base)
     });
 };
 
+
+sh.defineProperties = function (target, props)
+{
+    for (var key in props)
+    {
+        var description = props[key];
+        sh.addProperty(target, key, description.set, description.get);
+    }
+};
+
+/* Adds a property with notification callback.
+ */
+sh.addProperty = function (target, name, setter, getter)
+{
+    var callback = null;
+
+    var uname = name[0].toUpperCase() + name.substr(1);
+    Object.defineProperty(target, "on" + uname + "Changed", {
+        set: function (cb) { callback = cb; },
+        get: function () { return callback; },
+        enumerable: true
+    });
+
+    target[name + "Changed"] = function ()
+    {
+        if (callback) { callback(); }
+    };
+
+    Object.defineProperty(target, name, {
+        set: function (v)
+        {
+            setter(v);
+            target[name + "Changed"]();
+        },
+        get: getter,
+        enumerable: true
+    });
+}
+
 sh.NSPage = function ()
 {
-    Object.defineProperties(this,{
+    sh.defineProperties(this, {
         header: { set: setHeader, get: header, enumerable: true },
         footer: { set: setFooter, get: footer, enumerable: true },
         left: { set: setLeft, get: left, enumerable: true },
@@ -174,7 +215,7 @@ sh.NSPage = function ()
 
 sh.PageHeader = function ()
 {
-    Object.defineProperties(this, {
+    sh.defineProperties(this, {
         title: { set: setTitle, get: title, enumerable: true },
         subtitle: { set: setSubtitle, get: subtitle, enumerable: true },
         left: { set: addLeft, get: left, enumerable: true },
@@ -429,7 +470,7 @@ sh.Menu = function ()
 
 sh.Box = function ()
 {
-    Object.defineProperties(this, {
+    sh.defineProperties(this, {
         visible: { set: setVisible, get: visible, enumerable: true }
     });
 
@@ -464,7 +505,7 @@ sh.Box = function ()
 
 sh.MenuItem = function ()
 {
-    Object.defineProperties(this, {
+    sh.defineProperties(this, {
         enabled: { set: setEnabled, get: enabled, enumerable: true },
         icon: { set: setIcon, get: icon, enumerable: true },
         text: { set: setText, get: text, enumerable: true },
@@ -571,7 +612,7 @@ sh.MenuItem = function ()
 
 sh.SubMenu = function ()
 {
-    Object.defineProperties(this, {
+    sh.defineProperties(this, {
         text: { set: setText, get: text, enumerable: true },
         visible: { set: setVisible, get: visible, enumerable: true }
     });
@@ -697,7 +738,7 @@ sh.Popup = function ()
 
 sh.Dialog = function ()
 {
-    Object.defineProperties(this, {
+    sh.defineProperties(this, {
         title: { set: setTitle, get: title, enumerable: true },
         button: { set: addButton, get: buttons, enumerable: true }
     });
@@ -802,7 +843,7 @@ sh.Dialog = function ()
 
 sh.BusyPopup = function ()
 {
-    Object.defineProperties(this, {
+    sh.defineProperties(this, {
         text: { set: setText, get: text, enumerable: true }
     });
 
@@ -851,7 +892,7 @@ sh.BusyPopup = function ()
 
 sh.Label = function ()
 {
-    Object.defineProperties(this, {
+    sh.defineProperties(this, {
         text: { set: setText, get: text, enumerable: true }
     });
 
@@ -881,7 +922,7 @@ sh.Label = function ()
 
 sh.Labeled = function ()
 {
-    Object.defineProperties(this, {
+    sh.defineProperties(this, {
         text: { set: setText, get: text, enumerable: true }
     });
 
@@ -921,7 +962,7 @@ sh.Labeled = function ()
 
 sh.TextInput = function ()
 {
-    Object.defineProperties(this, {
+    sh.defineProperties(this, {
         text: { set: setText, get: text, enumerable: true },
         password: { set: setPassword, get: password, enumerable: true },
         focus: { set: setFocus, get: focus, enumerable: true }
@@ -977,7 +1018,7 @@ sh.TextInput = function ()
 
 sh.Toolbar = function ()
 {
-    Object.defineProperties(this, {
+    sh.defineProperties(this, {
         visible: { set: setVisible, get: visible, enumerable: true },
         left: { set: addLeft, get: left, enumerable: true },
         right: { set: addRight, get: right, enumerable: true }
@@ -1072,7 +1113,7 @@ sh.Gap = function ()
 
 sh.Button = function ()
 {
-    Object.defineProperties(this, {
+    sh.defineProperties(this, {
         text: { set: setText, get: text, enumerable: true },
         action: { set: setOnClicked, get: onClicked, enumerable: true },
         onClicked: { set: setOnClicked, get: onClicked, enumerable: true },
@@ -1131,7 +1172,7 @@ sh.Button = function ()
 
 sh.IconButton = function ()
 {
-    Object.defineProperties(this, {
+    sh.defineProperties(this, {
         enabled: { set: setEnabled, get: enabled, enumerable: true },
         checked: { set: setChecked, get: checked, enumerable: true },
         visible: { set: setVisible, get: visible, enumerable: true },
@@ -1272,7 +1313,7 @@ sh.IconButton = function ()
 
 sh.Switch = function ()
 {
-    Object.defineProperties(this, {
+    sh.defineProperties(this, {
         checked: { set: setChecked, get: checked, enumerable: true },
         onToggled: { set: setOnToggled, get: onToggled, enumerable: true }
     });
@@ -1351,7 +1392,7 @@ sh.ListView = function ()
 
 sh.ListItem = function ()
 {
-    Object.defineProperties(this, {
+    sh.defineProperties(this, {
         action: { set: setAction, get: action, enumerable: true },
         fillMode: { set: setFillMode, get: fillMode, enumerable: true },
         icon: { set: setIcon, get: icon, enumerable: true },
@@ -1546,7 +1587,7 @@ sh.GridView = function ()
 
 sh.GridItem = function ()
 {
-    Object.defineProperties(this, {
+    sh.defineProperties(this, {
         action: { set: setAction, get: action, enumerable: true },
         fillMode: { set: setFillMode, get: fillMode, enumerable: true },
         icon: { set: setIcon, get: icon, enumerable: true },
