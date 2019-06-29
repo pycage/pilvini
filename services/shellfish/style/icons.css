@@ -219,6 +219,10 @@
     font-family: Material; content: "\f1bc";
 }
 
+.sh-icon-search:before {
+    font-family: Material; content: "\f1c3";
+}
+
 .sh-icon-share:before {
     font-family: Material; content: "\f228";
 }
