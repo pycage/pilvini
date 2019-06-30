@@ -4,11 +4,10 @@
  */
 sh.extend = function (target, base)
 {
-    var descriptors = Object.getOwnPropertyDescriptors(base);
-
-    Object.keys(descriptors).forEach(function (key)
+    Object.getOwnPropertyNames(base).forEach(function (prop)
     {
-        Object.defineProperty(target, key, descriptors[key]);
+        var descriptor = Object.getOwnPropertyDescriptor(base, prop);
+        Object.defineProperty(target, prop, descriptor);
     });
 };
 
@@ -1382,6 +1381,11 @@ sh.ListView = function ()
     {
         m_items.push(item);
         m_listView.append(item.get());
+    };
+
+    this.size = function ()
+    {
+        return m_items.length;
     };
 
     this.item = function (n)
