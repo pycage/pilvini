@@ -14,7 +14,6 @@
     font-family: Material; content: "\f26b";
 }
 
-
 .sh-icon-add:before {
     font-family: Material; content: "\f278";
 }
@@ -25,6 +24,14 @@
 
 .sh-icon-alphabet:before {
     content: "Az";
+}
+
+.sh-icon-arrow-left:before {
+    font-family: Material; content: "\f2ea";
+}
+
+.sh-icon-arrow-right:before {
+    font-family: Material; content: "\f2eb";
 }
 
 .sh-icon-arrow-up:before {
