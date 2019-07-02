@@ -1365,6 +1365,7 @@ sh.Switch = function ()
 
 sh.ListView = function ()
 {
+    var that = this;
     var m_items = [];
 
     var m_listView = $(
@@ -1383,14 +1384,37 @@ sh.ListView = function ()
         m_listView.append(item.get());
     };
 
-    this.size = function ()
+    this.insert = function (at, item)
     {
-        return m_items.length;
+        if (at === m_items.length)
+        {
+            that.add(item);
+        }
+        else if (at >= 0 && at < m_items.length)
+        {
+            m_items = m_items.slice(0, at).concat([item]).concat(m_items.slice(at));
+            item.get().insertBefore(m_listView.find("> *")[at]);
+        }
+    };
+
+    this.remove = function (at)
+    {
+        if (at >= 0 && at < m_items.length)
+        {
+            m_items.splice(at, 1);
+            m_listView.find("> *")[at].remove();
+        }
     };
 
     this.item = function (n)
     {
         return m_items[n];
+    };
+
+    this.clear = function ()
+    {
+        m_listView.html("");
+        m_items = [];
     };
 };
 
@@ -1736,4 +1760,149 @@ sh.GridItem = function ()
     {
         return m_onClicked;
     }
+};
+
+sh.ListModelView = function ()
+{    
+    sh.defineProperties(this, {
+        model: { set: setModel, get: model },
+        delegate: { set: setDelegate, get: delegate }
+    });
+
+    var base = new sh.ListView();
+    sh.extend(this, base);
+
+
+    var m_model = null;
+    var m_delegate = null;
+
+    function setModel(m)
+    {
+        m_model = m;
+        m.onReset = function ()
+        {
+            base.clear();
+            for (var i = 0; !! m_delegate && i < m.size; ++i)
+            {
+                var item = m_delegate(m.at(i));
+                base.add(item);
+            }
+        };
+        m.onInsert = function (at)
+        {
+            var item = m_delegate(m.at(at));
+            base.insert(at, item);
+        };
+        m.onRemove = function (at)
+        {
+            base.remove(at);
+        };
+    }
+
+    function model()
+    {
+        return m_model;
+    }
+
+    function setDelegate(d)
+    {
+        m_delegate = d;
+    }
+
+    function delegate()
+    {
+        return m_delegate;
+    }
+};
+
+sh.ListModel = function ()
+{
+    sh.defineProperties(this, {
+        onReset: { set: setOnReset, get: onReset },
+        onInsert: { set: setOnInsert, get: onInsert },
+        onRemove: { set: setOnRemove, get: onRemove },
+        size: { get: size }
+    });
+
+    var that = this;
+    var m_data = [];
+    var m_onReset = null;
+    var m_onInsert = null;
+    var m_onRemove = null;
+
+    function setOnReset(cb)
+    {
+        m_onReset = cb;
+    }
+
+    function onReset()
+    {
+        return m_onReset;
+    }
+
+    function setOnInsert(cb)
+    {
+        m_onInsert = cb;
+    }
+
+    function onInsert()
+    {
+        return m_onInsert;
+    }
+
+    function setOnRemove(cb)
+    {
+        m_onRemove = cb;
+    }
+
+    function onRemove()
+    {
+        return m_onRemove;
+    }
+
+    function size()
+    {
+        return m_data.length;
+    }
+
+    this.reset = function (data)
+    {
+        m_data = data;
+        that.sizeChanged();
+        if (m_onReset)
+        {
+            m_onReset();
+        }
+    };
+
+    this.insert = function (at, data)
+    {
+        if (at >= 0 && at <= m_data.length)
+        {
+            m_data = m_data.slice(0, at).concat([data]).concat(m_data.slice(at));
+            that.sizeChanged();
+            if (m_onInsert)
+            {
+                m_onInsert(at);
+            }
+        }
+    };
+
+    this.remove = function (at)
+    {
+        if (at >= 0 && at < m_data.length)
+        {
+            m_data.splice(at, 1);
+            that.sizeChanged();
+            if (m_onRemove)
+            {
+                m_onRemove(at);
+            }
+        }
+    };
+
+    this.at = function (n)
+    {
+        return m_data[n];
+    };
 };
