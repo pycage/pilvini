@@ -53,12 +53,12 @@ sh.addProperty = function (target, name, setter, getter)
 sh.NSPage = function ()
 {
     sh.defineProperties(this, {
-        header: { set: setHeader, get: header, enumerable: true },
-        footer: { set: setFooter, get: footer, enumerable: true },
-        left: { set: setLeft, get: left, enumerable: true },
-        script: { set: setScript, get: script, enumerable: true },
-        onSwipeBack: { set: setOnSwipeBack, get: onSwipeBack, enumerable: true },
-        onClosed: { set: setOnClosed, get: onClosed, enumerable: true }
+        header: { set: setHeader, get: header },
+        footer: { set: setFooter, get: footer },
+        left: { set: setLeft, get: left },
+        script: { set: setScript, get: script },
+        onSwipeBack: { set: setOnSwipeBack, get: onSwipeBack },
+        onClosed: { set: setOnClosed, get: onClosed }
     });
 
     var that = this;
@@ -215,11 +215,11 @@ sh.NSPage = function ()
 sh.PageHeader = function ()
 {
     sh.defineProperties(this, {
-        title: { set: setTitle, get: title, enumerable: true },
-        subtitle: { set: setSubtitle, get: subtitle, enumerable: true },
-        left: { set: addLeft, get: left, enumerable: true },
-        right: { set: addRight, get: right, enumerable: true },
-        onClicked: { set: setOnClicked, get: onClicked, enumerable: true }
+        title: { set: setTitle, get: title },
+        subtitle: { set: setSubtitle, get: subtitle },
+        left: { set: addLeft, get: left },
+        right: { set: addRight, get: right },
+        onClicked: { set: setOnClicked, get: onClicked }
     });
 
     var m_title = "";
@@ -470,7 +470,7 @@ sh.Menu = function ()
 sh.Box = function ()
 {
     sh.defineProperties(this, {
-        visible: { set: setVisible, get: visible, enumerable: true }
+        visible: { set: setVisible, get: visible }
     });
 
     var m_isVisible = true;
@@ -505,11 +505,11 @@ sh.Box = function ()
 sh.MenuItem = function ()
 {
     sh.defineProperties(this, {
-        enabled: { set: setEnabled, get: enabled, enumerable: true },
-        icon: { set: setIcon, get: icon, enumerable: true },
-        text: { set: setText, get: text, enumerable: true },
-        visible: { set: setVisible, get: visible, enumerable: true },
-        onClicked: { set: setOnClicked, get: onClicked, enumerable: true }
+        enabled: { set: setEnabled, get: enabled },
+        icon: { set: setIcon, get: icon },
+        text: { set: setText, get: text },
+        visible: { set: setVisible, get: visible },
+        onClicked: { set: setOnClicked, get: onClicked }
     });
 
     var m_item;
@@ -612,8 +612,8 @@ sh.MenuItem = function ()
 sh.SubMenu = function ()
 {
     sh.defineProperties(this, {
-        text: { set: setText, get: text, enumerable: true },
-        visible: { set: setVisible, get: visible, enumerable: true }
+        text: { set: setText, get: text },
+        visible: { set: setVisible, get: visible }
     });
     
     var m_subMenu;
@@ -738,8 +738,8 @@ sh.Popup = function ()
 sh.Dialog = function ()
 {
     sh.defineProperties(this, {
-        title: { set: setTitle, get: title, enumerable: true },
-        button: { set: addButton, get: buttons, enumerable: true }
+        title: { set: setTitle, get: title },
+        button: { set: addButton, get: buttons }
     });
 
     var m_title = "";
@@ -752,6 +752,7 @@ sh.Dialog = function ()
         .content(
             sh.tag("div").class("sh-dropshadow")
             .style("background-color", "var(--color-primary-background)")
+            .style("max-width", "calc(100vw - 80px)")
             .content(
                 sh.tag("header")
                 .style("border", "none")
@@ -843,7 +844,7 @@ sh.Dialog = function ()
 sh.BusyPopup = function ()
 {
     sh.defineProperties(this, {
-        text: { set: setText, get: text, enumerable: true }
+        text: { set: setText, get: text }
     });
 
     var m_text = "";
@@ -889,10 +890,40 @@ sh.BusyPopup = function ()
     };
 };
 
+sh.Text = function ()
+{
+    sh.defineProperties(this, {
+        text: { set: setText, get: text }
+    });
+
+    var m_text = "";
+    var m_label = $(
+        sh.tag("span")
+        .content("")
+        .html()
+    );
+
+    function setText(text)
+    {
+        m_label.html(sh.escapeHtml(text));
+        m_text = text;
+    }
+
+    function text()
+    {
+        return m_text;
+    }
+
+    this.get = function ()
+    {
+        return m_label;
+    };
+};
+
 sh.Label = function ()
 {
     sh.defineProperties(this, {
-        text: { set: setText, get: text, enumerable: true }
+        text: { set: setText, get: text }
     });
 
     var m_text = "";
@@ -919,10 +950,58 @@ sh.Label = function ()
     };
 };
 
+sh.Headline = function ()
+{
+    sh.defineProperties(this, {
+        title: { set: setTitle, get: title },
+        subtitle: { set: setSubtitle, get: subtitle }
+    });
+
+    var m_title = "";
+    var m_subtitle = "";
+    var m_label = $(
+        sh.tag("div")
+        .content(
+            sh.tag("h1")
+        )
+        .content(
+            sh.tag("h2")
+        )
+        .html()
+    );
+
+    function setTitle(text)
+    {
+        m_label.find("h1").html(sh.escapeHtml(text));
+        m_title = text;
+    }
+
+    function title()
+    {
+        return m_title;
+    }
+
+    function setSubtitle(text)
+    {
+        m_label.find("h2").html(sh.escapeHtml(text));
+        m_subtitle = text;
+    }
+
+    function subtitle()
+    {
+        return m_subtitle;
+    }
+
+    this.get = function ()
+    {
+        return m_label;
+    };
+};
+
 sh.Labeled = function ()
 {
     sh.defineProperties(this, {
-        text: { set: setText, get: text, enumerable: true }
+        text: { set: setText, get: text }
     });
 
     var m_text = "";
@@ -962,9 +1041,9 @@ sh.Labeled = function ()
 sh.TextInput = function ()
 {
     sh.defineProperties(this, {
-        text: { set: setText, get: text, enumerable: true },
-        password: { set: setPassword, get: password, enumerable: true },
-        focus: { set: setFocus, get: focus, enumerable: true }
+        text: { set: setText, get: text },
+        password: { set: setPassword, get: password },
+        focus: { set: setFocus, get: focus }
     });
 
     var m_password = false;
@@ -1018,9 +1097,9 @@ sh.TextInput = function ()
 sh.Toolbar = function ()
 {
     sh.defineProperties(this, {
-        visible: { set: setVisible, get: visible, enumerable: true },
-        left: { set: addLeft, get: left, enumerable: true },
-        right: { set: addRight, get: right, enumerable: true }
+        visible: { set: setVisible, get: visible },
+        left: { set: addLeft, get: left },
+        right: { set: addRight, get: right }
     });
 
     var m_isVisible = true;
@@ -1113,10 +1192,10 @@ sh.Gap = function ()
 sh.Button = function ()
 {
     sh.defineProperties(this, {
-        text: { set: setText, get: text, enumerable: true },
-        action: { set: setOnClicked, get: onClicked, enumerable: true },
-        onClicked: { set: setOnClicked, get: onClicked, enumerable: true },
-        isDefault: { set: setIsDefault, get: isDefault, enumerable: true }
+        text: { set: setText, get: text },
+        action: { set: setOnClicked, get: onClicked },
+        onClicked: { set: setOnClicked, get: onClicked },
+        isDefault: { set: setIsDefault, get: isDefault }
     });
 
     var m_text = "";
@@ -1172,11 +1251,11 @@ sh.Button = function ()
 sh.IconButton = function ()
 {
     sh.defineProperties(this, {
-        enabled: { set: setEnabled, get: enabled, enumerable: true },
-        checked: { set: setChecked, get: checked, enumerable: true },
-        visible: { set: setVisible, get: visible, enumerable: true },
-        icon: { set: setIcon, get: icon, enumerable: true },
-        onClicked: { set: setOnClicked, get: onClicked, enumerable: true }
+        enabled: { set: setEnabled, get: enabled },
+        checked: { set: setChecked, get: checked },
+        visible: { set: setVisible, get: visible },
+        icon: { set: setIcon, get: icon },
+        onClicked: { set: setOnClicked, get: onClicked }
     });
 
     var that = this;
@@ -1313,10 +1392,12 @@ sh.IconButton = function ()
 sh.Switch = function ()
 {
     sh.defineProperties(this, {
-        checked: { set: setChecked, get: checked, enumerable: true },
-        onToggled: { set: setOnToggled, get: onToggled, enumerable: true }
+        enabled: { set: setEnabled, get: enabled },
+        checked: { set: setChecked, get: checked },
+        onToggled: { set: setOnToggled, get: onToggled }
     });
 
+    var m_enabled = true;
     var m_onToggled = null;
     var m_swtch = $(
         sh.tag("label").class("sh-switch")
@@ -1341,6 +1422,24 @@ sh.Switch = function ()
     {
         return m_swtch;
     };
+
+    function setEnabled(value)
+    {
+        if (value)
+        {
+            m_swtch.removeClass("sh-disabled");
+        }
+        else
+        {
+            m_swtch.addClass("sh-disabled");
+        }
+        m_enabled = value;
+    }
+
+    function enabled()
+    {
+        return m_enabled;
+    }
 
     function setChecked(value)
     {
@@ -1421,13 +1520,13 @@ sh.ListView = function ()
 sh.ListItem = function ()
 {
     sh.defineProperties(this, {
-        action: { set: setAction, get: action, enumerable: true },
-        fillMode: { set: setFillMode, get: fillMode, enumerable: true },
-        icon: { set: setIcon, get: icon, enumerable: true },
-        subtitle: { set: setSubtitle, get: subtitle, enumerable: true },
-        title: { set: setTitle, get: title, enumerable: true },
-        selected: { set: setSelected, get: selected, enumerable: true },
-        onClicked: { set: setOnClicked, get: onClicked, enumerable: true }
+        action: { set: setAction, get: action },
+        fillMode: { set: setFillMode, get: fillMode },
+        icon: { set: setIcon, get: icon },
+        subtitle: { set: setSubtitle, get: subtitle },
+        title: { set: setTitle, get: title },
+        selected: { set: setSelected, get: selected },
+        onClicked: { set: setOnClicked, get: onClicked }
     });
 
     var m_action = ["", null];
@@ -1616,12 +1715,12 @@ sh.GridView = function ()
 sh.GridItem = function ()
 {
     sh.defineProperties(this, {
-        action: { set: setAction, get: action, enumerable: true },
-        fillMode: { set: setFillMode, get: fillMode, enumerable: true },
-        icon: { set: setIcon, get: icon, enumerable: true },
-        title: { set: setTitle, get: title, enumerable: true },
-        selected: { set: setSelected, get: selected, enumerable: true },
-        onClicked: { set: setOnClicked, get: onClicked, enumerable: true }
+        action: { set: setAction, get: action },
+        fillMode: { set: setFillMode, get: fillMode },
+        icon: { set: setIcon, get: icon },
+        title: { set: setTitle, get: title },
+        selected: { set: setSelected, get: selected },
+        onClicked: { set: setOnClicked, get: onClicked }
     });
 
     var m_action = ["", null];
