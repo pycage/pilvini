@@ -121,22 +121,32 @@
         var m_watchHandles = [];
         var m_inits = [];
         var m_bindings = [];
+        var m_isInitialized = false;
     
         /* Returns the underlying mid-level element.
          */
         this.get = function ()
         {
+            if (! m_isInitialized)
+            {
+                that.init();
+            }
             return m_element;
         };
 
         /* Initializes this element and its children.
+         * It is usually not required to call this method explicitly.
          */
         this.init = function ()
         {
-            m_inits.forEach(function (init) { init(); });
-            m_inits = [];
-
-            m_children.forEach(function (child) { child.init(); });
+            if (! m_isInitialized)
+            {
+                m_isInitialized = true;
+                m_inits.forEach(function (init) { init(); });
+                m_inits = [];
+    
+                m_children.forEach(function (child) { child.init(); });
+            }
         };
     
         /* Disposes of this element and all its child element.
@@ -156,12 +166,19 @@
             m_children = [];
         }
 
-        /* Sets the ID of this element.
+        /* Sets or returns the ID of this element.
          */
         this.id = function (i)
         {
-            m_id = i;
-            return that;
+            if (i === undefined)
+            {
+                return m_id;
+            }
+            else
+            {
+                m_id = i;
+                return that;
+            }
         };
 
         /* Adds a child element to this element.
@@ -291,7 +308,10 @@
             {
                 if (typeof m_element[prop] === "function")
                 {
-                    that[prop + "_"] = m_element[prop];
+                    that[prop + "_"] = function ()
+                    {
+                        that.get()[prop].apply(that.get(), arguments);
+                    };
                 }
                 else
                 {
