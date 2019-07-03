@@ -1255,6 +1255,7 @@ sh.IconButton = function ()
         checked: { set: setChecked, get: checked },
         visible: { set: setVisible, get: visible },
         icon: { set: setIcon, get: icon },
+        menu: { set: setMenu, get: menu },
         onClicked: { set: setOnClicked, get: onClicked }
     });
 
@@ -1263,6 +1264,7 @@ sh.IconButton = function ()
     var m_visible = true;
     var m_checked = false;
     var m_icon = "";
+    var m_menu = null;
     var m_onClicked = null;
 
     var m_button = $(
@@ -1285,6 +1287,10 @@ sh.IconButton = function ()
         if (m_onClicked)
         {
             m_onClicked(that);
+        }
+        if (m_menu)
+        {
+            m_menu.popup(m_button);
         }
     });
 
@@ -1353,6 +1359,16 @@ sh.IconButton = function ()
         return m_icon;
     }
 
+    function setMenu(menu)
+    {
+        m_menu = menu;
+    }
+
+    function menu()
+    {
+        return m_menu;
+    }
+
     function setOnClicked(callback)
     {
         m_onClicked = callback;
@@ -1366,26 +1382,6 @@ sh.IconButton = function ()
     this.get = function ()
     {
         return m_button;
-    };
-
-    // ---
-
-    this.setEnabled = function (value)
-    {
-        if (value)
-        {
-            m_button.removeClass("sh-disabled");
-        }
-        else
-        {
-            m_button.addClass("sh-disabled");
-        }
-    };
-
-    this.setIcon = function (icon)
-    {
-        m_button.find("span").removeClass(m_icon).addClass(icon);
-        m_icon = icon;
     };
 };
 
@@ -1464,6 +1460,10 @@ sh.Switch = function ()
 
 sh.ListView = function ()
 {
+    sh.defineProperties(this, {
+        size: { get: size }
+    });
+
     var that = this;
     var m_items = [];
 
@@ -1471,6 +1471,11 @@ sh.ListView = function ()
         sh.tag("ul").class("sh-listview")
         .html()
     );
+
+    function size()
+    {
+        return m_items.length;
+    }
 
     this.get = function ()
     {
@@ -1481,6 +1486,7 @@ sh.ListView = function ()
     {
         m_items.push(item);
         m_listView.append(item.get());
+        that.sizeChanged();
     };
 
     this.insert = function (at, item)
@@ -1493,6 +1499,7 @@ sh.ListView = function ()
         {
             m_items = m_items.slice(0, at).concat([item]).concat(m_items.slice(at));
             item.get().insertBefore(m_listView.find("> *")[at]);
+            that.sizeChanged();
         }
     };
 
@@ -1502,6 +1509,7 @@ sh.ListView = function ()
         {
             m_items.splice(at, 1);
             m_listView.find("> *")[at].remove();
+            that.sizeChanged();
         }
     };
 
@@ -1514,6 +1522,7 @@ sh.ListView = function ()
     {
         m_listView.html("");
         m_items = [];
+        that.sizeChanged();
     };
 };
 
@@ -1896,6 +1905,8 @@ sh.ListModelView = function ()
         {
             base.remove(at);
         };
+
+        m.onReset();
     }
 
     function model()
@@ -1917,6 +1928,7 @@ sh.ListModelView = function ()
 sh.ListModel = function ()
 {
     sh.defineProperties(this, {
+        data: { set: setData, get: data },
         onReset: { set: setOnReset, get: onReset },
         onInsert: { set: setOnInsert, get: onInsert },
         onRemove: { set: setOnRemove, get: onRemove },
@@ -1928,6 +1940,16 @@ sh.ListModel = function ()
     var m_onReset = null;
     var m_onInsert = null;
     var m_onRemove = null;
+
+    function setData(data)
+    {
+        that.reset(data);
+    }
+
+    function data()
+    {
+        return m_data.slice();
+    }
 
     function setOnReset(cb)
     {
