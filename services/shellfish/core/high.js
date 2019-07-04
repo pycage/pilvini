@@ -310,7 +310,7 @@
                 {
                     that[prop + "_"] = function ()
                     {
-                        that.get()[prop].apply(that.get(), arguments);
+                        return that.get()[prop].apply(that.get(), arguments);
                     };
                 }
                 else
