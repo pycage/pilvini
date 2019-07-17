@@ -1810,7 +1810,7 @@ function ListModelView()
         delegate: { set: setDelegate, get: delegate }
     });
 
-    var base = new low.ListView();
+    var base = new ListView();
     extend(this, base);
 
 
