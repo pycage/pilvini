@@ -59,6 +59,24 @@ function addProperty(target, name, setter, getter)
 }
 exports.addProperty = addProperty;
 
+/* Wraps an existing callback to invoke an additional one.
+ */
+exports.chainCallback = function (callbackProperty, callback)
+{
+    if (callbackProperty)
+    {
+        return function ()
+        {
+            callbackProperty.apply(this, arguments);
+            callback(this, arguments);
+        };
+    }
+    else
+    {
+        return callback;
+    }
+};
+
 /* Element representing a page on the UI page stack.
  */
 function Page()

@@ -688,8 +688,9 @@ require(mods, function (low, mid, high, ui, cfg, mimeReg)
         var totalItems = items.length;
         var statusEntry = high.element(ui.StatusItem).icon("sh-icon-wait").get();
         pushStatus(statusEntry);
-        m_properties.currentContext.watchOnce(function ()
+        var watchHandle = m_properties.currentContext.watch(function ()
         {
+            watchHandle.unwatch();
             if (statusEntry)
             {
                 popStatus(statusEntry);

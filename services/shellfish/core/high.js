@@ -8,7 +8,6 @@ var Binding = function (value)
     var m_idCounter = 0;
     var m_value = value;
     var m_watchers = { };
-    var m_onceWatchers = [];
     var m_onUnwatched = null;
 
     /* Notifies the watchers of this binding about an update.
@@ -26,19 +25,6 @@ var Binding = function (value)
                 console.error("Binding error: " + err);
             }
         }
-
-        m_onceWatchers.forEach(function (watchCallback)
-        {
-            try
-            {
-                watchCallback(m_value);
-            }
-            catch (err)
-            {
-                console.error("Binding error: " + err);
-            }
-        });
-        m_onceWatchers = [];
     }
 
     /* Registers a callback for watching this binding and returns the
@@ -59,13 +45,6 @@ var Binding = function (value)
                 }
             }
         }
-    };
-
-    /* Registers a one-shot callback for watching this binding.
-     */
-    this.watchOnce = function (watchCallback)
-    {
-        m_onceWatchers.push(watchCallback);
     };
 
     /* Registers a callback for when the last watcher was removed.
