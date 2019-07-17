@@ -99,7 +99,7 @@ var Element = function (type)
     var m_id = "";
     var m_watchHandles = [];
     var m_inits = [];
-    var m_bindings = [];
+    var m_bindings = { };
     var m_isInitialized = false;
 
     /* Returns the underlying mid-level element.
@@ -143,6 +143,7 @@ var Element = function (type)
         });
         m_element = null;
         m_children = [];
+        m_bindings = { };
     }
 
     /* Sets or returns the ID of this element.
