@@ -1,6 +1,13 @@
 "use strict";
 
-(function ()
+const mods = [
+    "/::res/shellfish/core/low.js",
+    "/::res/shellfish/core/mid.js",
+    "/::res/shellfish/core/high.js",
+    "/::res/shell/mime-registry.js"
+];
+
+require(mods, function (low, mid, high, mimeReg)
 {
     var IFrame = function ()
     {
@@ -10,7 +17,7 @@
 
         var m_source = "";
         var m_iframe = $(
-            sh.tag("iframe")
+            low.tag("iframe")
             .style("width", "calc(100vw - 80px)")
             .style("height", "calc(100vh - 80px)")
             .html()
@@ -35,14 +42,14 @@
 
     function viewPdf(href)
     {
-        var popup = sh.element(sh.Popup)
+        var popup = high.element(mid.Popup)
         .add(
-            sh.element(IFrame)
+            high.element(IFrame)
             .source("/::res/shell-documents/pdfjs/web/viewer.html?file=" + encodeURI(href))
         );
         
         popup.show_();
     }
 
-    mimeRegistry.register("application/pdf", viewPdf);
-})();
+    mimeReg.mimeRegistry.register("application/pdf", viewPdf);
+});

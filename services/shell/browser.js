@@ -176,15 +176,7 @@ function makeHtmlHead(initFunction, extensions)
                 .attr("type", "image/png")
                 .attr("sizes", "180x180")
                 .attr("href", "/::res/shell/apple-touch-icon.png")
-            )
-            .content(
-                tag("script").attr("src", "/::res/shell/index.js")
             );
-
-    t.content(
-        tag("script")
-        .content(initFunction + "(" + JSON.stringify(extensions) + ");")
-    );
 
     return t;
 }
@@ -216,17 +208,20 @@ function makeHtml(extensions)
     var t = tag("html")
             .content(
                 makeHtmlHead("init", extensions)
+                .content(
+                    tag("script")
+                    .attr("src", "/::res/shellfish/require.js")
+                    .attr("data-main", "/::res/shell/index.js")
+                )
             )
             .content(
                 tag("body").class("sh-theme-default")
+                .attr("data-extensions", JSON.stringify(extensions))
                 .content(
                     tag("input").id("upload").attr("type", "file").attr("multiple", "multiple").style("display", "none")
                 )
                 .content(
                     tag("a").id("download").data("ajax", "false").attr("href", "#").attr("download", "name").style("display", "none")
-                )
-                .content(
-                    tag("div").id("pagestack")
                 )
             );
 
@@ -276,12 +271,14 @@ function makeLoginPage(callback)
     var t = tag("html")
             .content(
                 makeHtmlHead("initLogin", [])
+                .content(
+                    tag("script")
+                    .attr("src", "/::res/shellfish/require.js")
+                    .attr("data-main", "/::res/shell/login.js")
+                )
             )
             .content(
                 tag("body").class("sh-theme-default")
-                .content(
-                    tag("div").id("pagestack")
-                )
             );
 
     var html = "<!DOCTYPE html>\n" + t.html();

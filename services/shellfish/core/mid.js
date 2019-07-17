@@ -1,29 +1,37 @@
 "use strict";
 
+var low;
+require(__dirname + "/low.js", function (l)
+{
+    low = l;
+});
+
+
 /* Extends from a base object.
  */
-sh.extend = function (target, base)
+function extend(target, base)
 {
     Object.getOwnPropertyNames(base).forEach(function (prop)
     {
         var descriptor = Object.getOwnPropertyDescriptor(base, prop);
         Object.defineProperty(target, prop, descriptor);
     });
-};
+}
+exports.extend = extend;
 
-
-sh.defineProperties = function (target, props)
+function defineProperties(target, props)
 {
     for (var key in props)
     {
         var description = props[key];
-        sh.addProperty(target, key, description.set, description.get);
+        addProperty(target, key, description.set, description.get);
     }
-};
+}
+exports.defineProperties = defineProperties;
 
 /* Adds a property with notification callback.
  */
-sh.addProperty = function (target, name, setter, getter)
+function addProperty(target, name, setter, getter)
 {
     var callback = null;
 
@@ -49,10 +57,13 @@ sh.addProperty = function (target, name, setter, getter)
         enumerable: true
     });
 }
+exports.addProperty = addProperty;
 
-sh.NSPage = function ()
+/* Element representing a page on the UI page stack.
+ */
+function Page()
 {
-    sh.defineProperties(this, {
+    defineProperties(this, {
         header: { set: setHeader, get: header },
         footer: { set: setFooter, get: footer },
         left: { set: setLeft, get: left },
@@ -68,10 +79,11 @@ sh.NSPage = function ()
     var m_onSwipeBack = null;
     var m_onClosed = null;
 
+    console.log("low " + Object.keys(low));
     var m_page = $(
-        sh.tag("div").class("sh-page")
+        low.tag("div").class("sh-page")
         .content(
-            sh.tag("section")
+            low.tag("section")
             .style("position", "relative")
         )
         .html()
@@ -128,7 +140,7 @@ sh.NSPage = function ()
     function setScript(uri)
     {
         m_page.append($(
-            sh.tag("script").attr("src", uri)
+            low.tag("script").attr("src", uri)
             .html()
         ));
     }
@@ -140,7 +152,7 @@ sh.NSPage = function ()
 
     function setOnSwipeBack(callback)
     {
-        sh.pageOnSwipe(m_page, callback);
+        low.pageOnSwipe(m_page, callback);
         m_onSwipeBack = callback;
     }
 
@@ -173,9 +185,10 @@ sh.NSPage = function ()
      */
     this.push = function (callback)
     {
-        $("#pagestack").append(m_page);
+        //$("#pagestack").append(m_page);
+        $("body").append(m_page);
         that.updateGeometry();
-        sh.pagePush(m_page, callback, $(".sh-page").length === 1);
+        low.pagePush(m_page, callback, $(".sh-page").length === 1);
 
         m_page.one("sh-closed", function ()
         {
@@ -190,7 +203,7 @@ sh.NSPage = function ()
      */
     this.pop = function (callback)
     {
-        sh.pagePop(function ()
+        low.pagePop(function ()
         {
             m_page.detach();
             if (callback)
@@ -204,17 +217,18 @@ sh.NSPage = function ()
      */
     this.updateGeometry = function ()
     {
-        if (!! m_header)
-            console.log("header: " + m_header.get().height());
         m_page.find("> section").css("padding-top", (!! m_header ? m_header.get().height() : 0) + "px");
         m_page.find("> section").css("padding-bottom", (!! m_footer ? m_footer.get().height() : 0) + "px");
         m_page.find("> section").css("padding-left", (!! m_left ? m_left.get().width() : 0) + "px");
     }
-};
+}
+exports.Page = Page;
 
-sh.PageHeader = function ()
+/* Element representing a page header with title and buttons.
+ */
+function PageHeader()
 {
-    sh.defineProperties(this, {
+    defineProperties(this, {
         title: { set: setTitle, get: title },
         subtitle: { set: setSubtitle, get: subtitle },
         left: { set: addLeft, get: left },
@@ -229,33 +243,33 @@ sh.PageHeader = function ()
     var m_onClicked = null;
 
     var m_header = $(
-        sh.tag("header").class("sh-dropshadow")
+        low.tag("header").class("sh-dropshadow")
         .style("padding-left", "3em")
         .style("padding-right", "3em")
         .content(
-            sh.tag("div")
+            low.tag("div")
             .style("line-height", "1.3rem")
             .style("padding-top", "0.2rem")
             .content(
-                sh.tag("h1").style("overflow", "none").content("")
+                low.tag("h1").style("overflow", "none").content("")
 
             )
             .content(
-                sh.tag("h2").style("overflow", "none").content("")
+                low.tag("h2").style("overflow", "none").content("")
             )
         )
         .content(
-            sh.tag("div").class("sh-left")
+            low.tag("div").class("sh-left")
         )
         .content(
-            sh.tag("div").class("sh-right")
+            low.tag("div").class("sh-right")
         )
         .html()
     );
 
     function setTitle(title)
     {
-        m_header.find("> div > h1").html(sh.resolveIcons(sh.escapeHtml(title)));
+        m_header.find("> div > h1").html(low.resolveIcons(low.escapeHtml(title)));
         m_title = title;
     }
 
@@ -266,7 +280,7 @@ sh.PageHeader = function ()
 
     function setSubtitle(subtitle)
     {
-        m_header.find("> div > h2").html(sh.escapeHtml(subtitle));
+        m_header.find("> div > h2").html(low.escapeHtml(subtitle));
         m_subtitle = subtitle;
     }
 
@@ -312,113 +326,10 @@ sh.PageHeader = function ()
     {
         return m_header;
     };
-};
+}
+exports.PageHeader = PageHeader;
 
-sh.Page = function (title, subtitle)
-{
-    var m_page = $(
-        sh.tag("div").class("sh-page")
-        .content(
-            sh.tag("header").class("sh-dropshadow")
-            .style("padding-left", "3em")
-            .style("padding-right", "3em")
-            .content(
-                sh.tag("div")
-                .style("line-height", "1.3rem")
-                .style("padding-top", "0.2rem")
-                .content(
-                    sh.tag("h1").content(sh.escapeHtml(title))
-
-                )
-                .content(
-                    sh.tag("h2").content(sh.escapeHtml(subtitle))
-                )
-            )
-            .content(
-                sh.tag("div").class("sh-left")
-            )
-            .content(
-                sh.tag("div").class("sh-right")
-            )
-        )
-        .content(
-            sh.tag("section")
-            .style("position", "relative")
-        )
-        .html()
-    );
-
-    this.get = function ()
-    {
-        return m_page;
-    };
-
-    /* Pushes this page onto the page stack.
-     */
-    this.push = function (callback)
-    {
-        $("#pagestack").append(m_page);
-        sh.pagePush(m_page, callback, $(".sh-page").length === 1);
-    };
-
-    /* Pops this page off the page stack.
-     */
-    this.pop = function (callback)
-    {
-        sh.pagePop(function ()
-        {
-            m_page.remove();
-            if (callback)
-            {
-                callback();
-            }
-        });
-    };
-
-    /* Sets a swipe-back action.
-     */
-    this.setSwipeBack = function (callback)
-    {
-        sh.pageOnSwipe(m_page, callback);
-    };
-
-    /* Sets the page title.
-     */
-    this.setTitle = function (text)
-    {
-        m_page.find("> header h1").html(sh.escapeHtml(text));
-    };
-
-    /* Sets the page subtitle.
-     */
-    this.setSubtitle = function (text)
-    {
-        m_page.find("> header h2").html(sh.escapeHtml(text));
-    };
-
-    /* Adds an item to the left side of the header.
-     */
-    this.addToHeaderLeft = function (item)
-    {
-        m_page.find("> header .sh-left").append(item.get());
-    };
-
-    /* Adds an item to the right side of the header.
-     */
-    this.addToHeaderRight = function (item)
-    {
-        m_page.find("> header .sh-right").append(item.get());
-    };
-
-    /* Adds an item to the page.
-     */
-    this.add = function (item)
-    {
-        m_page.find("> section").append(item.get());
-    };
-};
-
-sh.Menu = function ()
+function Menu()
 {
     var m_menu;
 
@@ -437,7 +348,7 @@ sh.Menu = function ()
     this.popup = function (parent)
     {
         $("body").append(m_menu);
-        sh.menuOpen(m_menu, parent, function () { });
+        low.menuOpen(m_menu, parent, function () { });
     };
 
     this.close = function ()
@@ -446,11 +357,11 @@ sh.Menu = function ()
     }
 
     m_menu = $(
-        sh.tag("div").class("sh-menu")
+        low.tag("div").class("sh-menu")
         .content(
-            sh.tag("div")
+            low.tag("div")
             .content(
-                sh.tag("ul")
+                low.tag("ul")
                 .style("max-height", "75vh")
                 .style("overflow-x", "hidden")
                 .style("overflow-y", "auto")
@@ -465,18 +376,19 @@ sh.Menu = function ()
         event.stopPropagation();
         m_menu.detach();
     });
-};
+}
+exports.Menu = Menu;
 
-sh.Box = function ()
+function Box()
 {
-    sh.defineProperties(this, {
+    defineProperties(this, {
         visible: { set: setVisible, get: visible }
     });
 
     var m_isVisible = true;
 
     var m_item = $(
-        sh.tag("div")
+        low.tag("div")
         .html()
     );
 
@@ -500,11 +412,12 @@ sh.Box = function ()
     {
         m_item.append(child.get());
     };
-};
+}
+exports.Box = Box;
 
-sh.MenuItem = function ()
+function MenuItem()
 {
-    sh.defineProperties(this, {
+    defineProperties(this, {
         enabled: { set: setEnabled, get: enabled },
         icon: { set: setIcon, get: icon },
         text: { set: setText, get: text },
@@ -533,7 +446,7 @@ sh.MenuItem = function ()
     function setText(text)
     {
         m_text = text;
-        m_item.find("span").last().html(sh.escapeHtml(text));
+        m_item.find("span").last().html(low.escapeHtml(text));
     }
 
     function text()
@@ -594,24 +507,25 @@ sh.MenuItem = function ()
     };
 
     m_item = $(
-        sh.tag("li")
+        low.tag("li")
         .style("position", "relative")
         .on("click", "")
         .content(
-            sh.tag("span").class("sh-left sh-fw-icon")
+            low.tag("span").class("sh-left sh-fw-icon")
         )
         .content(
-            sh.tag("span")
+            low.tag("span")
             .style("padding-left", "1.2em")
             .content("")
         )
         .html()
     );
-};
+}
+exports.MenuItem = MenuItem;
 
-sh.SubMenu = function ()
+function SubMenu()
 {
-    sh.defineProperties(this, {
+    defineProperties(this, {
         text: { set: setText, get: text },
         visible: { set: setVisible, get: visible }
     });
@@ -622,7 +536,7 @@ sh.SubMenu = function ()
     function setText(text)
     {
         m_text = text;
-        m_subMenu.find("h1").html(sh.escapeHtml(text));
+        m_subMenu.find("h1").html(low.escapeHtml(text));
     }
 
     function text()
@@ -659,13 +573,13 @@ sh.SubMenu = function ()
     };
 
     m_subMenu = $(
-        sh.tag("div")
+        low.tag("div")
         .content(
-            sh.tag("h1").class("sh-submenu")
+            low.tag("h1").class("sh-submenu")
             .on("click", "")
         )
         .content(
-            sh.tag("ul")
+            low.tag("ul")
         )
         .html()
     );
@@ -683,12 +597,13 @@ sh.SubMenu = function ()
         });
         $(item).toggleClass("sh-submenu-visible");
     });
-};
+}
+exports.SubMenu = SubMenu;
 
-sh.Separator = function ()
+function Separator()
 {
     var m_sep = $(
-        sh.tag("hr")
+        low.tag("hr")
         .html()
     );
 
@@ -696,15 +611,16 @@ sh.Separator = function ()
     {
         return m_sep;
     };
-};
+}
+exports.Separator = Separator;
 
-sh.Popup = function ()
+function Popup()
 {
     var m_popup = $(
-        sh.tag("div").class("sh-popup")
+        low.tag("div").class("sh-popup")
         .style("background-color", "rgba(0, 0, 0, 0.8)")
         .content(
-            sh.tag("div").class("sh-dropshadow")
+            low.tag("div").class("sh-dropshadow")
             .style("position", "relative")
             .style("background-color", "black")
             .style("overflow", "hidden")
@@ -733,11 +649,12 @@ sh.Popup = function ()
         $("body").append(m_popup);
         m_popup.attr("tabindex", -1).focus();
     };
-};
+}
+exports.Popup = Popup;
 
-sh.Dialog = function ()
+function Dialog()
 {
-    sh.defineProperties(this, {
+    defineProperties(this, {
         title: { set: setTitle, get: title },
         button: { set: addButton, get: buttons }
     });
@@ -746,24 +663,24 @@ sh.Dialog = function ()
     var m_buttons = [];
 
     var m_dialog = $(
-        sh.tag("form").class("sh-popup")
+        low.tag("form").class("sh-popup")
         .on("click", "event.stopPropagation();")
         .on("submit", "return false;")
         .content(
-            sh.tag("div").class("sh-dropshadow")
+            low.tag("div").class("sh-dropshadow")
             .style("background-color", "var(--color-primary-background)")
             .style("max-width", "calc(100vw - 80px)")
             .content(
-                sh.tag("header")
+                low.tag("header")
                 .style("border", "none")
                 .style("background-color", "var(--color-highlight-background)")
                 .content(
-                    sh.tag("h1")
+                    low.tag("h1")
                     .content("")
                 )
             )
             .content(
-                sh.tag("section")
+                low.tag("section")
                 .style("margin-top", "2rem")
                 .style("margin-bottom", "2.5rem")
                 .style("max-width", "calc(100vw - 2rem)")
@@ -771,13 +688,13 @@ sh.Dialog = function ()
                 .style("overflow", "auto")
             )
             .content(
-                sh.tag("footer")
+                low.tag("footer")
                 .style("border", "none")
                 .style("height", "2.5rem")
                 .style("line-height", "2.5rem")
                 .style("background-color", "var(--color-secondary-background)")
                 .content(
-                    sh.tag("span").class("sh-right")
+                    low.tag("span").class("sh-right")
                     .style("margin-right", "0.25rem")
                 )
             )
@@ -813,7 +730,7 @@ sh.Dialog = function ()
 
     function setTitle(title)
     {
-        m_dialog.find("header h1").html(sh.escapeHtml(title));
+        m_dialog.find("header h1").html(low.escapeHtml(title));
         m_title = title;
     }
 
@@ -839,30 +756,31 @@ sh.Dialog = function ()
     {
         m_dialog.find("section").append(widget.get());
     };
-};
+}
+exports.Dialog = Dialog;
 
-sh.BusyPopup = function ()
+function BusyPopup()
 {
-    sh.defineProperties(this, {
+    defineProperties(this, {
         text: { set: setText, get: text }
     });
 
     var m_text = "";
     var m_popup = $(
-        sh.tag("div").class("sh-popup")
+        low.tag("div").class("sh-popup")
         .content(
-            sh.tag("div").class("sh-dropshadow")
+            low.tag("div").class("sh-dropshadow")
             .style("color", "var(--color-primary)")
             .style("text-align", "center")
             .style("padding", "1em")
             .content(
-                sh.tag("span").class("sh-busy-indicator")
+                low.tag("span").class("sh-busy-indicator")
                 .style("font-size", "200%")
             )
-            .content(sh.tag("br"))
-            .content(sh.tag("br"))
+            .content(low.tag("br"))
+            .content(low.tag("br"))
             .content(
-                sh.tag("span").content("")
+                low.tag("span").content("")
             )
         )
         .html()
@@ -870,7 +788,7 @@ sh.BusyPopup = function ()
 
     function setText(text)
     {
-        m_popup.find("span").last().html(sh.escapeHtml(text));
+        m_popup.find("span").last().html(low.escapeHtml(text));
         m_text = text;
     }
 
@@ -888,24 +806,25 @@ sh.BusyPopup = function ()
     {
         m_popup.remove();
     };
-};
+}
+exports.BusyPopup = BusyPopup;
 
-sh.Text = function ()
+function Text()
 {
-    sh.defineProperties(this, {
+    defineProperties(this, {
         text: { set: setText, get: text }
     });
 
     var m_text = "";
     var m_label = $(
-        sh.tag("span")
+        low.tag("span")
         .content("")
         .html()
     );
 
     function setText(text)
     {
-        m_label.html(sh.escapeHtml(text));
+        m_label.html(low.escapeHtml(text));
         m_text = text;
     }
 
@@ -918,24 +837,25 @@ sh.Text = function ()
     {
         return m_label;
     };
-};
+}
+exports.Text = Text;
 
-sh.Label = function ()
+function Label()
 {
-    sh.defineProperties(this, {
+    defineProperties(this, {
         text: { set: setText, get: text }
     });
 
     var m_text = "";
     var m_label = $(
-        sh.tag("p")
+        low.tag("p")
         .content("")
         .html()
     );
 
     function setText(text)
     {
-        m_label.html(sh.escapeHtml(text));
+        m_label.html(low.escapeHtml(text));
         m_text = text;
     }
 
@@ -948,11 +868,12 @@ sh.Label = function ()
     {
         return m_label;
     };
-};
+}
+exports.Label = Label;
 
-sh.Headline = function ()
+function Headline()
 {
-    sh.defineProperties(this, {
+    defineProperties(this, {
         title: { set: setTitle, get: title },
         subtitle: { set: setSubtitle, get: subtitle }
     });
@@ -960,19 +881,19 @@ sh.Headline = function ()
     var m_title = "";
     var m_subtitle = "";
     var m_label = $(
-        sh.tag("div")
+        low.tag("div")
         .content(
-            sh.tag("h1")
+            low.tag("h1")
         )
         .content(
-            sh.tag("h2")
+            low.tag("h2")
         )
         .html()
     );
 
     function setTitle(text)
     {
-        m_label.find("h1").html(sh.escapeHtml(text));
+        m_label.find("h1").html(low.escapeHtml(text));
         m_title = text;
     }
 
@@ -983,7 +904,7 @@ sh.Headline = function ()
 
     function setSubtitle(text)
     {
-        m_label.find("h2").html(sh.escapeHtml(text));
+        m_label.find("h2").html(low.escapeHtml(text));
         m_subtitle = text;
     }
 
@@ -996,20 +917,21 @@ sh.Headline = function ()
     {
         return m_label;
     };
-};
+}
+exports.Headline = Headline;
 
-sh.Labeled = function ()
+function Labeled()
 {
-    sh.defineProperties(this, {
+    defineProperties(this, {
         text: { set: setText, get: text }
     });
 
     var m_text = "";
 
     var m_row = $(
-        sh.tag("p")
+        low.tag("p")
         .content(
-            sh.tag("label").content("")
+            low.tag("label").content("")
             .style("display", "inline-block")
             .style("min-width", "6em")
         )
@@ -1018,7 +940,7 @@ sh.Labeled = function ()
 
     function setText(text)
     {
-        m_row.find("> label").html(sh.escapeHtml(text));
+        m_row.find("> label").html(low.escapeHtml(text));
         m_text = text;
     }
 
@@ -1036,11 +958,12 @@ sh.Labeled = function ()
     {
         return m_row;
     };
-};
+}
+exports.Labeled = Labeled;
 
-sh.TextInput = function ()
+function TextInput()
 {
-    sh.defineProperties(this, {
+    defineProperties(this, {
         text: { set: setText, get: text },
         password: { set: setPassword, get: password },
         focus: { set: setFocus, get: focus }
@@ -1050,7 +973,7 @@ sh.TextInput = function ()
     var m_focus = false;
 
     var m_input = $(
-        sh.tag("input").attr("type", "text")
+        low.tag("input").attr("type", "text")
         .attr("value", "")
         .on("keydown", "event.stopPropagation();")
         .html()
@@ -1092,11 +1015,12 @@ sh.TextInput = function ()
     {
         return m_focus;
     }
-};
+}
+exports.TextInput = TextInput;
 
-sh.Toolbar = function ()
+function Toolbar()
 {
-    sh.defineProperties(this, {
+    defineProperties(this, {
         visible: { set: setVisible, get: visible },
         left: { set: addLeft, get: left },
         right: { set: addRight, get: right }
@@ -1107,17 +1031,17 @@ sh.Toolbar = function ()
     var m_right = [];
 
     var m_item = $(
-        sh.tag("div")
+        low.tag("div")
         .style("position", "relative")
         .style("height", "3rem")
         .style("line-height", "3rem")
         .style("overflow", "hidden")
         .style("white-space", "nowrap")
         .content(
-            sh.tag("div").class("sh-left")
+            low.tag("div").class("sh-left")
         )
         .content(
-            sh.tag("div").class("sh-right")
+            low.tag("div").class("sh-right")
         )
         .html()
     );
@@ -1171,12 +1095,13 @@ sh.Toolbar = function ()
     {
         addLeft(child);
     };
-};
+}
+exports.Toolbar = Toolbar;
 
-sh.Gap = function ()
+function Gap()
 {
     var m_item = $(
-        sh.tag("div")
+        low.tag("div")
         .style("display", "inline-block")
         .style("width", "3rem")
         .style("height", "1px")
@@ -1188,10 +1113,11 @@ sh.Gap = function ()
         return m_item;
     };
 }
+exports.Gap = Gap;
 
-sh.Button = function ()
+function Button()
 {
-    sh.defineProperties(this, {
+    defineProperties(this, {
         text: { set: setText, get: text },
         action: { set: setOnClicked, get: onClicked },
         onClicked: { set: setOnClicked, get: onClicked },
@@ -1203,7 +1129,7 @@ sh.Button = function ()
     var m_isDefault = false;
 
     var m_button = $(
-        sh.tag("input").attr("type", "button")
+        low.tag("input").attr("type", "button")
         .on("click", "")
         .attr("value", "")
         .html()
@@ -1211,7 +1137,7 @@ sh.Button = function ()
 
     function setText(text)
     {
-        m_button.prop("value", sh.escapeHtml(text));
+        m_button.prop("value", low.escapeHtml(text));
         m_text = text;
     }
 
@@ -1246,11 +1172,12 @@ sh.Button = function ()
     {
         return m_button;
     }
-};
+}
+exports.Button = Button;
 
-sh.IconButton = function ()
+function IconButton()
 {
-    sh.defineProperties(this, {
+    defineProperties(this, {
         enabled: { set: setEnabled, get: enabled },
         checked: { set: setChecked, get: checked },
         visible: { set: setVisible, get: visible },
@@ -1268,13 +1195,13 @@ sh.IconButton = function ()
     var m_onClicked = null;
 
     var m_button = $(
-        sh.tag("div")
+        low.tag("div")
         .style("display", "inline-block")
         .style("width", "3rem")
         .style("height", "100%")
         .style("text-align", "center")
         .content(
-            sh.tag("span").class("sh-fw-icon")
+            low.tag("span").class("sh-fw-icon")
             .style("font-size", "2rem")
         )
         .on("click", "")
@@ -1383,11 +1310,12 @@ sh.IconButton = function ()
     {
         return m_button;
     };
-};
+}
+exports.IconButton = IconButton;
 
-sh.Switch = function ()
+function Switch()
 {
-    sh.defineProperties(this, {
+    defineProperties(this, {
         enabled: { set: setEnabled, get: enabled },
         checked: { set: setChecked, get: checked },
         onToggled: { set: setOnToggled, get: onToggled }
@@ -1396,12 +1324,12 @@ sh.Switch = function ()
     var m_enabled = true;
     var m_onToggled = null;
     var m_swtch = $(
-        sh.tag("label").class("sh-switch")
+        low.tag("label").class("sh-switch")
         .content(
-            sh.tag("input").attr("type", "checkbox")
+            low.tag("input").attr("type", "checkbox")
         )
         .content(
-            sh.tag("span")
+            low.tag("span")
         )
         .html()
     );
@@ -1456,11 +1384,12 @@ sh.Switch = function ()
     {
         return m_onToggled;
     }
-};
+}
+exports.Switch = Switch;
 
-sh.ListView = function ()
+function ListView()
 {
-    sh.defineProperties(this, {
+    defineProperties(this, {
         size: { get: size }
     });
 
@@ -1468,7 +1397,7 @@ sh.ListView = function ()
     var m_items = [];
 
     var m_listView = $(
-        sh.tag("ul").class("sh-listview")
+        low.tag("ul").class("sh-listview")
         .html()
     );
 
@@ -1524,11 +1453,12 @@ sh.ListView = function ()
         m_items = [];
         that.sizeChanged();
     };
-};
+}
+exports.ListView = ListView;
 
-sh.ListItem = function ()
+function ListItem()
 {
-    sh.defineProperties(this, {
+    defineProperties(this, {
         action: { set: setAction, get: action },
         fillMode: { set: setFillMode, get: fillMode },
         icon: { set: setIcon, get: icon },
@@ -1547,38 +1477,38 @@ sh.ListItem = function ()
     var m_onClicked = null;
 
     var m_listItem = $(
-        sh.tag("li")
+        low.tag("li")
         .style("height", "80px")
         .on("click", "")
         .content(
-            sh.tag("div").class("sh-left icon")
+            low.tag("div").class("sh-left icon")
             .style("display", "none")
             .style("width", "80px")
             .style("background-repeat", "no-repeat")
             .style("background-position", "50% 50%")
         )
         .content(
-            sh.tag("div")
+            low.tag("div")
             .style("position", "absolute")
             .style("top", "1em")
             .style("left", "0")
             .style("right", "0")
             .style("padding-left", "0.5em")
             .content(
-                sh.tag("h1").content("")
+                low.tag("h1").content("")
             )
             .content(
-                sh.tag("h2").content("")
+                low.tag("h2").content("")
             )
         )
         .content(
-            sh.tag("div").class("sh-right sh-selection-box")
+            low.tag("div").class("sh-right sh-selection-box")
             .style("display", "none")
             .style("width", "42px")
             .style("text-align", "center")
             .style("border-left", "solid 1px var(--color-border)")
             .content(
-                sh.tag("span").class("sh-fw-icon")
+                low.tag("span").class("sh-fw-icon")
                 .style("line-height", "80px")
             )
         )
@@ -1620,7 +1550,7 @@ sh.ListItem = function ()
 
     function setTitle(title)
     {
-        m_labelBox.find("h1").html(sh.escapeHtml(title));
+        m_labelBox.find("h1").html(low.escapeHtml(title));
         m_title = title;
     }
 
@@ -1631,7 +1561,7 @@ sh.ListItem = function ()
 
     function setSubtitle(subtitle)
     {
-        m_labelBox.find("h2").html(sh.escapeHtml(subtitle));
+        m_labelBox.find("h2").html(low.escapeHtml(subtitle));
         m_subtitle = subtitle;
     }
 
@@ -1689,14 +1619,15 @@ sh.ListItem = function ()
     {
         return m_onClicked;
     }
-};
+}
+exports.ListItem = ListItem;
 
-sh.GridView = function ()
+function GridView()
 {
     var m_items = [];
 
     var m_gridView = $(
-        sh.tag("div")
+        low.tag("div")
         .style("display", "flex")
         .style("flex-direction", "row")
         .style("flex-wrap", "wrap")
@@ -1719,11 +1650,12 @@ sh.GridView = function ()
     {
         return m_items[n];
     };
-};
+}
+exports.GridView = GridView;
 
-sh.GridItem = function ()
+function GridItem()
 {
-    sh.defineProperties(this, {
+    defineProperties(this, {
         action: { set: setAction, get: action },
         fillMode: { set: setFillMode, get: fillMode },
         icon: { set: setIcon, get: icon },
@@ -1740,7 +1672,7 @@ sh.GridItem = function ()
     var m_onClicked = null;
 
     var m_gridItem = $(
-        sh.tag("div")
+        low.tag("div")
         .style("position", "relative")
         .style("width", "160px")
         .style("height", "160px")
@@ -1750,7 +1682,7 @@ sh.GridItem = function ()
         .style("background-repeat", "no-repeat")
         .style("background-position", "50% 50%")
         .content(
-            sh.tag("h1")
+            low.tag("h1")
             .style("position", "absolute")
             .style("background-color", "var(--color-primary-background-translucent)")
             .style("padding", "0")
@@ -1796,7 +1728,7 @@ sh.GridItem = function ()
 
     function setTitle(title)
     {
-        m_gridItem.find("h1").html(sh.escapeHtml(title));
+        m_gridItem.find("h1").html(low.escapeHtml(title));
         m_title = title;
     }
 
@@ -1829,7 +1761,7 @@ sh.GridItem = function ()
         var callback = action[1];
 
         var box = $(
-            sh.tag("div").class("sh-selection-box")
+            low.tag("div").class("sh-selection-box")
             .style("position", "absolute")
             .style("top", "0")
             .style("right", "0")
@@ -1838,7 +1770,7 @@ sh.GridItem = function ()
             .style("text-align", "center")
             .style("border-radius", "3px")
             .content(
-                sh.tag("span").class("sh-fw-icon " + icon)
+                low.tag("span").class("sh-fw-icon " + icon)
                 .style("line-height", "42px")
             )
             .html()
@@ -1868,17 +1800,18 @@ sh.GridItem = function ()
     {
         return m_onClicked;
     }
-};
+}
+exports.GridItem = GridItem;
 
-sh.ListModelView = function ()
+function ListModelView()
 {    
-    sh.defineProperties(this, {
+    defineProperties(this, {
         model: { set: setModel, get: model },
         delegate: { set: setDelegate, get: delegate }
     });
 
-    var base = new sh.ListView();
-    sh.extend(this, base);
+    var base = new low.ListView();
+    extend(this, base);
 
 
     var m_model = null;
@@ -1923,11 +1856,12 @@ sh.ListModelView = function ()
     {
         return m_delegate;
     }
-};
+}
+exports.ListModelView = ListModelView;
 
-sh.ListModel = function ()
+function ListModel()
 {
-    sh.defineProperties(this, {
+    defineProperties(this, {
         data: { set: setData, get: data },
         onReset: { set: setOnReset, get: onReset },
         onInsert: { set: setOnInsert, get: onInsert },
@@ -2026,4 +1960,6 @@ sh.ListModel = function ()
     {
         return m_data[n];
     };
-};
+}
+exports.ListModel = ListModel;
+

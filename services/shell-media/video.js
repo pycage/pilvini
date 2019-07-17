@@ -1,18 +1,22 @@
 "use strict";
 
-var shellMedia = {
-    videoExtensions: []
-};
+const mods = [
+    "/::res/shellfish/core/low.js",
+    "/::res/shellfish/core/mid.js",
+    "/::res/shellfish/core/high.js",
+    "/::res/shell/mime-registry.js",
+    __dirname + "/video-editor.js"
+];
 
-(function ()
+require(mods, function (low, mid, high, mimeReg, videoEditor)
 {
-    var m_uri = sh.binding("");
-    var m_size = sh.binding(0);
-    var m_position = sh.binding(0);
-    var m_duration = sh.binding(0);
-    var m_buffered = sh.binding(null);
-    var m_status = sh.binding("paused"); // playing | paused | buffering | stalled
-    var m_isFullscreen = sh.binding(false);
+    var m_uri = high.binding("");
+    var m_size = high.binding(0);
+    var m_position = high.binding(0);
+    var m_duration = high.binding(0);
+    var m_buffered = high.binding(null);
+    var m_status = high.binding("paused"); // playing | paused | buffering | stalled
+    var m_isFullscreen = high.binding(false);
 
     function VideoPopup()
     {
@@ -28,24 +32,24 @@ var shellMedia = {
         var m_uri = "";
 
         var m_item = $(
-            sh.tag("div")
+            low.tag("div")
             .style("position", "relative")
             .content(
-                sh.tag("div")
+                low.tag("div")
                 .style("background-color", "black")
                 .content(
-                    sh.tag("video")
+                    low.tag("video")
                     .style("max-width", "320px")
                     .style("max-height", "240px")
                 )
             )
             .content(
-                sh.tag("header")
+                low.tag("header")
                 .style("font-size", "200%")
                 .style("top", "0")
             )
             .content(
-                sh.tag("footer")
+                low.tag("footer")
                 .style("font-size", "200%")
                 .style("bottom", "0")
                 .style("min-height", "80px")
@@ -122,7 +126,7 @@ var shellMedia = {
             var h = video.height();
             var ratio = w / h;
 
-            var margin = sh.fullscreenStatus() ? 0 : 80;
+            var margin = low.fullscreenStatus() ? 0 : 80;
             var viewWidth = $(window).width() - margin;
             var viewHeight = $(window).height() - margin;
 
@@ -139,9 +143,9 @@ var shellMedia = {
             .css("min-height", h2 + "px")
             .css("max-width", viewWidth + "px")
             .css("max-height", viewHeight + "px")
-            .css("margin", sh.fullscreenStatus() ? "0" : "0.2rem");
+            .css("margin", low.fullscreenStatus() ? "0" : "0.2rem");
 
-            if ((w2 < viewWidth || h2 < viewHeight) && sh.fullscreenStatus())
+            if ((w2 < viewWidth || h2 < viewHeight) && low.fullscreenStatus())
             {
                 video.css("transform",
                         "translateX(" + ((viewWidth - w2) / 2) + "px) " +
@@ -196,14 +200,14 @@ var shellMedia = {
 
         function toggleFullscreen()
         {    
-            if (sh.fullscreenStatus())
+            if (low.fullscreenStatus())
             {
-                sh.fullscreenExit();
+                low.fullscreenExit();
                 m_isFullscreen.assign(false);
             }
             else
             {
-                sh.fullscreenEnter(m_item);
+                low.fullscreenEnter(m_item);
                 m_isFullscreen.assign(true);
             }
             setTimeout(updateSizeConstraints, 300);
@@ -293,7 +297,7 @@ var shellMedia = {
 
         var m_title = "";
         var m_item = $(
-            sh.tag("h1")
+            low.tag("h1")
             .style("font-size", "1rem")
             .style("position", "absolute")
             .style("margin", "0")
@@ -309,7 +313,7 @@ var shellMedia = {
         function setTitle(title)
         {
             m_title = title;
-            m_item.html(sh.escapeHtml(title));
+            m_item.html(low.escapeHtml(title));
         }
 
         function title()
@@ -330,7 +334,7 @@ var shellMedia = {
         });
 
         var m_item = $(
-            sh.tag("div")
+            low.tag("div")
             .html()
         );
 
@@ -363,13 +367,13 @@ var shellMedia = {
         var m_isDragging = false;
 
         var m_item = $(
-            sh.tag("div")
+            low.tag("div")
             .style("position", "relative")
             .style("height", "2rem")
             .style("line-height", "2rem")
             .style("background-color", "rgba(0, 0, 0, 0.2)")
             .content(
-                sh.tag("div")
+                low.tag("div")
                 .style("position", "absolute")
                 .style("top", "0")
                 .style("left", "0")
@@ -377,7 +381,7 @@ var shellMedia = {
                 .style("height", "100%")
             )
             .content(
-                sh.tag("div")
+                low.tag("div")
                 .style("position", "absolute")
                 .style("top", "0")
                 .style("left", "0")
@@ -386,14 +390,14 @@ var shellMedia = {
                 .style("background-color", "var(--color-highlight-background)")
             )
             .content(
-                sh.tag("div")
+                low.tag("div")
                 .style("position", "absolute")
                 .style("top", "0")
                 .style("left", "0")
                 .style("bottom", "0")
                 .style("right", "0")
                 .content(
-                    sh.tag("h1")
+                    low.tag("h1")
                     .style("text-align", "center")
                     .style("font-size", "1.5rem")
                 )
@@ -578,7 +582,7 @@ var shellMedia = {
                 while (box.find("> div").length < ranges.length)
                 {
                     box.append(
-                        sh.tag("div")
+                        low.tag("div")
                         .style("position", "absolute")
                         .style("background-color", "rgba(255, 0, 0, 0.3)")
                         .style("top", "0")
@@ -625,12 +629,12 @@ var shellMedia = {
 
     function openVideo(uri)
     {
-        var popup = sh.element(sh.Popup)
+        var popup = high.element(mid.Popup)
         .add(
-            sh.element(VideoPopup).id("video")
+            high.element(VideoPopup).id("video")
             .header(
-                sh.element(Header)
-                .title(sh.predicate([m_uri], function ()
+                high.element(Header)
+                .title(high.predicate([m_uri], function ()
                 {
                     var uri = m_uri.value();
                     var idx = uri.lastIndexOf("/");
@@ -639,12 +643,12 @@ var shellMedia = {
                 }))
             )
             .footer(
-                sh.element(Footer)
+                high.element(Footer)
                 .add(
-                    sh.element(ProgressBar).id("progressBar")
+                    high.element(ProgressBar).id("progressBar")
                     .position(m_position)
                     .duration(m_duration)
-                    .ranges(sh.predicate([m_buffered], function ()
+                    .ranges(high.predicate([m_buffered], function ()
                     {
                         var ranges = [];
                         var buffered = m_buffered.value();
@@ -664,7 +668,7 @@ var shellMedia = {
                     })
                 )
                 .add(
-                    sh.element(shellMedia.VideoEditor).id("editToolbar")
+                    high.element(videoEditor.VideoEditor).id("editToolbar")
                     .visible(false)
                     .uri(m_uri)
                     .position(m_position)
@@ -675,10 +679,10 @@ var shellMedia = {
                     })
                 )
                 .add(
-                    sh.element(sh.Toolbar)
+                    high.element(mid.Toolbar)
                     .add(
-                        sh.element(sh.IconButton)
-                        .icon(sh.predicate([m_status], function ()
+                        high.element(mid.IconButton)
+                        .icon(high.predicate([m_status], function ()
                         {
                             switch (m_status.value())
                             {
@@ -703,7 +707,7 @@ var shellMedia = {
                         })
                     )
                     .add(
-                        sh.element(sh.IconButton)
+                        high.element(mid.IconButton)
                         .icon("sh-icon-media-rwd10")
                         .onClicked(function ()
                         {
@@ -713,7 +717,7 @@ var shellMedia = {
                         })
                     )
                     .add(
-                        sh.element(sh.IconButton)
+                        high.element(mid.IconButton)
                         .icon("sh-icon-media-fwd30")
                         .onClicked(function ()
                         {
@@ -723,7 +727,7 @@ var shellMedia = {
                         })
                     )
                     .right(
-                        sh.element(sh.IconButton)
+                        high.element(mid.IconButton)
                         .icon("sh-icon-media-cut")
                         .onClicked(function ()
                         {
@@ -734,8 +738,8 @@ var shellMedia = {
                         })
                     )
                     .right(
-                        sh.element(sh.IconButton)
-                        .icon(sh.predicate([m_isFullscreen], function ()
+                        high.element(mid.IconButton)
+                        .icon(high.predicate([m_isFullscreen], function ()
                         {
                             return m_isFullscreen.value() ? "sh-icon-unfullscreen"
                                                           : "sh-icon-fullscreen"
@@ -771,8 +775,6 @@ var shellMedia = {
         m_size.assign($(window).width() * $(window).height());
     });
 
-    mimeRegistry.register("video/mp4", openVideo);
-    mimeRegistry.register("video/webm", openVideo);
-
-    importJs(["/::res/shell-media/video-editor.js"], function () { });
-})();
+    mimeReg.mimeRegistry.register("video/mp4", openVideo);
+    mimeReg.mimeRegistry.register("video/webm", openVideo);
+});

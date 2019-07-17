@@ -1,10 +1,28 @@
 "use strict";
 
-var sh = { };
+require("/::res/shellfish/jquery-2.1.4.min.js", function (jq)
+{
+    var mql = window.matchMedia("(prefers-color-scheme: dark)");
+    if (mql.matches)
+    {
+        $("body").removeClass("sh-theme-default").addClass("sh-theme-dark");
+    }
+    mql.addListener(function (ev)
+    {
+        if (ev.matches)
+        {
+            $("body").removeClass("sh-theme-default").addClass("sh-theme-dark");
+        }
+        else
+        {
+            $("body").removeClass("sh-theme-dark").addClass("sh-theme-default");
+        }
+    });
+});
 
 /* Escapes the given text for HTML output.
  */
-sh.escapeHtml = function (text)
+function escapeHtml(text)
 {
     return text.replace(/[\"'&<>]/g, function (a)
     {
@@ -16,12 +34,13 @@ sh.escapeHtml = function (text)
             '>': '&gt;'
         }[a];
     });
-};
+}
+exports.escapeHtml = escapeHtml;
 
 /* Resolves icons in the given text.
  * Icons are encoded by [icon:<name>].
  */
-sh.resolveIcons = function (text)
+function resolveIcons(text)
 {
     var out = "";
     var lastPos = 0;
@@ -36,7 +55,7 @@ sh.resolveIcons = function (text)
         var iconName = text.substring(pos + 6, endPos);
 
         // make icon
-        out += sh.tag("span").class("sh-fw-icon sh-icon-" + iconName).html();
+        out += tag("span").class("sh-fw-icon sh-icon-" + iconName).html();
 
         // advance
         lastPos = endPos + 1;
@@ -47,8 +66,10 @@ sh.resolveIcons = function (text)
     out += text.substring(lastPos);
 
     return out;
-};
+}
+exports.resolveIcons = resolveIcons;
 
+var tag;
 (function ()
 {
     var Tag = function (t)
@@ -137,7 +158,7 @@ sh.resolveIcons = function (text)
                 out += "<" + m_tag;
                 m_attrs.forEach(function (a)
                 {
-                    out += " " + a[0] + "=\"" + sh.escapeHtml(a[1]) + "\"";
+                    out += " " + a[0] + "=\"" + escapeHtml(a[1]) + "\"";
                 });
                 if (m_style.length > 0)
                 {
@@ -175,10 +196,11 @@ sh.resolveIcons = function (text)
         }
     }
     
-    sh.tag = function (t)
+    tag = function (t)
     {
         return new Tag(t);
-    };
+    }
+    exports.tag = tag;
 })();
 
 
@@ -186,7 +208,7 @@ sh.resolveIcons = function (text)
 
 /* Resolves and returns the item given by its element ID or its DOM node.
  */
-sh.item = function (which)
+function item(which)
 {
     switch ($.type(which))
     {
@@ -195,32 +217,35 @@ sh.item = function (which)
     default:
         return $(which);
     }
-};
+}
+exports.item = item;
 
 /* Freezes the given page at the given scroll position.
  */
-sh.pageFreeze = function (page, where)
+function pageFreeze(page, where)
 {
     var scrollTop = where;
     page.prop("rememberedScrollTop",  scrollTop);
     page.addClass("sh-page-transitioning");
     page.find("> section, > div").css("margin-top", (-scrollTop) + "px");
-};
+}
+exports.pageFreeze = pageFreeze;
 
 /* Unfreezes the given page, restoring the frozen scroll position.
  */
-sh.pageUnfreeze = function (page)
+function pageUnfreeze(page)
 {
     page.removeClass("sh-page-transitioning");
     page.find("> section, > div").css("margin-top", "0");
     $(document).scrollTop(page.prop("rememberedScrollTop") || 0);
-};
+}
+exports.pageUnfreeze = pageUnfreeze;
 
 /* Pushes the given page onto the page stack. Invokes callback afterwards.
  */
-sh.pagePush = function (page, callback, immediate)
+function pagePush(page, callback, immediate)
 {
-    sh.pageFreeze(page, 0);
+    pageFreeze(page, 0);
 
     var prevPage = $(".sh-page.sh-visible").last();
     if (prevPage.length)
@@ -232,7 +257,7 @@ sh.pagePush = function (page, callback, immediate)
         }
         else
         {
-            sh.pageFreeze(prevPage, $(document).scrollTop());
+            pageFreeze(prevPage, $(document).scrollTop());
         }
     }
 
@@ -261,7 +286,7 @@ sh.pagePush = function (page, callback, immediate)
                 prevPage.css("display", "none");
                 prevPage.trigger("hidden");
             }
-            sh.pageUnfreeze(page);
+            pageUnfreeze(page);
             if (callback)
             {
                 callback();
@@ -280,17 +305,18 @@ sh.pagePush = function (page, callback, immediate)
             prevPage.css("display", "none");
             prevPage.trigger("hidden");
         }
-        sh.pageUnfreeze(page);
+        pageUnfreeze(page);
         if (callback)
         {
             callback();
         }
     }
-};
+}
+exports.pagePush = pagePush;
 
 /* Pops the topmost page off the page stack. Invokes callback afterwards.
  */
-sh.pagePop = function (callback, reverse, immediate)
+function pagePop(callback, reverse, immediate)
 {
     var pages = $(".sh-page.sh-visible");
 
@@ -304,7 +330,7 @@ sh.pagePop = function (callback, reverse, immediate)
         if (! immediate)
         {
             // slide out
-            sh.pageFreeze(page, $(document).scrollTop());
+            pageFreeze(page, $(document).scrollTop());
 
             var width = $(window).width();
             page.animate({
@@ -313,8 +339,8 @@ sh.pagePop = function (callback, reverse, immediate)
             }, 350, function ()
             {
                 page.removeClass("sh-visible");
-                sh.pageUnfreeze(page);
-                sh.pageUnfreeze(prevPage);
+                pageUnfreeze(page);
+                pageUnfreeze(prevPage);
                 prevPage.trigger("visible");
 
                 page.css("left", "0").css("right", "0");
@@ -337,8 +363,8 @@ sh.pagePop = function (callback, reverse, immediate)
         else
         {
             page.removeClass("sh-visible");
-            sh.pageUnfreeze(page);
-            sh.pageUnfreeze(prevPage);
+            pageUnfreeze(page);
+            pageUnfreeze(prevPage);
             prevPage.trigger("visible");
 
             page.css("left", "0").css("right", "0");
@@ -351,13 +377,14 @@ sh.pagePop = function (callback, reverse, immediate)
             }
         }
     }
-};
+}
+exports.pagePop = pagePop;
 
 /* Sets up a swipe-back touch gesture on the given page.
  * Invokes the given callback on swiping back.
  * Provide an empty callback to disable swipe-back.
  */
-sh.pageOnSwipe = function (page, callback)
+function pageOnSwipe(page, callback)
 {
     // TODO: should be mid-layer
 
@@ -369,14 +396,14 @@ sh.pageOnSwipe = function (page, callback)
     page.on("touchstart", function (ev)
     {
         var backIndicator = $(
-            sh.tag("div")
+            tag("div")
             .style("position", "fixed")
             .style("top", "0")
             .style("bottom", "0")
             .style("left", "8px")
             .style("font-size", "10vh")
             .content(
-                sh.tag("span").class("sh-fw-icon sh-icon-back")
+                tag("span").class("sh-fw-icon sh-icon-back")
                 .style("line-height", "100vh")
                 .style("padding", "0.10em")
                 .style("background-color", "var(--color-primary)")
@@ -416,7 +443,7 @@ sh.pageOnSwipe = function (page, callback)
                 else
                 {
                     var scrollTop = $(document).scrollTop();
-                    sh.pageFreeze(page, scrollTop);
+                    pageFreeze(page, scrollTop);
 
                     var pages = $(".sh-page.sh-visible");
                     if (pages.length > 1)
@@ -466,7 +493,7 @@ sh.pageOnSwipe = function (page, callback)
     {
         function resetPage()
         {
-            sh.pageUnfreeze(page);
+            pageUnfreeze(page);
             page.css("left", "0").css("right", "0")
         }
 
@@ -520,12 +547,13 @@ sh.pageOnSwipe = function (page, callback)
             }, 300);
         }
     });
-};
+}
+exports.pageOnSwipe = pageOnSwipe;
 
 /* Opens the given menu attached to a parent element.
  * Invokes callback afterwards.
  */
-sh.menuOpen = function (menu, parent, callback)
+function menuOpen(menu, parent, callback)
 {
     var content = menu.find(">:first-child");
     var p = $(parent);
@@ -551,22 +579,24 @@ sh.menuOpen = function (menu, parent, callback)
 
         menu.addClass("sh-visible");
     }
-};
+}
+exports.menuOpen = menuOpen;
 
 /* Returns if fullscreen mode is currently active.
  */
-sh.fullscreenStatus = function ()
+function fullscreenStatus()
 {
     var state = document.webkitIsFullScreen || 
                 document.mozFullScreen ||
                 document.fullScreen;
 
     return (state === true);
-};
+}
+exports.fullscreenStatus = fullscreenStatus;
 
 /* Displays the given target in fullscreen mode.
  */
-sh.fullscreenEnter = function (target)
+function fullscreenEnter(target)
 {
     var e = $(target).get(0);
     if (e.webkitRequestFullscreen)
@@ -585,11 +615,12 @@ sh.fullscreenEnter = function (target)
     {
         e.requestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
     }
-};
+}
+exports.fullscreenEnter = fullscreenEnter;
 
 /* Leaves fullscreen mode.
  */
-sh.fullscreenExit = function ()
+function fullscreenExit()
 {
     if (document.webkitExitFullscreen)
     {
@@ -607,24 +638,5 @@ sh.fullscreenExit = function ()
     {
         document.exitFullscreen();
     }
-};
-
-(function ()
-{
-    var mql = window.matchMedia("(prefers-color-scheme: dark)");
-    if (mql.matches)
-    {
-        $("body").removeClass("sh-theme-default").addClass("sh-theme-dark");
-    }
-    mql.addListener(function (ev)
-    {
-        if (ev.matches)
-        {
-            $("body").removeClass("sh-theme-default").addClass("sh-theme-dark");
-        }
-        else
-        {
-            $("body").removeClass("sh-theme-dark").addClass("sh-theme-default");
-        }
-    });
-}) ();
+}
+exports.fullscreenExit = fullscreenExit;

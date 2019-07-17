@@ -1,6 +1,14 @@
 "use strict";
 
-(function ()
+const mods = [
+    "/::res/shellfish/core/low.js",
+    "/::res/shellfish/core/mid.js",
+    "/::res/shellfish/core/high.js",
+    "/::res/shell/files.js",
+    "/::res/shell/mime-registry.js"
+];
+
+require(mods, function (low, mid, high, files, mimeReg)
 {
     /* Loads the previous image.
      */
@@ -58,26 +66,26 @@
      */
     function openPopup()
     {
-        popup = new sh.Popup();
+        popup = new mid.Popup();
 
         popup.get().find("> div").html(
-            sh.tag("div")
+            low.tag("div")
             .style("position", "relative")
             .style("text-align", "center")
             .content(
-                sh.tag("img")
+                low.tag("img")
                 .style("max-width", "calc(100vw - 80px)")
                 .style("max-height", "calc(100vh - 80px)")
             )
             .content(
-                sh.tag("span").class("image-countdown-indicator")
+                low.tag("span").class("image-countdown-indicator")
                 .style("position", "absolute")
                 .style("top", "0")
                 .style("right", "1em")
                 .style("color", "#fff")
             )
             .content(
-                sh.tag("span").class("image-busy-indicator sh-fw-icon")
+                low.tag("span").class("image-busy-indicator sh-fw-icon")
                 .style("position", "absolute")
                 .style("width", "1em")
                 .style("height", "1em")
@@ -87,11 +95,11 @@
                 .style("color", "#fff")
             )
             .content(
-                sh.tag("header")
+                low.tag("header")
                 .style("top", "-80px")
                 .style("visibility", "hidden")
                 .content(
-                    sh.tag("h1")
+                    low.tag("h1")
                     .style("font-size", "1rem")
                     .style("position", "absolute")
                     .style("margin", "0")
@@ -104,7 +112,7 @@
                 )
             )
             .content(
-                sh.tag("footer")
+                low.tag("footer")
                 .style("font-size", "200%")
                 .style("margin", "0")
                 .style("bottom", "-80px")
@@ -114,7 +122,7 @@
                 .style("visibility", "hidden")
                 .on("click", "event.stopPropagation();")
                 .content(
-                    sh.tag("div").class("image-progress-label")
+                    low.tag("div").class("image-progress-label")
                     .style("position", "absolute")
                     .style("top", "6px")
                     .style("left", "0")
@@ -124,24 +132,24 @@
                     .style("font-size", "1rem")
                 )
                 .content(
-                    sh.tag("span").class("sh-left")
+                    low.tag("span").class("sh-left")
                     .content(
-                        sh.tag("span").class("sh-fw-icon sh-icon-media-previous image-previous-button")
+                        low.tag("span").class("sh-fw-icon sh-icon-media-previous image-previous-button")
                         .style("padding-left", "0.5em")
                         .style("font-size", "80%")
                     )
                     .content(
-                        sh.tag("span").class("sh-fw-icon sh-icon-media-play-circle image-play-button")
+                        low.tag("span").class("sh-fw-icon sh-icon-media-play-circle image-play-button")
                         .style("padding-left", "0.25em")
                     )
                     .content(
-                        sh.tag("span").class("sh-fw-icon sh-icon-media-next image-next-button")
+                        low.tag("span").class("sh-fw-icon sh-icon-media-next image-next-button")
                         .style("padding-left", "0.25em")
                         .style("font-size", "80%")
                     )
                 )
                 .content(
-                    sh.tag("span").class("sh-right sh-fw-icon sh-icon-fullscreen image-fullscreen-button")
+                    low.tag("span").class("sh-right sh-fw-icon sh-icon-fullscreen image-fullscreen-button")
                 )
             )
             .html()
@@ -433,18 +441,18 @@
     {
         if (! playing)
         {
-            var dlg = sh.element(sh.Dialog).title("Slideshow")
+            var dlg = high.element(mid.Dialog).title("Slideshow")
             .add(
-                sh.element(sh.Label).text("Interval between images:")
+                high.element(mid.Label).text("Interval between images:")
             )
             .add(
-                sh.element(sh.Labeled).text("Seconds")
+                high.element(mid.Labeled).text("Seconds")
                 .add(
-                    sh.element(sh.TextInput).id("input").text("" + slideshowInterval)
+                    high.element(mid.TextInput).id("input").text("" + slideshowInterval)
                 )
             )
             .button(
-                sh.element(sh.Button).text("Start").isDefault(true)
+                high.element(mid.Button).text("Start").isDefault(true)
                 .action(function ()
                 {
                     dlg.close_();
@@ -509,9 +517,9 @@
     function toggleFullscreen()
     {
         var fullscreenButton = popup.get().find(".image-fullscreen-button");
-        if (sh.fullscreenStatus())
+        if (low.fullscreenStatus())
         {
-            sh.fullscreenExit();
+            low.fullscreenExit();
             fullscreenButton.removeClass("sh-icon-unfullscreen").addClass("sh-icon-fullscreen");
             popup.get().find("img")
             .css("max-width", "calc(100vw - 80px)")
@@ -519,7 +527,7 @@
         }
         else
         {
-            sh.fullscreenEnter(popup.get().find("> div > div"));
+            low.fullscreenEnter(popup.get().find("> div > div"));
             fullscreenButton.removeClass("sh-icon-fullscreen").addClass("sh-icon-unfullscreen");
             popup.get().find("img")
             .css("max-width", "100vw")
@@ -536,7 +544,7 @@
         var h = img.height();
         var ratio = w / h;
 
-        var margin = sh.fullscreenStatus() ? 0 : 80;
+        var margin = low.fullscreenStatus() ? 0 : 80;
         var viewWidth = $(window).width() - margin;
         var viewHeight = $(window).height() - margin;
 
@@ -552,7 +560,7 @@
         .css("min-width", w2 + "px")
         .css("min-height", h2 + "px");
         
-        if (h2 < viewHeight && sh.fullscreenStatus())
+        if (h2 < viewHeight && low.fullscreenStatus())
         {
             img.css("transform", "translateY(" + ((viewHeight - h2) / 2)  + "px)");
         }
@@ -580,8 +588,8 @@
         }
     });
 
-    mimeRegistry.register("image/gif", loadImage);
-    mimeRegistry.register("image/jpeg", loadImage);
-    mimeRegistry.register("image/png", loadImage);
-    mimeRegistry.register("image/svg+xml", loadImage);
+    mimeReg.mimeRegistry.register("image/gif", loadImage);
+    mimeReg.mimeRegistry.register("image/jpeg", loadImage);
+    mimeReg.mimeRegistry.register("image/png", loadImage);
+    mimeReg.mimeRegistry.register("image/svg+xml", loadImage);
 })();

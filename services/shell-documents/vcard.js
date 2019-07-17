@@ -1,6 +1,12 @@
 "use strict";
 
-(function ()
+const mods = [
+    "/::res/shellfish/core/mid.js",
+    "/::res/shellfish/core/high.js",
+    "/::res/shell/mime-registry.js"
+];
+
+require(mods, function (mid, high, mimeReg)
 {
     var VC_PROPERTIES = ["SOURCE",
                      "KIND",
@@ -40,27 +46,27 @@
 
     function viewVCard(href)
     {
-        var amount = sh.binding(0);
+        var amount = high.binding(0);
 
         var parts = href.split("/");
         var name = decodeURI(parts[parts.length - 1]);
         
-        var page = sh.element(sh.NSPage)
+        var page = high.element(mid.Page)
         .onSwipeBack(function () { page.pop_(); })
         .header(
-            sh.element(sh.PageHeader)
+            high.element(mid.PageHeader)
             .title(name)
-            .subtitle(sh.predicate([amount], function ()
+            .subtitle(high.predicate([amount], function ()
             {
                 return amount.value() + " contacts";
             }))
             .left(
-                sh.element(sh.IconButton).icon("sh-icon-back")
+                high.element(mid.IconButton).icon("sh-icon-back")
                 .onClicked(function () { page.pop_(); })
             )
         )
         .add(
-            sh.element(sh.ListView).id("listview")
+            high.element(mid.ListView).id("listview")
         );
         page.push_();
 
@@ -69,7 +75,7 @@
                     
     function loadVCard(listView, amountBinding, href)
     {
-        var busyIndicator = sh.element(sh.BusyPopup).text("Loading");
+        var busyIndicator = high.element(mid.BusyPopup).text("Loading");
         busyIndicator.show_();
     
         $.ajax(href, {
@@ -98,7 +104,7 @@
                                     : "");
                 
                 listView.add(
-                    sh.element(sh.ListItem).title(title).subtitle(subTitle)
+                    high.element(mid.ListItem).title(title).subtitle(subTitle)
                 );
 
                 if (photo)
@@ -459,6 +465,6 @@
         }
     }
 
-    mimeRegistry.register("text/vcard", viewVCard);
-})();
+    mimeReg.mimeRegistry.register("text/vcard", viewVCard);
+});
 

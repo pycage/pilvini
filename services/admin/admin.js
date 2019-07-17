@@ -1,34 +1,42 @@
 "use strict";
 
-(function ()
+const mods = [
+    "/::res/shellfish/core/low.js",
+    "/::res/shellfish/core/mid.js",
+    "/::res/shellfish/core/high.js",
+    "/::res/shell/ui.js",
+    "/::res/shell/files.js"
+];
+
+require(mods, function (low, mid, high, ui, files)
 {
     function openPage()
     {
-        var page = sh.element(sh.NSPage)
+        var page = high.element(mid.Page)
         .onSwipeBack(function () { page.pop_(); })
         .header(
-            sh.element(sh.PageHeader).title("Administration")
+            high.element(mid.PageHeader).title("Administration")
             .left(
-                sh.element(sh.IconButton).icon("sh-icon-back")
+                high.element(mid.IconButton).icon("sh-icon-back")
                 .onClicked(function () { page.pop_(); })
             )
         )
         .add(
-            sh.element(sh.ListView)
+            high.element(mid.ListView)
             .add(
-                sh.element(sh.ListItem)
+                high.element(mid.ListItem)
                 .icon("/::res/shell/icons/server.png")
                 .title("Server")
                 .onClicked(function () { openServerPage(); })
             )
             .add(
-                sh.element(sh.ListItem)
+                high.element(mid.ListItem)
                 .icon("/::res/shell/icons/face.png")
                 .title("Users")
                 .onClicked(function () { openUsersPage(); })
             )
             .add(
-                sh.element(sh.ListItem)
+                high.element(mid.ListItem)
                 .icon("/::res/shell/file-icons/text.png")
                 .title("Statistics")
                 .onClicked(function () { ui.showError("Statistics are not yet available."); })
@@ -39,14 +47,14 @@
 
     function openServerPage()
     {
-        var listenAddress = sh.binding("0.0.0.0");
-        var port = sh.binding(8000);
-        var useSsl = sh.binding(false);
-        var contentRoot = sh.binding("/");
+        var listenAddress = high.binding("0.0.0.0");
+        var port = high.binding(8000);
+        var useSsl = high.binding(false);
+        var contentRoot = high.binding("/");
 
-        var dlg = sh.element(sh.Dialog).title("Server Settings")
+        var dlg = high.element(mid.Dialog).title("Server Settings")
         .button(
-            sh.element(sh.Button).text("Save and Restart")
+            high.element(mid.Button).text("Save and Restart")
             .onClicked(function ()
             {
                 var config = {
@@ -61,40 +69,40 @@
             })
         )
         .button(
-            sh.element(sh.Button).text("Cancel")
+            high.element(mid.Button).text("Cancel")
             .onClicked(function ()
             {
                 dlg.close_();
             })
         )
         .add(
-            sh.element(sh.Labeled).text("Listen Address:")
+            high.element(mid.Labeled).text("Listen Address:")
             .add(
-                sh.element(sh.TextInput).id("listen").text(listenAddress).focus(true)
+                high.element(mid.TextInput).id("listen").text(listenAddress).focus(true)
             )
         )
         .add(
-            sh.element(sh.Labeled).text("Port:")
+            high.element(mid.Labeled).text("Port:")
             .add(
-                sh.element(sh.TextInput).id("port")
-                .text(sh.predicate([port], function () { return "" + port.value(); }))
+                high.element(mid.TextInput).id("port")
+                .text(high.predicate([port], function () { return "" + port.value(); }))
             )
         )
         .add(
-            sh.element(sh.Labeled).text("Use SSL:")
+            high.element(mid.Labeled).text("Use SSL:")
             .add(
-                sh.element(sh.Switch).id("ssl").checked(useSsl)
+                high.element(mid.Switch).id("ssl").checked(useSsl)
             )
         )
         .add(
-            sh.element(sh.Labeled).text("Content Root:")
+            high.element(mid.Labeled).text("Content Root:")
             .add(
-                sh.element(sh.TextInput).id("root").text(contentRoot)
+                high.element(mid.TextInput).id("root").text(contentRoot)
             )
         )
         dlg.show_();
 
-        var busyIndicator = sh.element(sh.BusyPopup).text("Loading");
+        var busyIndicator = high.element(mid.BusyPopup).text("Loading");
         busyIndicator.show_();
 
         $.ajax({
@@ -121,25 +129,25 @@
 
     function openUsersPage()
     {
-        var page = sh.element(sh.NSPage)
+        var page = high.element(mid.Page)
         .onSwipeBack(function () { page.pop_(); })
         .header(
-            sh.element(sh.PageHeader).title("Users")
+            high.element(mid.PageHeader).title("Users")
             .left(
-                sh.element(sh.IconButton).icon("sh-icon-back")
+                high.element(mid.IconButton).icon("sh-icon-back")
                 .onClicked(function () { page.pop_(); })
             )
             .right(
-                sh.element(sh.IconButton).icon("sh-icon-add-user")
+                high.element(mid.IconButton).icon("sh-icon-add-user")
                 .onClicked(function () { showCreateUserDialog(); })
             )
         )
         .add(
-            sh.element(sh.ListView).id("listview")
+            high.element(mid.ListView).id("listview")
         );
         page.push_();
 
-        var busyIndicator = sh.element(sh.BusyPopup).text("Loading");
+        var busyIndicator = high.element(mid.BusyPopup).text("Loading");
         busyIndicator.show_();
 
         $.ajax({
@@ -155,7 +163,7 @@
 
                 page.find("listview")
                 .add(
-                    sh.element(sh.ListItem)
+                    high.element(mid.ListItem)
                     .icon("/::res/shell/icons/face.png")
                     .title(item.name)
                     .subtitle(item.home + " (" + item.permissions.join(" ") + ")")
@@ -182,60 +190,60 @@
 
     function showCreateUserDialog()
     {
-        var dlg = sh.element(sh.Dialog).title("Create User")
+        var dlg = high.element(mid.Dialog).title("Create User")
         .add(
-            sh.element(sh.Label).text("Create a new user.")
+            high.element(mid.Label).text("Create a new user.")
         )
         .add(
-            sh.element(sh.Labeled).text("Name:")
+            high.element(mid.Labeled).text("Name:")
             .add(
-                sh.element(sh.TextInput).id("name").text("user").focus(true)
+                high.element(mid.TextInput).id("name").text("user").focus(true)
             )
         )
         .add(
-            sh.element(sh.Labeled).text("Password:")
+            high.element(mid.Labeled).text("Password:")
             .add(
-                sh.element(sh.TextInput).id("password")
+                high.element(mid.TextInput).id("password")
             )
         )
         .add(
-            sh.element(sh.Labeled).text("Home:")
+            high.element(mid.Labeled).text("Home:")
             .add(
-                sh.element(sh.TextInput).id("home").text(files.currentUri())
+                high.element(mid.TextInput).id("home").text(files.currentUri())
             )
         )
         .add(
-            sh.element(sh.Labeled).text("Create")
+            high.element(mid.Labeled).text("Create")
             .add(
-                sh.element(sh.Switch).id("mayCreate").checked(true)
+                high.element(mid.Switch).id("mayCreate").checked(true)
             )
         )
         .add(
-            sh.element(sh.Labeled).text("Delete")
+            high.element(mid.Labeled).text("Delete")
             .add(
-                sh.element(sh.Switch).id("mayDelete").checked(true)
+                high.element(mid.Switch).id("mayDelete").checked(true)
             )
         )
         .add(
-            sh.element(sh.Labeled).text("Modify")
+            high.element(mid.Labeled).text("Modify")
             .add(
-                sh.element(sh.Switch).id("mayModify").checked(true)
+                high.element(mid.Switch).id("mayModify").checked(true)
             )
         )
         .add(
-            sh.element(sh.Labeled).text("Share")
+            high.element(mid.Labeled).text("Share")
             .add(
-                sh.element(sh.Switch).id("mayShare").checked(false)
+                high.element(mid.Switch).id("mayShare").checked(false)
             )
         )
         .add(
-            sh.element(sh.Labeled).text("Administrator")
+            high.element(mid.Labeled).text("Administrator")
             .add(
-                sh.element(sh.Switch).id("mayAdmin").checked(false)
+                high.element(mid.Switch).id("mayAdmin").checked(false)
             )
         )
         .button(
-            sh.element(sh.Button).text("Create").isDefault(true)
+            high.element(mid.Button).text("Create").isDefault(true)
             .action(function ()
            {
                dlg.close_();
@@ -252,7 +260,7 @@
            })
         )
         .button(
-            sh.element(sh.Button).text("Cancel")
+            high.element(mid.Button).text("Cancel")
             .action(function ()
             {
                 dlg.close_();
@@ -263,7 +271,7 @@
 
     function configureServer(config)
     {
-        var busyIndicator = sh.element(sh.BusyPopup).text("Saving");
+        var busyIndicator = high.element(mid.BusyPopup).text("Saving");
         busyIndicator.show_();
 
         $.ajax({
@@ -300,7 +308,7 @@
         })
         .done(function (data, status, xhr)
         {
-            sh.pagePop();
+            low.pagePop();
             openUsersPage();
         })
         .fail(function (xhr, status, err)
@@ -321,7 +329,7 @@
         })
         .done(function (data, status, xhr)
         {
-            sh.pagePop();
+            low.pagePop();
             openUsersPage();
         })
         .fail(function (xhr, status, err)
@@ -332,27 +340,27 @@
 
     files.actionsMenu().find("tools-menu")
     .add(
-        //sh.element(sh.IconButton).icon("sh-icon-gear")
-        sh.element(sh.MenuItem).text("Administration")
-        .visible(sh.predicate([files.properties().permissions], function () { return files.properties().permissions.value().indexOf("ADMIN") !== -1; }))
+        //high.element(mid.IconButton).icon("sh-icon-gear")
+        high.element(mid.MenuItem).text("Administration")
+        .visible(high.predicate([files.properties().permissions], function () { return files.properties().permissions.value().indexOf("ADMIN") !== -1; }))
         .onClicked(openPage)
     );
     /*
     .add(
-        sh.element(sh.MenuItem).text("User Agent")
-        .visible(sh.predicate([files.properties().permissions], function () { return files.properties().permissions.value().indexOf("ADMIN") !== -1; }))
+        high.element(mid.MenuItem).text("User Agent")
+        .visible(high.predicate([files.properties().permissions], function () { return files.properties().permissions.value().indexOf("ADMIN") !== -1; }))
         .onClicked(function ()
         {
-            var dlg = sh.element(sh.Dialog).title("User Agent")
+            var dlg = high.element(mid.Dialog).title("User Agent")
             .add(
-                sh.element(sh.Label).text(navigator.userAgent)
+                high.element(mid.Label).text(navigator.userAgent)
             )
             .button(
-                sh.element(sh.Button).text("Ok")
+                high.element(mid.Button).text("Ok")
                 .action(function () { dlg.close_(); })
             );
             dlg.show_();
         })
     )
     */
-})();
+});

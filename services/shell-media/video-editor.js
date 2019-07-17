@@ -1,6 +1,14 @@
 "use strict";
 
-(function ()
+const mods = [
+    "/::res/shellfish/core/low.js",
+    "/::res/shellfish/core/mid.js",
+    "/::res/shellfish/core/high.js",
+    "/::res/shell/ui.js",
+    "/::res/shell/files.js"
+];
+
+require(mods, function (low, mid, high, ui, files)
 {
     function formatTime(seconds)
     {
@@ -34,9 +42,9 @@
         var name = idx !== -1 ? filename.substr(0, idx) : filename;
         var ext = idx !== -1 ? filename.substr(idx) : "";
 
-        var dlg = sh.element(sh.Dialog).title("Cut Video")
+        var dlg = high.element(mid.Dialog).title("Cut Video")
         .button(
-            sh.element(sh.Button).text("Cut")
+            high.element(mid.Button).text("Cut")
             .onClicked(function ()
             {
                 var directions = { };
@@ -55,14 +63,14 @@
             })
         )
         .button(
-            sh.element(sh.Button).text("Cancel")
+            high.element(mid.Button).text("Cancel")
             .onClicked(function ()
             {
                 dlg.close_();
             })
         )
         .add(
-            sh.element(sh.Label)
+            high.element(mid.Label)
             .text("You may combine multiple ranges in the same output file.")
         );
 
@@ -70,10 +78,10 @@
         ranges.forEach(function (range)
         {
             dlg.add(
-                sh.element(sh.Labeled)
+                high.element(mid.Labeled)
                 .text("Range " + counter + " <" + formatTime(range[0]) + " - " + formatTime(range[1]) + ">")
                 .add(
-                    sh.element(sh.TextInput).id("target." + counter)
+                    high.element(mid.TextInput).id("target." + counter)
                     .text(name + "_" + counter + ext)
                 )
             );
@@ -84,7 +92,7 @@
 
     function cutVideo(uri, directions)
     {
-        var busyIndicator = sh.element(sh.BusyPopup).text("Sending");
+        var busyIndicator = high.element(mid.BusyPopup).text("Sending");
         busyIndicator.show_();
 
         var data = {
@@ -163,12 +171,12 @@
         var m_onRangesChanged = null;
 
         var m_item = $(
-            sh.tag("div")
+            low.tag("div")
             .style("position", "relative")
             .style("height", "2rem")
             .style("line-height", "2rem")
             .content(
-                sh.tag("div")
+                low.tag("div")
                 .style("position", "absolute")
                 .style("top", "0")
                 .style("left", "0")
@@ -293,7 +301,7 @@
                 while (box.find("> div").length < ranges.length)
                 {
                     box.append(
-                        sh.tag("div")
+                        low.tag("div")
                         .style("position", "absolute")
                         .style("background-color", "rgba(255, 255, 0, 0.3)")
                         .style("border-left", "solid 2px var(--color-primary)")
@@ -347,7 +355,7 @@
         }
     }
 
-    shellMedia.VideoEditor = function ()
+    exports.VideoEditor = function ()
     {
         Object.defineProperties(this, {
             uri: { set: setUri, get: uri, enumerable: true },
@@ -364,7 +372,7 @@
         var m_onSeeked = null;
         var m_ranges = [];
 
-        sh.extend(this, new sh.Box());
+        mid.extend(this, new mid.Box());
 
         var m_markersBar = new MarkersBar();
         m_markersBar.onSeeked = function (seconds)
@@ -381,10 +389,10 @@
         }
         this.add(m_markersBar);
 
-        var m_toolbar = new sh.Toolbar();
+        var m_toolbar = new mid.Toolbar();
         this.add(m_toolbar);
 
-        var btn = new sh.IconButton();
+        var btn = new mid.IconButton();
         btn.icon = "sh-icon-scissors";
         btn.onClicked = function ()
         {
@@ -392,7 +400,7 @@
         };
         m_toolbar.add(btn);
 
-        btn = new sh.IconButton();
+        btn = new mid.IconButton();
         btn.icon = "sh-icon-trashcan";
         btn.onClicked = function ()
         {
@@ -400,10 +408,10 @@
         };
         m_toolbar.add(btn);
 
-        var gap = new sh.Gap();
+        var gap = new mid.Gap();
         m_toolbar.add(gap);
 
-        btn = new sh.IconButton();
+        btn = new mid.IconButton();
         btn.icon = "sh-icon-flip-horizontal";
         btn.onClicked = function ()
         {
@@ -411,10 +419,10 @@
         };
         m_toolbar.add(btn);
 
-        gap = new sh.Gap();
+        gap = new mid.Gap();
         m_toolbar.add(gap);
 
-        btn = new sh.IconButton();
+        btn = new mid.IconButton();
         btn.icon = "sh-icon-media-rwd1";
         btn.onClicked = function ()
         {
@@ -425,7 +433,7 @@
         };
         m_toolbar.add(btn);
 
-        btn = new sh.IconButton();
+        btn = new mid.IconButton();
         btn.icon = "sh-icon-media-rwd";
         btn.onClicked = function ()
         {
@@ -436,7 +444,7 @@
         };
         m_toolbar.add(btn);
 
-        btn = new sh.IconButton();
+        btn = new mid.IconButton();
         btn.icon = "sh-icon-media-fwd";
         btn.onClicked = function ()
         {
@@ -447,7 +455,7 @@
         };
         m_toolbar.add(btn);
 
-        btn = new sh.IconButton();
+        btn = new mid.IconButton();
         btn.icon = "sh-icon-media-fwd1";
         btn.onClicked = function ()
         {
@@ -458,7 +466,7 @@
         };
         m_toolbar.add(btn);
 
-        var cutButton = new sh.IconButton();
+        var cutButton = new mid.IconButton();
         cutButton.icon = "sh-icon-accept";
         cutButton.enabled = false;
         cutButton.onClicked = function ()
@@ -521,4 +529,4 @@
         }
     };
 
-})();
+});

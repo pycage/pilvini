@@ -1,15 +1,30 @@
 "use strict";
 
-var ui = { };
-
-ui.showInfo = function (title, msg, callback)
+var low;
+var mid;
+var high;
+var mods = [
+    "/::res/shellfish/core/low.js",
+    "/::res/shellfish/core/mid.js",
+    "/::res/shellfish/core/high.js"
+];
+require(mods, function (l, m, h)
 {
-    var dlg = sh.element(sh.Dialog).title(title)
+    low = l;
+    mid = m;
+    high = h;
+});
+
+
+
+function showInfo(title, msg, callback)
+{
+    var dlg = high.element(mid.Dialog).title(title)
     .add(
-        sh.element(sh.Label).text(msg)
+        high.element(mid.Label).text(msg)
     )
     .button(
-        sh.element(sh.Button).text("Ok")
+        high.element(mid.Button).text("Ok")
         .action(function ()
         {
             dlg.close_();
@@ -20,17 +35,17 @@ ui.showInfo = function (title, msg, callback)
         })
     );
     dlg.show_();
-};
+}
+exports.showInfo = showInfo;
 
-
-ui.showError = function (msg, callback)
+function showError(msg, callback)
 {
-    var dlg = sh.element(sh.Dialog).title("Error")
+    var dlg = high.element(mid.Dialog).title("Error")
     .add(
-        sh.element(sh.Label).text(msg)
+        high.element(mid.Label).text(msg)
     )
     .button(
-        sh.element(sh.Button).text("Ok")
+        high.element(mid.Button).text("Ok")
         .action(function ()
         {
             dlg.close_();
@@ -41,24 +56,26 @@ ui.showError = function (msg, callback)
         })
     );
     dlg.show_();
-};
+}
+exports.showError = showError;
 
-ui.showQuestion = function (title, msg, yesCb, noCb)
+function showQuestion(title, msg, yesCb, noCb)
 {
-    var dlg = sh.element(sh.Dialog).title(title)
+    var dlg = high.element(mid.Dialog).title(title)
     .add(
-        sh.element(sh.Label).text(msg)
+        high.element(mid.Label).text(msg)
     )
     .button(
-        sh.element(sh.Button).text("Yes").action(function () { dlg.close_(); yesCb(); }).isDefault(true)
+        high.element(mid.Button).text("Yes").action(function () { dlg.close_(); yesCb(); }).isDefault(true)
     )
     .button(
-        sh.element(sh.Button).text("No").action(function () { dlg.close_(); noCb(); })
+        high.element(mid.Button).text("No").action(function () { dlg.close_(); noCb(); })
     );
     dlg.show_();
-};
+}
+exports.showQuestion = showQuestion;
 
-ui.NavBar = function ()
+function NavBar()
 {
     Object.defineProperties(this, {
         page: { set: setPage, get: page, enumerable: true }
@@ -66,7 +83,7 @@ ui.NavBar = function ()
 
     var m_page = null;
     var m_navBar = $(
-        sh.tag("div")
+        low.tag("div")
         .style("position", "absolute")
         .style("top", "0")
         .style("left", "0")
@@ -179,7 +196,7 @@ ui.NavBar = function ()
             if (letter !== currentLetter && offset !== previousOffset)
             {
                 m_navBar.append(
-                    sh.tag("span")
+                    low.tag("span")
                     .style("position", "absolute")
                     .style("top", (offset - m_page.header.get().height()) + "px")
                     .style("left", "0")
@@ -199,13 +216,14 @@ ui.NavBar = function ()
 
         m_navBar.css("top", m_page.header.get().height() + "px");
     };
-};
+}
+exports.NavBar = NavBar;
 
-ui.StatusBox = function ()
+function StatusBox()
 {
     var that = this;
     var m_box = $(
-        sh.tag("footer").class("sh-dropshadow")
+        low.tag("footer").class("sh-dropshadow")
         /*
         .style("position", "fixed")
         .style("bottom", "0")
@@ -228,9 +246,10 @@ ui.StatusBox = function ()
     {
         m_box.append(item.get());
     };
-};
+}
+exports.StatusBox = StatusBox;
 
-ui.StatusItem = function ()
+function StatusItem()
 {
     Object.defineProperties(this, {
         left: { set: addLeft, get: left, enumerable: true },
@@ -249,19 +268,19 @@ ui.StatusItem = function ()
     var m_onClicked = null;
 
     var m_item = $(
-        sh.tag("div")
+        low.tag("div")
         .style("position", "relative")
         .style("border-top", "solid 1px var(--color-border)")
         .content(
             // box
-            sh.tag("div")
+            low.tag("div")
             .style("position", "relative")
             .style("display", "flex")
             .style("align-items", "center")
             .style("width", "100%")
             .content(
                 // progress bar
-                sh.tag("div")
+                low.tag("div")
                 .style("position", "absolute")
                 .style("background-color", "var(--color-highlight-background)")
                 .style("top", "0")
@@ -271,31 +290,31 @@ ui.StatusItem = function ()
             )
             .content(
                 // left content area
-                sh.tag("div")
+                low.tag("div")
                 .style("position", "relative")
             )
             .content(
                 // text
-                sh.tag("h1")
+                low.tag("h1")
                 .style("position", "relative")
                 .style("flex-grow", "1")
                 .style("line-height", "100%")
                 .content(
-                    sh.tag("span").class("sh-fw-icon")
+                    low.tag("span").class("sh-fw-icon")
                 )
                 .content(
-                    sh.tag("span")
+                    low.tag("span")
                 )
             )
             .content(
                 // right content area
-                sh.tag("div")
+                low.tag("div")
                 .style("position", "relative")
             )
         )
         .content(
             // custom content area
-            sh.tag("div")
+            low.tag("div")
         )
         .html()
     );
@@ -343,7 +362,7 @@ ui.StatusItem = function ()
 
     function setText(text)
     {
-        m_item.find("h1 > span").last().html(sh.escapeHtml(text));
+        m_item.find("h1 > span").last().html(low.escapeHtml(text));
         m_text = text;
     }
 
@@ -382,4 +401,5 @@ ui.StatusItem = function ()
     {
         m_item.find("> div:nth-child(2)").append(child.get());
     };
-};
+}
+exports.StatusItem = StatusItem;

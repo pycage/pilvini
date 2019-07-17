@@ -1,9 +1,20 @@
 "use strict";
 
-var files = { };
+const mods = [
+    "/::res/shellfish/core/low.js",
+    "/::res/shellfish/core/mid.js",
+    "/::res/shellfish/core/high.js",
+    __dirname + "/ui.js",
+    __dirname + "/configuration.js",
+    __dirname + "/mime-registry.js"
+];
 
-(function ()
+require(mods, function (low, mid, high, ui, cfg, mimeReg)
 {
+    console.log("using configuration");
+    var configuration = cfg.configuration;
+    var mimeRegistry = mimeReg.mimeRegistry;
+
     var m_page = null;
     var m_listView = null;
     var m_actionsMenu = null;
@@ -14,23 +25,44 @@ var files = { };
     var m_logItem = null;
 
 
+    /* Opens the given file item.
+     */
+    function openFile(item)
+    {
+        var mimeType = item.mimeType;
+        var uri = item.uri;
+
+        var handlers = mimeRegistry.fileHandlers(mimeType);
+        if (handlers.length === 0)
+        {
+            ui.showError("There is no handler available for this type: " + mimeType);
+        }
+        else
+        {
+            handlers[0](uri);
+        }
+    }
+    exports.openFile = openFile;
+
     /* Returns the current location.
      */
-    files.currentUri = function ()
+    function currentUri()
     {
         return m_properties.currentUri.value();
-    };
+    }
+    exports.currentUri = currentUri;
 
     /* Returns the actions menu.
      */
-    files.actionsMenu = function ()
+    function actionsMenu()
     {
         return m_actionsMenu;
-    };
+    }
+    exports.actionsMenu = actionsMenu;
 
     /* Returns a list of URIs by MIME type.
      */
-    files.filesByMimetype = function (pattern)
+    function filesByMimetype(pattern)
     {
         return m_properties.files.value().filter(function (meta)
         {
@@ -40,33 +72,55 @@ var files = { };
         {
             return meta.uri;
         });
-    };
+    }
+    exports.filesByMimetype = filesByMimetype;
 
-    files.eachSelected = function (callback)
+    function eachSelected(callback)
     {
-        return eachSelected(callback);
-    };
+        return function ()
+        {
+            var sel = m_properties.selection.value().slice();
+            sel.sort(function (a, b) { return Number.parseInt("" + a) - Number.parseInt("" + b); });
+            sel.forEach(function (idx)
+            {
+                callback(idx);
+            });
+            unselectAll();
+        };
+    }
+    exports.eachSelected = eachSelected;
 
-    files.pushStatus = function (item)
+    /* Pushes the given item into the status box.
+     */
+    function pushStatus(item)
     {
-        pushStatus(item);
-    };
+        m_page.footer.push(item);
+        m_page.updateGeometry();
+        updateNavBar();
+    }
+    exports.pushStatus = pushStatus;
 
-    files.popStatus = function (item)
+    /* Removes the given item from the status box.
+     */
+    function popStatus(item)
     {
-        popStatus(item);
-    };
+        item.get().remove();
+        m_page.updateGeometry();
+        updateNavBar();
+    }
+    exports.popStatus = popStatus;
 
-    files.properties = function ()
+    function properties()
     {
         return m_properties;
-    };
+    }
+    exports.properties = properties;
 
     function log(message)
     {
         if (! m_logItem)
         {
-            m_logItem = sh.element(ui.StatusItem).text(message).get();
+            m_logItem = high.element(ui.StatusItem).text(message).get();
             pushStatus(m_logItem)
         }
         else
@@ -79,24 +133,6 @@ var files = { };
     {
         return a.endsWith("/") ? a + b
                                : a + "/" + b;
-    }
-
-    /* Pushes the given item into the status box.
-     */
-    function pushStatus(item)
-    {
-        m_page.footer.push(item);
-        m_page.updateGeometry();
-        updateNavBar();
-    }
-
-    /* Removes the given item from the status box.
-     */
-    function popStatus(item)
-    {
-        item.get().remove();
-        m_page.updateGeometry();
-        updateNavBar();
     }
 
     /* Adds the current location to the favorites menu.
@@ -153,24 +189,24 @@ var files = { };
 
     function showShareDialog()
     {
-        var dlg = sh.element(sh.Dialog).title("Setup Share")
+        var dlg = high.element(mid.Dialog).title("Setup Share")
         .add(
-            sh.element(sh.Label).text("Share this directory.")
+            high.element(mid.Label).text("Share this directory.")
         )
         .add(
-            sh.element(sh.Labeled).text("Share Login:")
+            high.element(mid.Labeled).text("Share Login:")
             .add(
-                sh.element(sh.TextInput).id("login").focus(true)
+                high.element(mid.TextInput).id("login").focus(true)
             )
         )
         .add(
-            sh.element(sh.Labeled).text("Share Password:")
+            high.element(mid.Labeled).text("Share Password:")
             .add(
-                sh.element(sh.TextInput).id("password")
+                high.element(mid.TextInput).id("password")
             )
         )
         .button(
-            sh.element(sh.Button).text("Share").isDefault(true)
+            high.element(mid.Button).text("Share").isDefault(true)
             .action(function ()
             {
                 dlg.close_();
@@ -179,7 +215,7 @@ var files = { };
             })
         )
         .button(
-            sh.element(sh.Button).text("Cancel")
+            high.element(mid.Button).text("Cancel")
             .action(function ()
             {
                 dlg.close_();
@@ -225,18 +261,18 @@ var files = { };
 
     function makeNewDirectory()
     {
-        var dlg = sh.element(sh.Dialog).title("New Directory")
+        var dlg = high.element(mid.Dialog).title("New Directory")
         .add(
-            sh.element(sh.Label).text("Create a new directory.")
+            high.element(mid.Label).text("Create a new directory.")
         )
         .add(
-            sh.element(sh.Labeled).text("Name:")
+            high.element(mid.Labeled).text("Name:")
             .add(
-                sh.element(sh.TextInput).id("name").focus(true)
+                high.element(mid.TextInput).id("name").focus(true)
             )
         )
         .button(
-            sh.element(sh.Button).text("Create").isDefault(true)
+            high.element(mid.Button).text("Create").isDefault(true)
             .action(function ()
             {
                 dlg.close_();
@@ -263,7 +299,7 @@ var files = { };
             })
         )
         .button(
-            sh.element(sh.Button).text("Cancel")
+            high.element(mid.Button).text("Cancel")
             .action(function ()
             {
                 dlg.close_();
@@ -274,18 +310,18 @@ var files = { };
 
     function makeNewFile()
     {
-        var dlg = sh.element(sh.Dialog).title("New File")
+        var dlg = high.element(mid.Dialog).title("New File")
         .add(
-            sh.element(sh.Label).text("Create a new file.")
+            high.element(mid.Label).text("Create a new file.")
         )
         .add(
-            sh.element(sh.Labeled).text("Name:")
+            high.element(mid.Labeled).text("Name:")
             .add(
-                sh.element(sh.TextInput).id("name").focus(true)
+                high.element(mid.TextInput).id("name").focus(true)
             )
         )
         .button(
-            sh.element(sh.Button).text("Create").isDefault(true)
+            high.element(mid.Button).text("Create").isDefault(true)
             .action(function ()
             {
                 dlg.close_();
@@ -312,7 +348,7 @@ var files = { };
             })
         )
         .button(
-            sh.element(sh.Button).text("Cancel")
+            high.element(mid.Button).text("Cancel")
             .action(function ()
             {
                 dlg.close_();
@@ -650,7 +686,7 @@ var files = { };
         console.log("loadThumbnails: " + items.length + " images");
 
         var totalItems = items.length;
-        var statusEntry = sh.element(ui.StatusItem).icon("sh-icon-wait").get();
+        var statusEntry = high.element(ui.StatusItem).icon("sh-icon-wait").get();
         pushStatus(statusEntry);
         m_properties.currentContext.watchOnce(function ()
         {
@@ -690,18 +726,18 @@ var files = { };
         var meta = m_properties.files.value()[idx];
         var name = meta.name;
 
-        var dlg = sh.element(sh.Dialog).title("Rename File")
+        var dlg = high.element(mid.Dialog).title("Rename File")
         .add(
-            sh.element(sh.Label).text("Rename the file.")
+            high.element(mid.Label).text("Rename the file.")
         )
         .add(
-            sh.element(sh.Labeled).text("Name:")
+            high.element(mid.Labeled).text("Name:")
             .add(
-                sh.element(sh.TextInput).id("name").text(name).focus(true)
+                high.element(mid.TextInput).id("name").text(name).focus(true)
             )
         )
         .button(
-            sh.element(sh.Button).text("Rename").isDefault(true)
+            high.element(mid.Button).text("Rename").isDefault(true)
             .action(function ()
             {
                 dlg.close_();
@@ -724,7 +760,7 @@ var files = { };
             })
         )
         .button(
-            sh.element(sh.Button).text("Cancel")
+            high.element(mid.Button).text("Cancel")
             .action(function ()
             {
                 dlg.close_();
@@ -777,35 +813,35 @@ var files = { };
             return s;
         }
 
-        var dlg = sh.element(sh.Dialog).title("Bulk-Rename")
+        var dlg = high.element(mid.Dialog).title("Bulk-Rename")
         .add(
-            sh.element(sh.Label).text("Rename the selected files.")
+            high.element(mid.Label).text("Rename the selected files.")
         )
         .add(
-            sh.element(sh.Label).text("- <N>: Number (prepend 0 for leading zeros, e.g. <00N>)")
+            high.element(mid.Label).text("- <N>: Number (prepend 0 for leading zeros, e.g. <00N>)")
         )
         .add(
-            sh.element(sh.Label).text("- <NAME>: File name without extension")
+            high.element(mid.Label).text("- <NAME>: File name without extension")
         )
         .add(
-            sh.element(sh.Label).text("- <EXT>: File extension")
+            high.element(mid.Label).text("- <EXT>: File extension")
         )
         .add(
-            sh.element(sh.Labeled).text("Pattern:")
+            high.element(mid.Labeled).text("Pattern:")
             .add(
-                sh.element(sh.TextInput).id("pattern").focus(true)
+                high.element(mid.TextInput).id("pattern").focus(true)
                 .text("<00N> <NAME>.<EXT>")
             )
         )
         .add(
-            sh.element(sh.Labeled).text("Start N at:")
+            high.element(mid.Labeled).text("Start N at:")
             .add(
-                sh.element(sh.TextInput).id("startAt")
+                high.element(mid.TextInput).id("startAt")
                 .text("1")
             )
         )
         .button(
-            sh.element(sh.Button).text("Rename").isDefault(true)
+            high.element(mid.Button).text("Rename").isDefault(true)
             .action(function ()
             {
                 dlg.close_();
@@ -870,7 +906,7 @@ var files = { };
             })
         )
         .button(
-            sh.element(sh.Button).text("Cancel")
+            high.element(mid.Button).text("Cancel")
             .action(function ()
             {
                 dlg.close_();
@@ -899,20 +935,6 @@ var files = { };
         m_properties.selection.assign([]);
     }
 
-    function eachSelected(callback)
-    {
-        return function ()
-        {
-            var sel = m_properties.selection.value().slice();
-            sel.sort(function (a, b) { return Number.parseInt("" + a) - Number.parseInt("" + b); });
-            sel.forEach(function (idx)
-            {
-                callback(idx);
-            });
-            unselectAll();
-        };
-    }
-
     function openPathMenu()
     {
         var favs = configuration.get("favorites", []);
@@ -921,48 +943,48 @@ var files = { };
 
         console.log(JSON.stringify(m_properties.shares.value()) + " current " + m_properties.currentUri.value());
 
-        var menu = sh.element(sh.Menu)
+        var menu = high.element(mid.Menu)
         .add(
-            sh.element(sh.SubMenu).text("Favorites")
+            high.element(mid.SubMenu).text("Favorites")
             .add(
-                sh.element(sh.MenuItem).text("Remove from Favorites")
+                high.element(mid.MenuItem).text("Remove from Favorites")
                 .visible(isFav)
                 .onClicked(removeFavorite)
             )
             .add(
-                sh.element(sh.MenuItem).text("Add to Favorites")
+                high.element(mid.MenuItem).text("Add to Favorites")
                 .visible(! isFav)
                 .onClicked(addFavorite)
             )
             .add(
-                sh.element(sh.Separator)
+                high.element(mid.Separator)
             )
         )
         .add(
-            sh.element(sh.SubMenu).text("Shares")
-            .visible(sh.predicate([m_properties.permissions], function () { return m_properties.permissions.value().indexOf("SHARE") !== -1; }))
+            high.element(mid.SubMenu).text("Shares")
+            .visible(high.predicate([m_properties.permissions], function () { return m_properties.permissions.value().indexOf("SHARE") !== -1; }))
             .add(
-                sh.element(sh.MenuItem).text("Unshare This")
+                high.element(mid.MenuItem).text("Unshare This")
                 .visible(isShare)
                 .onClicked(unshare)
             )
             .add(
-                sh.element(sh.MenuItem).text("Share This")
+                high.element(mid.MenuItem).text("Share This")
                 .visible(! isShare)
                 .onClicked(showShareDialog)
             )
             .add(
-                sh.element(sh.Separator)
+                high.element(mid.Separator)
             )
         )
         .add(
-            sh.element(sh.Separator)
+            high.element(mid.Separator)
         );
 
         favs.forEach(function (f)
         {
             menu.child(0).add(
-                sh.element(sh.MenuItem).text(f.name).icon("sh-icon-star-circle")
+                high.element(mid.MenuItem).text(f.name).icon("sh-icon-star-circle")
                 .onClicked(function ()
                 {
                     m_scrollPositionsMap = { };
@@ -974,7 +996,7 @@ var files = { };
         m_properties.shares.value().forEach(function (s)
         {
             menu.child(1).add(
-                sh.element(sh.MenuItem).text(s.share + " " + s.uri).icon("sh-icon-share")
+                high.element(mid.MenuItem).text(s.share + " " + s.uri).icon("sh-icon-share")
                 .onClicked(function ()
                 {
                     m_scrollPositionsMap = { };
@@ -984,7 +1006,7 @@ var files = { };
         });
 
         menu.add(
-            sh.element(sh.MenuItem).text("/")
+            high.element(mid.MenuItem).text("/")
             .onClicked(function ()
             {
                 m_scrollPositionsMap = { };
@@ -1003,7 +1025,7 @@ var files = { };
 
             breadcrumbUri += "/" + parts[i];
             menu.add(
-                sh.element(sh.MenuItem).text(decodeURIComponent(parts[i]))
+                high.element(mid.MenuItem).text(decodeURIComponent(parts[i]))
                 .onClicked(function (uri)
                 {
                     return function ()
@@ -1028,7 +1050,7 @@ var files = { };
 
     function loadDirectory(uri, pushToHistory)
     {
-        var busyIndicator = sh.element(sh.BusyPopup).text("Loading");
+        var busyIndicator = high.element(mid.BusyPopup).text("Loading");
         busyIndicator.show_();
 
         m_scrollPositionsMap[m_properties.currentUri.value()] = $(document).scrollTop();
@@ -1101,7 +1123,7 @@ var files = { };
         switch (configuration.get("view-mode", "list"))
         {
         case "list":
-            var listView = new sh.ListView();
+            var listView = new mid.ListView();
 
             var count = 0;
             files.forEach(function (entry)
@@ -1113,7 +1135,7 @@ var files = { };
                 }
                 var d = new Date(entry.mtime);
                 info += d.toLocaleDateString() + " " + d.toLocaleTimeString();
-                var item = new sh.ListItem();
+                var item = new mid.ListItem();
                 item.title = entry.name;
                 item.subtitle = info;
                 item.onClicked = function ()
@@ -1153,12 +1175,12 @@ var files = { };
             break;
 
         case "grid":
-            var gridView = new sh.GridView();
+            var gridView = new mid.GridView();
 
             var count = 0;
             files.forEach(function (entry)
             {
-                var item = new sh.GridItem();
+                var item = new mid.GridItem();
                 item.title = entry.name;
                 item.onClicked = function ()
                 {
@@ -1251,7 +1273,7 @@ var files = { };
         var sourceUri = meta.uri;
         var targetUri = "/.pilvini/clipboard/" + encodeURIComponent(meta.name);
 
-        var statusEntry = sh.element(ui.StatusItem).icon("sh-icon-clipboard").text("Copying " + meta.name).get();
+        var statusEntry = high.element(ui.StatusItem).icon("sh-icon-clipboard").text("Copying " + meta.name).get();
         pushStatus(statusEntry);
 
         file.copy(sourceUri, targetUri, function (ok)
@@ -1315,21 +1337,21 @@ var files = { };
 
     function openClipboardPage()
     {
-        var amount = sh.binding(0);
+        var amount = high.binding(0);
 
-        var page = sh.element(sh.NSPage)
+        var page = high.element(mid.Page)
         .onSwipeBack(function () { page.pop_(); })
         .header(
-            sh.element(sh.PageHeader)
+            high.element(mid.PageHeader)
             .title("Clipboard")
-            .subtitle(sh.predicate([amount], function () { return amount.value() + " items"; }))
+            .subtitle(high.predicate([amount], function () { return amount.value() + " items"; }))
             .left(
-                sh.element(sh.IconButton).icon("sh-icon-back")
+                high.element(mid.IconButton).icon("sh-icon-back")
                 .onClicked(function () { page.pop_(); })
             )
         )
         .add(
-            sh.element(sh.ListView).id("listview")
+            high.element(mid.ListView).id("listview")
         );
         
         m_properties.clipboard.value().forEach(function (entry)
@@ -1344,7 +1366,7 @@ var files = { };
 
             page.find("listview")
             .add(
-                sh.element(sh.ListItem)
+                high.element(mid.ListItem)
                 .title(entry.name)
                 .subtitle(info)
                 .icon(entry.icon || "")
@@ -1405,7 +1427,7 @@ var files = { };
             }
         }
 
-        var statusEntry = sh.element(ui.StatusItem).icon("sh-icon-cloud-upload").get();
+        var statusEntry = high.element(ui.StatusItem).icon("sh-icon-cloud-upload").get();
         pushStatus(statusEntry);
 
         var rootUri = m_properties.currentUri.value();
@@ -1429,21 +1451,21 @@ var files = { };
 
 
     /* setup properties */
-    m_properties.currentUri = sh.binding("");
-    m_properties.currentContext = sh.binding(0);
-    m_properties.files = sh.binding([]);
-    m_properties.selection = sh.binding([]);
-    m_properties.clipboard = sh.binding([]);
-    m_properties.clipboardFilled = sh.binding(false);
-    m_properties.shares = sh.binding([]);
-    m_properties.permissions = sh.binding([]);
-    m_properties.configuration = sh.binding(configuration);
+    m_properties.currentUri = high.binding("");
+    m_properties.currentContext = high.binding(0);
+    m_properties.files = high.binding([]);
+    m_properties.selection = high.binding([]);
+    m_properties.clipboard = high.binding([]);
+    m_properties.clipboardFilled = high.binding(false);
+    m_properties.shares = high.binding([]);
+    m_properties.permissions = high.binding([]);
+    m_properties.configuration = high.binding(configuration.configuration);
 
-    var page = sh.element(sh.NSPage)
+    var page = high.element(mid.Page)
     .onSwipeBack(cdUp)
     .header(
-        sh.element(sh.PageHeader)
-        .title(sh.predicate([m_properties.currentUri, m_properties.shares], function ()
+        high.element(mid.PageHeader)
+        .title(high.predicate([m_properties.currentUri, m_properties.shares], function ()
         {
             var isFav = configuration.get("favorites", []).find(function (a) { return a.uri === m_properties.currentUri.value(); }) !== undefined;
             var isShare = m_properties.shares.value().find(function (a) { return a.uri === m_properties.currentUri.value(); }) !== undefined;
@@ -1452,18 +1474,18 @@ var files = { };
                    (isShare ? "[icon:share] " : "") +
                    decodeURIComponent(m_properties.currentUri.value());
         }))
-        .subtitle(sh.predicate([m_properties.files], function ()
+        .subtitle(high.predicate([m_properties.files], function ()
         {
             return m_properties.files.value().length + " items";
         }))
         .onClicked(openPathMenu)
         .left(
-            sh.element(sh.IconButton).icon("sh-icon-back")
-            .visible(sh.predicate([m_properties.currentUri], function () { return m_properties.currentUri.value() !== "/"; }))
+            high.element(mid.IconButton).icon("sh-icon-back")
+            .visible(high.predicate([m_properties.currentUri], function () { return m_properties.currentUri.value() !== "/"; }))
             .onClicked(cdUp)
         )
         .right(
-            sh.element(sh.IconButton).icon("sh-icon-menu")
+            high.element(mid.IconButton).icon("sh-icon-menu")
             .onClicked(function ()
             {
                 var menu = m_actionsMenu.get();
@@ -1472,10 +1494,10 @@ var files = { };
         )
     )
     .left(
-        sh.element(ui.NavBar)
+        high.element(ui.NavBar)
     )
     .footer(
-        sh.element(ui.StatusBox)
+        high.element(ui.StatusBox)
     );
     m_page = page.get();
 
@@ -1486,36 +1508,36 @@ var files = { };
 
 
     /* setup actions menu */
-    var m_actionsMenu = sh.element(sh.Menu)
+    var m_actionsMenu = high.element(mid.Menu)
     .add(
-        sh.element(sh.IconButton).icon("sh-icon-view-as-list")
-        .checked(sh.predicate([m_properties.configuration], function () { return configuration.get("view-mode", "list") === "list"; }))
+        high.element(mid.IconButton).icon("sh-icon-view-as-list")
+        .checked(high.predicate([m_properties.configuration], function () { return configuration.get("view-mode", "list") === "list"; }))
         .onClicked(function () { setViewMode("list"); })
     )
     .add(
-        sh.element(sh.IconButton).icon("sh-icon-view-as-grid")
-        .checked(sh.predicate([m_properties.configuration], function () { return configuration.get("view-mode") === "grid"; }))
+        high.element(mid.IconButton).icon("sh-icon-view-as-grid")
+        .checked(high.predicate([m_properties.configuration], function () { return configuration.get("view-mode") === "grid"; }))
         .onClicked(function () { setViewMode("grid"); })
     )
     .add(
-        sh.element(sh.IconButton).icon("sh-icon-alphabet")
-        .checked(sh.predicate([m_properties.configuration], function () { return configuration.get("sort-mode", "name") === "name"; }))
+        high.element(mid.IconButton).icon("sh-icon-alphabet")
+        .checked(high.predicate([m_properties.configuration], function () { return configuration.get("sort-mode", "name") === "name"; }))
         .onClicked(function () { setSortMode("name"); })
     )
     .add(
-        sh.element(sh.IconButton).icon("sh-icon-number")
-        .checked(sh.predicate([m_properties.configuration], function () { return configuration.get("sort-mode") === "number"; }))
+        high.element(mid.IconButton).icon("sh-icon-number")
+        .checked(high.predicate([m_properties.configuration], function () { return configuration.get("sort-mode") === "number"; }))
         .onClicked(function () { setSortMode("number"); })
     )
     .add(
-        sh.element(sh.IconButton).icon("sh-icon-clock")
-        .checked(sh.predicate([m_properties.configuration], function () { return configuration.get("sort-mode") === "date"; }))
+        high.element(mid.IconButton).icon("sh-icon-clock")
+        .checked(high.predicate([m_properties.configuration], function () { return configuration.get("sort-mode") === "date"; }))
         .onClicked(function () { setSortMode("date"); })
     )
     .add(
-        sh.element(sh.SubMenu).text("Tools").id("tools-menu")
+        high.element(mid.SubMenu).text("Tools").id("tools-menu")
         .add(
-            sh.element(sh.MenuItem).text("Toggle Dark Mode")
+            high.element(mid.MenuItem).text("Toggle Dark Mode")
             .onClicked(function ()
             {
                 if ($("body").hasClass("sh-theme-dark"))
@@ -1530,79 +1552,79 @@ var files = { };
         )
     )
     .add(
-        sh.element(sh.SubMenu).text("New")
-        .visible(sh.predicate([m_properties.permissions], function () { return m_properties.permissions.value().indexOf("CREATE") !== -1; }))
+        high.element(mid.SubMenu).text("New")
+        .visible(high.predicate([m_properties.permissions], function () { return m_properties.permissions.value().indexOf("CREATE") !== -1; }))
         .add(
-            sh.element(sh.MenuItem).icon("sh-icon-folder").text("Directory...")
+            high.element(mid.MenuItem).icon("sh-icon-folder").text("Directory...")
             .onClicked(makeNewDirectory)
         )
         .add(
-            sh.element(sh.MenuItem).icon("sh-icon-file").text("File...")
+            high.element(mid.MenuItem).icon("sh-icon-file").text("File...")
             .onClicked(makeNewFile)
         )
     )
     .add(
-        sh.element(sh.SubMenu).text("Clipboard")
-        .visible(sh.predicate([m_properties.permissions], function () { return m_properties.permissions.value().indexOf("CREATE") !== -1; }))
+        high.element(mid.SubMenu).text("Clipboard")
+        .visible(high.predicate([m_properties.permissions], function () { return m_properties.permissions.value().indexOf("CREATE") !== -1; }))
         .add(
-            sh.element(sh.MenuItem).text("Cut").icon("sh-icon-clipboard-cut")
-            .enabled(sh.predicate([m_properties.selection], function () { return m_properties.selection.value().length > 0; }))
+            high.element(mid.MenuItem).text("Cut").icon("sh-icon-clipboard-cut")
+            .enabled(high.predicate([m_properties.selection], function () { return m_properties.selection.value().length > 0; }))
             .onClicked(eachSelected(cutToClipboard))
         )
         .add(
-            sh.element(sh.MenuItem).text("Copy").icon("sh-icon-clipboard-copy")
-            .enabled(sh.predicate([m_properties.selection], function () { return m_properties.selection.value().length > 0; }))
+            high.element(mid.MenuItem).text("Copy").icon("sh-icon-clipboard-copy")
+            .enabled(high.predicate([m_properties.selection], function () { return m_properties.selection.value().length > 0; }))
             .onClicked(eachSelected(copyToClipboard))
         )
         .add(
-            sh.element(sh.MenuItem).text("Paste").icon("sh-icon-clipboard-paste")
-            .enabled(sh.predicate([m_properties.clipboard], function () { return m_properties.clipboard.value().length > 0; }))
+            high.element(mid.MenuItem).text("Paste").icon("sh-icon-clipboard-paste")
+            .enabled(high.predicate([m_properties.clipboard], function () { return m_properties.clipboard.value().length > 0; }))
             .onClicked(pasteFromClipboard)
         )
         .add(
-            sh.element(sh.MenuItem).text("Show").icon("sh-icon-clipboard")
-            .enabled(sh.predicate([m_properties.clipboard], function () { return m_properties.clipboard.value().length > 0; }))
+            high.element(mid.MenuItem).text("Show").icon("sh-icon-clipboard")
+            .enabled(high.predicate([m_properties.clipboard], function () { return m_properties.clipboard.value().length > 0; }))
             .onClicked(openClipboardPage)
         )
     )
     .add(
-        sh.element(sh.SubMenu).text("Action")
+        high.element(mid.SubMenu).text("Action")
         .add(
-            sh.element(sh.MenuItem).text("Upload...").icon("sh-icon-cloud-upload")
-            .visible(sh.predicate([m_properties.permissions], function () { return m_properties.permissions.value().indexOf("CREATE") !== -1; }))
+            high.element(mid.MenuItem).text("Upload...").icon("sh-icon-cloud-upload")
+            .visible(high.predicate([m_properties.permissions], function () { return m_properties.permissions.value().indexOf("CREATE") !== -1; }))
             .onClicked(function () { $("#upload").click(); })
         )
         .add(
-            sh.element(sh.MenuItem).text("Download").icon("sh-icon-download")
-            .enabled(sh.predicate([m_properties.selection], function () { return m_properties.selection.value().length > 0; }))
+            high.element(mid.MenuItem).text("Download").icon("sh-icon-download")
+            .enabled(high.predicate([m_properties.selection], function () { return m_properties.selection.value().length > 0; }))
             .onClicked(eachSelected(downloadItem))
         )
         .add(
-            sh.element(sh.MenuItem).text("Rename...").icon("sh-icon-rename")
-            .visible(sh.predicate([m_properties.permissions], function () { return m_properties.permissions.value().indexOf("MODIFY") !== -1; }))
-            .enabled(sh.predicate([m_properties.selection], function () { return m_properties.selection.value().length === 1; }))
+            high.element(mid.MenuItem).text("Rename...").icon("sh-icon-rename")
+            .visible(high.predicate([m_properties.permissions], function () { return m_properties.permissions.value().indexOf("MODIFY") !== -1; }))
+            .enabled(high.predicate([m_properties.selection], function () { return m_properties.selection.value().length === 1; }))
             .onClicked(eachSelected(renameItem))
         )
         .add(
-            sh.element(sh.MenuItem).text("Bulk-Rename...").icon("sh-icon-rename")
-            .visible(sh.predicate([m_properties.permissions], function () { return m_properties.permissions.value().indexOf("MODIFY") !== -1; }))
-            .enabled(sh.predicate([m_properties.selection], function () { return m_properties.selection.value().length > 0; }))
+            high.element(mid.MenuItem).text("Bulk-Rename...").icon("sh-icon-rename")
+            .visible(high.predicate([m_properties.permissions], function () { return m_properties.permissions.value().indexOf("MODIFY") !== -1; }))
+            .enabled(high.predicate([m_properties.selection], function () { return m_properties.selection.value().length > 0; }))
             .onClicked(bulkRename)
         )
         .add(
-            sh.element(sh.MenuItem).text("Delete").icon("sh-icon-trashcan")
-            .visible(sh.predicate([m_properties.permissions], function () { return m_properties.permissions.value().indexOf("DELETE") !== -1; }))
-            .enabled(sh.predicate([m_properties.selection], function () { return m_properties.selection.value().length > 0; }))
+            high.element(mid.MenuItem).text("Delete").icon("sh-icon-trashcan")
+            .visible(high.predicate([m_properties.permissions], function () { return m_properties.permissions.value().indexOf("DELETE") !== -1; }))
+            .enabled(high.predicate([m_properties.selection], function () { return m_properties.selection.value().length > 0; }))
             .onClicked(removeSelected)
         )
     )
     .add(
-        sh.element(sh.MenuItem).text("Select All")
+        high.element(mid.MenuItem).text("Select All")
         .onClicked(selectAll)
     )
     .add(
-        sh.element(sh.MenuItem).text("Unselect All")
-        .enabled(sh.predicate([m_properties.selection], function () { return m_properties.selection.value().length > 0; }))
+        high.element(mid.MenuItem).text("Unselect All")
+        .enabled(high.predicate([m_properties.selection], function () { return m_properties.selection.value().length > 0; }))
         .onClicked(unselectAll)
     );
     
@@ -1661,7 +1683,7 @@ var files = { };
             }
         }
 
-        var statusEntry = sh.element(ui.StatusItem).icon("sh-icon-cloud-upload").get();
+        var statusEntry = high.element(ui.StatusItem).icon("sh-icon-cloud-upload").get();
         pushStatus(statusEntry);
 
         var rootUri = m_properties.currentUri.value();
@@ -1687,4 +1709,4 @@ var files = { };
     {
         loadDirectory(uri, true);
     });
-})();
+});

@@ -1,6 +1,13 @@
 "use strict";
 
-(function ()
+const mods = [
+    "/::res/shellfish/core/low.js",
+    "/::res/shellfish/core/mid.js",
+    "/::res/shellfish/core/high.js",
+    "/::res/shell/mime-registry.js"
+];
+
+require(mods, function (low, mid, high, mimeReg)
 {
     function ViewBox()
     {
@@ -12,7 +19,7 @@
         var m_text = "";
         var m_visible = false;
         var m_box = $(
-            sh.tag("div").class("sh-html")
+            low.tag("div").class("sh-html")
             .style("display: none")
             .style("padding", "0.5em")
             .html()
@@ -70,7 +77,7 @@
 
         var m_visible = false;
         var m_box = $(
-            sh.tag("textarea")
+            low.tag("textarea")
             .style("display: none")
             .style("padding", "1em")
             .style("width", "100vw")
@@ -116,8 +123,8 @@
     function viewMarkdown(href)
     {
         // 0 = view, 1 = edit
-        var m_displayMode = sh.binding(0);
-        var m_data = sh.binding("");
+        var m_displayMode = high.binding(0);
+        var m_data = high.binding("");
         var m_originalContent = "";
   
         function toggleMode()
@@ -135,7 +142,7 @@
     
         function upload(href, text)
         {
-            var busyIndicator = sh.element(sh.BusyPopup).text("Saving");
+            var busyIndicator = high.element(mid.BusyPopup).text("Saving");
             busyIndicator.show_();
     
             $.ajax({
@@ -162,7 +169,7 @@
         var parts = href.split("/");
         var name = decodeURI(parts[parts.length - 1]);
     
-        var page = sh.element(sh.NSPage)
+        var page = high.element(mid.Page)
         .script("/::res/shell-documents/markdown/showdown.js")
         .onSwipeBack(function () { page.pop_(); })
         .onClosed(function ()
@@ -174,19 +181,19 @@
             }
         })
         .header(
-            sh.element(sh.PageHeader)
-            .title(sh.predicate([m_data], function ()
+            high.element(mid.PageHeader)
+            .title(high.predicate([m_data], function ()
             {
                 return name + (m_data.value() !== m_originalContent ? "*" : "");
             }))
             .left(
-                sh.element(sh.IconButton)
+                high.element(mid.IconButton)
                 .icon("sh-icon-back")
                 .onClicked(function () { page.pop_(); })
             )
             .right(
-                sh.element(sh.IconButton)
-                .icon(sh.predicate([m_displayMode], function ()
+                high.element(mid.IconButton)
+                .icon(high.predicate([m_displayMode], function ()
                 {
                     return m_displayMode.value() === 0 ? "sh-icon-edit" : "sh-icon-checked";
                 }))
@@ -194,15 +201,15 @@
             )
         )
         .add(
-            sh.element(ViewBox).text(m_data)
-            .visible(sh.predicate([m_displayMode], function ()
+            high.element(ViewBox).text(m_data)
+            .visible(high.predicate([m_displayMode], function ()
             {
                 return m_displayMode.value() === 0;
             }))
         )
         .add(
-            sh.element(EditBox).id("editbox").text(m_data)
-            .visible(sh.predicate([m_displayMode], function ()
+            high.element(EditBox).id("editbox").text(m_data)
+            .visible(high.predicate([m_displayMode], function ()
             {
                 return m_displayMode.value() === 1;
             }))
@@ -210,7 +217,7 @@
         
         page.push_();
     
-        var busyIndicator = sh.element(sh.BusyPopup).text("Loading");
+        var busyIndicator = high.element(mid.BusyPopup).text("Loading");
         busyIndicator.show_();
     
         $.ajax(href, {
@@ -237,5 +244,5 @@
         });
     }
 
-    mimeRegistry.register("text/x-markdown", viewMarkdown);
-})();
+    mimeReg.mimeRegistry.register("text/x-markdown", viewMarkdown);
+});

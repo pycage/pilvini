@@ -1,6 +1,15 @@
 "use strict";
 
-(function ()
+const mods = [
+    "/::res/shellfish/core/low.js",
+    "/::res/shellfish/core/mid.js",
+    "/::res/shellfish/core/high.js",
+    "/::res/shell/ui.js",
+    "/::res/shell/files.js",
+    "/::res/shell/mime-registry.js"
+];
+
+require(mods, function (low, mid, high, ui, files, mimeReg)
 {
     var m_metaDataCache = { };
 
@@ -10,12 +19,12 @@
     var m_playlist = null;
 
     var m_properties = {
-        status: sh.binding("paused"), // playing | paused | buffering | stalled
-        position: sh.binding(0),
-        total: sh.binding(0),
-        title: sh.binding(""),
-        artist: sh.binding(""),
-        cover: sh.binding("")
+        status: high.binding("paused"), // playing | paused | buffering | stalled
+        position: high.binding(0),
+        total: high.binding(0),
+        title: high.binding(""),
+        artist: high.binding(""),
+        cover: high.binding("")
     };
 
     /* Formats the given time in seconds to look pretty.
@@ -158,10 +167,10 @@
         var m_cover = "";
 
         var m_item = $(
-            sh.tag("div")
+            low.tag("div")
             .style("display", "flex")
             .content(
-                sh.tag("div")
+                low.tag("div")
                 .style("width", "64px")
                 .style("height", "64px")
                 .style("background-repeat", "no-repeat")
@@ -169,13 +178,13 @@
                 .style("background-size", "cover")
             )
             .content(
-                sh.tag("div")
+                low.tag("div")
                 .style("flex-grow", "1")
                 .content(
-                    sh.tag("h1")
+                    low.tag("h1")
                 )
                 .content(
-                    sh.tag("h2")
+                    low.tag("h2")
                 )
             )
             .html()
@@ -183,7 +192,7 @@
 
         function setTitle(title)
         {
-            m_item.find("h1").html(sh.escapeHtml(title));
+            m_item.find("h1").html(low.escapeHtml(title));
             m_title = title;
         }
 
@@ -194,7 +203,7 @@
 
         function setArtist(artist)
         {
-            m_item.find("h2").html(sh.escapeHtml(artist));
+            m_item.find("h2").html(low.escapeHtml(artist));
             m_artist = artist;
         }
 
@@ -230,7 +239,7 @@
 
         var m_source = "";
         var m_image = $(
-            sh.tag("img")
+            low.tag("img")
             .style("width", "100%")
             .html()
         );
@@ -263,7 +272,7 @@
 
         var m_isLocked = false;
         var m_locker = $(
-            sh.tag("video")
+            low.tag("video")
             .style("display", "none")
             .attr("muted", "true")
             .attr("loop", "true")
@@ -319,18 +328,18 @@
         var m_onPlayClicked = null;
 
         var m_controls = $(
-            sh.tag("footer").class("sh-dropshadow")
+            low.tag("footer").class("sh-dropshadow")
             .style("height", "160px")
             .style("text-align", "center")
             .content(
-                sh.tag("div")
+                low.tag("div")
                 .style("position", "absolute")
                 .style("top", "0")
                 .style("left", "0")
                 .style("right", "0")
                 .style("height", "16px")
                 .content(
-                    sh.tag("div")
+                    low.tag("div")
                     .style("position", "absolute")
                     .style("top", "0")
                     .style("left", "0")
@@ -339,7 +348,7 @@
                     .style("background-color", "red")
                 )
                 .content(
-                    sh.tag("div")
+                    low.tag("div")
                     .style("position", "absolute")
                     .style("top", "0")
                     .style("left", "0")
@@ -349,7 +358,7 @@
                 )
             )
             .content(
-                sh.tag("div")
+                low.tag("div")
                 .style("position", "absolute")
                 .style("top", "16px")
                 .style("left", "0")
@@ -357,18 +366,18 @@
                 .content("0:42 / 1:23")
             )
             .content(
-                sh.tag("div")
+                low.tag("div")
                 .style("position", "relative")
                 .style("margin-top", "48px")
                 .style("font-size", "80px")
                 .content(
-                    sh.tag("span").class("sh-fw-icon sh-icon-media-play-circle")
+                    low.tag("span").class("sh-fw-icon sh-icon-media-play-circle")
                 )
                 .content(
-                    sh.tag("span").class("sh-left sh-fw-icon sh-icon-media-previous")
+                    low.tag("span").class("sh-left sh-fw-icon sh-icon-media-previous")
                 )
                 .content(
-                    sh.tag("span").class("sh-right sh-fw-icon sh-icon-media-next")
+                    low.tag("span").class("sh-right sh-fw-icon sh-icon-media-next")
                 )
             )
             .html()
@@ -700,12 +709,12 @@
      */
     function createPlayerItem()
     {
-        return sh.element(ui.StatusItem)
-        .text(sh.predicate([m_properties.position, m_properties.total], function ()
+        return high.element(ui.StatusItem)
+        .text(high.predicate([m_properties.position, m_properties.total], function ()
         {
             return formatTime(m_properties.position.value()) + " / " + formatTime(m_properties.total.value());
         }))
-        .progress(sh.predicate([m_properties.position, m_properties.total], function ()
+        .progress(high.predicate([m_properties.position, m_properties.total], function ()
         {
             if (m_properties.total.value() > 0)
             {
@@ -714,8 +723,8 @@
         }))
         .onClicked(pushPlayerPage)
         .left(
-            sh.element(sh.IconButton)
-            .icon(sh.predicate([m_properties.status], function ()
+            high.element(mid.IconButton)
+            .icon(high.predicate([m_properties.status], function ()
             {
                 switch (m_properties.status.value())
                 {
@@ -740,21 +749,21 @@
             })
         )
         .left(
-            sh.element(sh.IconButton).icon("sh-icon-media-next")
+            high.element(mid.IconButton).icon("sh-icon-media-next")
             .onClicked(function ()
             {
                 m_playlist.next();
             })
         )
         .right(
-            sh.element(sh.IconButton).icon("sh-icon-close")
+            high.element(mid.IconButton).icon("sh-icon-close")
             .onClicked(function ()
             {
                 m_playlist.clear();
             })
         )
         .add(
-            sh.element(StatusContent)
+            high.element(StatusContent)
             .title(m_properties.title)
             .artist(m_properties.artist)
             .cover(m_properties.cover)
@@ -766,17 +775,17 @@
      */
     function pushPlayerPage()
     {
-        var page = sh.element(sh.NSPage)
+        var page = high.element(mid.Page)
         .onSwipeBack(function ()
         {
             page.pop_();
         })
         .header(
-            sh.element(sh.PageHeader)
+            high.element(mid.PageHeader)
             .title(m_properties.title)
             .subtitle(m_properties.artist)
             .left(
-                sh.element(sh.IconButton).icon("sh-icon-back")
+                high.element(mid.IconButton).icon("sh-icon-back")
                 .onClicked(function ()
                 {
                     page.pop_();
@@ -784,7 +793,7 @@
             )
         )
         .footer(
-            sh.element(PlayerControls)
+            high.element(PlayerControls)
             .position(m_properties.position)
             .total(m_properties.total)
             .status(m_properties.status)
@@ -807,17 +816,17 @@
             })
         )
         .add(
-            sh.element(WakeLocker)
-            .locked(sh.predicate([m_properties.status], function ()
+            high.element(WakeLocker)
+            .locked(high.predicate([m_properties.status], function ()
             {
                 return m_properties.status.value() === "playing";
             }))
         )
         .add(
-            sh.element(CoverImage).source(m_properties.cover)
+            high.element(CoverImage).source(m_properties.cover)
         )
         .add(
-            sh.element(sh.ListView).id("listview")
+            high.element(mid.ListView).id("listview")
         );
 
         page.push_(function ()
@@ -826,9 +835,9 @@
             {
                 var item = m_playlist.itemAt(i);
 
-                var trackTitle = sh.binding(item[1]);
-                var trackArtist = sh.binding("");
-                var trackCover = sh.binding("");
+                var trackTitle = high.binding(item[1]);
+                var trackArtist = high.binding("");
+                var trackCover = high.binding("");
 
                 // closure
                 (function (trackNo, trackTitle, trackArtist, trackCover)
@@ -844,7 +853,7 @@
                     });
 
                     page.find("listview").add(
-                        sh.element(sh.ListItem).id("listitem-" + trackNo)
+                        high.element(mid.ListItem).id("listitem-" + trackNo)
                         .title(trackTitle)
                         .subtitle(trackArtist)
                         .icon(trackCover)
@@ -872,13 +881,13 @@
 
         if (selection.length > 0 && ! m_statusItem)
         {
-            m_statusItem = sh.element(ui.StatusItem)
-            .text(sh.predicate([files.properties().selection], function ()
+            m_statusItem = high.element(ui.StatusItem)
+            .text(high.predicate([files.properties().selection], function ()
             {
                 return "Add " + audioSelection().length + " audio files to playlist";
             }))
             .left(
-                sh.element(sh.IconButton).icon("sh-icon-media-add-to-playlist")
+                high.element(mid.IconButton).icon("sh-icon-media-add-to-playlist")
                 .onClicked(function ()
                 {
                     audioSelection()
@@ -904,7 +913,7 @@
     // setup audio player
 
     var m_player = $(
-        sh.tag("audio").style("display", "none")
+        low.tag("audio").style("display", "none")
         .html()
     );
 
@@ -986,7 +995,7 @@
     });
 
 
-    mimeRegistry.register("audio/flac", addToPlaylist);
-    mimeRegistry.register("audio/mp3", addToPlaylist);
-    mimeRegistry.register("audio/ogg", addToPlaylist);
-})();
+    mimeReg.mimeRegistry.register("audio/flac", addToPlaylist);
+    mimeReg.mimeRegistry.register("audio/mp3", addToPlaylist);
+    mimeReg.mimeRegistry.register("audio/ogg", addToPlaylist);
+});
