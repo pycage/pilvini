@@ -3,7 +3,6 @@
 exports.__id = "shell/files";
 
 const mods = [
-    "shellfish/low",
     "shellfish/mid",
     "shellfish/high",
     "shell/ui",
@@ -13,7 +12,7 @@ const mods = [
     __dirname + "/file.js"
 ];
 
-require(mods, function (low, mid, high, ui, cfg, mimeReg, upload, file)
+require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
 {
     console.log("using configuration");
     var configuration = cfg.configuration;

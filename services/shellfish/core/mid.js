@@ -734,6 +734,7 @@ require(__dirname + "/low.js", function (low)
             {
                 $("body").append(m_dialog);
             }
+            m_dialog.find("input").first().attr("tabindex", -1).focus();
         };
 
         /* Closes this dialog.
