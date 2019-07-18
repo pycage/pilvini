@@ -1,5 +1,7 @@
 "use strict";
 
+exports.__id = "shell/storage";
+
 function Storage()
 {
     var m_indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB;

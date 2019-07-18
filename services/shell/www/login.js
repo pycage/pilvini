@@ -1,13 +1,14 @@
 "use strict";
 
 const mods = [
-    "/::res/shellfish/core/low.js",
-    "/::res/shellfish/core/mid.js",
-    "/::res/shellfish/core/high.js",
+    "/::res/shellfish/preload.js",
+    "shellfish/low",
+    "shellfish/mid",
+    "shellfish/high",
     __dirname + "/ui.js"
 ];
 loadStyle("/::res/shellfish/style/shellfish.css");
-require(mods, function (low, mid, high, ui)
+require(mods, function (preload, low, mid, high, ui)
 {
     function login(user, password)
     {

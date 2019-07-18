@@ -60,15 +60,16 @@ function extensions()
 }
 
 const mods = [
-    "/::res/shellfish/core/low.js",
-    "/::res/shellfish/core/mid.js",
-    "/::res/shellfish/core/high.js",
+    "/::res/shellfish/preload.js",
+    "shellfish/low",
+    "shellfish/mid",
+    "shellfish/high",
     __dirname + "/ui.js",
     __dirname + "/files.js",
     __dirname + "/tips.js"
 ].concat(extensions());
 loadStyle("/::res/shellfish/style/shellfish.css");
-require(mods, function (low, mid, high, ui, files)
+require(mods, function (preload, low, mid, high, ui, files)
 {
     function logout()
     {
