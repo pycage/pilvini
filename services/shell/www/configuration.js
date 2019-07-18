@@ -1,5 +1,7 @@
 "use strict";
 
+exports.__id = "shell/configuration";
+
 require(__dirname + "/storage.js", function (st)
 {
     var storage = st.storage;

@@ -1,5 +1,7 @@
 "use strict";
 
+exports.__id = "shell/mime-registry";
+
 function MimeRegistry()
 {
     var m_mapping = { };

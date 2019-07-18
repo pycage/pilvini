@@ -10,10 +10,19 @@ var require;
     // modules cache
     var cache = { };
 
+    // ID to URL map
+    var idsMap = { };
+
     var nextScheduled = false;
 
     function loadModule(url, callback)
     {
+        if (idsMap[url])
+        {
+            console.log("resolving module ID: " + url + " -> " + idsMap[url]);
+            url = idsMap[url];
+        }
+
         if (cache[url])
         {
             console.log("from cache " + url);
@@ -21,7 +30,7 @@ var require;
             return;
         }
         
-        console.log("loading " + url);
+        console.log("from server " + url);
         var xhr = new XMLHttpRequest();
         xhr.open("GET", url, true);
         xhr.onreadystatechange = function ()
@@ -46,6 +55,12 @@ var require;
                         stackOfQueues.push([]);
                         var module = eval(js);
                         cache[url] = module;
+
+                        if (module.__id)
+                        {
+                            console.log("registering module ID: " + module.__id);
+                            idsMap[module.__id] = url;
+                        }
 
                         callback(module);
                     }
@@ -75,7 +90,6 @@ var require;
             return;
         }
 
-        console.log("next");
         if (stackOfQueues.length === 0)
         {
             return;
@@ -118,8 +132,6 @@ var require;
             stackOfQueues.push([]);
         }
         var queue = stackOfQueues[stackOfQueues.length - 1];
-
-        console.log("addTask " + urls);
         var ctx = {
             urls: urls,
             modules: [],

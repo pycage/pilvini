@@ -1,15 +1,19 @@
 "use strict";
 
+exports.__id = "shell/files";
+
 const mods = [
-    "/::res/shellfish/core/low.js",
-    "/::res/shellfish/core/mid.js",
-    "/::res/shellfish/core/high.js",
-    __dirname + "/ui.js",
+    "shellfish/low",
+    "shellfish/mid",
+    "shellfish/high",
+    "shell/ui",
     __dirname + "/configuration.js",
-    __dirname + "/mime-registry.js"
+    __dirname + "/mime-registry.js",
+    __dirname + "/upload.js",
+    __dirname + "/file.js"
 ];
 
-require(mods, function (low, mid, high, ui, cfg, mimeReg)
+require(mods, function (low, mid, high, ui, cfg, mimeReg, upload, file)
 {
     console.log("using configuration");
     var configuration = cfg.configuration;
@@ -1442,11 +1446,11 @@ require(mods, function (low, mid, high, ui, cfg, mimeReg)
         var items = ev.dataTransfer.items;
         if (items)
         {
-            uploadFileItems(items, m_properties.currentUri.value(), fileCallback, progressCallback, finishedCallback);
+            upload.uploadFileItems(items, m_properties.currentUri.value(), fileCallback, progressCallback, finishedCallback);
         }
         else
         {
-            uploadFiles(ev.dataTransfer.files, m_properties.currentUri.value(), fileCallback, progressCallback, finishedCallback);
+            upload.uploadFiles(ev.dataTransfer.files, m_properties.currentUri.value(), fileCallback, progressCallback, finishedCallback);
         }   
     }
 
@@ -1691,7 +1695,7 @@ require(mods, function (low, mid, high, ui, cfg, mimeReg)
         var amount = 0;
         var total = 0;
 
-        uploadFiles(event.target.files, m_properties.currentUri.value(), fileCallback, progressCallback, finishedCallback);
+        upload.uploadFiles(event.target.files, m_properties.currentUri.value(), fileCallback, progressCallback, finishedCallback);
     });
 
     /* setup drag and drop for external files */

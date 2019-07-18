@@ -1,8 +1,6 @@
 "use strict";
 
-var file = { };
-
-file.copy = function (sourceUri, targetUri, callback)
+exports.copy = function (sourceUri, targetUri, callback)
 {
     $.ajax({
         url: sourceUri,
@@ -19,7 +17,7 @@ file.copy = function (sourceUri, targetUri, callback)
     });
 };
 
-file.move = function (sourceUri, targetUri, callback)
+exports.move = function (sourceUri, targetUri, callback)
 {
     $.ajax({
         url: sourceUri,
@@ -37,7 +35,7 @@ file.move = function (sourceUri, targetUri, callback)
     });
 };
 
-file.remove = function (targetUri, callback)
+exports.remove = function (targetUri, callback)
 {
     $.ajax({
         url: targetUri,
@@ -53,7 +51,7 @@ file.remove = function (targetUri, callback)
     });
 };
 
-file.mkdir = function (targetUri, callback)
+exports.mkdir = function (targetUri, callback)
 {
     $.ajax({
         url: targetUri,
@@ -69,7 +67,7 @@ file.mkdir = function (targetUri, callback)
     });
 };
 
-file.create = function (targetUri, callback)
+exports.create = function (targetUri, callback)
 {
     $.ajax({
         url: targetUri,

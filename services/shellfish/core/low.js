@@ -1,5 +1,7 @@
 "use strict";
 
+exports.__id = "shellfish/low";
+
 require("/::res/shellfish/jquery-2.1.4.min.js", function (jq)
 {
     var mql = window.matchMedia("(prefers-color-scheme: dark)");

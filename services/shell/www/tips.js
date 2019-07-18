@@ -1,8 +1,8 @@
 "use strict";
 
 const mods = [
-    "/::res/shellfish/core/mid.js",
-    "/::res/shellfish/core/high.js"
+    "shellfish/mid",
+    "shellfish/high"
 ];
 require(mods, function (mid, high)
 {

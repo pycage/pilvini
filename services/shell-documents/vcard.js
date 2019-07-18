@@ -1,9 +1,9 @@
 "use strict";
 
 const mods = [
-    "/::res/shellfish/core/mid.js",
-    "/::res/shellfish/core/high.js",
-    "/::res/shell/mime-registry.js"
+    "shellfish/mid",
+    "shellfish/high",
+    "shell/mime-registry"
 ];
 
 require(mods, function (mid, high, mimeReg)

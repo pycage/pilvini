@@ -64,12 +64,11 @@ const mods = [
     "/::res/shellfish/core/mid.js",
     "/::res/shellfish/core/high.js",
     __dirname + "/ui.js",
-    __dirname + "/upload.js",
     __dirname + "/files.js",
     __dirname + "/tips.js"
 ].concat(extensions());
 loadStyle("/::res/shellfish/style/shellfish.css");
-require(mods, function (low, mid, high, ui, upload, files)
+require(mods, function (low, mid, high, ui, files)
 {
     function logout()
     {

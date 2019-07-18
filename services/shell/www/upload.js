@@ -107,6 +107,7 @@ function uploadFiles(files, rootUri, fileCallback, progressCallback, finishedCal
         uploadFile(0);
     }
 }
+exports.uploadFiles = uploadFiles;
 
 /* Uploads the given list of files represented by HTML5 FileEntry objects.
  */
@@ -150,6 +151,7 @@ function uploadFileItems(items, rootUri, fileCallback, progressCallback, finishe
         uploadItem(0);
     }
 }
+exports.uploadFileItems = uploadFileItems;
 
 /* Uploads a hierarchy of files represented by a WebkitFileEntry object,
  * which may be a file or directory.
@@ -277,3 +279,4 @@ function uploadHierarchy(item, rootUri, fileCallback, progressCallback, finished
         })
     });
 }
+exports.uploadHierarchy = uploadHierarchy;

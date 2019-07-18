@@ -1,11 +1,11 @@
 "use strict";
 
 const mods = [
-    "/::res/shellfish/core/low.js",
-    "/::res/shellfish/core/mid.js",
-    "/::res/shellfish/core/high.js",
-    "/::res/shell/ui.js",
-    "/::res/shell/files.js"
+    "shellfish/low",
+    "shellfish/mid",
+    "shellfish/high",
+    "shell/ui",
+    "shell/files"
 ];
 
 require(mods, function (low, mid, high, ui, files)
