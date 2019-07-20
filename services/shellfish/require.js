@@ -1,4 +1,4 @@
-"use strict";
+// must not be in strict mode or some browsers will fail with JQuery
 
 var require;
 
@@ -19,18 +19,17 @@ var require;
     {
         if (idsMap[url])
         {
-            console.log("resolving module ID: " + url + " -> " + idsMap[url]);
             url = idsMap[url];
         }
 
         if (cache[url])
         {
-            console.log("from cache " + url);
+            //console.log("loading module from cache " + url);
             callback(cache[url]);
             return;
         }
         
-        console.log("from server " + url);
+        console.log("loading module from server " + url);
         var xhr = new XMLHttpRequest();
         xhr.open("GET", url, true);
         xhr.onreadystatechange = function ()
@@ -51,7 +50,6 @@ var require;
                              "})();";
                     try
                     {
-                        console.log("loaded " + url);
                         stackOfQueues.push([]);
                         var module = eval(js);
                         cache[url] = module;
@@ -66,7 +64,7 @@ var require;
                     }
                     catch (err)
                     {
-                        console.log("Failed to load module: " + url + " " + err);
+                        console.error("Failed to load module: " + url + " " + err);
                         //console.log(js);
                         callback(null);
                     }
@@ -74,7 +72,6 @@ var require;
                 }
                 else
                 {
-                    console.log("status " + xhr.status);
                     //throw "Failed to load module: status code " + xhr.status;
                     callback(null);
                 }
@@ -120,7 +117,6 @@ var require;
         {
             nextScheduled = false;
             ctx.modules.push(module);
-            console.log("loaded " + url + ", next");
             next();
         });
     }
@@ -143,7 +139,6 @@ var require;
 
     require = function (urls, callback)
     {
-        console.log("require " + urls);
         if (typeof urls === "string")
         {
             addTask([urls], callback);

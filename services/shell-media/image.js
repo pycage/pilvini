@@ -592,4 +592,4 @@ require(mods, function (low, mid, high, files, mimeReg)
     mimeReg.mimeRegistry.register("image/jpeg", loadImage);
     mimeReg.mimeRegistry.register("image/png", loadImage);
     mimeReg.mimeRegistry.register("image/svg+xml", loadImage);
-})();
+});

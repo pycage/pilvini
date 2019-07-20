@@ -108,7 +108,11 @@ require(mods, function (low, mid, high, ui, files)
         $.ajax({
             type: "GET",
             url: "/::admin/server",
-            dataType: "json"
+            dataType: "json",
+            beforeSend: function (xhr)
+            {
+                xhr.overrideMimeType("application/json");
+            }
         })
         .done(function (data, status, xhr)
         {
@@ -153,7 +157,11 @@ require(mods, function (low, mid, high, ui, files)
         $.ajax({
             type: "GET",
             url: "/::admin/users",
-            dataType: "json"
+            dataType: "json",
+            beforeSend: function (xhr)
+            {
+                xhr.overrideMimeType("application/json");
+            }
         })
         .done(function (data, status, xhr)
         {

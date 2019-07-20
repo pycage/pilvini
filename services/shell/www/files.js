@@ -14,7 +14,6 @@ const mods = [
 
 require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
 {
-    console.log("using configuration");
     var configuration = cfg.configuration;
     var mimeRegistry = mimeReg.mimeRegistry;
 
@@ -1062,7 +1061,11 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
         $.ajax({
             type: "GET",
             url: "/::shell" + uri + "?json",
-            dataType: "json"
+            dataType: "json",
+            beforeSend: function (xhr)
+            {
+                xhr.overrideMimeType("application/json");
+            }
         })
         .done(function (data, status, xhr)
         {
@@ -1327,7 +1330,11 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
         $.ajax({
             type: "GET",
             url: "/::shell/.pilvini/clipboard?json",
-            dataType: "json"
+            dataType: "json",
+            beforeSend: function (xhr)
+            {
+                xhr.overrideMimeType("application/json");
+            }
         })
         .done(function (data, status, xhr)
         {

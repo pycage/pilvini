@@ -94,7 +94,6 @@ require(__dirname + "/low.js", function (low)
         var m_onSwipeBack = null;
         var m_onClosed = null;
 
-        console.log("low " + Object.keys(low));
         var m_page = $(
             low.tag("div").class("sh-page")
             .content(
@@ -200,7 +199,6 @@ require(__dirname + "/low.js", function (low)
          */
         this.push = function (callback)
         {
-            //$("#pagestack").append(m_page);
             $("body").append(m_page);
             that.updateGeometry();
             low.pagePush(m_page, callback, $(".sh-page").length === 1);
