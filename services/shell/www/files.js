@@ -155,14 +155,13 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
         favs.push({ name: name, uri: uri });
         configuration.set("favorites", favs);
         m_properties.configuration.update();
-        loadDirectory(m_properties.currentUri.value(), false);
+        reload();
     }
 
-    /* Removes the current location from the favorites menu.
+    /* Removes the given location from the favorites menu.
      */
-    function removeFavorite()
+    function removeFavorite(uri)
     {
-        var uri = m_properties.currentUri.value();
         var favs = configuration.get("favorites", []);
         favs = favs.filter(function (a)
         {
@@ -170,7 +169,7 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
         });
         configuration.set("favorites", favs);
         m_properties.configuration.update();
-        loadDirectory(m_properties.currentUri.value(), false);
+        reload();
     }
 
     function setSortMode(mode)
@@ -178,7 +177,7 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
         configuration.set("sort-mode", mode);
         m_properties.configuration.update();
         m_scrollPositionsMap = { };
-        loadDirectory(m_properties.currentUri.value(), false);
+        reload();
     }
 
     function setViewMode(mode)
@@ -186,7 +185,7 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
         configuration.set("view-mode", mode);
         m_properties.configuration.update();
         m_scrollPositionsMap = { };
-        loadDirectory(m_properties.currentUri.value(), false);
+        reload();
     }
 
     function showShareDialog()
@@ -242,7 +241,7 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
         })
         .done(function (data, status, xhr)
         {
-            loadDirectory(m_properties.currentUri.value(), false);
+            reload();
         });
     }
 
@@ -256,7 +255,7 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
         })
         .done(function (data, status, xhr)
         {
-            loadDirectory(m_properties.currentUri.value(), false);
+            reload();
         });
     }
 
@@ -286,7 +285,7 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
                     {
                         if (ok)
                         {
-                            loadDirectory(m_properties.currentUri.value(), false);    
+                            reload();    
                         }
                         else
                         {
@@ -335,7 +334,7 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
                     {
                         if (ok)
                         {
-                            loadDirectory(m_properties.currentUri.value(), false);
+                            reload();
                         }
                         else
                         {
@@ -753,7 +752,7 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
                     {
                         console.log("File moved: " + name + " -> " + newName);
                         m_listView.item(idx).title = newName;
-                        loadDirectory(m_properties.currentUri.value(), false);    
+                        reload();    
                     }
                     else
                     {
@@ -900,7 +899,7 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
                         --remaining;
                         if (remaining === 0)
                         {
-                            loadDirectory(m_properties.currentUri.value(), false);
+                            reload();
                         }
 
                     }); 
@@ -944,15 +943,16 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
         var isFav = !! favs.find(function (a) { return a.uri === m_properties.currentUri.value(); });
         var isShare = !! m_properties.shares.value().find(function (a) { return a.uri === m_properties.currentUri.value(); });
 
-        console.log(JSON.stringify(m_properties.shares.value()) + " current " + m_properties.currentUri.value());
-
         var menu = high.element(mid.Menu)
         .add(
             high.element(mid.SubMenu).text("Favorites")
             .add(
                 high.element(mid.MenuItem).text("Remove from Favorites")
                 .visible(isFav)
-                .onClicked(removeFavorite)
+                .onClicked(function ()
+                {
+                    removeFavorite(m_properties.currentUri.value());
+                })
             )
             .add(
                 high.element(mid.MenuItem).text("Add to Favorites")
@@ -991,7 +991,18 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
                 .onClicked(function ()
                 {
                     m_scrollPositionsMap = { };
-                    loadDirectory(f.uri, true);
+                    loadDirectory(f.uri, true, function (ok, message)
+                    {
+                        if (! ok)
+                        {
+                            ui.showQuestion("Loading Failed", message + " " + "Remove from favorites?",
+                            function ()
+                            {
+                                removeFavorite(f.uri);
+                            },
+                            function () { });
+                        }
+                    });
                 })
             );
         });
@@ -1051,8 +1062,24 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
         }
     }
 
-    function loadDirectory(uri, pushToHistory)
+    function reload()
     {
+        loadDirectory(m_properties.currentUri.value(), false, function () { });
+    }
+
+    function loadDirectory(uri, pushToHistory, callback)
+    {
+        if (! callback)
+        {
+            callback = function (ok, message)
+            {
+                if (! ok)
+                {
+                    ui.showError(message);
+                }
+            }
+        }
+
         var busyIndicator = high.element(mid.BusyPopup).text("Loading");
         busyIndicator.show_();
 
@@ -1074,7 +1101,7 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
             {
                 window.history.pushState({ "uri": uri }, uri, "/::shell" + uri);
             }
-            showDirectory(data);
+            showDirectory(data, callback);
         })
         .fail(function (xhr, status, err)
         {
@@ -1084,7 +1111,7 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
             }
             else
             {
-                ui.showError("Failed to read directory.");
+                callback(false, "Failed to read directory.");
             }
         })
         .always(function ()
@@ -1094,7 +1121,7 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
 
     }
 
-    function showDirectory(data)
+    function showDirectory(data, callback)
     {
         var files = (data.files || []).filter(function (f)
         {
@@ -1240,6 +1267,8 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
 
         setTimeout(function () { loadThumbnails(); }, 500);
         updateNavBar();
+
+        callback(true, "");
     }
 
     function cdUp()
@@ -1319,7 +1348,7 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
                 if (count === 0)
                 {
                     m_properties.clipboard.assign([]);
-                    loadDirectory(m_properties.currentUri.value(), false);
+                    reload();
                 }
             });
         });
@@ -1434,7 +1463,7 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
             popStatus(statusEntry);
             if (m_properties.currentUri.value() === rootUri)
             {
-                loadDirectory(m_properties.currentUri.value(), false);
+                reload();
             }
         }
 
@@ -1690,7 +1719,7 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
             popStatus(statusEntry);
             if (m_properties.currentUri.value() === rootUri)
             {
-                loadDirectory(m_properties.currentUri.value(), false);
+                reload();
             }
         }
 
