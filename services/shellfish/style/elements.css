@@ -1,0 +1,322 @@
+/* Busy Indicator */
+
+span.sh-busy-indicator {
+    display: inline-block;
+    animation: sh-busy-indicator-rotation 1.5s infinite linear;
+}
+
+span.sh-busy-indicator:before {
+    font-family: Material;
+    width: 1.25em;
+    text-align: center;
+    content: "\f3ec";
+    text-shadow: var(--color-primary-background) 0px 0px 1px;
+}
+
+@keyframes sh-busy-indicator-rotation {
+  0% {
+      transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(359deg);
+  }
+}
+
+/* Button */
+
+a, input[type=submit], input[type=button] {
+    border-radius: 0.25rem;
+    border: solid 1px var(--color-border);
+    padding: 0.3rem;
+    margin: 0.2rem;
+    min-width: 4rem;
+    background: #000;
+    background-color: var(--color-primary-background);
+    color: var(--color-primary);
+    text-align: center;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 1rem;
+    display: inline;
+}
+
+/*
+a:hover, input[type=submit]:hover, input[type=button]:hover {
+    color: var(--color-highlight);
+    background-color: var(--color-highlight-background);
+}
+*/
+
+a:active, input[type=submit]:active, input[type=button]:active {
+    color: var(--color-highlight);
+    background-color: var(--color-highlight-background);
+}
+
+/* List View */
+
+.sh-listview li {
+    position: relative;
+    list-style: none;
+    color: var(--color-primary);
+}
+
+.sh-listview li[onclick] {
+    cursor: pointer;
+}
+
+.sh-listview li[onclick]:active {
+    color: var(--color-highlight);
+    background-color: var(--color-highlight-background);
+}
+
+.sh-listview li:nth-child(odd) { background-color: var(--color-content-background); }
+.sh-listview li:nth-child(even) { background-color: var(--color-content-alt-background); }
+
+/* Menu */
+
+.sh-menu {
+    position: fixed;
+    overflow: hidden;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+}
+
+.sh-menu > * {
+    position: absolute;
+    border: solid 2px var(--color-border);
+    border-radius: 0.25rem;
+    
+    -webkit-box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+       -moz-box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+            box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+
+    color: var(--color-primary);
+    background-color: var(--color-content-background);
+}
+
+.sh-menu h1 {
+    line-height: 2rem;
+}
+
+.sh-menu li {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    line-height: 2rem;
+    list-style: none;
+}
+
+h1.sh-submenu {
+    background-color: var(--color-primary-background);
+    border-bottom: solid 0.25rem var(--color-border);
+}
+
+h1.sh-submenu-visible {
+    border-bottom: none;
+}
+
+h1.sh-submenu + ul {
+    display: none;
+    border-left: solid 0.25rem var(--color-border);
+}
+
+h1.sh-submenu-visible + ul {
+    display: block;
+}
+
+h1.sh-submenu:before {
+    font-family: Material;
+    content: "\f2f5";
+    padding-right: 0.25rem;
+}
+
+h1.sh-submenu-visible:before {
+    font-family: Material;
+    content: "\f2f1";
+    padding-right: 0.25rem;
+}
+
+/* Page */
+
+.sh-page {
+    position: absolute;
+    color: var(--color-primary);
+    background-color: var(--color-content-background);
+    top: 0;
+    left: 0;
+    width: 100%;
+    min-height: 100%;
+    /*padding-top: 3rem;*/
+}
+
+.sh-page > header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1;
+    height: 3rem;
+    line-height: 3rem;
+
+    background-color: var(--color-primary-background-translucent);
+    color: var(--color-primary);
+    border-bottom: solid 1px var(--color-border);
+    
+    text-align: center;
+}
+
+.sh-page > footer {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    
+    background-color: var(--color-primary-background-translucent);
+    color: var(--color-primary);
+    border-top: solid 1px var(--color-border);
+
+}
+
+.sh-page.sh-page-fullscreen > header {
+    visibility: hidden;
+}
+
+.sh-page.sh-page-fullscreen {
+    padding-top: 0;
+}
+
+.sh-page.sh-page-fullscreen > footer {
+    visibility: hidden;
+}
+
+.sh-page.sh-page-transitioning {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+}
+
+/* Popup */
+
+.sh-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.sh-popup > div {
+    position: relative;
+    border: solid 2px var(--color-border);
+    border-radius: 0.25rem;
+    background-color: var(--color-content-background);
+    overflow: hidden;
+}
+
+.sh-popup header, .sh-popup footer {
+    position: absolute;
+}
+
+.sh-popup header {
+    top: 0;
+    left: 0;
+    right: 0;
+    min-height: 2rem;
+    margin: 0;
+    color: var(--color-primary);
+    background-color: var(--color-primary-background-translucent);
+    border-bottom: solid 2px var(--color-border);
+    line-height: 2rem;
+    text-align: left;
+}
+
+.sh-popup footer {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    min-height: 2rem;
+    margin: 0;
+    color: var(--color-primary);
+    background-color: var(--color-primary-background-translucent);
+    border-top: solid 2px var(--color-border);
+    line-height: 2rem;
+    text-align: center;
+}
+
+/* Switch */
+
+/* Toggle switch */
+
+label.sh-switch {
+    position: relative;
+    display: inline-block;
+    width: 2em;
+    height: 1.2em;
+    margin-right: 1em;
+}
+
+.sh-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.sh-switch span {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    -webkit-transition: 0.3s;
+            transition: 0.3s;
+    
+    border: solid 1px var(--color-primary);
+    border-radius: 3px;
+}
+
+.sh-switch span:before {
+    position: absolute;
+    content: "";
+    width: calc(1em - 4px);
+    height: calc(1.2em - 4px);
+    top: 1px;
+    left: 1px;
+    background-color: var(--color-primary);
+    border-radius: 3px;
+    -webkit-transition: 0.3s;
+            transition: 0.3s;
+}
+
+.sh-switch input:checked + span {
+    background-color: var(--color-highlight-background);
+}
+
+.sh-switch input:checked + span:before {
+    -webkit-transform: translateX(1em);
+        -ms-transform: translateX(1em);
+            transform: translateX(1em);
+}
+
+/* Text Input */
+
+input[type=text], input[type=password] {
+    border-radius: 0;
+    background-image: none;
+    background-color: transparent;
+    border: none;
+    border-bottom: solid 2px var(--color-border);
+    padding-bottom: 2px;
+    font-family: inherit;
+    font-size: 100%;
+    color: var(--color-primary)
+}

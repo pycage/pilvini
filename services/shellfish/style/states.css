@@ -1,0 +1,30 @@
+/*
+div[onclick]:hover, span[onclick]:hover, li[onclick]:hover, h1[onclick]:hover, h2[onclick]:hover {
+    color: var(--color-highlight);
+    background-color: var(--color-highlight-background);
+}
+*/
+
+div[onclick]:active, span[onclick]:active, li[onclick]:active, h1[onclick]:active, h2[onclick]:active {
+    color: var(--color-highlight);
+    background-color: var(--color-highlight-background);
+}
+
+.sh-disabled {
+    background-color: inherit;
+    color: var(--color-disabled);
+    pointer-events: none;
+}
+
+.sh-hidden {
+    display: none;
+}
+
+.sh-inverted {
+    background-color: var(--color-primary);
+    color: var(--color-primary-background);
+}
+
+.sh-visible {
+    visibility: visible;
+}

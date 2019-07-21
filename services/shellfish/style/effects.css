@@ -1,0 +1,17 @@
+.sh-blur {
+    -webkit-filter: blur(5px);
+       -moz-filter: blur(5px);
+        -ms-filter: blur(5px);
+         -o-filter: blur(5px);
+            filter: blur(5px);
+}
+
+.sh-dropshadow {
+    -webkit-box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+       -moz-box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+            box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+}
+
+.sh-translucent {
+    opacity: 0.66;
+}

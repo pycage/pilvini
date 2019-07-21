@@ -26,8 +26,8 @@ require(mods, function (preload, low, mid, high, ui)
             url: "/::login/",
             beforeSend: function(xhr)
             {
-                 xhr.setRequestHeader("x-pilvini-user", user);
-                 xhr.setRequestHeader("x-pilvini-password", password);
+                xhr.setRequestHeader("x-pilvini-user", user);
+                xhr.setRequestHeader("x-pilvini-password", password);
             },
         })
         .done(function (data, status, xhr)
@@ -103,7 +103,11 @@ require(mods, function (preload, low, mid, high, ui)
     $.ajax({
         type: "GET",
         url: "/::image-of-the-day/",
-        dataType: "json"
+        dataType: "json",
+        beforeSend: function (xhr)
+        {
+            xhr.overrideMimeType("application/json");
+        }
     })
     .done(function (data, status, xhr)
     {

@@ -95,7 +95,7 @@ require(__dirname + "/low.js", function (low)
         var m_onClosed = null;
 
         var m_page = $(
-            low.tag("div").class("sh-page")
+            low.tag("div").class("sh-page sh-hidden")
             .content(
                 low.tag("section")
                 .style("position", "relative")
@@ -370,7 +370,7 @@ require(__dirname + "/low.js", function (low)
         }
 
         m_menu = $(
-            low.tag("div").class("sh-menu")
+            low.tag("div").class("sh-menu sh-hidden")
             .content(
                 low.tag("div")
                 .content(
@@ -715,6 +715,20 @@ require(__dirname + "/low.js", function (low)
             .html()
         );
 
+        m_dialog.find("> div > header")
+        .on("mousedown", function ()
+        {
+            m_dialog.addClass("sh-translucent");
+        })
+        .on("mouseup", function ()
+        {
+            m_dialog.removeClass("sh-translucent");
+        })
+        .on("mouseleave", function ()
+        {
+            m_dialog.removeClass("sh-translucent");
+        });
+
         this.get = function ()
         {
             return m_dialog;
@@ -947,7 +961,7 @@ require(__dirname + "/low.js", function (low)
             .content(
                 low.tag("label").content("")
                 .style("display", "inline-block")
-                .style("min-width", "6em")
+                .style("min-width", "10em")
             )
             .html()
         );
@@ -1516,7 +1530,7 @@ require(__dirname + "/low.js", function (low)
                 )
             )
             .content(
-                low.tag("div").class("sh-right sh-selection-box")
+                low.tag("div").class("sh-right")
                 .style("display", "none")
                 .style("width", "42px")
                 .style("text-align", "center")
@@ -1588,11 +1602,11 @@ require(__dirname + "/low.js", function (low)
         {
             if (value)
             {
-                m_listItem.addClass("sh-selected");
+                m_buttonBox.addClass("sh-inverted");
             }
             else
             {
-                m_listItem.removeClass("sh-selected");
+                m_buttonBox.removeClass("sh-inverted");
             }
             m_isSelected = value;
         }
@@ -1755,11 +1769,11 @@ require(__dirname + "/low.js", function (low)
         {
             if (value)
             {
-                m_gridItem.addClass("sh-selected");
+                m_gridItem.find("> div").last().addClass("sh-inverted");
             }
             else
             {
-                m_gridItem.removeClass("sh-selected");
+                m_gridItem.find("> div").last().removeClass("sh-inverted");
             }
             m_isSelected = value;
         }
@@ -1775,7 +1789,7 @@ require(__dirname + "/low.js", function (low)
             var callback = action[1];
 
             var box = $(
-                low.tag("div").class("sh-selection-box")
+                low.tag("div")
                 .style("position", "absolute")
                 .style("top", "0")
                 .style("right", "0")

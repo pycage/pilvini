@@ -287,6 +287,8 @@ require(mods, function (low, mid, high, mimeReg, videoEditor)
         {
             toggleFullscreen();
         };
+
+        setTimeout(slideOut, 300);
     }
 
     function Header()

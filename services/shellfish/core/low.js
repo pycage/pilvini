@@ -249,7 +249,7 @@ function pagePush(page, callback, immediate)
 {
     pageFreeze(page, 0);
 
-    var prevPage = $(".sh-page.sh-visible").last();
+    var prevPage = $(".sh-page:not(.sh-hidden)").last();
     if (prevPage.length)
     {
         if (prevPage[0] === page[0])
@@ -269,11 +269,12 @@ function pagePush(page, callback, immediate)
         var width = $(window).width();
         page.css("left", width + "px")
             .css("right", -width + "px");
-        page.find("> header").css("left", width + "px")
-                             .css("right", -width + "px");
+        page.find("> header, > footer")
+            .css("left", width + "px")
+            .css("right", -width + "px");
     }
 
-    page.addClass("sh-visible");
+    page.removeClass("sh-hidden");
 
     if (! immediate)
     {
@@ -285,7 +286,7 @@ function pagePush(page, callback, immediate)
         {
             if (prevPage.length)
             {
-                prevPage.css("display", "none");
+                prevPage.addClass("sh-hidden");
                 prevPage.trigger("hidden");
             }
             pageUnfreeze(page);
@@ -295,7 +296,7 @@ function pagePush(page, callback, immediate)
             }
         });
     
-        page.find("> header").animate({
+        page.find("> header, > footer").animate({
             left: 0,
             right: 0
         }, 350);
@@ -304,7 +305,7 @@ function pagePush(page, callback, immediate)
     {
         if (prevPage.length)
         {
-            prevPage.css("display", "none");
+            prevPage.addClass("sh-hidden");
             prevPage.trigger("hidden");
         }
         pageUnfreeze(page);
@@ -320,14 +321,14 @@ exports.pagePush = pagePush;
  */
 function pagePop(callback, reverse, immediate)
 {
-    var pages = $(".sh-page.sh-visible");
+    var pages = $(".sh-page");
 
     if (pages.length > 1)
     {
         var page = $(pages[pages.length - 1]);
         var prevPage = $(pages[pages.length - 2]);
 
-        prevPage.css("display", "block");
+        prevPage.removeClass("sh-hidden");
         
         if (! immediate)
         {
@@ -340,7 +341,7 @@ function pagePop(callback, reverse, immediate)
                 right: (reverse ? width : -width) + "px"
             }, 350, function ()
             {
-                page.removeClass("sh-visible");
+                page.addClass("sh-hidden");
                 pageUnfreeze(page);
                 pageUnfreeze(prevPage);
                 prevPage.trigger("visible");
@@ -354,23 +355,23 @@ function pagePop(callback, reverse, immediate)
                 }
             });
     
-            page.find("> header").animate({
+            page.find("> header, > footer").animate({
                 left: (reverse ? -width : width) + "px",
                 right: (reverse ? width : -width) + "px"
             }, 350, function ()
             {
-                page.find("> header").css("left", "0").css("right", "0");
+                page.find("> header, > footer").css("left", "0").css("right", "0");
             });
         }
         else
         {
-            page.removeClass("sh-visible");
+            page.addClass("sh-hidden");
             pageUnfreeze(page);
             pageUnfreeze(prevPage);
             prevPage.trigger("visible");
 
             page.css("left", "0").css("right", "0");
-            page.find("> header").css("left", "0").css("right", "0");
+            page.find("> header, > footer").css("left", "0").css("right", "0");
             page.trigger("sh-closed");
 
             if (callback)
@@ -447,11 +448,11 @@ function pageOnSwipe(page, callback)
                     var scrollTop = $(document).scrollTop();
                     pageFreeze(page, scrollTop);
 
-                    var pages = $(".sh-page.sh-visible");
+                    var pages = $(".sh-page");
                     if (pages.length > 1)
                     {
                         var prevPage = $(pages[pages.length - 2]);
-                        prevPage.css("display", "block");
+                        prevPage.removeClass("sh-hidden");
                     }
 
                     this.swipeContext.scrollTop = scrollTop;
@@ -557,6 +558,8 @@ exports.pageOnSwipe = pageOnSwipe;
  */
 function menuOpen(menu, parent, callback)
 {
+    menu.css("visibility", "hidden").removeClass("sh-hidden");
+
     var content = menu.find(">:first-child");
     var p = $(parent);
 
@@ -577,9 +580,14 @@ function menuOpen(menu, parent, callback)
         }
 
         content.css("left", l + "px");
-        content.css("top", p.offset().top - $(document).scrollTop() + (h * 0.75) + "px");
+        content.css("top", p.offset().top - $(document).scrollTop() + (h * 0.96) + "px");
 
-        menu.addClass("sh-visible");
+        menu.css("visibility", "visible");
+
+        if (callback)
+        {
+            callback();
+        }
     }
 }
 exports.menuOpen = menuOpen;
