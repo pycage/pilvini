@@ -10,10 +10,77 @@ var require;
     // modules cache
     var cache = { };
 
+    // bundle cache
+    var bundleCache = { };
+
     // ID to URL map
     var idsMap = { };
 
     var nextScheduled = false;
+
+    function loadBundle(url, callback)
+    {
+        console.log("loading JS bundle from server: " + url);
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", url, true);
+        xhr.onreadystatechange = function ()
+        {
+            if (xhr.readyState === XMLHttpRequest.DONE)
+            {
+                if (xhr.status === 200)
+                {
+                    try
+                    {
+                        var bundle = JSON.parse(xhr.responseText);
+                        for (var moduleUrl in bundle)
+                        {
+                            bundleCache[moduleUrl] = bundle[moduleUrl];
+                        }
+                        callback();
+                    }
+                    catch (err)
+                    {
+                        console.error("Failed to load bundle: " + err);
+                    }
+                }
+                else
+                {
+                    callback();
+                }
+            }
+        };
+        xhr.send();
+    }
+
+    function loadCode(url, callback)
+    {
+        if (bundleCache[url])
+        {
+            //console.log("loading module from bundle: " + url);
+            callback(bundleCache[url]);
+            return;
+        }
+
+        console.log("loading module from server: " + url);
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", url, true);
+        xhr.onreadystatechange = function ()
+        {
+            if (xhr.readyState === XMLHttpRequest.DONE)
+            {
+                if (xhr.status === 200)
+                {
+                    callback(xhr.responseText);
+                }
+                else
+                {
+                    //throw "Failed to load module: status code " + xhr.status;
+                    callback("");
+                }
+            }
+        };
+        xhr.send();
+    }
 
     function loadModule(url, callback)
     {
@@ -29,55 +96,45 @@ var require;
             return;
         }
         
-        console.log("loading module from server " + url);
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", url, true);
-        xhr.onreadystatechange = function ()
+        loadCode(url, function (code)
         {
-            if (xhr.readyState === XMLHttpRequest.DONE)
+            if (code === "")
             {
-                if (xhr.status === 200)
-                {
-                    var pos = url.lastIndexOf("/");
-                    var dirname = url.substr(0, pos);
-
-                    var js = "(function ()" +
-                             "{" +
-                             "var __dirname = \"" + dirname + "\";" +
-                             "var exports = { };" +
-                             xhr.responseText +
-                             "return exports;" +
-                             "})();";
-                    try
-                    {
-                        stackOfQueues.push([]);
-                        var module = eval(js);
-                        cache[url] = module;
-
-                        if (module.__id)
-                        {
-                            console.log("registering module ID: " + module.__id);
-                            idsMap[module.__id] = url;
-                        }
-
-                        callback(module);
-                    }
-                    catch (err)
-                    {
-                        console.error("Failed to load module: " + url + " " + err);
-                        //console.log(js);
-                        callback(null);
-                    }
-                    return;
-                }
-                else
-                {
-                    //throw "Failed to load module: status code " + xhr.status;
-                    callback(null);
-                }
+                callback(null);
+                return;
             }
-        };
-        xhr.send();
+
+            var pos = url.lastIndexOf("/");
+            var dirname = url.substr(0, pos);
+
+            var js = "(function ()" +
+                     "{" +
+                     "var __dirname = \"" + dirname + "\";" +
+                     "var exports = { };" +
+                     code +
+                     "return exports;" +
+                     "})();";
+            try
+            {
+                stackOfQueues.push([]);
+                var module = eval(js);
+                cache[url] = module;
+
+                if (module.__id)
+                {
+                    console.log("registering module ID: " + module.__id);
+                    idsMap[module.__id] = url;
+                }
+
+                callback(module);
+            }
+            catch (err)
+            {
+                console.error("Failed to load module: " + url + " " + err);
+                //console.log(js);
+                callback(null);
+            }
+        });
     }
 
     function next()
@@ -154,6 +211,18 @@ var require;
     for (var i = 0; i < scripts.length; ++i)
     {
         var script = scripts[i];
+
+        var bundle = script.getAttribute("data-bundle");
+        if (bundle && bundle !== "")
+        {
+            nextScheduled = true;
+            loadBundle(bundle, function ()
+            {
+                nextScheduled = false;
+                next();
+            });
+        }
+
         var main = script.getAttribute("data-main");
         if (main && main !== "")
         {

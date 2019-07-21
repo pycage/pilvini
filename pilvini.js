@@ -156,6 +156,10 @@ function isPublic(method, uri)
     {
         return true;
     }
+    else if (uri.indexOf("/::jsbundle/") === 0)
+    {
+        return true;
+    }
     else if (uri.indexOf("/::login/") === 0)
     {
         return true;
@@ -676,6 +680,7 @@ console.log("                   |");
 
 services["login"].setAuthenticator(codeAuthenticator);
 services["res"].setResourceMap(resourceMap);
+services["jsbundle"].setResourceMap(resourceMap);
 services["shell"].setExtensions(shellExtensions);
 
 
