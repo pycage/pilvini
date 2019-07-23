@@ -7,7 +7,7 @@ const mods = [
     "shellfish/high",
     __dirname + "/ui.js"
 ];
-loadStyle("/::res/shellfish/style/shellfish.css");
+
 require(mods, function (preload, low, mid, high, ui)
 {
     function login(user, password)

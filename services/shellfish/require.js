@@ -82,6 +82,19 @@ var require;
         xhr.send();
     }
 
+    function loadStyle(url, callback)
+    {
+        var link = document.createElement("link");
+        link.setAttribute("type", "text/css");
+        link.setAttribute("rel", "stylesheet");
+        link.setAttribute("href", url);
+        link.onload = function ()
+        {
+            callback();
+        }
+        document.head.appendChild(link);
+    }
+
     function loadModule(url, callback)
     {
         if (idsMap[url])
@@ -170,12 +183,25 @@ var require;
         ctx.urls.shift();
 
         nextScheduled = true;
-        loadModule(url, function (module)
+
+        if (url.toLowerCase().endsWith(".css"))
         {
-            nextScheduled = false;
-            ctx.modules.push(module);
-            next();
-        });
+            loadStyle(url, function ()
+            {
+                nextScheduled = false;
+                ctx.modules.push(null);
+                next();
+            });
+        }
+        else
+        {
+            loadModule(url, function (module)
+            {
+                nextScheduled = false;
+                ctx.modules.push(module);
+                next();
+            });
+        }
     }
 
     function addTask(urls, callback)
@@ -230,21 +256,3 @@ var require;
         }
     }
 })();
-
-/* Loads the given stylesheet.
- */
-function loadStyle(uri, callback)
-{
-    var link = document.createElement("link");
-    link.setAttribute("type", "text/css");
-    link.setAttribute("rel", "stylesheet");
-    link.setAttribute("href", uri);
-    link.onload = function ()
-    {
-        if (callback)
-        {
-            callback();
-        }
-    }
-    document.head.appendChild(link);
-}

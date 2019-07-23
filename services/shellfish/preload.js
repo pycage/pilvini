@@ -1,5 +1,6 @@
 "use strict";
 
-require([__dirname + "/core/low.js",
+require([__dirname + "/style/shellfish.css",
+         __dirname + "/core/low.js",
          __dirname + "/core/mid.js",
          __dirname + "/core/high.js"], function () { });

@@ -68,7 +68,6 @@ const mods = [
     __dirname + "/files.js",
     __dirname + "/tips.js"
 ].concat(extensions());
-loadStyle("/::res/shellfish/style/shellfish.css");
 require(mods, function (preload, low, mid, high, ui, files)
 {
     function logout()
