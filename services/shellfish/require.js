@@ -84,6 +84,11 @@ var require;
 
     function loadStyle(url, callback)
     {
+        if (bundleCache[url])
+        {
+            url = "data:text/css;base64," + btoa(bundleCache[url]);
+        }
+
         var link = document.createElement("link");
         link.setAttribute("type", "text/css");
         link.setAttribute("rel", "stylesheet");

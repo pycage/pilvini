@@ -406,7 +406,7 @@ function pageOnSwipe(page, callback)
             .style("left", "8px")
             .style("font-size", "10vh")
             .content(
-                tag("span").class("sh-fw-icon sh-icon-back")
+                tag("span").class("sh-fw-icon sh-icon-arrow_back")
                 .style("line-height", "100vh")
                 .style("padding", "0.10em")
                 .style("background-color", "var(--color-primary)")

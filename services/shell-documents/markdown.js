@@ -188,14 +188,14 @@ require(mods, function (low, mid, high, mimeReg)
             }))
             .left(
                 high.element(mid.IconButton)
-                .icon("sh-icon-back")
+                .icon("sh-icon-arrow_back")
                 .onClicked(function () { page.pop_(); })
             )
             .right(
                 high.element(mid.IconButton)
                 .icon(high.predicate([m_displayMode], function ()
                 {
-                    return m_displayMode.value() === 0 ? "sh-icon-edit" : "sh-icon-checked";
+                    return m_displayMode.value() === 0 ? "sh-icon-edit" : "sh-icon-check";
                 }))
                 .onClicked(toggleMode)
             )

@@ -6,10 +6,10 @@ span.sh-busy-indicator {
 }
 
 span.sh-busy-indicator:before {
-    font-family: Material;
+    font-family: material;
     width: 1.25em;
     text-align: center;
-    content: "\f3ec";
+    content: "\ea71";
     text-shadow: var(--color-primary-background) 0px 0px 1px;
 }
 
@@ -127,14 +127,14 @@ h1.sh-submenu-visible + ul {
 }
 
 h1.sh-submenu:before {
-    font-family: Material;
-    content: "\f2f5";
+    font-family: material;
+    content: "\ea58";
     padding-right: 0.25rem;
 }
 
 h1.sh-submenu-visible:before {
-    font-family: Material;
-    content: "\f2f1";
+    font-family: material;
+    content: "\ea56";
     padding-right: 0.25rem;
 }
 

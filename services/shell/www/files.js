@@ -687,7 +687,7 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
         console.log("loadThumbnails: " + items.length + " images");
 
         var totalItems = items.length;
-        var statusEntry = high.element(ui.StatusItem).icon("sh-icon-wait").get();
+        var statusEntry = high.element(ui.StatusItem).icon("sh-icon-photo_library").get();
         pushStatus(statusEntry);
         var watchHandle = m_properties.currentContext.watch(function ()
         {
@@ -987,7 +987,7 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
         favs.forEach(function (f)
         {
             menu.child(0).add(
-                high.element(mid.MenuItem).text(f.name).icon("sh-icon-star-circle")
+                high.element(mid.MenuItem).text(f.name).icon("sh-icon-stars")
                 .onClicked(function ()
                 {
                     m_scrollPositionsMap = { };
@@ -1010,7 +1010,7 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
         m_properties.shares.value().forEach(function (s)
         {
             menu.child(1).add(
-                high.element(mid.MenuItem).text(s.share + " " + s.uri).icon("sh-icon-share")
+                high.element(mid.MenuItem).text(s.share + " " + s.uri).icon("sh-icon-folder_shared")
                 .onClicked(function ()
                 {
                     m_scrollPositionsMap = { };
@@ -1178,7 +1178,7 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
                 };
 
                 var idx = count;
-                item.action = ["sh-icon-checked-circle", function ()
+                item.action = ["sh-icon-check_circle", function ()
                 {
                     item.selected = ! item.selected;
                     var sel = m_properties.selection.value().slice();
@@ -1222,7 +1222,7 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
                 };
 
                 var idx = count;
-                item.action = ["sh-icon-checked-circle", function ()
+                item.action = ["sh-icon-check_circle", function ()
                 {
                     item.selected = ! item.selected;
                     var sel = m_properties.selection.value().slice();
@@ -1309,7 +1309,7 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
         var sourceUri = meta.uri;
         var targetUri = "/.pilvini/clipboard/" + encodeURIComponent(meta.name);
 
-        var statusEntry = high.element(ui.StatusItem).icon("sh-icon-clipboard").text("Copying " + meta.name).get();
+        var statusEntry = high.element(ui.StatusItem).icon("sh-icon-content_paste").text("Copying " + meta.name).get();
         pushStatus(statusEntry);
 
         file.copy(sourceUri, targetUri, function (ok)
@@ -1386,7 +1386,7 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
             .title("Clipboard")
             .subtitle(high.predicate([amount], function () { return amount.value() + " items"; }))
             .left(
-                high.element(mid.IconButton).icon("sh-icon-back")
+                high.element(mid.IconButton).icon("sh-icon-arrow_back")
                 .onClicked(function () { page.pop_(); })
             )
         )
@@ -1467,7 +1467,7 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
             }
         }
 
-        var statusEntry = high.element(ui.StatusItem).icon("sh-icon-cloud-upload").get();
+        var statusEntry = high.element(ui.StatusItem).icon("sh-icon-cloud_upload").get();
         pushStatus(statusEntry);
 
         var rootUri = m_properties.currentUri.value();
@@ -1515,8 +1515,8 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
             var isFav = configuration.get("favorites", []).find(function (a) { return a.uri === m_properties.currentUri.value(); }) !== undefined;
             var isShare = m_properties.shares.value().find(function (a) { return a.uri === m_properties.currentUri.value(); }) !== undefined;
     
-            return (isFav ? "[icon:star-circle] " : "") +
-                   (isShare ? "[icon:share] " : "") +
+            return (isFav ? "[icon:stars] " : "") +
+                   (isShare ? "[icon:folder_shared] " : "") +
                    decodeURIComponent(m_properties.currentUri.value());
         }))
         .subtitle(high.predicate([m_properties.files], function ()
@@ -1525,7 +1525,7 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
         }))
         .onClicked(openPathMenu)
         .left(
-            high.element(mid.IconButton).icon("sh-icon-back")
+            high.element(mid.IconButton).icon("sh-icon-arrow_back")
             .visible(high.predicate([m_properties.currentUri], function () { return m_properties.currentUri.value() !== "/"; }))
             .onClicked(cdUp)
         )
@@ -1555,27 +1555,27 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
     /* setup actions menu */
     var m_actionsMenu = high.element(mid.Menu)
     .add(
-        high.element(mid.IconButton).icon("sh-icon-view-as-list")
+        high.element(mid.IconButton).icon("sh-icon-list")
         .checked(high.predicate([m_properties.configuration], function () { return configuration.get("view-mode", "list") === "list"; }))
         .onClicked(function () { setViewMode("list"); })
     )
     .add(
-        high.element(mid.IconButton).icon("sh-icon-view-as-grid")
+        high.element(mid.IconButton).icon("sh-icon-grid_view")
         .checked(high.predicate([m_properties.configuration], function () { return configuration.get("view-mode") === "grid"; }))
         .onClicked(function () { setViewMode("grid"); })
     )
     .add(
-        high.element(mid.IconButton).icon("sh-icon-alphabet")
+        high.element(mid.IconButton).icon("sh-icon-sort_by_alpha")
         .checked(high.predicate([m_properties.configuration], function () { return configuration.get("sort-mode", "name") === "name"; }))
         .onClicked(function () { setSortMode("name"); })
     )
     .add(
-        high.element(mid.IconButton).icon("sh-icon-number")
+        high.element(mid.IconButton).icon("sh-icon-format_list_numbered")
         .checked(high.predicate([m_properties.configuration], function () { return configuration.get("sort-mode") === "number"; }))
         .onClicked(function () { setSortMode("number"); })
     )
     .add(
-        high.element(mid.IconButton).icon("sh-icon-clock")
+        high.element(mid.IconButton).icon("sh-icon-access_time")
         .checked(high.predicate([m_properties.configuration], function () { return configuration.get("sort-mode") === "date"; }))
         .onClicked(function () { setSortMode("date"); })
     )
@@ -1604,7 +1604,7 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
             .onClicked(makeNewDirectory)
         )
         .add(
-            high.element(mid.MenuItem).icon("sh-icon-file").text("File...")
+            high.element(mid.MenuItem).icon("sh-icon-insert_drive_file").text("File...")
             .onClicked(makeNewFile)
         )
     )
@@ -1612,22 +1612,22 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
         high.element(mid.SubMenu).text("Clipboard")
         .visible(high.predicate([m_properties.permissions], function () { return m_properties.permissions.value().indexOf("CREATE") !== -1; }))
         .add(
-            high.element(mid.MenuItem).text("Cut").icon("sh-icon-clipboard-cut")
+            high.element(mid.MenuItem).text("Cut").icon("sh-icon-content_cut")
             .enabled(high.predicate([m_properties.selection], function () { return m_properties.selection.value().length > 0; }))
             .onClicked(eachSelected(cutToClipboard))
         )
         .add(
-            high.element(mid.MenuItem).text("Copy").icon("sh-icon-clipboard-copy")
+            high.element(mid.MenuItem).text("Copy").icon("sh-icon-content_copy")
             .enabled(high.predicate([m_properties.selection], function () { return m_properties.selection.value().length > 0; }))
             .onClicked(eachSelected(copyToClipboard))
         )
         .add(
-            high.element(mid.MenuItem).text("Paste").icon("sh-icon-clipboard-paste")
+            high.element(mid.MenuItem).text("Paste").icon("sh-icon-content_paste")
             .enabled(high.predicate([m_properties.clipboard], function () { return m_properties.clipboard.value().length > 0; }))
             .onClicked(pasteFromClipboard)
         )
         .add(
-            high.element(mid.MenuItem).text("Show").icon("sh-icon-clipboard")
+            high.element(mid.MenuItem).text("Show").icon("sh-icon-content_paste")
             .enabled(high.predicate([m_properties.clipboard], function () { return m_properties.clipboard.value().length > 0; }))
             .onClicked(openClipboardPage)
         )
@@ -1635,29 +1635,29 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
     .add(
         high.element(mid.SubMenu).text("Action")
         .add(
-            high.element(mid.MenuItem).text("Upload...").icon("sh-icon-cloud-upload")
+            high.element(mid.MenuItem).text("Upload...").icon("sh-icon-cloud_upload")
             .visible(high.predicate([m_properties.permissions], function () { return m_properties.permissions.value().indexOf("CREATE") !== -1; }))
             .onClicked(function () { $("#upload").click(); })
         )
         .add(
-            high.element(mid.MenuItem).text("Download").icon("sh-icon-download")
+            high.element(mid.MenuItem).text("Download").icon("sh-icon-file_download")
             .enabled(high.predicate([m_properties.selection], function () { return m_properties.selection.value().length > 0; }))
             .onClicked(eachSelected(downloadItem))
         )
         .add(
-            high.element(mid.MenuItem).text("Rename...").icon("sh-icon-rename")
+            high.element(mid.MenuItem).text("Rename...").icon("sh-icon-drive_file_rename_outline")
             .visible(high.predicate([m_properties.permissions], function () { return m_properties.permissions.value().indexOf("MODIFY") !== -1; }))
             .enabled(high.predicate([m_properties.selection], function () { return m_properties.selection.value().length === 1; }))
             .onClicked(eachSelected(renameItem))
         )
         .add(
-            high.element(mid.MenuItem).text("Bulk-Rename...").icon("sh-icon-rename")
+            high.element(mid.MenuItem).text("Bulk-Rename...").icon("sh-icon-drive_file_rename_outline")
             .visible(high.predicate([m_properties.permissions], function () { return m_properties.permissions.value().indexOf("MODIFY") !== -1; }))
             .enabled(high.predicate([m_properties.selection], function () { return m_properties.selection.value().length > 0; }))
             .onClicked(bulkRename)
         )
         .add(
-            high.element(mid.MenuItem).text("Delete").icon("sh-icon-trashcan")
+            high.element(mid.MenuItem).text("Delete").icon("sh-icon-delete")
             .visible(high.predicate([m_properties.permissions], function () { return m_properties.permissions.value().indexOf("DELETE") !== -1; }))
             .enabled(high.predicate([m_properties.selection], function () { return m_properties.selection.value().length > 0; }))
             .onClicked(removeSelected)
@@ -1728,7 +1728,7 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
             }
         }
 
-        var statusEntry = high.element(ui.StatusItem).icon("sh-icon-cloud-upload").get();
+        var statusEntry = high.element(ui.StatusItem).icon("sh-icon-cloud_upload").get();
         pushStatus(statusEntry);
 
         var rootUri = m_properties.currentUri.value();

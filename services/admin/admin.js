@@ -17,7 +17,7 @@ require(mods, function (low, mid, high, ui, files)
         .header(
             high.element(mid.PageHeader).title("Administration")
             .left(
-                high.element(mid.IconButton).icon("sh-icon-back")
+                high.element(mid.IconButton).icon("sh-icon-arrow_back")
                 .onClicked(function () { page.pop_(); })
             )
         )
@@ -138,11 +138,11 @@ require(mods, function (low, mid, high, ui, files)
         .header(
             high.element(mid.PageHeader).title("Users")
             .left(
-                high.element(mid.IconButton).icon("sh-icon-back")
+                high.element(mid.IconButton).icon("sh-icon-arrow_back")
                 .onClicked(function () { page.pop_(); })
             )
             .right(
-                high.element(mid.IconButton).icon("sh-icon-add-user")
+                high.element(mid.IconButton).icon("sh-icon-person_add")
                 .onClicked(function () { showCreateUserDialog(); })
             )
         )
@@ -175,7 +175,7 @@ require(mods, function (low, mid, high, ui, files)
                     .icon("/::res/shell/icons/face.png")
                     .title(item.name)
                     .subtitle(item.home + " (" + item.permissions.join(" ") + ")")
-                    .action(["sh-icon-trashcan", function ()
+                    .action(["sh-icon-delete", function ()
                     {
                         ui.showQuestion("Delete User", "Delete user " + name + "?", function ()
                         {
@@ -348,7 +348,6 @@ require(mods, function (low, mid, high, ui, files)
 
     files.actionsMenu().find("tools-menu")
     .add(
-        //high.element(mid.IconButton).icon("sh-icon-gear")
         high.element(mid.MenuItem).text("Administration")
         .visible(high.predicate([files.properties().permissions], function () { return files.properties().permissions.value().indexOf("ADMIN") !== -1; }))
         .onClicked(openPage)

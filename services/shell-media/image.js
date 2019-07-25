@@ -134,16 +134,16 @@ require(mods, function (low, mid, high, files, mimeReg)
                 .content(
                     low.tag("span").class("sh-left")
                     .content(
-                        low.tag("span").class("sh-fw-icon sh-icon-media-previous image-previous-button")
+                        low.tag("span").class("sh-fw-icon sh-icon-skip_previous image-previous-button")
                         .style("padding-left", "0.5em")
                         .style("font-size", "80%")
                     )
                     .content(
-                        low.tag("span").class("sh-fw-icon sh-icon-media-play-circle image-play-button")
+                        low.tag("span").class("sh-fw-icon sh-icon-play_circle_outline image-play-button")
                         .style("padding-left", "0.25em")
                     )
                     .content(
-                        low.tag("span").class("sh-fw-icon sh-icon-media-next image-next-button")
+                        low.tag("span").class("sh-fw-icon sh-icon-skip_next image-next-button")
                         .style("padding-left", "0.25em")
                         .style("font-size", "80%")
                     )
@@ -412,11 +412,11 @@ require(mods, function (low, mid, high, files, mimeReg)
         var playButton = popup.get().find(".image-play-button");
         if (playing)
         {
-            playButton.removeClass("sh-icon-media-play-circle").addClass("sh-icon-media-pause-circle");
+            playButton.removeClass("sh-icon-play_circle_outline").addClass("sh-icon-pause_circle_outline");
         }
         else
         {
-            playButton.removeClass("sh-icon-media-pause-circle").addClass("sh-icon-media-play-circle");
+            playButton.removeClass("sh-icon-pause_circle_outline").addClass("sh-icon-play_circle_outline");
         }
     }
 
@@ -520,7 +520,7 @@ require(mods, function (low, mid, high, files, mimeReg)
         if (low.fullscreenStatus())
         {
             low.fullscreenExit();
-            fullscreenButton.removeClass("sh-icon-unfullscreen").addClass("sh-icon-fullscreen");
+            fullscreenButton.removeClass("sh-icon-fullscreen_exit").addClass("sh-icon-fullscreen");
             popup.get().find("img")
             .css("max-width", "calc(100vw - 80px)")
             .css("max-height", "calc(100vh - 80px)");
@@ -528,7 +528,7 @@ require(mods, function (low, mid, high, files, mimeReg)
         else
         {
             low.fullscreenEnter(popup.get().find("> div > div"));
-            fullscreenButton.removeClass("sh-icon-fullscreen").addClass("sh-icon-unfullscreen");
+            fullscreenButton.removeClass("sh-icon-fullscreen").addClass("sh-icon-fullscreen_exit");
             popup.get().find("img")
             .css("max-width", "100vw")
             .css("max-height", "100vh");

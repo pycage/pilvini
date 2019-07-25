@@ -371,13 +371,13 @@ require(mods, function (low, mid, high, ui, files, mimeReg)
                 .style("margin-top", "48px")
                 .style("font-size", "80px")
                 .content(
-                    low.tag("span").class("sh-fw-icon sh-icon-media-play-circle")
+                    low.tag("span").class("sh-fw-icon sh-icon-play_circle_outline")
                 )
                 .content(
-                    low.tag("span").class("sh-left sh-fw-icon sh-icon-media-previous")
+                    low.tag("span").class("sh-left sh-fw-icon sh-icon-skip_previous")
                 )
                 .content(
-                    low.tag("span").class("sh-right sh-fw-icon sh-icon-media-next")
+                    low.tag("span").class("sh-right sh-fw-icon sh-icon-skip_next")
                 )
             )
             .html()
@@ -534,10 +534,10 @@ require(mods, function (low, mid, high, ui, files, mimeReg)
             switch (m_status)
             {
             case "playing":
-                btn.removeClass("sh-icon-media-pause-circle");
+                btn.removeClass("sh-icon-pause_circle_outline");
                 break;
             case "paused":
-                btn.removeClass("sh-icon-media-play-circle");
+                btn.removeClass("sh-icon-play_circle_outline");
                 break;
             case "buffering":
                 btn.removeClass("sh-busy-indicator");
@@ -550,10 +550,10 @@ require(mods, function (low, mid, high, ui, files, mimeReg)
             switch (status)
             {
             case "playing":
-                btn.addClass("sh-icon-media-pause-circle");
+                btn.addClass("sh-icon-pause_circle_outline");
                 break;
             case "paused":
-                btn.addClass("sh-icon-media-play-circle");
+                btn.addClass("sh-icon-play_circle_outline");
                 break;
             case "buffering":
                 btn.addClass("sh-busy-indicator");
@@ -729,9 +729,9 @@ require(mods, function (low, mid, high, ui, files, mimeReg)
                 switch (m_properties.status.value())
                 {
                 case "playing":
-                    return "sh-icon-media-pause";
+                    return "sh-icon-pause";
                 case "paused":
-                    return "sh-icon-media-play";
+                    return "sh-icon-play_arrow";
                 default:
                     return "sh-busy-indicator";
                 }
@@ -749,7 +749,7 @@ require(mods, function (low, mid, high, ui, files, mimeReg)
             })
         )
         .left(
-            high.element(mid.IconButton).icon("sh-icon-media-next")
+            high.element(mid.IconButton).icon("sh-icon-skip_next")
             .onClicked(function ()
             {
                 m_playlist.next();
@@ -785,7 +785,7 @@ require(mods, function (low, mid, high, ui, files, mimeReg)
             .title(m_properties.title)
             .subtitle(m_properties.artist)
             .left(
-                high.element(mid.IconButton).icon("sh-icon-back")
+                high.element(mid.IconButton).icon("sh-icon-arrow_back")
                 .onClicked(function ()
                 {
                     page.pop_();
@@ -887,7 +887,7 @@ require(mods, function (low, mid, high, ui, files, mimeReg)
                 return "Add " + audioSelection().length + " audio files to playlist";
             }))
             .left(
-                high.element(mid.IconButton).icon("sh-icon-media-add-to-playlist")
+                high.element(mid.IconButton).icon("sh-icon-playlist_add")
                 .onClicked(function ()
                 {
                     audioSelection()

@@ -33,10 +33,10 @@ function Service(config)
                 {
                     findJs(prefix, location, filePath);
                 }
-                else if (name.endsWith(".js"))
+                else if (name.endsWith(".js") || name.endsWith(".css"))
                 {
-                    var js = modFs.readFileSync(fullPath).toString("binary" /* as is */);
-                    jsBundle["/::res/" + modPath.join(prefix, filePath)] = js;
+                    var data = modFs.readFileSync(fullPath).toString("binary" /* as is */);
+                    jsBundle["/::res/" + modPath.join(prefix, filePath)] = data;
                 }
             });
         }

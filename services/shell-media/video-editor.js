@@ -108,7 +108,7 @@ require(mods, function (low, mid, high, ui, files)
         .done(function (data, status, xhr)
         {
             var statusItem = new ui.StatusItem();
-            statusItem.icon = "sh-icon-media-cut";
+            statusItem.icon = "sh-icon-movie_creation";
             statusItem.text = "Waiting...";
             files.pushStatus(statusItem);
             getStatus(statusItem);
@@ -393,7 +393,7 @@ require(mods, function (low, mid, high, ui, files)
         this.add(m_toolbar);
 
         var btn = new mid.IconButton();
-        btn.icon = "sh-icon-scissors";
+        btn.icon = "sh-icon-content_cut";
         btn.onClicked = function ()
         {
             m_markersBar.addMarker();
@@ -401,7 +401,7 @@ require(mods, function (low, mid, high, ui, files)
         m_toolbar.add(btn);
 
         btn = new mid.IconButton();
-        btn.icon = "sh-icon-trashcan";
+        btn.icon = "sh-icon-delete";
         btn.onClicked = function ()
         {
             m_markersBar.removeMarker();
@@ -412,7 +412,7 @@ require(mods, function (low, mid, high, ui, files)
         m_toolbar.add(gap);
 
         btn = new mid.IconButton();
-        btn.icon = "sh-icon-flip-horizontal";
+        btn.icon = "sh-icon-flip";
         btn.onClicked = function ()
         {
             m_markersBar.inverse = ! m_markersBar.inverse;
@@ -423,7 +423,7 @@ require(mods, function (low, mid, high, ui, files)
         m_toolbar.add(gap);
 
         btn = new mid.IconButton();
-        btn.icon = "sh-icon-media-rwd1";
+        btn.icon = "sh-icon-exposure_minus_1";
         btn.onClicked = function ()
         {
             if (m_onSeeked)
@@ -434,7 +434,7 @@ require(mods, function (low, mid, high, ui, files)
         m_toolbar.add(btn);
 
         btn = new mid.IconButton();
-        btn.icon = "sh-icon-media-rwd";
+        btn.icon = "sh-icon-fast_rewind";
         btn.onClicked = function ()
         {
             if (m_onSeeked)
@@ -445,7 +445,7 @@ require(mods, function (low, mid, high, ui, files)
         m_toolbar.add(btn);
 
         btn = new mid.IconButton();
-        btn.icon = "sh-icon-media-fwd";
+        btn.icon = "sh-icon-fast_forward";
         btn.onClicked = function ()
         {
             if (m_onSeeked)
@@ -456,7 +456,7 @@ require(mods, function (low, mid, high, ui, files)
         m_toolbar.add(btn);
 
         btn = new mid.IconButton();
-        btn.icon = "sh-icon-media-fwd1";
+        btn.icon = "sh-icon-exposure_plus_1";
         btn.onClicked = function ()
         {
             if (m_onSeeked)
@@ -467,7 +467,7 @@ require(mods, function (low, mid, high, ui, files)
         m_toolbar.add(btn);
 
         var cutButton = new mid.IconButton();
-        cutButton.icon = "sh-icon-accept";
+        cutButton.icon = "sh-icon-check";
         cutButton.enabled = false;
         cutButton.onClicked = function ()
         {

@@ -689,9 +689,9 @@ require(mods, function (low, mid, high, mimeReg, videoEditor)
                             switch (m_status.value())
                             {
                             case "playing":
-                                return "sh-icon-media-pause";
+                                return "sh-icon-pause";
                             case "paused":
-                                return "sh-icon-media-play";
+                                return "sh-icon-play_arrow";
                             default:
                                 return "sh-busy-indicator";
                             }
@@ -710,7 +710,7 @@ require(mods, function (low, mid, high, mimeReg, videoEditor)
                     )
                     .add(
                         high.element(mid.IconButton)
-                        .icon("sh-icon-media-rwd10")
+                        .icon("sh-icon-replay_10")
                         .onClicked(function ()
                         {
                             popup.find("video")
@@ -720,7 +720,7 @@ require(mods, function (low, mid, high, mimeReg, videoEditor)
                     )
                     .add(
                         high.element(mid.IconButton)
-                        .icon("sh-icon-media-fwd30")
+                        .icon("sh-icon-forward_30")
                         .onClicked(function ()
                         {
                             popup.find("video")
@@ -730,7 +730,7 @@ require(mods, function (low, mid, high, mimeReg, videoEditor)
                     )
                     .right(
                         high.element(mid.IconButton)
-                        .icon("sh-icon-media-cut")
+                        .icon("sh-icon-movie_creation")
                         .onClicked(function ()
                         {
                             var editToolbar = popup.find("editToolbar").get();
@@ -743,8 +743,8 @@ require(mods, function (low, mid, high, mimeReg, videoEditor)
                         high.element(mid.IconButton)
                         .icon(high.predicate([m_isFullscreen], function ()
                         {
-                            return m_isFullscreen.value() ? "sh-icon-unfullscreen"
-                                                          : "sh-icon-fullscreen"
+                            return m_isFullscreen.value() ? "sh-icon-fullscreen_exit"
+                                                          : "sh-icon-fullscreen";
                         }))
                         .onClicked(function ()
                         {
