@@ -1499,7 +1499,12 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
     m_properties.clipboardFilled = high.binding(false);
     m_properties.shares = high.binding([]);
     m_properties.permissions = high.binding([]);
-    m_properties.configuration = high.binding(configuration.configuration);
+    m_properties.configuration = high.binding(configuration);
+
+    m_properties.configuration.value().onLoaded = function ()
+    {
+        m_properties.configuration.update();
+    };
 
     var page = high.element(mid.Page)
     .onSwipeBack(cdUp)
