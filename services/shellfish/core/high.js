@@ -82,17 +82,7 @@ require(__dirname + "/mid.js", function (mid)
             that.update();
         };
     };
-    
-    var Ref = function (elem, id, prop)
-    {
-        /* Resolves this reference by returning a binding.
-         */
-        this.resolve = function ()
-        {
-            return elem.find(id).binding(prop);
-        };
-    };
-    
+       
     var Element = function (type)
     {
         var that = this;
@@ -103,6 +93,7 @@ require(__dirname + "/mid.js", function (mid)
         var m_inits = [];
         var m_bindings = { };
         var m_isInitialized = false;
+        var m_status = binding("created");
     
         /* Returns the underlying mid-level element.
          */
@@ -115,6 +106,13 @@ require(__dirname + "/mid.js", function (mid)
             return m_element;
         };
     
+        /* Returns a binding to this element's current status.
+         */
+        this.status = function ()
+        {
+            return m_status;
+        };
+
         /* Initializes this element and its children.
          * It is usually not required to call this method explicitly.
          */
@@ -127,6 +125,7 @@ require(__dirname + "/mid.js", function (mid)
                 m_inits = [];
     
                 m_children.forEach(function (child) { child.init(); });
+                m_status.assign("initialized");
             }
         };
     
@@ -146,6 +145,10 @@ require(__dirname + "/mid.js", function (mid)
             m_element = null;
             m_children = [];
             m_bindings = { };
+
+            var status = m_status;
+            m_status = null;
+            status.assign("disposed");
         }
     
         /* Sets or returns the ID of this element.
@@ -185,6 +188,17 @@ require(__dirname + "/mid.js", function (mid)
             {
                 return m_children[m_children.length + n];
             }
+        };
+
+        /* Returns a list of children of the given element type.
+         * Returns all children if type is undefined.
+         */
+        this.children = function (type)
+        {
+            return m_children.filter(function (c)
+            {
+                return type === undefined || c.get() instanceof type;
+            });
         };
     
         /* Returns the child element with the given ID.
@@ -250,18 +264,6 @@ require(__dirname + "/mid.js", function (mid)
                 m_watchHandles.push(handle);
                 m_element[prop] = value.value();
             }
-            else if (value instanceof Ref)
-            {
-                // setup binding on initialization
-                m_inits.push(function ()
-                {
-                    var b = value.resolve();
-                    // watch binding for value changes to apply
-                    var handle = b.watch(function (v) { m_element[prop] = v; });
-                    m_watchHandles.push(handle);
-                    m_element[prop] = b.value();
-                });
-            }
             else if (value instanceof Element)
             {
                 // nest another element and assign mid-level element to the property
@@ -326,10 +328,13 @@ require(__dirname + "/mid.js", function (mid)
     function predicate(dependencies, pred)
     {
         var handles = [];
-        var b = binding(pred());
+        var b = binding(pred.apply(null, dependencies));
         dependencies.forEach(function (dep)
         {
-            var handle = dep.watch(function (v) { b.assign(pred()); });
+            var handle = dep.watch(function (v)
+            {
+                b.assign(pred.apply(null, dependencies));
+            });
             handles.push(handle);
         });
         b.unwatched(function ()
@@ -343,11 +348,36 @@ require(__dirname + "/mid.js", function (mid)
     }
     exports.predicate = predicate;
     
-    /* Creates and returns a binding that references another high-level element's property.
+    /* Creates and returns a binding that references another high-level
+     * element's property.
      */
     function ref(elem, id, prop)
     {
-        return new Ref(elem, id, prop);
+        var targetElement = elem.find(id);
+        if (targetElement)
+        {
+            return targetElement.binding(prop);
+        }
+        else
+        {
+            var b = binding(undefined);
+    
+            var status = elem.status();
+            status.watch(function ()
+            {
+                if (status.value() === "initialized")
+                {
+                    var targetBinding = elem.find(id).binding(prop);
+                    b.assign(targetBinding.value());
+                    targetBinding.watch(function ()
+                    {
+                        b.assign(targetBinding.value());
+                    });
+                }
+            });
+    
+            return b;
+        }
     }
     exports.ref = ref;    
 });
