@@ -2,14 +2,15 @@
 
 span.sh-busy-indicator {
     display: inline-block;
+    width: 1.25em;
+    line-height: 1.25em;
+    text-align: center;
     animation: sh-busy-indicator-rotation 1.5s infinite linear;
 }
 
 span.sh-busy-indicator:before {
-    font-family: material;
-    width: 1.25em;
-    text-align: center;
-    content: "\ea71";
+    font-family: shellfish-icons;
+    content: "\edf7";
     text-shadow: var(--color-primary-background) 0px 0px 1px;
 }
 
