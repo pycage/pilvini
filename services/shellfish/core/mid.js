@@ -1763,7 +1763,7 @@ require(__dirname + "/low.js", function (low)
 
         function setTitle(title)
         {
-            m_gridItem.find("h1").html(low.escapeHtml(title));
+            m_gridItem.find("h1").html(low.resolveIcons(low.escapeHtml(title)));
             m_title = title;
         }
 
