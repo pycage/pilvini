@@ -128,7 +128,9 @@ var require;
             var js = "(function ()" +
                      "{" +
                      "var __dirname = \"" + dirname + "\";" +
-                     "var exports = { };" +
+                     "var exports = {" +
+                     "include: function (mod) { for (var key in mod) if (key !== 'include' && key !== '__id') exports[key] = mod[key]; }" +
+                     "};" +
                      code +
                      "return exports;" +
                      "})();";
