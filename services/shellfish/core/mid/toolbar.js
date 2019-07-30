@@ -6,12 +6,10 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
     exports.Toolbar = function ()
     {
         tools.defineProperties(this, {
-            visible: { set: setVisible, get: visible },
             left: { set: addLeft, get: left },
             right: { set: addRight, get: right }
         });
 
-        var m_isVisible = true;
         var m_left = [];
         var m_right = [];
 
@@ -30,24 +28,6 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
             )
             .html()
         );
-
-        function setVisible(v)
-        {
-            m_isVisible = v;
-            if (v)
-            {
-                m_item.css("display", "block");
-            }
-            else
-            {
-                m_item.css("display", "none");
-            }
-        }
-
-        function visible()
-        {
-            return m_isVisible;
-        }
 
         function addLeft(child)
         {
@@ -80,6 +60,8 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
         {
             addLeft(child);
         };
+
+        tools.initAs(this, tools.VISUAL);
     };
 
 });

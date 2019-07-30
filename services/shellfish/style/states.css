@@ -25,6 +25,3 @@ div[onclick]:active, span[onclick]:active, li[onclick]:active, h1[onclick]:activ
     color: var(--color-primary-background);
 }
 
-.sh-visible {
-    visibility: visible;
-}

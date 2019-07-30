@@ -5,27 +5,10 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
 
     exports.Box = function ()
     {
-        tools.defineProperties(this, {
-            visible: { set: setVisible, get: visible }
-        });
-
-        var m_isVisible = true;
-
         var m_item = $(
             low.tag("div")
             .html()
         );
-
-        function setVisible(v)
-        {
-            m_isVisible = v;
-            m_item.css("display", v ? "block" : "none");
-        }
-
-        function visible()
-        {
-            return m_isVisible;
-        }
 
         this.get = function ()
         {
@@ -36,6 +19,8 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
         {
             m_item.append(child.get());
         };
+
+        tools.initAs(this, tools.VISUAL);
     };
 
 });

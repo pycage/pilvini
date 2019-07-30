@@ -12,14 +12,14 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
             subtitle: { set: setSubtitle, get: subtitle },
             left: { set: addLeft, get: left },
             right: { set: addRight, get: right },
-            onClicked: { set: setOnClicked, get: onClicked }
+            //onClicked: { set: setOnClicked, get: onClicked }
         });
 
         var m_title = "";
         var m_subtitle = "";
         var m_left = [];
         var m_right = [];
-        var m_onClicked = null;
+        //var m_onClicked = null;
 
         var m_header = $(
             low.tag("header").class("sh-dropshadow")
@@ -90,6 +90,7 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
             return m_right;
         }
 
+        /*
         function setOnClicked(callback)
         {
             m_header.find("> div").first().off("click").on("click", callback);
@@ -100,12 +101,14 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
         {
             return m_onClicked;
         }
+        */
 
         this.get = function ()
         {
             return m_header;
         };
 
+        tools.initAs(this, tools.VISUAL | tools.INTERACTIVE);
     };
 
 });

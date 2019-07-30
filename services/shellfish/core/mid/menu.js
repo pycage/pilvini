@@ -7,6 +7,27 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
     {
         var m_menu;
 
+        m_menu = $(
+            low.tag("div").class("sh-menu sh-hidden")
+            .content(
+                low.tag("div")
+                .content(
+                    low.tag("ul")
+                    .style("max-height", "75vh")
+                    .style("overflow-x", "hidden")
+                    .style("overflow-y", "auto")
+                    .style("white-space", "nowrap")
+                )
+            )
+            .html()
+        );
+
+        m_menu.on("click", function (event)
+        {
+            event.stopPropagation();
+            m_menu.detach();
+        });
+
         this.clear = function()
         {
             m_menu.find("> div").html("");
@@ -28,28 +49,9 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
         this.close = function ()
         {
             m_menu.detach();
-        }
+        };
 
-        m_menu = $(
-            low.tag("div").class("sh-menu sh-hidden")
-            .content(
-                low.tag("div")
-                .content(
-                    low.tag("ul")
-                    .style("max-height", "75vh")
-                    .style("overflow-x", "hidden")
-                    .style("overflow-y", "auto")
-                    .style("white-space", "nowrap")
-                )
-            )
-            .html()
-        );
-
-        m_menu.on("click", function (event)
-        {
-            event.stopPropagation();
-            m_menu.detach();
-        });
+        tools.initAs(this, tools.VISUAL);
     };
 
 });

@@ -14,6 +14,8 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
         {
             return m_sep;
         };
+
+        tools.initAs(this, tools.VISUAL);
     };
 
 });

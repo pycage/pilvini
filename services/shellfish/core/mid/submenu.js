@@ -7,50 +7,10 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
     {
         tools.defineProperties(this, {
             text: { set: setText, get: text },
-            visible: { set: setVisible, get: visible }
         });
         
         var m_subMenu;
         var m_text = "";
-
-        function setText(text)
-        {
-            m_text = text;
-            m_subMenu.find("h1").html(low.escapeHtml(text));
-        }
-
-        function text()
-        {
-            return m_text;
-        }
-
-        this.add = function (item)
-        {
-            var ul = m_subMenu.find("ul").last();
-            ul.append(item.get());
-        };
-
-        function setVisible(value)
-        {
-            if (value)
-            {
-                m_subMenu.removeClass("sh-hidden");
-            }
-            else
-            {
-                m_subMenu.addClass("sh-hidden");
-            }
-        }
-
-        function visible()
-        {
-            return true;
-        }
-
-        this.get = function ()
-        {
-            return m_subMenu;
-        };
 
         m_subMenu = $(
             low.tag("div")
@@ -77,6 +37,30 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
             });
             $(item).toggleClass("sh-submenu-visible");
         });
+
+        function setText(text)
+        {
+            m_text = text;
+            m_subMenu.find("h1").html(low.escapeHtml(text));
+        }
+
+        function text()
+        {
+            return m_text;
+        }
+
+        this.add = function (item)
+        {
+            var ul = m_subMenu.find("ul").last();
+            ul.append(item.get());
+        };
+
+        this.get = function ()
+        {
+            return m_subMenu;
+        };
+
+        tools.initAs(this, tools.VISUAL);
     };
 
 });

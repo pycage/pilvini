@@ -56,6 +56,8 @@ require([__dirname + "/../low.js", __dirname + "/tools.js", __dirname + "/listvi
         {
             return m_delegate;
         }
+
+        tools.initAs(this, tools.VISUAL);
     };
 
 });

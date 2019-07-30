@@ -2,6 +2,12 @@
 
 require(__dirname + "/../low.js", function (low)
 {
+    const VISUAL = 1;
+    const INTERACTIVE = 2;
+    const CLICK_THROUGH = 4;
+    exports.VISUAL = VISUAL;
+    exports.INTERACTIVE = INTERACTIVE;
+    exports.CLICK_THROUGH = CLICK_THROUGH;
 
     /* Extends from a base object.
      */
@@ -54,6 +60,86 @@ require(__dirname + "/../low.js", function (low)
         });
     }
     exports.addProperty = addProperty;
+
+    /* Initializes the given element for the given type(s).
+     */
+    function initAs(target, types)
+    {
+        if (types & VISUAL)
+        {
+            var visible = true;
+            addProperty(target, "visible", function (v)
+            {
+                visible = v;
+                if (v)
+                {
+                    target.get().removeClass("sh-hidden");
+                }
+                else
+                {
+                    target.get().addClass("sh-hidden");
+                }
+            },
+            function ()
+            {
+                return visible;
+            });
+        }
+        
+        if (types & INTERACTIVE)
+        {
+            var enabled = true;
+            var onClicked = null;
+
+            target.get().on("click", function (event)
+            {
+                if (! (types & CLICK_THROUGH))
+                {
+                    event.stopPropagation();
+                }
+                if (onClicked)
+                {
+                    onClicked();
+                }
+            });
+
+            addProperty(target, "enabled", function (e)
+            {
+                enabled = e;
+                if (e)
+                {
+                    target.get().removeClass("sh-disabled");
+                }
+                else
+                {
+                    target.get().addClass("sh-disabled");
+                }
+            },
+            function ()
+            {
+                return enabled;
+            });
+
+            addProperty(target, "onClicked", function (cb)
+            {
+                onClicked = cb;
+            },
+            function ()
+            {
+                return onClicked;
+            });
+
+            addProperty(target, "action", function (cb)
+            {
+                onClicked = cb;
+            },
+            function ()
+            {
+                return onClicked;
+            });
+        }
+    }
+    exports.initAs = initAs;
 
     /* Wraps an existing callback to invoke an additional one.
      */

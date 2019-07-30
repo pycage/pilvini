@@ -7,13 +7,10 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
     {
         tools.defineProperties(this, {
             text: { set: setText, get: text },
-            action: { set: setOnClicked, get: onClicked },
-            onClicked: { set: setOnClicked, get: onClicked },
             isDefault: { set: setIsDefault, get: isDefault }
         });
 
         var m_text = "";
-        var m_onClicked = null;
         var m_isDefault = false;
 
         var m_button = $(
@@ -34,17 +31,6 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
             return m_text;
         }
 
-        function setOnClicked(callback)
-        {
-            m_button.off("click").on("click", callback);
-            m_onClicked = callback;
-        }
-
-        function onClicked()
-        {
-            return m_onClicked;
-        }
-
         function setIsDefault(value)
         {
             m_button.prop("type", value ? "submit" : "button");
@@ -60,6 +46,8 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
         {
             return m_button;
         }
+
+        tools.initAs(this, tools.VISUAL | tools.INTERACTIVE);
     };
 
 });

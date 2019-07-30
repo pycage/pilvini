@@ -41,6 +41,8 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
         {
             return m_row;
         };
+
+        tools.initAs(this, tools.VISUAL);
     };
 
 });

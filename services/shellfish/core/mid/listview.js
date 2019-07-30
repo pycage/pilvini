@@ -69,6 +69,8 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
             m_items = [];
             that.sizeChanged();
         };
+
+        tools.initAs(this, tools.VISUAL);
     };
 
 });
