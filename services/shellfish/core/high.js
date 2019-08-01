@@ -4,6 +4,13 @@ exports.__id = "shellfish/high";
 
 require(__dirname + "/mid.js", function (mid)
 {
+    const CREATED = 0;
+    const INITIALIZED = 1;
+    const DISCARDED = 2;
+    exports.CREATED = CREATED;
+    exports.INITIALIZED = INITIALIZED;
+    exports.DISCARDED = DISCARDED;
+
     var Binding = function (value)
     {
         var that = this;
@@ -93,7 +100,7 @@ require(__dirname + "/mid.js", function (mid)
         var m_inits = [];
         var m_bindings = { };
         var m_isInitialized = false;
-        var m_status = binding("created");
+        var m_status = binding(CREATED);
     
         /* Returns the underlying mid-level element.
          */
@@ -125,7 +132,7 @@ require(__dirname + "/mid.js", function (mid)
                 m_inits = [];
     
                 m_children.forEach(function (child) { child.init(); });
-                m_status.assign("initialized");
+                m_status.assign(INITIALIZED);
             }
         };
     
@@ -140,7 +147,7 @@ require(__dirname + "/mid.js", function (mid)
             });
             m_children.forEach(function (child)
             {
-                child.dispose();
+                child.discard();
             });
             m_element = null;
             m_children = [];
@@ -148,7 +155,7 @@ require(__dirname + "/mid.js", function (mid)
 
             var status = m_status;
             m_status = null;
-            status.assign("disposed");
+            status.assign(DISCARDED);
         }
     
         /* Sets or returns the ID of this element.
@@ -365,7 +372,7 @@ require(__dirname + "/mid.js", function (mid)
             var status = elem.status();
             status.watch(function ()
             {
-                if (status.value() === "initialized")
+                if (status.value() === INITIALIZED)
                 {
                     var targetBinding = elem.find(id).binding(prop);
                     b.assign(targetBinding.value());

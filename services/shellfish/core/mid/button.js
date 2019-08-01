@@ -25,8 +25,6 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
             .style("display", "inline-block")
             .style("height", "100%")
             .style("text-align", "center")
-            //.style("border", "solid 1px var(--color-border)")
-            //.style("border-radius", "0.25rem")
             .style("padding", "0.2rem")
             .style("overflow", "hidden")
             .on("click", "")
@@ -42,7 +40,7 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
                 .style("align-items", "center")
                 .style("justify-content", "center")    
                 .content(
-                    low.tag("span").class("sh-fw-icon")
+                    low.tag("span")//.class("sh-fw-icon")
                     .style("font-size", "2rem")        
                 )
                 .content(
@@ -67,6 +65,15 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
                 m_button.find("span").first()
                 .removeClass("sh-hidden")
                 .html(low.resolveIcons("[icon:" + m_icon + "]"));
+
+                if (m_text === "")
+                {
+                    m_button.find("span").first().addClass("sh-fw-icon");
+                }
+                else
+                {
+                    m_button.find("span").first().removeClass("sh-fw-icon");
+                }
             }
             else
             {
@@ -79,10 +86,12 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
             if (m_text !== "")
             {
                 m_button.css("minWidth", "6rem");
+                m_button.addClass("sh-frame");
             }
             else
             {
                 m_button.css("minWidth", "0");
+                m_button.removeClass("sh-frame");
             }
         }
 
@@ -91,15 +100,10 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
             if (value)
             {
                 m_button.addClass("sh-checked");
-                //m_button.css("backgroundColor", "var(--color-highlight-background)");
-                //m_button.css("color", "var(--color-highlight)");
             }
             else
             {
                 m_button.removeClass("sh-checked");
-                //m_button.css("backgroundColor", "var(--color-primary-background)");
-                //m_button.css("color", "var(--color-primary)");
-
             }
             m_checked = value;
         }

@@ -761,7 +761,7 @@ require(mods, function (low, mid, high, mimeReg, videoEditor)
         {
             // force-stop buffering
             m_uri.assign("");
-            popup.dispose();
+            popup.discard();
             popup = null;
         });
 

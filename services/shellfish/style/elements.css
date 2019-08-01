@@ -23,25 +23,12 @@ span.sh-busy-indicator:before {
   }
 }
 
-/* Button */
+/* Frame around elements */
 
-/*
-a, input[type=submit], input[type=button] {
-    border-radius: 0.25rem;
+.sh-frame {
     border: solid 1px var(--color-border);
-    padding: 0.3rem;
-    margin: 0.2rem;
-    min-width: 4rem;
-    background: #000;
-    background-color: var(--color-primary-background);
-    color: var(--color-primary);
-    text-align: center;
-    cursor: pointer;
-    font-family: inherit;
-    font-size: 1rem;
-    display: inline;
+    border-radius: 0.25rem;
 }
-*/
 
 /*
 a:hover, input[type=submit]:hover, input[type=button]:hover {
@@ -130,13 +117,13 @@ h1.sh-submenu-visible + ul {
 }
 
 h1.sh-submenu:before {
-    font-family: material;
+    font-family: shellfish-icons;
     content: "\ea58";
     padding-right: 0.25rem;
 }
 
 h1.sh-submenu-visible:before {
-    font-family: material;
+    font-family: shellfish-icons;
     content: "\ea56";
     padding-right: 0.25rem;
 }
