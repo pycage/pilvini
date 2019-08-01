@@ -46,7 +46,8 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
                     .style("background-color", "var(--color-secondary-background)")
                     .content(
                         low.tag("span").class("sh-right")
-                        .style("margin-right", "0.25rem")
+                        .style("margin-top", "0.3rem")
+                        .style("margin-bottom", "0.3rem")
                     )
                 )
             )
@@ -109,6 +110,7 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
         {
             m_buttons.push(button);
             m_dialog.find("footer > span").append(button.get().get());
+            m_dialog.find("footer > span").append($("<span>&nbsp;</span>"));
         }
 
         function buttons()

@@ -61,7 +61,7 @@ require(mods, function (mid, high, mimeReg)
                 return amount.value() + " contacts";
             }))
             .left(
-                high.element(mid.IconButton).icon("sh-icon-arrow_back")
+                high.element(mid.Button).icon("arrow_back")
                 .onClicked(function () { page.pop_(); })
             )
         )

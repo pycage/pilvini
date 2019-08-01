@@ -12,12 +12,10 @@ require(mods, function (low, mid, high, mimeReg)
     function ViewBox()
     {
         Object.defineProperties(this, {
-            text: { set: setText, get: text, enumerable: true },
-            visible: { set: setVisible, get: visible, enumerable: true }
+            text: { set: setText, get: text, enumerable: true }
         });
 
         var m_text = "";
-        var m_visible = false;
         var m_box = $(
             low.tag("pre")
             .style("display: none")
@@ -36,38 +34,20 @@ require(mods, function (low, mid, high, mimeReg)
             return m_text;
         }
 
-        function setVisible(value)
-        {
-            if (value)
-            {
-                m_box.css("display", "block");
-            }
-            else
-            {
-                m_box.css("display", "none");
-            }
-            m_visible = value;
-        }
-
-        function visible()
-        {
-            return m_visible;
-        }
-
         this.get = function ()
         {
             return m_box;
-        }
+        };
+
+        mid.initAs(this, mid.VISUAL);
     }
 
     function EditBox()
     {
         Object.defineProperties(this, {
-            text: { set: setText, get: text, enumerable: true },
-            visible: { set: setVisible, get: visible, enumerable: true }
+            text: { set: setText, get: text, enumerable: true }
         });
 
-        var m_visible = false;
         var m_box = $(
             low.tag("textarea")
             .style("display: none")
@@ -87,28 +67,12 @@ require(mods, function (low, mid, high, mimeReg)
             return m_box.val();
         }
 
-        function setVisible(value)
-        {
-            if (value)
-            {
-                m_box.css("display", "block");
-            }
-            else
-            {
-                m_box.css("display", "none");
-            }
-            m_visible = value;
-        }
-
-        function visible()
-        {
-            return m_visible;
-        }
-
         this.get = function ()
         {
             return m_box;
-        }
+        };
+
+        mid.initAs(this, mid.VISUAL);
     }
 
 
@@ -178,15 +142,15 @@ require(mods, function (low, mid, high, mimeReg)
                 return name + (m_data.value() !== m_originalContent ? "*" : "");
             }))
             .left(
-                high.element(mid.IconButton)
-                .icon("sh-icon-arrow_back")
+                high.element(mid.Button)
+                .icon("arrow_back")
                 .onClicked(function () { page.pop_(); })
             )
             .right(
-                high.element(mid.IconButton)
+                high.element(mid.Button)
                 .icon(high.predicate([m_displayMode], function ()
                 {
-                    return m_displayMode.value() === 0 ? "sh-icon-edit" : "sh-icon-check";
+                    return m_displayMode.value() === 0 ? "edit" : "check";
                 }))
                 .onClicked(toggleMode)
             )

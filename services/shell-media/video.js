@@ -683,17 +683,17 @@ require(mods, function (low, mid, high, mimeReg, videoEditor)
                 .add(
                     high.element(mid.Toolbar)
                     .add(
-                        high.element(mid.IconButton)
+                        high.element(mid.Button)
                         .icon(high.predicate([m_status], function ()
                         {
                             switch (m_status.value())
                             {
                             case "playing":
-                                return "sh-icon-pause";
+                                return "pause";
                             case "paused":
-                                return "sh-icon-play_arrow";
+                                return "play_arrow";
                             default:
-                                return "sh-busy-indicator";
+                                return "busy-indicator";
                             }
                         }))
                         .onClicked(function ()
@@ -709,8 +709,8 @@ require(mods, function (low, mid, high, mimeReg, videoEditor)
                         })
                     )
                     .add(
-                        high.element(mid.IconButton)
-                        .icon("sh-icon-replay_10")
+                        high.element(mid.Button)
+                        .icon("replay_10")
                         .onClicked(function ()
                         {
                             popup.find("video")
@@ -719,8 +719,8 @@ require(mods, function (low, mid, high, mimeReg, videoEditor)
                         })
                     )
                     .add(
-                        high.element(mid.IconButton)
-                        .icon("sh-icon-forward_30")
+                        high.element(mid.Button)
+                        .icon("forward_30")
                         .onClicked(function ()
                         {
                             popup.find("video")
@@ -729,8 +729,8 @@ require(mods, function (low, mid, high, mimeReg, videoEditor)
                         })
                     )
                     .right(
-                        high.element(mid.IconButton)
-                        .icon("sh-icon-movie_creation")
+                        high.element(mid.Button)
+                        .icon("movie_creation")
                         .onClicked(function ()
                         {
                             var editToolbar = popup.find("editToolbar").get();
@@ -740,11 +740,11 @@ require(mods, function (low, mid, high, mimeReg, videoEditor)
                         })
                     )
                     .right(
-                        high.element(mid.IconButton)
+                        high.element(mid.Button)
                         .icon(high.predicate([m_isFullscreen], function ()
                         {
-                            return m_isFullscreen.value() ? "sh-icon-fullscreen_exit"
-                                                          : "sh-icon-fullscreen";
+                            return m_isFullscreen.value() ? "fullscreen_exit"
+                                                          : "fullscreen";
                         }))
                         .onClicked(function ()
                         {

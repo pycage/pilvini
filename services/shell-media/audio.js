@@ -723,17 +723,17 @@ require(mods, function (low, mid, high, ui, files, mimeReg)
         }))
         .onClicked(pushPlayerPage)
         .left(
-            high.element(mid.IconButton)
+            high.element(mid.Button)
             .icon(high.predicate([m_properties.status], function ()
             {
                 switch (m_properties.status.value())
                 {
                 case "playing":
-                    return "sh-icon-pause";
+                    return "pause";
                 case "paused":
-                    return "sh-icon-play_arrow";
+                    return "play_arrow";
                 default:
-                    return "sh-busy-indicator";
+                    return "indicator";
                 }
             }))
             .onClicked(function ()
@@ -749,14 +749,14 @@ require(mods, function (low, mid, high, ui, files, mimeReg)
             })
         )
         .left(
-            high.element(mid.IconButton).icon("sh-icon-skip_next")
+            high.element(mid.Button).icon("skip_next")
             .onClicked(function ()
             {
                 m_playlist.next();
             })
         )
         .right(
-            high.element(mid.IconButton).icon("sh-icon-close")
+            high.element(mid.Button).icon("close")
             .onClicked(function ()
             {
                 m_playlist.clear();
@@ -785,7 +785,7 @@ require(mods, function (low, mid, high, ui, files, mimeReg)
             .title(m_properties.title)
             .subtitle(m_properties.artist)
             .left(
-                high.element(mid.IconButton).icon("sh-icon-arrow_back")
+                high.element(mid.Button).icon("arrow_back")
                 .onClicked(function ()
                 {
                     page.pop_();
@@ -887,7 +887,7 @@ require(mods, function (low, mid, high, ui, files, mimeReg)
                 return "Add " + audioSelection().length + " audio files to playlist";
             }))
             .left(
-                high.element(mid.IconButton).icon("sh-icon-playlist_add")
+                high.element(mid.Button).icon("playlist_add")
                 .onClicked(function ()
                 {
                     audioSelection()

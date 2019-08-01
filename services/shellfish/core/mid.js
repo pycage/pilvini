@@ -12,7 +12,6 @@ const mods = [
     __dirname + "/mid/griditem.js",
     __dirname + "/mid/gridview.js",
     __dirname + "/mid/headline.js",
-    __dirname + "/mid/iconbutton.js",
     __dirname + "/mid/label.js",
     __dirname + "/mid/labeled.js",
     __dirname + "/mid/listitem.js",

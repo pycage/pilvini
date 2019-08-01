@@ -1,18 +1,21 @@
-/*
-div[onclick]:hover, span[onclick]:hover, li[onclick]:hover, h1[onclick]:hover, h2[onclick]:hover {
+div[onclick] {
+    color: var(--color-primary);
+    background-color: var(--color-primary-background);
+}
+
+div[onclick]:active {
     color: var(--color-highlight);
     background-color: var(--color-highlight-background);
 }
-*/
 
-div[onclick]:active, span[onclick]:active, li[onclick]:active, h1[onclick]:active, h2[onclick]:active {
-    color: var(--color-highlight);
-    background-color: var(--color-highlight-background);
+.sh-checked {
+    color: var(--color-highlight) !important;
+    background-color: var(--color-highlight-background) !important;
 }
 
 .sh-disabled {
-    background-color: inherit;
     color: var(--color-disabled);
+    background-color: inherit;
     pointer-events: none;
 }
 

@@ -25,6 +25,7 @@ span.sh-busy-indicator:before {
 
 /* Button */
 
+/*
 a, input[type=submit], input[type=button] {
     border-radius: 0.25rem;
     border: solid 1px var(--color-border);
@@ -40,6 +41,7 @@ a, input[type=submit], input[type=button] {
     font-size: 1rem;
     display: inline;
 }
+*/
 
 /*
 a:hover, input[type=submit]:hover, input[type=button]:hover {

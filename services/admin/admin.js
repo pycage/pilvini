@@ -17,7 +17,7 @@ require(mods, function (low, mid, high, ui, files)
         .header(
             high.element(mid.PageHeader).title("Administration")
             .left(
-                high.element(mid.IconButton).icon("sh-icon-arrow_back")
+                high.element(mid.Button).icon("arrow_back")
                 .onClicked(function () { page.pop_(); })
             )
         )
@@ -138,11 +138,11 @@ require(mods, function (low, mid, high, ui, files)
         .header(
             high.element(mid.PageHeader).title("Users")
             .left(
-                high.element(mid.IconButton).icon("sh-icon-arrow_back")
+                high.element(mid.Button).icon("arrow_back")
                 .onClicked(function () { page.pop_(); })
             )
             .right(
-                high.element(mid.IconButton).icon("sh-icon-person_add")
+                high.element(mid.Button).icon("person_add")
                 .onClicked(function () { showCreateUserDialog(); })
             )
         )

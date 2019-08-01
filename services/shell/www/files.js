@@ -1386,7 +1386,7 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
             .title("Clipboard")
             .subtitle(high.predicate([amount], function () { return amount.value() + " items"; }))
             .left(
-                high.element(mid.IconButton).icon("sh-icon-arrow_back")
+                high.element(mid.Button).icon("arrow_back")
                 .onClicked(function () { page.pop_(); })
             )
         )
@@ -1525,12 +1525,12 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
         }))
         .onClicked(openPathMenu)
         .left(
-            high.element(mid.IconButton).icon("sh-icon-arrow_back")
+            high.element(mid.Button).icon("arrow_back")
             .visible(high.predicate([m_properties.currentUri], function () { return m_properties.currentUri.value() !== "/"; }))
             .onClicked(cdUp)
         )
         .right(
-            high.element(mid.IconButton).icon("sh-icon-menu")
+            high.element(mid.Button).icon("menu")
             .onClicked(function ()
             {
                 var menu = m_actionsMenu.get();
@@ -1555,27 +1555,27 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
     /* setup actions menu */
     var m_actionsMenu = high.element(mid.Menu)
     .add(
-        high.element(mid.IconButton).icon("sh-icon-list")
+        high.element(mid.Button).icon("list")
         .checked(high.predicate([m_properties.configuration], function () { return configuration.get("view-mode", "list") === "list"; }))
         .onClicked(function () { setViewMode("list"); })
     )
     .add(
-        high.element(mid.IconButton).icon("sh-icon-grid_view")
+        high.element(mid.Button).icon("grid_view")
         .checked(high.predicate([m_properties.configuration], function () { return configuration.get("view-mode") === "grid"; }))
         .onClicked(function () { setViewMode("grid"); })
     )
     .add(
-        high.element(mid.IconButton).icon("sh-icon-sort_by_alpha")
+        high.element(mid.Button).icon("sort_by_alpha")
         .checked(high.predicate([m_properties.configuration], function () { return configuration.get("sort-mode", "name") === "name"; }))
         .onClicked(function () { setSortMode("name"); })
     )
     .add(
-        high.element(mid.IconButton).icon("sh-icon-format_list_numbered")
+        high.element(mid.Button).icon("format_list_numbered")
         .checked(high.predicate([m_properties.configuration], function () { return configuration.get("sort-mode") === "number"; }))
         .onClicked(function () { setSortMode("number"); })
     )
     .add(
-        high.element(mid.IconButton).icon("sh-icon-access_time")
+        high.element(mid.Button).icon("access_time")
         .checked(high.predicate([m_properties.configuration], function () { return configuration.get("sort-mode") === "date"; }))
         .onClicked(function () { setSortMode("date"); })
     )
