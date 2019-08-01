@@ -18,7 +18,7 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
                 .style("text-align", "center")
                 .style("padding", "1em")
                 .content(
-                    low.tag("span").class("sh-busy-indicator")
+                    low.tag("span").class("sh-fw-icon sh-icon-busy-indicator")
                     .style("font-size", "200%")
                 )
                 .content(low.tag("br"))
@@ -32,7 +32,7 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
 
         function setText(text)
         {
-            m_popup.find("span").last().html(low.escapeHtml(text));
+            m_popup.find("span").last().html(low.resolveIcons(low.escapeHtml(text)));
             m_text = text;
         }
 

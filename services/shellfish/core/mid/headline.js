@@ -25,7 +25,7 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
 
         function setTitle(text)
         {
-            m_label.find("h1").html(low.escapeHtml(text));
+            m_label.find("h1").html(low.resolveIcons(low.escapeHtml(text)));
             m_title = text;
         }
 
@@ -36,7 +36,7 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
 
         function setSubtitle(text)
         {
-            m_label.find("h2").html(low.escapeHtml(text));
+            m_label.find("h2").html(low.resolveIcons(low.escapeHtml(text)));
             m_subtitle = text;
         }
 

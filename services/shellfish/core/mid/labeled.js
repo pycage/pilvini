@@ -23,7 +23,7 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
 
         function setText(text)
         {
-            m_row.find("> label").html(low.escapeHtml(text));
+            m_row.find("> label").html(low.resolveIcons(low.escapeHtml(text)));
             m_text = text;
         }
 

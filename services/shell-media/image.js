@@ -317,7 +317,7 @@ require(mods, function (low, mid, high, files, mimeReg)
             openPopup();
         }
 
-        popup.get().find(".image-busy-indicator").addClass("sh-busy-indicator");
+        popup.get().find(".image-busy-indicator").addClass("sh-icon-busy-indicator");
         var img = popup.get().find("img");
         img
         .css("min-width", "0")
@@ -351,7 +351,7 @@ require(mods, function (low, mid, high, files, mimeReg)
         })
         .always(function ()
         {
-            popup.get().find(".image-busy-indicator").removeClass("sh-busy-indicator");
+            popup.get().find(".image-busy-indicator").removeClass("sh-icon-busy-indicator");
         });
     
     

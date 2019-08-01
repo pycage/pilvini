@@ -97,7 +97,7 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
 
         function setTitle(title)
         {
-            m_dialog.find("header h1").html(low.escapeHtml(title));
+            m_dialog.find("header h1").html(low.resolveIcons(low.escapeHtml(title)));
             m_title = title;
         }
 

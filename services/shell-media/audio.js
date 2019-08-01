@@ -540,10 +540,10 @@ require(mods, function (low, mid, high, ui, files, mimeReg)
                 btn.removeClass("sh-icon-play_circle_outline");
                 break;
             case "buffering":
-                btn.removeClass("sh-busy-indicator");
+                btn.removeClass("sh-icon-busy-indicator");
                 break;
             case "stalled":
-                btn.removeClass("sh-busy-indicator");
+                btn.removeClass("sh-icon-busy-indicator");
                 break;
             }
 
@@ -556,10 +556,10 @@ require(mods, function (low, mid, high, ui, files, mimeReg)
                 btn.addClass("sh-icon-play_circle_outline");
                 break;
             case "buffering":
-                btn.addClass("sh-busy-indicator");
+                btn.addClass("sh-icon-busy-indicator");
                 break;
             case "stalled":
-                btn.addClass("sh-busy-indicator");
+                btn.addClass("sh-icon-busy-indicator");
                 break;
             }
 

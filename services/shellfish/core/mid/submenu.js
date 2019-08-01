@@ -41,7 +41,7 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
         function setText(text)
         {
             m_text = text;
-            m_subMenu.find("h1").html(low.escapeHtml(text));
+            m_subMenu.find("h1").html(low.resolveIcons(low.escapeHtml(text)));
         }
 
         function text()

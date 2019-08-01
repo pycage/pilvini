@@ -59,7 +59,7 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
 
         function setSubtitle(subtitle)
         {
-            m_header.find("> div > h2").html(low.escapeHtml(subtitle));
+            m_header.find("> div > h2").html(low.resolveIcons(low.escapeHtml(subtitle)));
             m_subtitle = subtitle;
         }
 
@@ -89,19 +89,6 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
         {
             return m_right;
         }
-
-        /*
-        function setOnClicked(callback)
-        {
-            m_header.find("> div").first().off("click").on("click", callback);
-            m_onClicked = callback;
-        }
-
-        function onClicked()
-        {
-            return m_onClicked;
-        }
-        */
 
         this.get = function ()
         {
