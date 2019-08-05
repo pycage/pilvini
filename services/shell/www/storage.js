@@ -18,7 +18,7 @@ function Storage()
             var req = m_indexedDB.open("Pilvini", 1);
             req.onerror = function (event)
             {
-                //ui.showError("Failed to store data at storage://" + uri + ".");
+                callback(null);
             };
             req.onupgradeneeded = function ()
             {
@@ -33,7 +33,7 @@ function Storage()
                 var m_db = this.result;
                 m_db.onerror = function (event)
                 {
-                    //ui.showError("Storage failure: " + event.target.errorCode);
+
                 };
                 callback(m_db);
             };
@@ -54,7 +54,7 @@ function Storage()
             };
             req.onerror = function ()
             {
-                //ui.showError("Failed to store data: " + this.error);
+                callback();
             };
         });
     };
@@ -63,6 +63,13 @@ function Storage()
     {
         open(function (db)
         {
+            if (! db)
+            {
+                console.error("Use of local storage is not permitted.");
+                callback(null);
+                return;
+            }
+
             var tx = db.transaction("Storage", "readonly");
             var store = tx.objectStore("Storage");
 
@@ -73,7 +80,7 @@ function Storage()
             };
             req.onerror = function ()
             {
-                //ui.showError("Failed to load data: " + this.error);
+                callback(null);
             };
         });
     };

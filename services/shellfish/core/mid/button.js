@@ -40,7 +40,7 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
                 .style("align-items", "center")
                 .style("justify-content", "center")    
                 .content(
-                    low.tag("span")//.class("sh-fw-icon")
+                    low.tag("span")
                     .style("font-size", "2rem")        
                 )
                 .content(
@@ -86,12 +86,12 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
             if (m_text !== "")
             {
                 m_button.css("minWidth", "6rem");
-                m_button.addClass("sh-frame");
+                m_button.addClass("sh-framed");
             }
             else
             {
                 m_button.css("minWidth", "0");
-                m_button.removeClass("sh-frame");
+                m_button.removeClass("sh-framed");
             }
         }
 

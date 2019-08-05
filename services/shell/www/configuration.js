@@ -54,5 +54,4 @@ require(["shellfish/mid", __dirname + "/storage.js"], function (mid, st)
         });
     };
     exports.configuration = new Configuration();
-    console.log("configuration is available");
 });

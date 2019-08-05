@@ -1,8 +1,3 @@
-div[onclick] {
-    color: var(--color-primary);
-    background-color: var(--color-primary-background);
-}
-
 div[onclick]:active {
     color: var(--color-highlight);
     background-color: var(--color-highlight-background);

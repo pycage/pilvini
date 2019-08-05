@@ -136,10 +136,11 @@ require(__dirname + "/mid.js", function (mid)
             }
         };
     
-        /* Disposes of this element and all its child element.
+        /* Discards this element and all its child elements.
          * This will release references for garbage collecting.
+         * Do not use the element afterwards.
          */
-        this.dispose = function ()
+        this.discard = function ()
         {
             m_watchHandles.forEach(function (handle)
             {

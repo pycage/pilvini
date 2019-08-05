@@ -1501,11 +1501,6 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
     m_properties.permissions = high.binding([]);
     m_properties.configuration = high.binding(configuration);
 
-    m_properties.configuration.value().onLoaded = function ()
-    {
-        m_properties.configuration.update();
-    };
-
     var page = high.element(mid.Page)
     .onSwipeBack(cdUp)
     .header(
@@ -1742,9 +1737,6 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
     $("body").on("dragover", onDragOver);
     $("body").on("drop", onDrop);
 
-    loadDirectory("/", true);
-    loadClipboard();
-
     mimeRegistry.register("application/x-folder", function (uri)
     {
         loadDirectory(uri, true);
@@ -1754,4 +1746,11 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
     {
         loadDirectory(uri, true);
     });
+
+    m_properties.configuration.value().onLoaded = function ()
+    {
+        m_properties.configuration.update();
+        loadDirectory("/", true);
+        loadClipboard();
+    };
 });

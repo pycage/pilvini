@@ -1,8 +1,9 @@
 /* Frame around elements */
 
-.sh-frame {
+.sh-framed {
     border: solid 1px var(--color-border);
     border-radius: 0.25rem;
+    background-color: var(--color-primary-background);
 }
 
 /*
