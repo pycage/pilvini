@@ -20,6 +20,7 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
             .content(
                 low.tag("div").class("sh-dropshadow")
                 .style("background-color", "var(--color-primary-background)")
+                .style("min-width", "calc(3 * 6rem)")
                 .style("max-width", "calc(100vw - 80px)")
                 .content(
                     low.tag("header")
@@ -44,6 +45,7 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
                     .style("height", "2.5rem")
                     .style("line-height", "2.5rem")
                     .style("background-color", "var(--color-secondary-background)")
+                    .style("white-space", "nowrap")
                     .content(
                         low.tag("span").class("sh-right")
                         .style("margin-top", "0.3rem")
