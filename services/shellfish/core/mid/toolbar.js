@@ -20,6 +20,7 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
             .style("line-height", "3rem")
             .style("overflow", "hidden")
             .style("white-space", "nowrap")
+            .style("flex-grow", "1")
             .content(
                 low.tag("div").class("sh-left")
             )
