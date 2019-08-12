@@ -14,11 +14,13 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
         var m_subtitle = "";
         var m_label = $(
             low.tag("div")
+            .style("line-height", "1.3rem")
+            .style("padding-top", "0.2rem")
             .content(
-                low.tag("h1")
+                low.tag("h1").style("overflow", "none").content("")
             )
             .content(
-                low.tag("h2")
+                low.tag("h2").style("overflow", "none").content("")
             )
             .html()
         );
