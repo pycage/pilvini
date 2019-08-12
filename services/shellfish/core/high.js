@@ -11,14 +11,26 @@ require(__dirname + "/mid.js", function (mid)
     exports.INITIALIZED = INITIALIZED;
     exports.DISCARDED = DISCARDED;
 
-    var Binding = function (value)
+    var Binding = function (v)
     {
+        Object.defineProperty(this, "val", { set: assign, get: value });
+
         var that = this;
         var m_idCounter = 0;
-        var m_value = value;
+        var m_value = v;
         var m_watchers = { };
         var m_onUnwatched = null;
     
+        function assign(v)
+        {
+            that.assign(v);
+        }
+        
+        function value()
+        {
+            return that.value();
+        }
+
         /* Notifies the watchers of this binding about an update.
          */
         this.update = function ()
