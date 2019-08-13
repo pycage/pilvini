@@ -37,6 +37,7 @@ require(mods, function (low, mid, high, mimeReg, videoEditor)
             .content(
                 low.tag("div")
                 .style("background-color", "black")
+                .style("padding", "3px")  // work around Silk issue on FireTV
                 .content(
                     low.tag("video")
                     .style("max-width", "320px")
