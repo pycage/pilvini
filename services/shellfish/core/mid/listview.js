@@ -63,6 +63,18 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
             return m_items[n];
         };
 
+        this.indexOf = function (item)
+        {
+            for (var i = 0; i < m_items.length; ++i)
+            {
+                if (m_items[i] === item)
+                {
+                    return i;
+                }
+            }
+            return -1;
+        };
+
         this.clear = function ()
         {
             m_listView.html("");

@@ -7,19 +7,21 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
     {
         tools.defineProperties(this, {
             left: { set: addLeft, get: left },
-            right: { set: addRight, get: right }
+            right: { set: addRight, get: right },
+            size: { set: setSize, get: size }
         });
 
         var m_left = [];
         var m_right = [];
+        var m_size = 1;
 
         var m_item = $(
             low.tag("div")
             .style("position", "relative")
             .style("height", "3rem")
-            .style("line-height", "3rem")
             .style("overflow", "hidden")
             .style("white-space", "nowrap")
+            .style("flex-grow", "1")
             .content(
                 low.tag("div").class("sh-left")
             )
@@ -49,6 +51,17 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
         function right()
         {
             return m_right;
+        }
+
+        function setSize(s)
+        {
+            m_size = s;
+            m_item.css("height", "calc(3rem * " + s + ")");
+        }
+
+        function size()
+        {
+            return m_size;
         }
 
         this.get = function ()

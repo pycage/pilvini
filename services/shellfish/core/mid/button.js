@@ -8,6 +8,7 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
         tools.defineProperties(this, {
             checked: { set: setChecked, get: checked },
             icon: { set: setIcon, get: icon },
+            iconSize: { set: setIconSize, get: iconSize },
             text: { set: setText, get: text },
             isDefault: { set: setIsDefault, get: isDefault },
             menu: { set: setMenu, get: menu }
@@ -15,6 +16,7 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
 
         var m_checked = false;
         var m_icon = "";
+        var m_iconSize = 1;
         var m_text = "";
         var m_isDefault = false;
         var m_menu = null;
@@ -41,7 +43,7 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
                 .style("justify-content", "center")    
                 .content(
                     low.tag("span")
-                    .style("font-size", "2rem")        
+                    .style("font-size", "2rem")
                 )
                 .content(
                     low.tag("span")   
@@ -122,6 +124,18 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
         function icon()
         {
             return m_icon;
+        }
+
+        function setIconSize(s)
+        {
+            m_iconSize = s;
+            m_button.find("span").first()
+            .css("fontSize", "calc(2rem * " + s + ")");
+        }
+
+        function iconSize()
+        {
+            return m_iconSize;
         }
 
         function setText(text)
