@@ -1268,7 +1268,14 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
         setTimeout(function () { loadThumbnails(); }, 500);
         updateNavBar();
 
-        callback(true, "");
+        if (data.ok)
+        {
+            callback(true, "");
+        }
+        else
+        {
+            callback(false, "Failed to read directory.");
+        }
     }
 
     function cdUp()

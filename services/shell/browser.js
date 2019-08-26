@@ -237,17 +237,12 @@ function makeJson(uri, contentRoot, userContext, shares, callback)
 
     readStats(fullPath, function (err, stats)
     {
-        if (err)
-        {
-            callback(false, "");
-            return;
-        }
-
         var obj = {
             "uri": uri,
             "permissions": userContext.permissions(),
-            "files": makeFilesJson(uri, stats, true),
-            "shares": makeSharesJson(userContext.home(), shares)
+            "files": err ? [] : makeFilesJson(uri, stats),
+            "shares": makeSharesJson(userContext.home(), shares),
+            "ok": err ? false : true
         };
 
         var json = JSON.stringify(obj, 4);
