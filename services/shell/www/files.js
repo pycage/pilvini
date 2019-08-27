@@ -1084,6 +1084,7 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
         busyIndicator.show_();
 
         m_scrollPositionsMap[m_properties.currentUri.value()] = $(document).scrollTop();
+        m_page.get().find("> section").html("");
 
         $.ajax({
             type: "GET",
@@ -1096,7 +1097,6 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
         })
         .done(function (data, status, xhr)
         {
-            m_page.get().find("> section").html("");
             if (pushToHistory)
             {
                 window.history.pushState({ "uri": uri }, uri, "/::shell" + uri);

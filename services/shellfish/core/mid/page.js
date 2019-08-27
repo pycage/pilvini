@@ -118,7 +118,6 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
         {
             function resetPage()
             {
-                low.pageUnfreeze(page);
                 page.css("left", "0").css("right", "0")
             }
 
@@ -129,6 +128,8 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
 
             function finish()
             {
+                low.pageUnfreeze(page);
+                
                 if (swipeContext.status === 2)
                 {
                     callback();
