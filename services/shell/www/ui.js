@@ -139,6 +139,7 @@ require(mods, function (low, mid, high)
             {
                 $(document).scrollTop(this.touchContext.scrollTarget);
             }    
+            m_navBar.css("margin-top", "0");
         });
     
         m_navBar.on("touchmove", function (event)
@@ -152,6 +153,7 @@ require(mods, function (low, mid, high)
             var scrollTop = (m_navBar.height() + m_page.header.get().height() - $(window).height()) * percents;
     
             m_page.get().find("> section").css("margin-top", (-scrollTop) + "px");
+            m_navBar.css("margin-top", (-scrollTop) + "px");
             this.touchContext.scrollTarget = scrollTop;        
         });
     
