@@ -1,6 +1,6 @@
-div[onclick]:active {
-    color: var(--color-highlight);
-    background-color: var(--color-highlight-background);
+div[onclick]:active, li[onclick]:active {
+    color: var(--color-highlight) !important;
+    background-color: var(--color-highlight-background) !important;
 }
 
 .sh-checked {
