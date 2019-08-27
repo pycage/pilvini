@@ -1509,7 +1509,12 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
     m_properties.configuration = high.binding(configuration);
 
     var page = high.element(mid.Page)
-    .onSwipeBack(cdUp)
+    .onSwipeBack(
+        high.predicate([m_properties.currentUri], function (currentUri)
+        {
+            return currentUri.val !== "/" ? cdUp : null;
+        })
+    )
     .header(
         high.element(mid.PageHeader)
         .title(high.predicate([m_properties.currentUri, m_properties.shares], function ()
@@ -1523,12 +1528,17 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
         }))
         .subtitle(high.predicate([m_properties.files], function ()
         {
-            return m_properties.files.value().length + " items";
+            return m_properties.files.val.length + " items";
         }))
         .onClicked(openPathMenu)
         .left(
             high.element(mid.Button).icon("arrow_back")
-            .visible(high.predicate([m_properties.currentUri], function () { return m_properties.currentUri.value() !== "/"; }))
+            .visible(
+                high.predicate([m_properties.currentUri], function (currentUri)
+                {
+                    return currentUri.val !== "/";
+                })
+            )
             .onClicked(cdUp)
         )
         .right(

@@ -2,6 +2,177 @@
 
 require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tools)
 {
+    /* Sets up a swipe-back touch gesture on the given page.
+     * Invokes the given callback on swiping back.
+     * Provide a null callback to disable swipe-back.
+     */
+    function setOnSwipe(page, callback)
+    {
+        page
+        .off("touchstart")
+        .off("touchmove")
+        .off("touchend");
+
+        if (! callback)
+        {
+            return;
+        }
+
+        page.on("touchstart", function (ev)
+        {
+            var backIndicator = $(
+                low.tag("div")
+                .style("position", "fixed")
+                .style("top", "0")
+                .style("bottom", "0")
+                .style("left", "8px")
+                .style("font-size", "10vh")
+                .content(
+                    low.tag("span").class("sh-fw-icon sh-icon-arrow_back")
+                    .style("line-height", "100vh")
+                    .style("padding", "0.10em")
+                    .style("background-color", "var(--color-primary)")
+                    .style("color", "var(--color-primary-background)")
+                )
+                .html()
+            );
+
+            this.swipeContext = {
+                beginX: ev.originalEvent.touches[0].screenX,
+                beginY: ev.originalEvent.touches[0].screenY,
+                status: 0,
+                scrollTop: 0,
+                backIndicator: backIndicator
+            };
+        });
+
+        page.on("touchmove", function (ev)
+        {
+            var dx = ev.originalEvent.touches[0].screenX - this.swipeContext.beginX;
+            var dy = ev.originalEvent.touches[0].screenY - this.swipeContext.beginY;
+            var pos = dx - 16;
+            
+            var fullWidth = $(this).width();
+            var swipeThreshold = fullWidth * 0.20;
+        
+            switch (this.swipeContext.status)
+            {
+            case 0: // initiated
+                if (pos > 0)
+                {
+                    var angle = Math.atan(dy / dx);
+                    if (Math.abs(angle) > Math.PI / 4)
+                    {
+                        this.swipeContext.status = 3;
+                    }
+                    else
+                    {
+                        var scrollTop = $(document).scrollTop();
+                        low.pageFreeze(page, scrollTop);
+
+                        var pages = $(".sh-page");
+                        if (pages.length > 1)
+                        {
+                            var prevPage = $(pages[pages.length - 2]);
+                            prevPage.removeClass("sh-hidden");
+                        }
+
+                        this.swipeContext.scrollTop = scrollTop;
+                        this.swipeContext.status = 1;
+                    }
+                }
+                break;
+        
+            case 1: // swiping
+                page.css("left", Math.max(0, Math.min(fullWidth, pos)) + "px")
+                    .css("right", -Math.max(0, Math.min(fullWidth, pos)) + "px");
+                page.find("> header").css("left", Math.max(0, Math.min(fullWidth, pos)) + "px")
+                                     .css("right", -Math.max(0, Math.min(fullWidth, pos)) + "px");
+            
+                if (dx > swipeThreshold)
+                {
+                    $("body").append(this.swipeContext.backIndicator);
+                    this.swipeContext.status = 2;
+                }
+                break;
+        
+            case 2: // activated
+                page.css("left", Math.max(0, Math.min(fullWidth, pos)) + "px")
+                    .css("right", -Math.max(0, Math.min(fullWidth, pos)) + "px");
+                page.find("> header").css("left", Math.max(0, Math.min(fullWidth, pos)) + "px")
+                                     .css("right", -Math.max(0, Math.min(fullWidth, pos)) + "px");
+        
+                if (dx < swipeThreshold)
+                {
+                    this.swipeContext.backIndicator.remove();
+                    this.swipeContext.status = 1;
+                }
+                break;
+        
+            case 3: // aborted
+                break;
+            }
+        });
+
+        page.on("touchend", function (ev)
+        {
+            function resetPage()
+            {
+                low.pageUnfreeze(page);
+                page.css("left", "0").css("right", "0")
+            }
+
+            function resetHeader()
+            {
+                page.find("> header").css("left", "0").css("right", "0")
+            }
+
+            function finish()
+            {
+                if (swipeContext.status === 2)
+                {
+                    callback();
+                }
+
+                var left = page.css("left");
+                setTimeout(function ()
+                {
+                    if (page.css("left") === left)
+                    {
+                        resetPage();
+                        resetHeader();
+                    }
+                }, 500);
+            }
+
+            var swipeContext = this.swipeContext;
+            var fullWidth = $(this).width();
+            this.swipeContext.backIndicator.remove();
+            
+            if (swipeContext.status === 1)
+            {
+                page.animate({
+                    left: "0",
+                    right: "0"
+                }, 300, resetPage);
+                page.find("> header").animate({
+                    left: "0",
+                    right: "0"
+                }, 300, resetHeader);
+            }
+            else if (swipeContext.status === 2)
+            {
+                page.animate({
+                    left: fullWidth + "px",
+                    right: -fullWidth + "px"
+                }, 300, finish);
+                page.find("> header").animate({
+                    left: fullWidth + "px",
+                    right: -fullWidth + "px"
+                }, 300);
+            }
+        });
+    }
    
     /* Element representing a page on the UI page stack.
      */
@@ -113,7 +284,7 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
 
         function setOnSwipeBack(callback)
         {
-            low.pageOnSwipe(m_page, callback);
+            setOnSwipe(m_page, callback);
             m_onSwipeBack = callback;
         }
 

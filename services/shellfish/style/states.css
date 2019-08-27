@@ -15,7 +15,7 @@ div[onclick]:active {
 }
 
 .sh-hidden {
-    display: none;
+    display: none !important;
 }
 
 .sh-inverted {
