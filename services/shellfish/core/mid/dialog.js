@@ -68,6 +68,14 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
         .on("mouseleave", function ()
         {
             m_dialog.removeClass("sh-translucent");
+        })
+        .on("touchstart", function ()
+        {
+            m_dialog.addClass("sh-translucent");
+        })
+        .on("touchend", function ()
+        {
+            m_dialog.removeClass("sh-translucent");
         });
 
         this.get = function ()
