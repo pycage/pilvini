@@ -11,15 +11,13 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
             title: { set: setTitle, get: title },
             subtitle: { set: setSubtitle, get: subtitle },
             left: { set: addLeft, get: left },
-            right: { set: addRight, get: right },
-            //onClicked: { set: setOnClicked, get: onClicked }
+            right: { set: addRight, get: right }
         });
 
         var m_title = "";
         var m_subtitle = "";
         var m_left = [];
         var m_right = [];
-        //var m_onClicked = null;
 
         var m_header = $(
             low.tag("header").class("sh-dropshadow")
