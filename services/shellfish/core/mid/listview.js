@@ -75,6 +75,17 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
             return -1;
         };
 
+        this.scrollTo = function (item)
+        {
+            for (var i = 0; i < m_items.length; ++i)
+            {
+                if (m_items[i] === item)
+                {
+                    $(document).scrollTop(item.get().offset().top - $(window).height() / 2);
+                }
+            }
+        };
+
         this.clear = function ()
         {
             m_listView.html("");
