@@ -21,6 +21,7 @@ const mods = [
     __dirname + "/mid/listview.js",
     __dirname + "/mid/menu.js",
     __dirname + "/mid/menuitem.js",
+    __dirname + "/mid/navbar.js",
     __dirname + "/mid/page.js",
     __dirname + "/mid/pageheader.js",
     __dirname + "/mid/popup.js",
@@ -32,7 +33,7 @@ const mods = [
     __dirname + "/mid/toolbar.js"
 ];
 
-require(mods, function (tools)
+require(mods, function ()
 {
     for (var i = 0; i < arguments.length; ++i)
     {

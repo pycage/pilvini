@@ -98,7 +98,6 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
     {
         m_page.footer.push(item);
         m_page.updateGeometry();
-        updateNavBar();
     }
     exports.pushStatus = pushStatus;
 
@@ -108,7 +107,6 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
     {
         item.get().remove();
         m_page.updateGeometry();
-        updateNavBar();
     }
     exports.popStatus = popStatus;
 
@@ -797,7 +795,6 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
             if (ok)
             {
                 m_listView.item(idx).get().remove();
-                updateNavBar();
             }
             else
             {
@@ -1054,14 +1051,6 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
         menu.get().popup(m_page.header.get());
     }
 
-    function updateNavBar()
-    {
-        if (m_page.get().is(":visible"))
-        {
-            m_page.left.update();
-        }
-    }
-
     function reload()
     {
         loadDirectory(m_properties.currentUri.value(), false, function () { });
@@ -1084,7 +1073,7 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
         busyIndicator.show_();
 
         m_scrollPositionsMap[m_properties.currentUri.value()] = $(document).scrollTop();
-        m_page.get().find("> section").html("");
+        m_page.clear();
 
         $.ajax({
             type: "GET",
@@ -1266,7 +1255,6 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
         $(document).scrollTop(m_scrollPositionsMap[m_properties.currentUri.value()] || 0);
 
         setTimeout(function () { loadThumbnails(); }, 500);
-        updateNavBar();
 
         if (data.ok)
         {
@@ -1301,7 +1289,6 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
                 
                 m_listView.item(idx).get().remove();
                 //$(item).remove();
-                updateNavBar();
             }
             else
             {
@@ -1508,7 +1495,11 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
     m_properties.permissions = high.binding([]);
     m_properties.configuration = high.binding(configuration);
 
-    var page = high.element(mid.Page)
+    var windowWidth = high.binding($(window).width());
+    var windowHeight = high.binding($(window).height());
+
+    var page = high.element(mid.Page);
+    page
     .onSwipeBack(
         high.predicate([m_properties.currentUri], function (currentUri)
         {
@@ -1551,14 +1542,40 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
         )
     )
     .left(
-        high.element(ui.NavBar)
+        high.element(mid.NavBar)
+        .height(
+            high.predicate([windowHeight, page.binding("height")], function (windowHeight, pageHeight)
+            {
+                return Math.max(windowHeight.val - page.header().get().height(), pageHeight.val);
+            })
+        )
+        .labels(
+            high.predicate([m_properties.files, windowWidth, windowHeight], function (files, ww, wh)
+            {
+                var d = [];
+                for (var i = 0; i < files.val.length; ++i)
+                {
+                    var fileItem = page.get().get().find(".fileitem")[i];
+                    var letter = $(fileItem).find("h1").html()[0].toUpperCase();
+                    var offset = $(fileItem).offset().top - page.header().get().height();
+                    d.push([letter, offset]);
+                }
+                return d;
+            })
+        )
+        .onPressed(function (percents)
+        {
+            $(document).scrollTop(($(document).height() - $(window).height()) * percents);
+        })
+        .onMoved(function (percents)
+        {
+            $(document).scrollTop(($(document).height() - $(window).height()) * percents);
+        })
     )
     .footer(
         high.element(ui.StatusBox)
     );
     m_page = page.get();
-
-    m_page.left.page = m_page;
 
     m_page.push();
 
@@ -1694,8 +1711,12 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
         }
     }, false);
 
-    $(window).resize(updateNavBar);
-    m_page.get().on("visible", updateNavBar);
+    $(window).resize(function ()
+    {
+        windowWidth.val = $(window).width();
+        windowHeight.val = $(window).height();
+        page.get().updateGeometry();
+    });
 
     /* setup file upload */
     $("#upload").on("change", function (event)

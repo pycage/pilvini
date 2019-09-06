@@ -186,7 +186,8 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
             right: { set: setRight, get: right },
             script: { set: setScript, get: script },
             onSwipeBack: { set: setOnSwipeBack, get: onSwipeBack },
-            onClosed: { set: setOnClosed, get: onClosed }
+            onClosed: { set: setOnClosed, get: onClosed },
+            height: { get: height }
         });
 
         var that = this;
@@ -196,6 +197,7 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
         var m_right = null;
         var m_onSwipeBack = null;
         var m_onClosed = null;
+        var m_height = 0;
 
         var m_page = $(
             low.tag("div").class("sh-page sh-hidden")
@@ -304,6 +306,11 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
             return m_onClosed;
         }
 
+        function height()
+        {
+            return m_height;
+        }
+
         this.get = function ()
         {
             return m_page;
@@ -312,7 +319,14 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
         this.add = function (child)
         {
             m_page.find("> section").append(child.get());
+            that.updateGeometry();
         };
+
+        this.clear = function ()
+        {
+            m_page.find("> section").html("");
+            that.updateGeometry();
+        }
 
         /* Pushes this page onto the page stack.
          */
@@ -349,10 +363,22 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
          */
         this.updateGeometry = function ()
         {
-            m_page.find("> section").css("padding-top", (!! m_header ? m_header.get().height() : 0) + "px");
+            var headerHeight = m_header ? m_header.get().height() : 0;
+            m_page.find("> section").css("padding-top", headerHeight + "px");
             m_page.find("> section").css("padding-bottom", (!! m_footer ? m_footer.get().height() : 0) + "px");
             m_page.find("> section").css("padding-left", (!! m_left ? m_left.get().width() : 0) + "px");
             m_page.find("> section").css("padding-right", (!! m_right ? m_right.get().width() : 0) + "px");
+            
+            if (m_left)
+            {
+                m_left.get().css("margin-top", headerHeight + "px");
+            }
+            if (m_right)
+            {
+                //m_right.get().css("margin-top", headerHeight + "px");
+            }
+            m_height = m_page.find("> section").height();
+            that.heightChanged();
         }
     };
 
