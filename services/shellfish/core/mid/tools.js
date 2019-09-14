@@ -143,19 +143,36 @@ require(__dirname + "/../low.js", function (low)
 
     /* Wraps an existing callback to invoke an additional one.
      */
-    exports.chainCallback = function (callbackProperty, callback)
+    exports.chainCallback = function (callbackProperty, isAlive, callback)
     {
         if (callbackProperty)
         {
             return function ()
             {
                 callbackProperty.apply(this, arguments);
-                callback(this, arguments);
+                if (callback && isAlive())
+                {
+                    callback(this, arguments);
+                }
+                else
+                {
+                    callback = undefined;
+                }
             };
         }
         else
         {
-            return callback;
+            return function ()
+            {
+                if (callback && isAlive())
+                {
+                    callback(this, arguments);
+                }
+                else
+                {
+                    callback = undefined;
+                }
+            };
         }
     };
 

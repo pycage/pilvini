@@ -1495,8 +1495,8 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
     m_properties.permissions = high.binding([]);
     m_properties.configuration = high.binding(configuration);
 
-    var windowWidth = high.binding($(window).width());
-    var windowHeight = high.binding($(window).height());
+
+    var doc = high.element(mid.Document);
 
     var page = high.element(mid.Page);
     page
@@ -1544,13 +1544,13 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
     .left(
         high.element(mid.NavBar)
         .height(
-            high.predicate([windowHeight, page.binding("height")], function (windowHeight, pageHeight)
+            high.predicate([doc.binding("windowHeight"), page.binding("height")], function (windowHeight, pageHeight)
             {
                 return Math.max(windowHeight.val - page.header().get().height(), pageHeight.val);
             })
         )
         .labels(
-            high.predicate([m_properties.files, windowWidth, windowHeight], function (files, ww, wh)
+            high.predicate([m_properties.files, doc.binding("windowWidth"), doc.binding("windowHeight")], function (files, ww, wh)
             {
                 var d = [];
                 for (var i = 0; i < files.val.length; ++i)
@@ -1711,12 +1711,6 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
         }
     }, false);
 
-    $(window).resize(function ()
-    {
-        windowWidth.val = $(window).width();
-        windowHeight.val = $(window).height();
-        page.get().updateGeometry();
-    });
 
     /* setup file upload */
     $("#upload").on("change", function (event)

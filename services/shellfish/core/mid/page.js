@@ -1,6 +1,6 @@
 "use strict";
 
-require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tools)
+require([__dirname + "/../low.js", __dirname + "/document.js", __dirname + "/tools.js"], function (low, doc, tools)
 {
     /* Sets up a swipe-back touch gesture on the given page.
      * Invokes the given callback on swiping back.
@@ -199,6 +199,12 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
         var m_onClosed = null;
         var m_height = 0;
 
+        var m_document = new doc.Document();
+        m_document.onWindowHeightChanged = function ()
+        {
+            that.updateGeometry();
+        };
+
         var m_page = $(
             low.tag("div").class("sh-page sh-hidden")
             .content(
@@ -311,6 +317,11 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
             return m_height;
         }
 
+        this.discard = function ()
+        {
+            m_document.discard();
+        };
+
         this.get = function ()
         {
             return m_page;
@@ -332,9 +343,18 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
          */
         this.push = function (callback)
         {
+            function cb()
+            {
+                that.updateGeometry();
+                if (callback)
+                {
+                    callback();
+                }
+            }
+
             $("body").append(m_page);
             that.updateGeometry();
-            low.pagePush(m_page, callback, $(".sh-page").length === 1);
+            low.pagePush(m_page, cb, $(".sh-page").length === 1);
 
             m_page.one("sh-closed", function ()
             {

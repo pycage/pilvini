@@ -18,6 +18,7 @@ require(__dirname + "/mid.js", function (mid)
         var that = this;
         var m_idCounter = 0;
         var m_value = v;
+        var m_isPredicate = false;
         var m_watchers = { };
         var m_onUnwatched = null;
     
@@ -39,7 +40,14 @@ require(__dirname + "/mid.js", function (mid)
             {
                 try
                 {
-                    m_watchers[watchId](m_value);
+                    if (m_isPredicate)
+                    {
+                        m_watchers[watchId](m_value());
+                    }
+                    else
+                    {
+                        m_watchers[watchId](m_value);
+                    }
                 }
                 catch (err)
                 {
@@ -75,6 +83,18 @@ require(__dirname + "/mid.js", function (mid)
             m_onUnwatched = callback;
         };
     
+        /* Assigns a predicate to this binding.
+         */
+        this.assignPredicate = function (pred)
+        {
+            if (m_value !== pred)
+            {
+                m_value = pred;
+                m_isPredicate = true;
+                that.update();
+            }
+        };
+
         /* Assigns a new value to this binding.
          */
         this.assign = function (value)
@@ -82,6 +102,7 @@ require(__dirname + "/mid.js", function (mid)
             if (m_value !== value)
             {
                 m_value = value;
+                m_isPredicate = false;
                 that.update();
             }
         };
@@ -90,7 +111,14 @@ require(__dirname + "/mid.js", function (mid)
          */
         this.value = function ()
         {
-            return m_value;
+            if (m_isPredicate)
+            {
+                return m_value();
+            }
+            else
+            {
+                return m_value;
+            }
         };
     
         /* Pushes a new value to an array.
@@ -116,9 +144,9 @@ require(__dirname + "/mid.js", function (mid)
     
         /* Returns the underlying mid-level element.
          */
-        this.get = function ()
+        this.get = function (noInit)
         {
-            if (! m_isInitialized)
+            if (! noInit && ! m_isInitialized)
             {
                 that.init();
             }
@@ -162,6 +190,10 @@ require(__dirname + "/mid.js", function (mid)
             {
                 child.discard();
             });
+            if (typeof m_element.discard === Function)
+            {
+                m_element.discard();
+            }
             m_element = null;
             m_children = [];
             m_bindings = { };
@@ -191,7 +223,7 @@ require(__dirname + "/mid.js", function (mid)
         this.add = function (element)
         {
             m_children.push(element);
-            m_element.add(element.get());
+            m_element.add(element.get(true));
             return that;
         };
     
@@ -217,7 +249,7 @@ require(__dirname + "/mid.js", function (mid)
         {
             return m_children.filter(function (c)
             {
-                return type === undefined || c.get() instanceof type;
+                return type === undefined || c.get(true) instanceof type;
             });
         };
     
@@ -279,16 +311,21 @@ require(__dirname + "/mid.js", function (mid)
         {           
             if (value instanceof Binding)
             {
-                // watch binding for value changes to apply
-                var handle = value.watch(function (v) { m_element[prop] = v; });
-                m_watchHandles.push(handle);
-                m_element[prop] = value.value();
+                // bindings will be assigned at initialization time
+                function initBinding()
+                {
+                    // watch binding for value changes to apply
+                    var handle = value.watch(function (v) { m_element[prop] = v; });
+                    m_watchHandles.push(handle);
+                    m_element[prop] = value.value();
+                }
+                m_inits.push(initBinding);
             }
             else if (value instanceof Element)
             {
                 // nest another element and assign mid-level element to the property
                 m_children.push(value);
-                m_element[prop] = value.get();
+                m_element[prop] = value.get(true);
             }
             else
             {
@@ -347,13 +384,19 @@ require(__dirname + "/mid.js", function (mid)
      */
     function predicate(dependencies, pred)
     {
+        function f()
+        {
+            return pred.apply(null, dependencies);
+        }
+
         var handles = [];
-        var b = binding(pred.apply(null, dependencies));
+        var b = binding(undefined);
+        b.assignPredicate(f);
         dependencies.forEach(function (dep)
         {
             var handle = dep.watch(function (v)
             {
-                b.assign(pred.apply(null, dependencies));
+                b.update();
             });
             handles.push(handle);
         });
@@ -399,5 +442,6 @@ require(__dirname + "/mid.js", function (mid)
             return b;
         }
     }
-    exports.ref = ref;    
+    exports.ref = ref;
+
 });

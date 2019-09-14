@@ -8,6 +8,7 @@ const mods = [
     __dirname + "/mid/busypopup.js",
     __dirname + "/mid/button.js",
     __dirname + "/mid/dialog.js",
+    __dirname + "/mid/document.js",
     __dirname + "/mid/gap.js",
     __dirname + "/mid/griditem.js",
     __dirname + "/mid/gridview.js",

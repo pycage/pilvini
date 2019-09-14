@@ -26,7 +26,7 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
             .style("top", "0")
             .style("left", "0")
             .style("width", "32px")
-            .style("height", "100%")
+            //.style("height", "100%")
             .style("background-color", "var(--color-primary)")
             .style("color", "var(--color-primary-background)")
             .style("text-align", "center")
