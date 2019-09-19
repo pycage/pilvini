@@ -17,7 +17,7 @@ require(__dirname + "/mid.js", function (mid)
 
         var that = this;
         var m_idCounter = 0;
-        var m_value = v;
+        var m_value = undefined;
         var m_isPredicate = false;
         var m_watchers = { };
         var m_onUnwatched = null;
@@ -128,6 +128,8 @@ require(__dirname + "/mid.js", function (mid)
             m_value.push(v);
             that.update();
         };
+
+        assign(v);
     };
        
     var Element = function (type)
@@ -290,16 +292,20 @@ require(__dirname + "/mid.js", function (mid)
             var uprop = prop[0].toUpperCase() + prop.substr(1);
             m_element["on" + uprop + "Changed"] = function ()
             {
+                //console.log("on" + uprop + "Changed");
                 blocked = true;
-                b.assign(m_element[prop]);
+                if (m_element)
+                {
+                    b.val = m_element[prop];
+                }
                 blocked = false;
             };
             
             b.watch(function ()
             {
-                if (! blocked)
+                if (! blocked && m_element)
                 {
-                    m_element[prop] = b.value();
+                    m_element[prop] = b.val;
                 }
             });
     
@@ -317,7 +323,8 @@ require(__dirname + "/mid.js", function (mid)
                     // watch binding for value changes to apply
                     var handle = value.watch(function (v) { m_element[prop] = v; });
                     m_watchHandles.push(handle);
-                    m_element[prop] = value.value();
+                    that.binding(prop).val = value.val;
+                    //m_element[prop] = value.value();
                 }
                 m_inits.push(initBinding);
             }
@@ -325,11 +332,13 @@ require(__dirname + "/mid.js", function (mid)
             {
                 // nest another element and assign mid-level element to the property
                 m_children.push(value);
-                m_element[prop] = value.get(true);
+                that.binding(prop).val = value.get(true);
+                //m_element[prop] = value.get(true);
             }
             else
             {
-                m_element[prop] = value;
+                that.binding(prop).val = value;
+                //m_element[prop] = value;
             }
             return that;
         }

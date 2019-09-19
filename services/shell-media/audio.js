@@ -51,105 +51,103 @@ require(mods, function (low, mid, high, ui, files, mimeReg)
 
     /* Class representing a playlist.
      */
-    var Playlist = function (playCallback)
+    var Playlist = function ()
     {
+        var base = new mid.ListModel();
+        mid.extend(this, base);
+
+        mid.defineProperties(this, {
+            position: { set: setPosition, get: position },
+            current: { set: setCurrent, get: current }
+        });
+
+        var that = this;
         var m_keyCounter = 0;
-        var m_items = [];
         var m_position = -1;
+        var m_current = "";
+
+        function setPosition(pos)
+        {
+            m_position = pos;
+            updateCurrent();
+        }
+
+        function position()
+        {
+            return m_position;
+        }
+
+        function setCurrent(c)
+        {
+            m_current = c;
+        }
+
+        function current()
+        {
+            return m_current;
+        }
+
+        function updateCurrent()
+        {
+            console.log("pos " + that.position);
+            console.log("item " + that.at(that.position));
+            that.current = that.position >= 0 && that.position < that.size ? that.at(that.position)
+                                                                           : undefined;
+            console.log("current is " + that.current);
+        }
 
         this.clear = function ()
         {
-            m_items = [];
-            m_position = -1;
-            playCallback(undefined);
+            console.log("playlist clear");
+            that.reset([]);
+            that.position = -1;
+            updateCurrent();
         };
 
         this.add = function (uri, skipTo)
         {
-            m_items.push(["" + (++m_keyCounter), uri]);
-            if (skipTo || m_items.length === 1)
+            console.log("playlist add " + uri);
+            that.insert(that.size, ["" + (++m_keyCounter), uri]);
+            if (skipTo || that.size === 1)
             {
-                m_position = m_items.length - 1;
-                playCallback(m_items[m_position]);
+                that.position = that.size - 1;
             }
         };
 
         this.previous = function ()
         {
-            if (m_position > 0)
+            console.log("playlist previous");
+            if (that.position > 0)
             {
-                --m_position;
-                playCallback(m_items[m_position]);
+                that.position = that.position - 1;
+                updateCurrent();
             }
         }
 
         this.next = function ()
         {
-            if (m_position < m_items.length - 1)
+            console.log("playlist next");
+            if (that.position < that.size - 1)
             {
-                ++m_position;
-                playCallback(m_items[m_position]);
-            }
-        };
-
-        this.goto = function (i)
-        {
-            if (i >= 0 && i < m_items.length)
-            {
-                m_position = i;
-                playCallback(m_items[m_position]);
+                that.position = that.position + 1;
+                updateCurrent();
             }
         };
 
         this.removeAt = function (i)
         {
-            if (i < m_position)
+            console.log("playlist removeAt " + i);
+            base.remove(i);
+
+            if (that.position > that.size - 1)
             {
-                m_items.splice(i, 1);
-                --m_position;
-            }
-            else if (i > m_position)
-            {
-                m_items.splice(i, 1);
+                that.position = that.size - 1;
             }
             else
             {
-                m_items.splice(i, 1);
-                playCallback(m_items[m_position]);
+                updateCurrent();
             }
         }
-
-        this.size = function ()
-        {
-            return m_items.length;
-        };
-
-        this.itemAt = function (i)
-        {
-            return m_items[i];
-        };
-
-        this.indexOf = function (key)
-        {
-            for (var i = 0; i < m_items.length; ++i)
-            {
-                if (key == m_items[i][0])
-                {
-                    return i;
-                }
-            }
-            return -1;
-        };
-
-        this.current = function (i)
-        {
-            return m_items[m_position];
-        };
-
-        this.position = function ()
-        {
-            return m_position;
-        };
     };
 
     /* Class representing the status item content.
@@ -702,7 +700,7 @@ require(mods, function (low, mid, high, ui, files, mimeReg)
      */
     function addToPlaylist(uri)
     {
-        m_playlist.add(uri, m_playlist.size() === 0);
+        m_playlist.get().add(uri, m_playlist.size() === 0);
     }
 
     /* Creates the player status item.
@@ -752,14 +750,14 @@ require(mods, function (low, mid, high, ui, files, mimeReg)
             high.element(mid.Button).icon("skip_next")
             .onClicked(function ()
             {
-                m_playlist.next();
+                m_playlist.get().next();
             })
         )
         .right(
             high.element(mid.Button).icon("close")
             .onClicked(function ()
             {
-                m_playlist.clear();
+                m_playlist.get().clear();
             })
         )
         .add(
@@ -778,7 +776,7 @@ require(mods, function (low, mid, high, ui, files, mimeReg)
         var page = high.element(mid.Page)
         .onSwipeBack(function ()
         {
-            page.pop_();
+            page.get().pop();
         })
         .header(
             high.element(mid.PageHeader)
@@ -788,7 +786,7 @@ require(mods, function (low, mid, high, ui, files, mimeReg)
                 high.element(mid.Button).icon("arrow_back")
                 .onClicked(function ()
                 {
-                    page.pop_();
+                    page.get().pop();
                 })
             )
         )
@@ -801,8 +799,8 @@ require(mods, function (low, mid, high, ui, files, mimeReg)
             {
                 m_player.prop("currentTime", pos);
             })
-            .onPreviousClicked(m_playlist.previous)
-            .onNextClicked(m_playlist.next)
+            .onPreviousClicked(m_playlist.get().previous)
+            .onNextClicked(m_playlist.get().next)
             .onPlayClicked(function ()
             {
                 if (m_player.prop("paused"))
@@ -826,52 +824,58 @@ require(mods, function (low, mid, high, ui, files, mimeReg)
             high.element(CoverImage).source(m_properties.cover)
         )
         .add(
-            high.element(mid.ListView).id("listview")
-        );
-
-        page.push_(function ()
-        {
-            for (var i = 0; i < m_playlist.size(); ++i)
-            {
-                var item = m_playlist.itemAt(i);
-
-                var trackTitle = high.binding(item[1]);
-                var trackArtist = high.binding("");
-                var trackCover = high.binding("");
-
-                // closure
-                (function (trackNo, trackTitle, trackArtist, trackCover)
+            high.element(mid.ListModelView).id("listview")
+            .delegate(
+                function (item)
                 {
+                    console.log("new list item " + item);
+                    var listItem = high.element(mid.ListItem)
+                    .title(item[0])
+                    .fillMode("cover")
+                    .selected(
+                        high.predicate([m_playlist.binding("current")], function (cur)
+                        {
+                            return cur.val ? cur.val[0] === item[0] : false;
+                            //return m_playlist.get().at(m_playlist.position())[0] === item[0];
+                        })
+                    )
+                    .onClicked(function ()
+                    {
+                        var trackNo = page.find("listview").get().indexOf(listItem.get());
+                        m_playlist.get().position = trackNo;
+                    })
+                    .action(["sh-icon-close", function ()
+                    {
+                        var trackNo = page.find("listview").get().indexOf(listItem.get());
+                        m_playlist.get().removeAt(trackNo);
+
+                        if (m_playlist.size() === 0)
+                        {
+                            page.get().pop();
+                        }
+                    }]);
+
                     fetchMetadata(item[1], function (uri, data)
                     {
                         parseMetadata(uri, data, function (title, artist, pic)
                         {
-                            trackTitle.assign(title);
-                            trackArtist.assign(artist);
-                            trackCover.assign(pic);
+                            listItem.title(title);
+                            listItem.subtitle(artist);
+                            listItem.icon(pic);
                         });
                     });
 
-                    page.find("listview").add(
-                        high.element(mid.ListItem).id("listitem-" + trackNo)
-                        .title(trackTitle)
-                        .subtitle(trackArtist)
-                        .icon(trackCover)
-                        .fillMode("cover")
-                        .onClicked(function ()
-                        {
-                            m_playlist.goto(trackNo);
-                        })
-                        .action(["sh-icon-close", function ()
-                        {
-                            m_playlist.removeAt(trackNo);
-                            page.find("listitem-" + trackNo).get().get().remove();
-                        }])
-                    );
-                }) (i, trackTitle, trackArtist, trackCover);
-            }
+                    return listItem.get();
+                }
+            )
+        );
+
+        page.get().push(function ()
+        {
+            page.find("listview").model(m_playlist);
         });
     }
+
 
     // setup selection watcher
 
@@ -945,7 +949,7 @@ require(mods, function (low, mid, high, ui, files, mimeReg)
     m_player.on("ended", function ()
     {
         m_properties.status.assign("paused");
-        m_playlist.next();
+        m_playlist.get().next();
     });
     m_player.on("stalled", function ()
     {
@@ -955,9 +959,13 @@ require(mods, function (low, mid, high, ui, files, mimeReg)
 
     // setup playlist
 
-    m_playlist = new Playlist(function (entry)
-    {       
-        if (entry)
+    m_playlist = high.element(Playlist);
+    m_playlist.binding("current").watch(function ()
+    {
+        var cur = m_playlist.current();
+        var url = cur ? cur[1] : "";
+        console.log("current: " + url);
+        if (url !== "")
         {
             if (! m_playerItem)
             {
@@ -966,11 +974,11 @@ require(mods, function (low, mid, high, ui, files, mimeReg)
             }
 
             // play
-            m_player.prop("src", entry[1]);
+            m_player.prop("src", url);
             m_player.trigger("load");
             m_player.trigger("play");
 
-            fetchMetadata(entry[1], function (uri, data)
+            fetchMetadata(url, function (uri, data)
             {
                 parseMetadata(uri, data, function (title, artist, pic)
                 {
