@@ -89,11 +89,8 @@ require(mods, function (low, mid, high, ui, files, mimeReg)
 
         function updateCurrent()
         {
-            console.log("pos " + that.position);
-            console.log("item " + that.at(that.position));
             that.current = that.position >= 0 && that.position < that.size ? that.at(that.position)
                                                                            : undefined;
-            console.log("current is " + that.current);
         }
 
         this.clear = function ()
@@ -101,13 +98,12 @@ require(mods, function (low, mid, high, ui, files, mimeReg)
             console.log("playlist clear");
             that.reset([]);
             that.position = -1;
-            updateCurrent();
         };
 
-        this.add = function (uri, skipTo)
+        this.add = function (url, skipTo)
         {
-            console.log("playlist add " + uri);
-            that.insert(that.size, ["" + (++m_keyCounter), uri]);
+            console.log("playlist add " + url);
+            that.insert(that.size, ["" + (++m_keyCounter), url]);
             if (skipTo || that.size === 1)
             {
                 that.position = that.size - 1;
@@ -120,7 +116,6 @@ require(mods, function (low, mid, high, ui, files, mimeReg)
             if (that.position > 0)
             {
                 that.position = that.position - 1;
-                updateCurrent();
             }
         }
 
@@ -130,7 +125,6 @@ require(mods, function (low, mid, high, ui, files, mimeReg)
             if (that.position < that.size - 1)
             {
                 that.position = that.position + 1;
-                updateCurrent();
             }
         };
 
@@ -828,7 +822,6 @@ require(mods, function (low, mid, high, ui, files, mimeReg)
             .delegate(
                 function (item)
                 {
-                    console.log("new list item " + item);
                     var listItem = high.element(mid.ListItem)
                     .title(item[0])
                     .fillMode("cover")
@@ -836,7 +829,6 @@ require(mods, function (low, mid, high, ui, files, mimeReg)
                         high.predicate([m_playlist.binding("current")], function (cur)
                         {
                             return cur.val ? cur.val[0] === item[0] : false;
-                            //return m_playlist.get().at(m_playlist.position())[0] === item[0];
                         })
                     )
                     .onClicked(function ()
@@ -959,12 +951,12 @@ require(mods, function (low, mid, high, ui, files, mimeReg)
 
     // setup playlist
 
-    m_playlist = high.element(Playlist);
-    m_playlist.binding("current").watch(function ()
+    m_playlist = high.element(Playlist)
+    .on("current", function (self, current)
     {
-        var cur = m_playlist.current();
+        var cur = current.val;
         var url = cur ? cur[1] : "";
-        console.log("current: " + url);
+
         if (url !== "")
         {
             if (! m_playerItem)

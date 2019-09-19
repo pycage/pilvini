@@ -313,6 +313,19 @@ require(__dirname + "/mid.js", function (mid)
             return b;
         };
     
+        /* Invokes a callback function on changes to the given property.
+         */
+        this.on = function (prop, f)
+        {
+            var b = that.binding(prop);
+            var handle = b.watch(function ()
+            {
+                f(that, b);
+            });
+            m_watchHandles.push(handle);
+            return that;
+        };
+
         function setProperty(prop, value)
         {           
             if (value instanceof Binding)
@@ -323,8 +336,8 @@ require(__dirname + "/mid.js", function (mid)
                     // watch binding for value changes to apply
                     var handle = value.watch(function (v) { m_element[prop] = v; });
                     m_watchHandles.push(handle);
-                    that.binding(prop).val = value.val;
-                    //m_element[prop] = value.value();
+                    //that.binding(prop).val = value.val;
+                    m_element[prop] = value.val;
                 }
                 m_inits.push(initBinding);
             }
@@ -332,13 +345,13 @@ require(__dirname + "/mid.js", function (mid)
             {
                 // nest another element and assign mid-level element to the property
                 m_children.push(value);
-                that.binding(prop).val = value.get(true);
-                //m_element[prop] = value.get(true);
+                //that.binding(prop).val = value.get(true);
+                m_element[prop] = value.get(true);
             }
             else
             {
-                that.binding(prop).val = value;
-                //m_element[prop] = value;
+                //that.binding(prop).val = value;
+                m_element[prop] = value;
             }
             return that;
         }

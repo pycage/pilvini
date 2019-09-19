@@ -17,7 +17,7 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
 
         var m_action = ["", null];
         var m_icon = "";
-        var m_fillMode = "cover";
+        var m_fillMode = "auto";
         var m_title = "";
         var m_subtitle = "";
         var m_isSelected = false;
@@ -33,6 +33,7 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
                 .style("width", "80px")
                 .style("background-repeat", "no-repeat")
                 .style("background-position", "50% 50%")
+                .style("background-size", "auto")
             )
             .content(
                 low.tag("div")
@@ -75,7 +76,7 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
         {
             m_labelBox.css("left", "80px");
             m_iconBox.css("display", "block");
-            m_iconBox.css("background-image", "url(" + url + ")");
+            m_iconBox.css("backgroundImage", "url(" + url + ")");
             m_icon = url;
         }
         
@@ -86,7 +87,7 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
         
         function setFillMode(fillMode)
         {
-            m_iconBox.css("background-size", fillMode || "auto");
+            m_iconBox.css("backgroundSize", fillMode);
             m_fillMode = fillMode;
         }
 
