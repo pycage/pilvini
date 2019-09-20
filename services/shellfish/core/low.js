@@ -290,6 +290,7 @@ function pagePush(page, callback, immediate)
                 prevPage.trigger("hidden");
             }
             pageUnfreeze(page);
+            page.trigger("visible");
             if (callback)
             {
                 callback();
@@ -309,6 +310,7 @@ function pagePush(page, callback, immediate)
             prevPage.trigger("hidden");
         }
         pageUnfreeze(page);
+        page.trigger("visible");
         if (callback)
         {
             callback();

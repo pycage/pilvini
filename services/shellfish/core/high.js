@@ -13,12 +13,17 @@ require(__dirname + "/mid.js", function (mid)
 
     var Binding = function (v)
     {
-        Object.defineProperty(this, "val", { set: assign, get: value });
+        Object.defineProperties(this, {
+            "val": { set: assign, get: value },
+            "getter": { set: setGetter, get: getter },
+            "setter": { set: setSetter, get: setter }
+        });
 
         var that = this;
         var m_idCounter = 0;
         var m_value = undefined;
-        var m_isPredicate = false;
+        var m_getter = function () { return m_value; };
+        var m_setter = function (v) { m_value = v; };
         var m_watchers = { };
         var m_onUnwatched = null;
     
@@ -32,6 +37,26 @@ require(__dirname + "/mid.js", function (mid)
             return that.value();
         }
 
+        function setGetter(getter)
+        {
+            m_getter = getter;
+        }
+
+        function getter()
+        {
+            return getter;
+        }
+
+        function setSetter(setter)
+        {
+            m_setter = setter;
+        }
+
+        function setter()
+        {
+            return m_setter;
+        }
+
         /* Notifies the watchers of this binding about an update.
          */
         this.update = function ()
@@ -40,14 +65,7 @@ require(__dirname + "/mid.js", function (mid)
             {
                 try
                 {
-                    if (m_isPredicate)
-                    {
-                        m_watchers[watchId](m_value());
-                    }
-                    else
-                    {
-                        m_watchers[watchId](m_value);
-                    }
+                    m_watchers[watchId](m_getter());
                 }
                 catch (err)
                 {
@@ -83,26 +101,13 @@ require(__dirname + "/mid.js", function (mid)
             m_onUnwatched = callback;
         };
     
-        /* Assigns a predicate to this binding.
-         */
-        this.assignPredicate = function (pred)
-        {
-            if (m_value !== pred)
-            {
-                m_value = pred;
-                m_isPredicate = true;
-                that.update();
-            }
-        };
-
         /* Assigns a new value to this binding.
          */
         this.assign = function (value)
         {
-            if (m_value !== value)
+            if (m_getter() !== value)
             {
-                m_value = value;
-                m_isPredicate = false;
+                m_setter(value);
                 that.update();
             }
         };
@@ -111,25 +116,10 @@ require(__dirname + "/mid.js", function (mid)
          */
         this.value = function ()
         {
-            if (m_isPredicate)
-            {
-                return m_value();
-            }
-            else
-            {
-                return m_value;
-            }
-        };
-    
-        /* Pushes a new value to an array.
-         */
-        this.push = function (v)
-        {
-            m_value.push(v);
-            that.update();
+            return m_getter();
         };
 
-        assign(v);
+        m_setter(v);
     };
        
     var Element = function (type)
@@ -286,29 +276,23 @@ require(__dirname + "/mid.js", function (mid)
                 return m_bindings[prop];
             }
     
-            var blocked = false;
-            var b = binding(m_element[prop]);
+            var b = binding();
+            b.getter = function ()
+            {
+                return m_element[prop];
+            };
+            b.setter = function (v)
+            {
+                m_element[prop] = v;
+            };
     
             var uprop = prop[0].toUpperCase() + prop.substr(1);
             m_element["on" + uprop + "Changed"] = function ()
             {
                 //console.log("on" + uprop + "Changed");
-                blocked = true;
-                if (m_element)
-                {
-                    b.val = m_element[prop];
-                }
-                blocked = false;
+                b.update();
             };
-            
-            b.watch(function ()
-            {
-                if (! blocked && m_element)
-                {
-                    m_element[prop] = b.val;
-                }
-            });
-    
+               
             m_bindings[prop] = b;
             return b;
         };
@@ -336,7 +320,6 @@ require(__dirname + "/mid.js", function (mid)
                     // watch binding for value changes to apply
                     var handle = value.watch(function (v) { m_element[prop] = v; });
                     m_watchHandles.push(handle);
-                    //that.binding(prop).val = value.val;
                     m_element[prop] = value.val;
                 }
                 m_inits.push(initBinding);
@@ -345,12 +328,10 @@ require(__dirname + "/mid.js", function (mid)
             {
                 // nest another element and assign mid-level element to the property
                 m_children.push(value);
-                //that.binding(prop).val = value.get(true);
                 m_element[prop] = value.get(true);
             }
             else
             {
-                //that.binding(prop).val = value;
                 m_element[prop] = value;
             }
             return that;
@@ -411,9 +392,10 @@ require(__dirname + "/mid.js", function (mid)
             return pred.apply(null, dependencies);
         }
 
+        var b = binding();
+        b.getter = f;
+        
         var handles = [];
-        var b = binding(undefined);
-        b.assignPredicate(f);
         dependencies.forEach(function (dep)
         {
             var handle = dep.watch(function (v)
@@ -447,16 +429,16 @@ require(__dirname + "/mid.js", function (mid)
         {
             var b = binding(undefined);
     
-            var status = elem.status();
-            status.watch(function ()
+            var statusBinding = elem.status();
+            statusBinding.watch(function ()
             {
-                if (status.value() === INITIALIZED)
+                if (statusBinding.val === INITIALIZED)
                 {
                     var targetBinding = elem.find(id).binding(prop);
-                    b.assign(targetBinding.value());
+                    b.val = targetBinding.val;
                     targetBinding.watch(function ()
                     {
-                        b.assign(targetBinding.value());
+                        b.val = targetBinding.val;
                     });
                 }
             });

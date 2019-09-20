@@ -187,7 +187,8 @@ require([__dirname + "/../low.js", __dirname + "/document.js", __dirname + "/too
             script: { set: setScript, get: script },
             onSwipeBack: { set: setOnSwipeBack, get: onSwipeBack },
             onClosed: { set: setOnClosed, get: onClosed },
-            height: { get: height }
+            height: { get: height },
+            active: { get: active }
         });
 
         var that = this;
@@ -198,6 +199,7 @@ require([__dirname + "/../low.js", __dirname + "/document.js", __dirname + "/too
         var m_onSwipeBack = null;
         var m_onClosed = null;
         var m_height = 0;
+        var m_isActive = false;
 
         var m_document = new doc.Document();
         m_document.onWindowHeightChanged = function ()
@@ -213,6 +215,20 @@ require([__dirname + "/../low.js", __dirname + "/document.js", __dirname + "/too
             )
             .html()
         );
+
+        m_page
+        .on("visible", function ()
+        {
+            console.log("page became active");
+            m_isActive = true;
+            that.updateGeometry();
+            that.activeChanged();
+        })
+        .on("hidden", function ()
+        {
+            m_isActive = false;
+            that.activeChanged();
+        });
 
         function setHeader(header)
         {
@@ -315,6 +331,11 @@ require([__dirname + "/../low.js", __dirname + "/document.js", __dirname + "/too
         function height()
         {
             return m_height;
+        }
+
+        function active()
+        {
+            return m_isActive;
         }
 
         this.discard = function ()
