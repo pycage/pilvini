@@ -187,6 +187,7 @@ require([__dirname + "/../low.js", __dirname + "/document.js", __dirname + "/too
             script: { set: setScript, get: script },
             onSwipeBack: { set: setOnSwipeBack, get: onSwipeBack },
             onClosed: { set: setOnClosed, get: onClosed },
+            width: { get: width },
             height: { get: height },
             active: { get: active }
         });
@@ -198,10 +199,15 @@ require([__dirname + "/../low.js", __dirname + "/document.js", __dirname + "/too
         var m_right = null;
         var m_onSwipeBack = null;
         var m_onClosed = null;
+        var m_width = 0;
         var m_height = 0;
         var m_isActive = false;
 
         var m_document = new doc.Document();
+        m_document.onWindowWidthChanged = function ()
+        {
+            that.updateGeometry();
+        };
         m_document.onWindowHeightChanged = function ()
         {
             that.updateGeometry();
@@ -221,8 +227,8 @@ require([__dirname + "/../low.js", __dirname + "/document.js", __dirname + "/too
         {
             console.log("page became active");
             m_isActive = true;
-            that.updateGeometry();
             that.activeChanged();
+            that.updateGeometry();
         })
         .on("hidden", function ()
         {
@@ -328,6 +334,11 @@ require([__dirname + "/../low.js", __dirname + "/document.js", __dirname + "/too
             return m_onClosed;
         }
 
+        function width()
+        {
+            return m_width;
+        }
+
         function height()
         {
             return m_height;
@@ -404,6 +415,11 @@ require([__dirname + "/../low.js", __dirname + "/document.js", __dirname + "/too
          */
         this.updateGeometry = function ()
         {
+            if (! m_isActive)
+            {
+                return;
+            }
+
             var headerHeight = m_header ? m_header.get().height() : 0;
             m_page.find("> section").css("padding-top", headerHeight + "px");
             m_page.find("> section").css("padding-bottom", (!! m_footer ? m_footer.get().height() : 0) + "px");
@@ -418,8 +434,22 @@ require([__dirname + "/../low.js", __dirname + "/document.js", __dirname + "/too
             {
                 //m_right.get().css("margin-top", headerHeight + "px");
             }
-            m_height = m_page.find("> section").height();
-            that.heightChanged();
+
+            var newWidth = m_page.find("> section").width();
+            var newHeight = Math.max(m_page.find("> section").height(),
+                                     m_document.windowHeight - headerHeight);
+            
+            if (newWidth !== m_width)
+            {
+                m_width = newWidth;
+                that.widthChanged();
+            }
+            
+            if (newHeight !== m_height)
+            {
+                m_height = newHeight;
+                that.heightChanged();
+            }
         }
     };
 

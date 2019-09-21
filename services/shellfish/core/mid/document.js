@@ -17,10 +17,20 @@ require([__dirname + "/tools.js"], function (tools)
 
         $(window).resize(function ()
         {
-            m_windowWidth = $(window).width();
-            m_windowHeight = $(window).height();
-            that.windowWidthChanged();
-            that.windowHeightChanged();
+            var w = $(window).width();
+            var h = $(window).height();
+
+            if (w !== m_windowWidth)
+            {
+                m_windowWidth = w;
+                that.windowWidthChanged();
+            }
+
+            if (h !== m_windowHeight)
+            {
+                m_windowHeight = h;
+                that.windowHeightChanged();
+            }
         });
 
         function windowWidth()

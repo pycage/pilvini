@@ -1496,8 +1496,6 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
     m_properties.configuration = high.binding(configuration);
 
 
-    var doc = high.element(mid.Document);
-
     var page = high.element(mid.Page);
     page
     .onSwipeBack(
@@ -1543,15 +1541,11 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
     )
     .left(
         high.element(mid.NavBar)
-        .height(
-            high.predicate([doc.binding("windowHeight"), page.binding("height")], function (windowHeight, pageHeight)
-            {
-                return Math.max(windowHeight.val - page.header().get().height(), pageHeight.val);
-            })
-        )
+        .height(page.binding("height"))
         .labels(
-            high.predicate([m_properties.files, doc.binding("windowWidth"), doc.binding("windowHeight")], function (files, ww, wh)
+            high.predicate([m_properties.files, page.binding("width")], function (files, pw)
             {
+                console.log("set navbar labels");
                 var d = [];
                 for (var i = 0; i < files.val.length; ++i)
                 {
