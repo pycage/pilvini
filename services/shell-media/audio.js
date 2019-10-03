@@ -892,7 +892,7 @@ require(mods, function (low, mid, high, ui, files, mimeReg)
                         return files.properties().files.value()[idx].uri;
                     })
                     .forEach(addToPlaylist);
-                    files.properties().selection.assign([]);
+                    //files.properties().selection.assign([]);
                 })
             );
 

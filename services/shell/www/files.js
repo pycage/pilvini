@@ -1550,9 +1550,12 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
                 for (var i = 0; i < files.val.length; ++i)
                 {
                     var fileItem = page.get().get().find(".fileitem")[i];
-                    var letter = $(fileItem).find("h1").html()[0].toUpperCase();
-                    var offset = $(fileItem).offset().top - page.header().get().height();
-                    d.push([letter, offset]);
+                    if (fileItem)
+                    {
+                        var letter = $(fileItem).find("h1").html()[0].toUpperCase();
+                        var offset = $(fileItem).offset().top - page.header().get().height();
+                        d.push([letter, offset]);
+                    }
                 }
                 return d;
             })
