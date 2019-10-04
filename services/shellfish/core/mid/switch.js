@@ -6,12 +6,10 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
     exports.Switch = function ()
     {
         tools.defineProperties(this, {
-            enabled: { set: setEnabled, get: enabled },
             checked: { set: setChecked, get: checked },
             onToggled: { set: setOnToggled, get: onToggled }
         });
 
-        var m_enabled = true;
         var m_onToggled = null;
         var m_swtch = $(
             low.tag("label").class("sh-switch")
@@ -37,24 +35,6 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
             return m_swtch;
         };
 
-        function setEnabled(value)
-        {
-            if (value)
-            {
-                m_swtch.removeClass("sh-disabled");
-            }
-            else
-            {
-                m_swtch.addClass("sh-disabled");
-            }
-            m_enabled = value;
-        }
-
-        function enabled()
-        {
-            return m_enabled;
-        }
-
         function setChecked(value)
         {
             m_swtch.find("input").prop("checked", value);
@@ -74,6 +54,8 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
         {
             return m_onToggled;
         }
+
+        tools.initAs(this, tools.VISUAL | tools.INTERACTIVE);
     };
 
 });
