@@ -198,11 +198,25 @@ var DavSession = function(home)
                 }
                 else
                 {
-                    // TODO: error handling
                     modVfs.createReadStream(src, function (reader)
                     {
+                        if (! reader)
+                        {
+                            callback("Forbidden");
+                            return;
+                        }
                         modVfs.createWriteStream(dest, function (writer)
                         {
+                            if (! writer)
+                            {
+                                callback("Forbidden");
+                                return;
+                            }
+                            writer.on("error", function (err)
+                            {
+                                console.log(err);
+                                callback("Forbidden");
+                            });
                             reader.on("end", function ()
                             {
                                 callback();
@@ -215,7 +229,9 @@ var DavSession = function(home)
         }
 
         var path = pathFromHref(href, m_home);
+        console.log("path " + path);
         var destinationPath = pathFromHref(destinationHref, m_home);
+        console.log("destinationPath " + destinationPath);
 
         console.debug("Copy: " + path + " -> " + destinationPath);
 

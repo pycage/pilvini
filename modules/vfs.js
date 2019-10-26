@@ -101,7 +101,15 @@ exports.createReadStream = function (path, callback)
         });
         break;
     default:
-        callback(modFs.createReadStream(path));
+        try
+        {
+            callback(modFs.createReadStream(path));
+        }
+        catch (err)
+        {
+            console.log(err);
+            callback(null);
+        }
         break;
     }
 };
@@ -128,13 +136,29 @@ exports.createReadStreamRanged = function (path, from, to, callback)
 exports.createWriteStream = function (path, callback)
 {
     //console.log("vfs.createWriteStream");
-    callback(modFs.createWriteStream(path));
+    try
+    {
+        callback(modFs.createWriteStream(path));
+    }
+    catch (err)
+    {
+        console.log(err);
+        callback(null);
+    }
 };
 
 exports.createWriteStreamFd = function (fd, callback)
 {
     //console.log("vfs.createWriteStreamFd");
-    callback(modFs.createWriteStream("", { "fd": fd }));
+    try
+    {
+        callback(modFs.createWriteStream("", { "fd": fd }));
+    }
+    catch (err)
+    {
+        console.log(err);
+        callback(null);
+    }
 };
 
 exports.fstat = function (fd, callback)

@@ -1285,7 +1285,8 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
             {
                 var targetMeta = JSON.parse(JSON.stringify(meta));
                 targetMeta.uri = targetUri;
-                m_properties.clipboard.push(targetMeta);
+                m_properties.clipboard.val.push(targetMeta);
+                m_properties.clipboard.update();
                 
                 m_listView.item(idx).get().remove();
                 //$(item).remove();
@@ -1312,7 +1313,8 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
             {
                 var targetMeta = JSON.parse(JSON.stringify(meta));
                 targetMeta.uri = targetUri;
-                m_properties.clipboard.push(targetMeta);
+                m_properties.clipboard.val.push(targetMeta);
+                m_properties.clipboard.update();
             }
             else
             {
@@ -1324,9 +1326,9 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
 
     function pasteFromClipboard()
     {
-        var count = m_properties.clipboard.value().length;
+        var count = m_properties.clipboard.val.length;
 
-        m_properties.clipboard.value().forEach(function (meta)
+        m_properties.clipboard.val.forEach(function (meta)
         {
             var sourceUri = meta.uri;
             var targetUri = joinPath(m_properties.currentUri.value(), encodeURIComponent(meta.name));
@@ -1341,7 +1343,7 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
                 --count;
                 if (count === 0)
                 {
-                    m_properties.clipboard.assign([]);
+                    m_properties.clipboard.val = [];
                     reload();
                 }
             });
@@ -1361,11 +1363,11 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
         })
         .done(function (data, status, xhr)
         {
-            m_properties.clipboard.assign(data.files);
+            m_properties.clipboard.val = data.files;
         })
         .fail(function (xhr, status, err)
         {
-            //ui.showError("Failed to load clipboard contents.");
+            ui.showError("Failed to load clipboard contents.");
         });
     }
 
@@ -1388,7 +1390,7 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
             high.element(mid.ListView).id("listview")
         );
         
-        m_properties.clipboard.value().forEach(function (entry)
+        m_properties.clipboard.val.forEach(function (entry)
         {
             var info = "";
             if (entry.mimeType !== "application/x-folder")
@@ -1649,12 +1651,12 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
         )
         .add(
             high.element(mid.MenuItem).text("Paste").icon("sh-icon-content_paste")
-            .enabled(high.predicate([m_properties.clipboard], function () { return m_properties.clipboard.value().length > 0; }))
+            .enabled(high.predicate([m_properties.clipboard], function () { return m_properties.clipboard.val.length > 0; }))
             .onClicked(pasteFromClipboard)
         )
         .add(
             high.element(mid.MenuItem).text("Show").icon("sh-icon-content_paste")
-            .enabled(high.predicate([m_properties.clipboard], function () { return m_properties.clipboard.value().length > 0; }))
+            .enabled(high.predicate([m_properties.clipboard], function () { return m_properties.clipboard.val.length > 0; }))
             .onClicked(openClipboardPage)
         )
     )
@@ -1776,10 +1778,13 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
         loadDirectory(uri, true);
     });
 
-    m_properties.configuration.value().onLoaded = function ()
+    m_properties.configuration.val.onLoaded = function ()
     {
         m_properties.configuration.update();
         loadDirectory("/", true);
-        loadClipboard();
+        file.mkdir("/.pilvini/clipboard", function (ok)
+        {
+            loadClipboard();
+        });
     };
 });
