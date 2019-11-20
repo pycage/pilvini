@@ -3,7 +3,7 @@
 require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tools)
 {
 
-    exports.SubMenu = function ()
+    exports.SubMenu = function SubMenu()
     {
         tools.defineProperties(this, {
             text: { set: setText, get: text },

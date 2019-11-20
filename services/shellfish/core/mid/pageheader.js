@@ -5,7 +5,7 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
 
     /* Element representing a page header with title and buttons.
      */
-    exports.PageHeader = function ()
+    exports.PageHeader = function PageHeader()
     {
         tools.defineProperties(this, {
             title: { set: setTitle, get: title },

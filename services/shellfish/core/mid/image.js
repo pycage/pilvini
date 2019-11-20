@@ -3,7 +3,7 @@
 require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tools)
 {
 
-    exports.Image = function ()
+    exports.Image = function Image()
     {
         tools.defineProperties(this, {
             uri: { set: setUri, get: uri }

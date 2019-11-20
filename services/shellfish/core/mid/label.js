@@ -3,7 +3,7 @@
 require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tools)
 {
 
-    exports.Label = function ()
+    exports.Label = function Label()
     {
         tools.defineProperties(this, {
             text: { set: setText, get: text }

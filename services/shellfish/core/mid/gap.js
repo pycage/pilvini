@@ -3,7 +3,7 @@
 require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tools)
 {
 
-    exports.Gap = function ()
+    exports.Gap = function Gap()
     {
         var m_item = $(
             low.tag("div")

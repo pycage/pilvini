@@ -47,7 +47,7 @@ require([__dirname + "/tools.js"], function (tools)
     var doc = new InternalDocument();
 
 
-    exports.Document = function ()
+    exports.Document = function Document()
     {
         tools.defineProperties(this,
         {

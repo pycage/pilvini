@@ -3,7 +3,7 @@
 require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tools)
 {
 
-    exports.ListView = function ()
+    exports.ListView = function ListView()
     {
         tools.defineProperties(this, {
             size: { get: size }

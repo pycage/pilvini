@@ -3,7 +3,7 @@
 require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tools)
 {
 
-    exports.ListItem = function ()
+    exports.ListItem = function ListItem()
     {
         tools.defineProperties(this, {
             action: { set: setAction, get: action },

@@ -3,7 +3,7 @@
 require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tools)
 {
 
-    exports.NavBar = function ()
+    exports.NavBar = function NavBar()
     {
         tools.defineProperties(this, {
             height: { set: setHeight, get: height },
@@ -201,6 +201,7 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
     
         this.update = function ()
         {
+            console.log("update navbar");
             m_navBar.html("");
             m_navBar.height(0);
     

@@ -3,7 +3,7 @@
 require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tools)
 {
 
-    exports.Box = function ()
+    exports.Box = function Box()
     {
         var m_item = $(
             low.tag("div")

@@ -3,7 +3,7 @@
 require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tools)
 {
 
-    exports.Separator = function ()
+    exports.Separator = function Separator()
     {
         var m_sep = $(
             low.tag("hr")

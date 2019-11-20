@@ -3,7 +3,7 @@
 require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tools)
 {
 
-    exports.BusyPopup = function ()
+    exports.BusyPopup = function BusyPopup()
     {
         tools.defineProperties(this, {
             text: { set: setText, get: text }

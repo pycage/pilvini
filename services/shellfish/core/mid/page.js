@@ -177,7 +177,7 @@ require([__dirname + "/../low.js", __dirname + "/document.js", __dirname + "/too
    
     /* Element representing a page on the UI page stack.
      */
-    exports.Page = function ()
+    exports.Page = function Page()
     {
         tools.defineProperties(this, {
             header: { set: setHeader, get: header },

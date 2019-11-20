@@ -3,7 +3,7 @@
 require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tools)
 {
 
-    exports.Menu = function ()
+    exports.Menu = function Menu()
     {
         var m_menu;
 

@@ -3,7 +3,7 @@
 require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tools)
 {
 
-    exports.Headline = function ()
+    exports.Headline = function Headline()
     {
         tools.defineProperties(this, {
             title: { set: setTitle, get: title },

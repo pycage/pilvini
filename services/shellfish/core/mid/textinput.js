@@ -3,7 +3,7 @@
 require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tools)
 {
 
-    exports.TextInput = function ()
+    exports.TextInput = function TextInput()
     {
         tools.defineProperties(this, {
             text: { set: setText, get: text },

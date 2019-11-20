@@ -3,7 +3,7 @@
 require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tools)
 {
 
-    exports.Toolbar = function ()
+    exports.Toolbar = function Toolbar()
     {
         tools.defineProperties(this, {
             left: { set: addLeft, get: left },

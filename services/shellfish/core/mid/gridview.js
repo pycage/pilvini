@@ -3,7 +3,7 @@
 require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tools)
 {
 
-    exports.GridView = function ()
+    exports.GridView = function GridView()
     {
         tools.defineProperties(this, {
             size: { get: size }

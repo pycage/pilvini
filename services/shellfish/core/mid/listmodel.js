@@ -3,7 +3,7 @@
 require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tools)
 {
 
-    exports.ListModel = function ()
+    exports.ListModel = function ListModel()
     {
         tools.defineProperties(this, {
             data: { set: setData, get: data },

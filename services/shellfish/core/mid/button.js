@@ -3,7 +3,7 @@
 require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tools)
 {
 
-    exports.Button = function ()
+    exports.Button = function Button()
     {
         tools.defineProperties(this, {
             checked: { set: setChecked, get: checked },

@@ -3,7 +3,7 @@
 require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tools)
 {
 
-    exports.MenuItem = function ()
+    exports.MenuItem = function MenuItem()
     {
         tools.defineProperties(this, {
             icon: { set: setIcon, get: icon },

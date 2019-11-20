@@ -3,7 +3,7 @@
 require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tools)
 {
 
-    exports.Popup = function ()
+    exports.Popup = function Popup()
     {
         var m_popup = $(
             low.tag("div").class("sh-popup")

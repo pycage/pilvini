@@ -3,7 +3,7 @@
 require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tools)
 {
 
-    exports.Switch = function ()
+    exports.Switch = function Switch()
     {
         tools.defineProperties(this, {
             checked: { set: setChecked, get: checked },

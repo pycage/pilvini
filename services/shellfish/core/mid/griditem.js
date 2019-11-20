@@ -3,7 +3,7 @@
 require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tools)
 {
 
-    exports.GridItem = function ()
+    exports.GridItem = function GridItem()
     {
         tools.defineProperties(this, {
             action: { set: setAction, get: action },
