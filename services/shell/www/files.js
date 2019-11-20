@@ -1373,7 +1373,9 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
     {
         var amount = high.binding(0);
 
-        var page = high.element(mid.Page)
+        var page = high.element(mid.Page);
+        page
+        .onClosed(page.discard)
         .onSwipeBack(function () { page.pop_(); })
         .header(
             high.element(mid.PageHeader)
@@ -1498,6 +1500,7 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
 
     var page = high.element(mid.Page);
     page
+    .onClosed(page.discard)
     .onSwipeBack(
         high.predicate([m_properties.currentUri], function (currentUri)
         {

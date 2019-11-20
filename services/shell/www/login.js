@@ -77,6 +77,8 @@ require(mods, function (preload, low, mid, high, ui)
     }
 
     var page = high.element(mid.Page)
+    page
+    .onClosed(page.discard)
     .header(
         high.element(mid.PageHeader)
         .title("Pilvini Secure Cloud Drive")

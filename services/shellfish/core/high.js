@@ -133,7 +133,8 @@ require(__dirname + "/mid.js", function (mid)
         var m_bindings = { };
         var m_isInitialized = false;
         var m_status = binding(CREATED);
-    
+
+
         /* Returns the underlying mid-level element.
          */
         this.get = function (noInit)
@@ -174,6 +175,7 @@ require(__dirname + "/mid.js", function (mid)
          */
         this.discard = function ()
         {
+            console.log("discard " + (m_element.constructor.name) + " with " + m_children.length + " children");
             m_watchHandles.forEach(function (handle)
             {
                 handle.unwatch();
@@ -184,6 +186,7 @@ require(__dirname + "/mid.js", function (mid)
             });
             if (typeof m_element.discard === Function)
             {
+                // mid-level discard
                 m_element.discard();
             }
             m_element = null;
@@ -367,10 +370,23 @@ require(__dirname + "/mid.js", function (mid)
     };
     
     /* Creates and returns a high-level element of the given type.
+     * An optional parent element may be set in case the element is
+     * created outside an elements-tree.
      */
-    function element(type)
+    function element(type, parent)
     {
-        return new Element(type);
+        var el = new Element(type);
+        if (parent)
+        {
+            parent.status().watch(function (s)
+            {
+                if (s === DISCARDED)
+                {
+                    el.discard();
+                }
+            });
+        }
+        return el;
     }
     exports.element = element;
     

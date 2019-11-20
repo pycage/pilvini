@@ -51,7 +51,9 @@ require(mods, function (mid, high, mimeReg)
         var parts = href.split("/");
         var name = decodeURI(parts[parts.length - 1]);
         
-        var page = high.element(mid.Page)
+        var page = high.element(mid.Page);
+        page
+        .onClosed(page.discard)
         .onSwipeBack(function () { page.pop_(); })
         .header(
             high.element(mid.PageHeader)

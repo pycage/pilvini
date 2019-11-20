@@ -12,7 +12,9 @@ require(mods, function (low, mid, high, ui, files)
 {
     function openPage()
     {
-        var page = high.element(mid.Page)
+        var page = high.element(mid.Page);
+        page
+        .onClosed(page.discard)
         .onSwipeBack(function () { page.pop_(); })
         .header(
             high.element(mid.PageHeader).title("Administration")
@@ -133,7 +135,9 @@ require(mods, function (low, mid, high, ui, files)
 
     function openUsersPage()
     {
-        var page = high.element(mid.Page)
+        var page = high.element(mid.Page);
+        page
+        .onClosed(page.discard)
         .onSwipeBack(function () { page.pop_(); })
         .header(
             high.element(mid.PageHeader).title("Users")

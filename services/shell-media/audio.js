@@ -767,7 +767,9 @@ require(mods, function (low, mid, high, ui, files, mimeReg)
      */
     function pushPlayerPage()
     {
-        var page = high.element(mid.Page)
+        var page = high.element(mid.Page);
+        page
+        .onClosed(page.discard)
         .onSwipeBack(function ()
         {
             page.get().pop();

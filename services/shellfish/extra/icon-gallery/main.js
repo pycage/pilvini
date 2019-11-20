@@ -174,6 +174,7 @@ require(mods, function (pre, low, mid, high)
 
     var page = high.element(mid.Page);
     page
+    .onClosed(page.discard)
     .header(
         high.element(mid.PageHeader).id("header").title("Shellfish Icon Gallery")
     )

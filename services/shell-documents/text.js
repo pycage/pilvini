@@ -125,7 +125,8 @@ require(mods, function (low, mid, high, mimeReg)
         var parts = href.split("/");
         var name = decodeURI(parts[parts.length - 1]);
     
-        var page = high.element(mid.Page)
+        var page = high.element(mid.Page);
+        page
         .onSwipeBack(function () { page.pop_(); })
         .onClosed(function ()
         {
@@ -134,6 +135,7 @@ require(mods, function (low, mid, high, mimeReg)
             {
                 upload(href, m_data.value());
             }
+            page.discard();
         })
         .header(
             high.element(mid.PageHeader)
