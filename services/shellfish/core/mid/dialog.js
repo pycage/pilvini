@@ -7,11 +7,13 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
     {
         tools.defineProperties(this, {
             title: { set: setTitle, get: title },
-            button: { set: addButton, get: buttons }
+            button: { set: addButton, get: buttons },
+            onClosed: { set: setOnClosed, get: onClosed }
         });
 
         var m_title = "";
         var m_buttons = [];
+        var m_onClosed = null;
 
         var m_dialog = $(
             low.tag("form").class("sh-popup")
@@ -104,6 +106,10 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
         this.close = function ()
         {
             m_dialog.detach();
+            if (m_onClosed)
+            {
+                m_onClosed();
+            }
         }
 
         function setTitle(title)
@@ -127,6 +133,16 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
         function buttons()
         {
             return m_buttons;
+        }
+
+        function setOnClosed(callback)
+        {
+            m_onClosed = callback;
+        }
+
+        function onClosed()
+        {
+            return m_onClosed;
         }
 
         /* Adds a widget to this dialog.

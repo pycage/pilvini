@@ -445,7 +445,10 @@ require(mods, function (low, mid, high, files, mimeReg)
     {
         if (! playing)
         {
-            var dlg = high.element(mid.Dialog).title("Slideshow")
+            var dlg = high.element(mid.Dialog);
+            dlg
+            .onClosed(dlg.discard)
+            .title("Slideshow")
             .add(
                 high.element(mid.Label).text("Interval between images:")
             )
@@ -459,9 +462,9 @@ require(mods, function (low, mid, high, files, mimeReg)
                 high.element(mid.Button).text("Start").isDefault(true)
                 .action(function ()
                 {
-                    dlg.close_();
                     slideshowInterval = Number.parseInt(dlg.find("input").get().text) || 5;
                     slideshowCountdown = 0;
+                    dlg.close_();
                     runSlideshow();
                 })
             );

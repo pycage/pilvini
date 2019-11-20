@@ -387,14 +387,6 @@ require([__dirname + "/../low.js", __dirname + "/document.js", __dirname + "/too
             $("body").append(m_page);
             that.updateGeometry();
             low.pagePush(m_page, cb, $(".sh-page").length === 1);
-
-            m_page.one("sh-closed", function ()
-            {
-                if (m_onClosed)
-                {
-                    m_onClosed();
-                }
-            });
         };
 
         /* Pops this page off the page stack.
@@ -407,6 +399,10 @@ require([__dirname + "/../low.js", __dirname + "/document.js", __dirname + "/too
                 if (callback)
                 {
                     callback();
+                }
+                if (m_onClosed)
+                {
+                    m_onClosed();
                 }
             });
         };

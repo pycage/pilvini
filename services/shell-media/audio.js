@@ -866,7 +866,7 @@ require(mods, function (low, mid, high, ui, files, mimeReg)
 
         page.get().push(function ()
         {
-            page.find("listview").model(m_playlist);
+            page.find("listview").model(m_playlist.get());
         });
     }
 

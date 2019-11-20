@@ -54,7 +54,10 @@ require(mods, function (low, mid, high, ui, files)
         var useSsl = high.binding(false);
         var contentRoot = high.binding("/");
 
-        var dlg = high.element(mid.Dialog).title("Server Settings")
+        var dlg = high.element(mid.Dialog);
+        dlg
+        .onClosed(dlg.discard)
+        .title("Server Settings")
         .button(
             high.element(mid.Button).text("Save and Restart")
             .onClicked(function ()
@@ -202,7 +205,10 @@ require(mods, function (low, mid, high, ui, files)
 
     function showCreateUserDialog()
     {
-        var dlg = high.element(mid.Dialog).title("Create User")
+        var dlg = high.element(mid.Dialog);
+        dlg
+        .onClosed(dlg.discard)
+        .title("Create User")
         .add(
             high.element(mid.Label).text("Create a new user.")
         )
@@ -257,18 +263,18 @@ require(mods, function (low, mid, high, ui, files)
         .button(
             high.element(mid.Button).text("Create").isDefault(true)
             .action(function ()
-           {
-               dlg.close_();
-               var permissions = [];
-               if (dlg.find("mayCreate").get().checked) permissions.push("CREATE");
-               if (dlg.find("mayDelete").get().checked) permissions.push("DELETE");
-               if (dlg.find("mayModify").get().checked) permissions.push("MODIFY");
-               if (dlg.find("mayShare").get().checked) permissions.push("SHARE");
-               if (dlg.find("mayAdmin").get().checked) permissions.push("ADMIN");
-               createUser(dlg.find("name").get().text,
-                          dlg.find("password").get().text,
-                          dlg.find("home").get().text,
-                          permissions);
+            {
+                var permissions = [];
+                if (dlg.find("mayCreate").get().checked) permissions.push("CREATE");
+                if (dlg.find("mayDelete").get().checked) permissions.push("DELETE");
+                if (dlg.find("mayModify").get().checked) permissions.push("MODIFY");
+                if (dlg.find("mayShare").get().checked) permissions.push("SHARE");
+                if (dlg.find("mayAdmin").get().checked) permissions.push("ADMIN");
+                createUser(dlg.find("name").get().text,
+                           dlg.find("password").get().text,
+                           dlg.find("home").get().text,
+                           permissions);
+                dlg.close_();
            })
         )
         .button(

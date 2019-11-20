@@ -48,7 +48,10 @@ require(mods, function (preload, low, mid, high, ui)
 
     function showLoginDialog()
     {
-        var dlg = high.element(mid.Dialog).title("Login")
+        var dlg = high.element(mid.Dialog);
+        dlg
+        .onClosed(dlg.discard)
+        .title("Login")
         .add(
             high.element(mid.Label).text("Welcome to Pilvini Web Shell.")
         )
@@ -68,9 +71,9 @@ require(mods, function (preload, low, mid, high, ui)
             high.element(mid.Button).text("Login").isDefault(true)
             .action(function ()
             {
-                dlg.close_();
                 login(dlg.find("login").get().text,
                       dlg.find("password").get().text);
+                dlg.close_();
             })
         );
         dlg.show_();

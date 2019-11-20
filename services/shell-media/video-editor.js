@@ -42,7 +42,10 @@ require(mods, function (low, mid, high, ui, files)
         var name = idx !== -1 ? filename.substr(0, idx) : filename;
         var ext = idx !== -1 ? filename.substr(idx) : "";
 
-        var dlg = high.element(mid.Dialog).title("Cut Video")
+        var dlg = high.element(mid.Dialog);
+        dlg
+        .onClosed(dlg.discard)
+        .title("Cut Video")
         .button(
             high.element(mid.Button).text("Cut")
             .onClicked(function ()

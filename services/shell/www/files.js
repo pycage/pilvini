@@ -188,7 +188,10 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
 
     function showShareDialog()
     {
-        var dlg = high.element(mid.Dialog).title("Setup Share")
+        var dlg = high.element(mid.Dialog);
+        dlg
+        .onClosed(dlg.discard)
+        .title("Setup Share")
         .add(
             high.element(mid.Label).text("Share this directory.")
         )
@@ -208,9 +211,9 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
             high.element(mid.Button).text("Share").isDefault(true)
             .action(function ()
             {
-                dlg.close_();
                 share(dlg.find("login").get().text,
                       dlg.find("password").get().text);
+                dlg.close_();
             })
         )
         .button(
@@ -260,7 +263,10 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
 
     function makeNewDirectory()
     {
-        var dlg = high.element(mid.Dialog).title("New Directory")
+        var dlg = high.element(mid.Dialog);
+        dlg
+        .onClosed(dlg.discard)
+        .title("New Directory")
         .add(
             high.element(mid.Label).text("Create a new directory.")
         )
@@ -274,7 +280,6 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
             high.element(mid.Button).text("Create").isDefault(true)
             .action(function ()
             {
-                dlg.close_();
                 var name = dlg.find("name").get().text;
                 if (name !== "")
                 {
@@ -295,6 +300,7 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
                 {
                     ui.showError("Invalid name.");
                 }
+                dlg.close_();
             })
         )
         .button(
@@ -309,7 +315,10 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
 
     function makeNewFile()
     {
-        var dlg = high.element(mid.Dialog).title("New File")
+        var dlg = high.element(mid.Dialog);
+        dlg
+        .onClosed(dlg.discard)
+        .title("New File")
         .add(
             high.element(mid.Label).text("Create a new file.")
         )
@@ -323,7 +332,6 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
             high.element(mid.Button).text("Create").isDefault(true)
             .action(function ()
             {
-                dlg.close_();
                 var name = dlg.find("name").get().text;
                 if (name !== "")
                 {
@@ -344,6 +352,7 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
                 {
                     ui.showError("Invalid name.");
                 }
+                dlg.close_();
             })
         )
         .button(
@@ -726,7 +735,10 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
         var meta = m_properties.files.value()[idx];
         var name = meta.name;
 
-        var dlg = high.element(mid.Dialog).title("Rename File")
+        var dlg = high.element(mid.Dialog);
+        dlg
+        .onClosed(dlg.discard)
+        .title("Rename File")
         .add(
             high.element(mid.Label).text("Rename the file.")
         )
@@ -740,7 +752,6 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
             high.element(mid.Button).text("Rename").isDefault(true)
             .action(function ()
             {
-                dlg.close_();
                 var newName = dlg.find("name").get().text;
                 var targetUri = joinPath(m_properties.currentUri.value(), encodeURIComponent(newName));
     
@@ -756,7 +767,8 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
                     {
                         ui.showError("Failed to move: " + name + " to " + newName);
                     }
-                }); 
+                });
+                dlg.close_();
             })
         )
         .button(
@@ -812,7 +824,10 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
             return s;
         }
 
-        var dlg = high.element(mid.Dialog).title("Bulk-Rename")
+        var dlg = high.element(mid.Dialog);
+        dlg
+        .onClosed(dlg.discard)
+        .title("Bulk-Rename")
         .add(
             high.element(mid.Label).text("Rename the selected files.")
         )
@@ -843,7 +858,6 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
             high.element(mid.Button).text("Rename").isDefault(true)
             .action(function ()
             {
-                dlg.close_();
                 var pattern = dlg.find("pattern").get().text;
                 var startAt = Number.parseInt(dlg.find("startAt").get().text);
 
@@ -899,7 +913,8 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
                             reload();
                         }
 
-                    }); 
+                    });
+                    dlg.close_();
                 });
             unselectAll();
             })

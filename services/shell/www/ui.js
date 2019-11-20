@@ -11,7 +11,10 @@ require(mods, function (low, mid, high)
 {
     function showInfo(title, msg, callback)
     {
-        var dlg = high.element(mid.Dialog).title(title)
+        var dlg = high.element(mid.Dialog);
+        dlg
+        .onClosed(dlg.discard)
+        .title(title)
         .add(
             high.element(mid.Label).text(msg)
         )
@@ -32,7 +35,10 @@ require(mods, function (low, mid, high)
     
     function showError(msg, callback)
     {
-        var dlg = high.element(mid.Dialog).title("Error")
+        var dlg = high.element(mid.Dialog);
+        dlg
+        .onClosed(dlg.discard)
+        .title("Error")
         .add(
             high.element(mid.Label).text(msg)
         )
@@ -53,7 +59,10 @@ require(mods, function (low, mid, high)
     
     function showQuestion(title, msg, yesCb, noCb)
     {
-        var dlg = high.element(mid.Dialog).title(title)
+        var dlg = high.element(mid.Dialog);
+        dlg
+        .onClosed(dlg.discard)
+        .title(title)
         .add(
             high.element(mid.Label).text(msg)
         )

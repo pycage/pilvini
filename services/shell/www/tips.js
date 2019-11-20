@@ -6,7 +6,10 @@ const mods = [
 ];
 require(mods, function (mid, high)
 {
-    var dlg = high.element(mid.Dialog).title("Tip of the Day")
+    var dlg = high.element(mid.Dialog);
+    dlg
+    .onClosed(dlg.discard)
+    .title("Tip of the Day")
     .add(
         high.element(mid.Label).text("Did you know..?")
         )
