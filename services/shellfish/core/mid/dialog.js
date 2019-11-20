@@ -15,6 +15,7 @@ require([__dirname + "/../low.js", __dirname + "/tools.js"], function (low, tool
 
         var m_dialog = $(
             low.tag("form").class("sh-popup")
+            .style("background-color", "rgba(0, 0, 0, 0.4)")
             .on("click", "event.stopPropagation();")
             .on("submit", "return false;")
             .content(
