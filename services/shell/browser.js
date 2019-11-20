@@ -80,6 +80,15 @@ function readStats(path, callback)
                 {
                     result.push([file, stat]);
                 }
+                else
+                {
+                    var fakeStat = {
+                        isDirectory: function () { return false; },
+                        mtime: new Date(),
+                        size: -1
+                    };
+                    result.push([file, fakeStat]);
+                }
                 if (count === 0)
                 {
                     var r = result

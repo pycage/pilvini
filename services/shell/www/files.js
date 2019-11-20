@@ -1169,7 +1169,14 @@ require(mods, function (mid, high, ui, cfg, mimeReg, upload, file)
                 var info = "";
                 if (entry.mimeType !== "application/x-folder")
                 {
-                    info += (entry.size / (1024 * 1024)).toFixed(2) + " MB, ";
+                    if (entry.size >= 0)
+                    {
+                        info += (entry.size / (1024 * 1024)).toFixed(2) + " MB, ";
+                    }
+                    else
+                    {
+                        info += "unreadable, ";
+                    }
                 }
                 var d = new Date(entry.mtime);
                 info += d.toLocaleDateString() + " " + d.toLocaleTimeString();
