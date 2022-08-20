@@ -1,4 +1,4 @@
-shRequire(["shellfish/core", "shellfish/core/mime", "./shell/jszip.min.js"], (core, mime, jszip) =>
+shRequire(["shellfish/core", "shellfish/core/mime", "./jszip.min.js"], (core, mime, jszip) =>
 {
     class File
     {
