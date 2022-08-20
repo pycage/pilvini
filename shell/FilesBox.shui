@@ -1,0 +1,648 @@
+require "shellfish/ui";
+require "./BreadCrumbs.shui";
+require "./MediaPlayer.shui";
+require "./videotools.js" as videotools;
+
+Box {
+    id: box
+
+    property fs: null
+    property path: "/"
+    property collapsed: false
+
+    event newPane
+    event closePane
+    event filesOpen
+
+    borderWidth: 1
+    borderColor: theme.borderColor
+
+    Object {
+        id: queue
+
+        property busy: false
+        property cbqueue: []
+
+        function clear()
+        {
+            cbqueue = [];
+        }
+
+        function enqueue()
+        {
+            const next = () =>
+            {
+                busy = false;
+
+                if (cbqueue.length > 0)
+                {
+                    const q = cbqueue;
+                    const cb = q.shift();
+                    cbqueue = q;
+                    busy = true;
+                    cb();
+                }
+            };
+
+            return new Promise((resolve, reject) =>
+            {
+                const q = cbqueue;
+                q.push(() =>
+                {
+                    resolve(next);
+                });
+                cbqueue = q;
+
+                if (! busy)
+                {
+                    next();
+                }
+            });
+        }
+    }
+
+    FSModel {
+        id: fsModel
+
+        filesystem: box.fs
+        path: box.path
+    }
+
+    Box {
+        fillWidth: true
+        height: theme.itemHeightMedium
+        color: theme.secondaryBackgroundColor
+
+        layout: "center-row"
+        
+        Button {
+            fillHeight: true
+            flat: true
+            icon: box.collapsed ? "ui-unfold_more" : "ui-unfold_less"
+            onClick: ev =>
+            {
+                box.collapsed = ! box.collapsed;
+                ev.accepted = true;
+            }
+        }
+
+        BreadCrumbs {
+            fillHeight: true
+            path: box.path
+
+            onChangePath: path =>
+            {
+                box.path = path;
+            }
+        }
+
+        Box { fillWidth: true }
+
+        Label {
+            marginRight: theme.paddingSmall
+            text: fsview.count + " items"
+        }
+
+        Button {
+            fillHeight: true
+            flat: true
+            icon: "ui-menu"
+
+            onClick: (ev) =>
+            {
+                ev.accepted = true;
+                const menu = menuT();
+                menu.popup(self);
+            }
+
+            property menuT: template Menu {
+                Box {
+                    ruler: thisMenu.menuRuler
+                    layout: "center-row"
+                    width: theme.itemWidthLarge * 1.5
+                    height: theme.itemHeightMedium
+
+                    Slider {
+                        fillWidth: true
+                        marginLeft: theme.paddingSmall
+                        marginRight: theme.paddingSmall
+                        minValue: 0.5
+                        maxValue: 3
+                        value: fsview.iconScale
+
+                        onValueChanged: () => { fsview.iconScale = value;}
+                    }
+
+                    Button {
+                        fillHeight: true
+                        flat: true
+                        icon: "ui-view_grid"
+                        checked: fsview.displayMode === "grid"
+                        onClick: (ev) =>
+                        {
+                            fsview.displayMode = "grid";
+                            ev.accepted = true;
+                        }
+                    }
+
+                    Button {
+                        fillHeight: true
+                        flat: true
+                        icon: "ui-view_list"
+                        checked: fsview.displayMode === "list"
+                        onClick: (ev) =>
+                        {
+                            fsview.displayMode = "list";
+                            ev.accepted = true;
+                        }
+                    }
+
+                }
+
+                MenuItem {
+                    icon: "ui-tab"
+                    text: "Clone Pane"
+                    onClick: () =>
+                    {
+                        box.newPane(box.path);
+                    }
+                }
+
+                MenuItem {
+                    icon: "ui-clear"
+                    text: "Close Pane"
+                    onClick: () =>
+                    {
+                        box.closePane();
+                    }
+                }
+            }
+        }
+
+    }
+
+    DropArea {
+        fillWidth: true
+        fillHeight: true
+
+        onDropAccept: (ev) =>
+        {
+            if (ev.types.includes("Files"))
+            {
+                ev.dropEffect = "copy";
+                ev.accepted = true;
+            }
+            else if (ev.types.includes("text/plain"))
+            {
+                ev.dropEffect = ev.original.shiftKey ? "copy" : "move";
+                ev.accepted = true;
+            }
+        }
+
+        onDrop: (ev) =>
+        {
+            console.log(JSON.stringify(ev));
+
+            for (let i = 0; i < ev.items.length; ++i)
+            {
+                const item = ev.items[i];
+                if (item.kind !== "file")
+                {
+                    continue;
+                }
+                const fileItem = item.getAsFile();
+                box.fs.write(box.fs.pathJoin(box.path, box.fs.encodeName(fileItem.name)), fileItem)
+                .then(() =>
+                {
+
+                });
+            }
+
+            if (ev.data["text/plain"])
+            {
+                const uris = ev.data["text/plain"].split("\r\n");
+                console.log(JSON.stringify(uris));
+                uris.forEach(uri =>
+                {
+                    const destPath = box.fs.pathJoin(box.path, box.fs.filename(uri));
+                    console.log("DROP EFFECT " + ev.dropEffect);
+                    if (ev.dropEffect === "copy")
+                    {
+                        box.fs.copy(uri, destPath)
+                        .then(() =>
+                        {
+                            console.log("files copied");
+                        })
+                        .catch(err =>
+                        {
+                            console.log("failed to copy files: " + err);
+                        });
+                    }
+                    else
+                    {
+                        box.fs.move(uri, destPath)
+                        .then(() =>
+                        {
+                            console.log("files moved");
+                        })
+                        .catch(err =>
+                        {
+                            console.log("failed to move files: " + err);
+                        });
+                    }
+                });
+            }
+        }
+
+        MouseBox {
+            fillWidth: true
+            fillHeight: true
+            layout: "center"
+
+            onContextMenu: (ev) =>
+            {
+                ev.accepted = true;
+                const menu = fileMenuT();
+                menu.popup(null);
+            }
+
+            ListView {
+                id: fsview
+
+                property iconScale: 1
+                property displayMode: "grid"
+
+                visible: ! fsModel.loading
+                fillWidth: true
+                fillHeight: true
+                canFocus: true
+
+                cellWidth: displayMode === "list" ? bbox.width - 1
+                                                  : theme.itemWidthLarge * iconScale
+                cellHeight: displayMode === "list" ? theme.itemHeightMedium * iconScale
+                                                   : cellWidth
+
+                model: fsModel
+
+                delegate: template Draggable {
+
+                    onDragStart: ev =>
+                    {
+                        console.log("drag start");
+                        const uris = [];
+                        selector.selection.forEach(idx =>
+                        {
+                            uris.push(fsview.model.at(idx).path);
+                        });
+
+                        if (uris.length > 0)
+                        {
+                            console.log(JSON.stringify(uris));
+
+                            ev.setData("text/uri-list", uris.join("\r\n"));
+                            ev.setData("text/plain", uris.join("\r\n"));
+                            ev.accepted = true;
+                        }
+                    }
+
+                    FSItem {
+                        id: fsitem
+
+                        fillWidth: true
+                        fillHeight: true
+                        displayMode: fsview.displayMode
+                        highlighted: selector.selection.has(parent.modelData.index)
+
+                        file: parent.modelData.value
+                        filesystem: box.fs
+
+                        thumbnail: file.type === "d" ? file.path + "/cover.jpg"
+                                                     : file.mimetype.startsWith("image/") ? file.path
+                                                                                          : file.mimetype === "video/mp4" ? "/.thumbnails/" + box.fs.encodeName(btoa(file.path))
+                                                                                                                          : ""
+
+                        onFileChanged: () =>
+                        {
+                            if (file && file.mimetype === "video/mp4")
+                            {
+                                const forPath = file.path;
+
+                                const condition = () =>
+                                {
+                                    return lifeCycleStatus !== "destroyed" &&
+                                           file.path === forPath;
+                                }
+
+                                const f = async () =>
+                                {
+                                    await wait(300);
+                                    if (! condition) return;
+
+                                    const tn = thumbnail;
+                                    const exists = await box.fs.exists(tn);
+                                    if (! condition) return;
+
+                                    if (! exists)
+                                    {
+
+                                        const next = await queue.enqueue();
+                                        try
+                                        {
+                                            const blob = await videotools.makeThumbnail(forPath);
+                                            await box.fs.write(tn, blob);
+
+                                            if (condition())
+                                            {
+                                                thumbnailChanged();
+                                            }
+                                        }
+                                        catch (err)
+                                        {
+                                            console.log("Thumbnail Error: " + err);
+                                        }
+                                        finally
+                                        {
+                                            next();
+                                        }
+                                    }
+                                };
+
+                                f();
+                            }
+                        }
+
+                        onPointerDown: (ev) =>
+                        {
+                            const idx = parent.modelData.index;
+
+                            if (ev.original.ctrlKey)
+                            {
+                                selector.select(idx, "toggle");
+                            }
+                            else if (ev.original.shiftKey)
+                            {
+                                selector.select(idx, "range");
+                            }
+                            else
+                            {
+                                selector.select(idx, "replace");
+                            }
+                        }
+
+                        onDoubleClick: (ev) =>
+                        {
+                            const file = parent.modelData.value;
+                            if (file.type === "d")
+                            {
+                                selector.clear();
+                                box.path = file.path;
+                            }
+                            else
+                            {
+                                box.filesOpen([file], 0);
+                            }
+                            /*
+                            else if (file.mimetype === "application/zip")
+                            {
+                                selector.clear();
+                                console.log("open ZIP: " + file.path);
+                                box.path = file.path;
+                            }
+                            else if (file.mimetype.startsWith("image/"))
+                            {
+                                box.filesOpen([file], 0);
+                            }
+                            else if (file.mimetype === "video/mp4")
+                            {
+                                box.filesOpen([file], 0);
+                                //const dlg = mediaPlayerDialogT();
+                                //dlg.file = file;
+                                //dlg.show();
+                                //documentRoot.add(dlg);
+                            }
+                            else if (file.mimetype.startsWith("audio/"))
+                            {
+                                const dlg = mediaPlayerDialogT();
+                                dlg.file = file;
+                                //dlg.show();
+                                documentRoot.add(dlg);
+                            }
+                            */
+                            ev.accepted = true;
+                        }
+                    }
+
+                    //Label { text: parent.modelData.index; color: "red"; fontSize: theme.fontSizeSmall }
+                }
+
+                model.onPathChanged: () =>
+                {
+                    selector.clear();
+                    queue.clear();
+                }
+
+                ListViewSelector {
+                    id: selector
+                    multiple: true
+                }
+
+                ScrollIndicator { }
+            }
+
+            Label {
+                visible: ! fsview.visible
+                fontSize: theme.fontSizeLarge
+                text: "[icon:ui-spinner5]"
+            }
+
+            property fileMenuT: template Menu {
+                MenuItem {
+                    text: "New Directory"
+                    onClick: () =>
+                    {
+                        const dlg = newDirectoryDialogT();
+                        dlg.callback = newName =>
+                        {
+                            box.fs.mkdir(box.path, box.fs.encodeName(newName));
+                        };
+                        dlg.show();
+                    }
+                }
+
+                MenuSeparator { }
+
+                MenuItem {
+                    text: "Rename"
+                    onClick: () =>
+                    {
+                        if (selector.selection.size !== 1)
+                        {
+                            return;
+
+                        }
+
+                        const idx = [...selector.selection][0];
+                        const item = fsModel.at(idx);
+
+                        const dlg = renameDialogT();
+                        dlg.name = item.name;
+                        dlg.callback = newName =>
+                        {
+                            box.fs.move(item.path, box.fs.pathJoin(box.fs.dirname(item.path), box.fs.encodeName(newName)));
+                        };
+                        dlg.show();
+                    }
+                }
+
+                MenuItem {
+                    text: "Delete"
+                    onClick: () =>
+                    {
+                        const idx = [...selector.selection][0];
+                        const item = fsModel.at(idx);
+
+                        showQuestionDialog("Delete File",
+                                           "Do you want to delete this file?\n" + item.name,
+                                           () =>
+                        {
+                            box.fs.remove(item.path);
+                        });
+                    }
+                }
+            }
+        }
+
+    }
+
+    property newDirectoryDialogT: template Dialog {
+        id: dialog
+
+        property name: ""
+        property callback: (newName) => { }
+
+        title: "New Directory"
+
+        into buttons Button {
+            text: "Create"
+            onClick: () => { callback(textEntry.text); dialog.parent = null; }
+        }
+
+        into buttons Button {
+            marginLeft: theme.paddingSmall
+            text: "Cancel"
+            onClick: () => { dialog.parent = null; }
+        }
+
+        Box {
+            layout: "center-row"
+
+            Label { text: "Name:" }
+
+            TextEntry {
+                id: textEntry
+
+                marginLeft: theme.paddingSmall
+                width: theme.itemWidthLarge * 2
+                text: "New Directory"
+
+                onAncestorsVisibleChanged: () =>
+                {
+                    if (ancestorsVisible)
+                    {
+                        active = true;
+                        selectRange(0, text.length);
+                    }
+                }
+            }
+        }
+    }
+
+    property renameDialogT: template Dialog {
+        id: dialog
+
+        property name: ""
+        property callback: (newName) => { }
+
+        title: "Rename"
+
+        into buttons Button {
+            text: "Rename"
+            onClick: () => { callback(textEntry.text); dialog.parent = null; }
+        }
+
+        into buttons Button {
+            marginLeft: theme.paddingSmall
+            text: "Cancel"
+            onClick: () => { dialog.parent = null; }
+        }
+
+        Box {
+            layout: "center-row"
+
+            Label { text: "Name:" }
+
+            TextEntry {
+                id: textEntry
+
+                marginLeft: theme.paddingSmall
+                width: theme.itemWidthLarge * 2
+                text: dialog.name
+
+                onAncestorsVisibleChanged: () =>
+                {
+                    if (ancestorsVisible)
+                    {
+                        active = true;
+                        const pos = text.lastIndexOf(".");
+                        if (pos !== -1)
+                        {
+                            selectRange(0, pos);
+                        }
+                        else
+                        {
+                            selectRange(0, text.length);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    property mediaPlayerDialogT: template Box {
+        id: dialog
+
+        position: "global"
+        width: documentRoot.windowWidth
+        height: documentRoot.windowHeight
+        color: "black"
+
+        //title: file ? file.name : ""
+        property file: null
+
+        onFileChanged: () =>
+        {
+            if (file)
+            {
+                player.model.reset([file]);
+                player.current = 0;
+            }
+        }
+
+        Button {
+            flat: true
+            text: "Back"
+            onClick: () => { dialog.parent = null; }
+        }
+
+        MediaPlayer {
+            id: player
+
+            fillWidth: true
+            fillHeight: true
+            //width: documentRoot.windowWidth * 0.5
+            //height: documentRoot.windowHeight * 0.5
+
+            minimized: false
+        }
+    }
+}

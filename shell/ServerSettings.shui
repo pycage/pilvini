@@ -1,0 +1,138 @@
+require "shellfish/ui";
+
+Box {
+
+    onInitialization: () =>
+    {
+        window.fetch("/::config/server")
+        .then(response => response.text())
+        .then(data =>
+        {
+            console.log("Got data: " + data);
+            priv.server = JSON.parse(data);
+            priv.modified = false;
+        })
+        .catch(err =>
+        {
+
+        });
+    }
+
+    onDestruction: () =>
+    {
+        if (priv.modified)
+        {
+            const obj = {
+                key: "server",
+                data: priv.server
+            };
+            window.fetch("/::config/set", { method: "POST", body: JSON.stringify(obj) });
+        }
+    }
+
+    Object {
+        id: priv
+
+        property modified: false
+        property server: ({ })
+    }
+
+    Ruler { id: labelRuler }
+
+    Box {
+        layout: "center-row"
+
+        Label {
+            ruler: labelRuler
+            minWidth: labelRuler.max.width
+            bold: true
+            text: "Listen Adress"
+        }
+
+        TextEntry {
+            marginLeft: theme.paddingMedium
+            text: priv.server.address
+
+            onTextChanged: () =>
+            {
+                console.log("Listen Changed: " + text);
+                priv.server.address = text;
+                priv.modified = true;
+            }
+        }
+    }
+
+    Box {
+        marginTop: theme.paddingMedium
+        layout: "center-row"
+
+        Label {
+            ruler: labelRuler
+            minWidth: labelRuler.max.width
+            bold: true
+            text: "Port"
+        }
+
+        SpinBox {
+            marginLeft: theme.paddingMedium
+            minValue: 80
+            maxValue: 65535
+            stepSize: 1
+            value: priv.server.port
+
+            onValueChanged: () =>
+            {
+                priv.server.port = value;
+                priv.modified = true;
+            }
+
+        }
+    }
+
+    Box {
+        marginTop: theme.paddingMedium
+        layout: "center-row"
+
+        Label {
+            ruler: labelRuler
+            minWidth: labelRuler.max.width
+            bold: true
+            text: "Use SSL"
+        }
+
+        Switch {
+            marginLeft: theme.paddingMedium
+            checked: priv.server.use_ssl
+
+            onCheckedChanged: () =>
+            {
+                priv.server.use_ssl = checked;
+                priv.modified = true;
+            }
+        }
+    }
+
+    Box {
+        marginTop: theme.paddingMedium
+        layout: "center-row"
+
+        Label {
+            ruler: labelRuler
+            minWidth: labelRuler.max.width
+            bold: true
+            text: "Content Root"
+        }
+
+        TextEntry {
+            marginLeft: theme.paddingMedium
+            text: priv.server.root
+
+            onTextChanged: () =>
+            {
+                priv.server.root = text;
+                priv.modified = true;
+            }
+        }
+    }
+
+}

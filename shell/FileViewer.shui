@@ -1,0 +1,153 @@
+require "shellfish/ui";
+require "./pdf.js";
+require "./ImageViewer.shui";
+require "./MediaPlayer.shui";
+
+Box {
+    id: box
+
+    property model: ListModel { }
+    property current: -1
+    property fullSize: true
+
+    borderWidth: 1
+    borderColor: theme.borderColor
+
+    Box {
+        fillWidth: true
+        height: theme.itemHeightMedium
+        color: theme.secondaryBackgroundColor
+
+        layout: "center-row"
+
+        Label {
+            marginLeft: theme.paddingSmall
+            marginRight: theme.paddingSmall
+            fillWidth: true
+            bold: true
+            literal: true
+            text: loader.fileItem ? loader.fileItem.name : ""
+        }
+
+        Button {
+            fillHeight: true
+            flat: true
+            text: "[ ]"
+
+            onClick: () =>
+            {
+                box.fullSize = ! box.fullSize;
+            }
+        }
+
+        Button {
+            fillHeight: true
+            flat: true
+            text: "Close"
+
+            onClick: () =>
+            {
+                box.current = -1;
+                box.model.reset([]);
+            }
+        }
+    }
+
+
+    Loader {
+        id: loader
+
+        property fileItem: box.current !== -1 && box.model.size > box.current ? box.model.at(box.current)
+                                                                              : null
+
+        fillWidth: true
+        fillHeight: true
+
+        sourceTemplate: (() =>
+        {
+            if (! fileItem)
+            {
+                return null;
+            }
+
+            const item = fileItem;
+            if (item.mimetype === "application/pdf")
+            {
+                return pdfViewerT;
+            }
+            else if (item.mimetype.startsWith("image/"))
+            {
+                return imageViewerT;
+            }
+            else if (item.mimetype.startsWith("audio/") ||
+                     item.mimetype.startsWith("video/"))
+            {
+                return mediaPlayerT;
+            }
+            else if (item.mimetype.startsWith("text/"))
+            {
+                console.log("TEXT: " + item.path);
+                return textViewerT;
+            }
+            else
+            {
+                return null;
+            }
+        })()
+    }
+
+    property imageViewerT: template ImageViewer {
+        fillWidth: true
+        fillHeight: true
+        source: loader.fileItem ? loader.fileItem.path : ""
+    }
+
+    property pdfViewerT: template Pdf {
+        fillWidth: true
+        fillHeight: true
+
+        source: loader.fileItem ? loader.fileItem.path : ""
+    }
+
+    property mediaPlayerT: template MediaPlayer {
+        fillWidth: true
+        fillHeight: true
+
+        minimized: false
+
+        model: box.model
+        current: box.current
+    }
+
+    property textViewerT: template Box {
+        fillWidth: true
+        fillHeight: true
+
+        overflowBehavior: "scroll"
+
+        Label {
+            property source: loader.fileItem ? loader.fileItem.path : ""
+
+            fillWidth: true
+            overflowBehavior: "wrap"
+            literal: true
+            fontFamily: "Monospace"
+
+            onSourceChanged: () =>
+            {
+                if (source === "")
+                {
+                    text = "";
+                }
+                else
+                {
+                    console.log("load " + source);
+                    window.fetch(source)
+                    .then(r => r.text())
+                    .then(safeCallback(d => text = d))
+                    .catch(err => { console.error(err); });
+                }
+            }
+        }
+    }
+}

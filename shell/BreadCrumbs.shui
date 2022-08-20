@@ -1,0 +1,58 @@
+require "shellfish/ui";
+
+Box {
+    id: box
+
+    property path: ""
+
+    event changePath
+
+    layout: "center-row"
+
+    onPathChanged: () =>
+    {
+        const parts = path.split("/");
+
+        let m = [];
+        m.push({ name: "", path: "/" });
+        let currentPath = parts[0];
+        for (let i = 1; i < parts.length; ++i)
+        {
+            if (parts[i].length > 0)
+            {
+                currentPath += "/" + parts[i];
+                m.push({ name: decodeURIComponent(parts[i]), path: currentPath });
+            }
+        }
+        breadCrumbsModel.reset(m);
+    }
+
+    ListModel {
+        id: breadCrumbsModel
+    }
+
+    Box {
+        fillHeight: true
+        layout: "row"
+
+        Repeater {
+            model: breadCrumbsModel
+            delegate: template Button {
+                labelProfile: Object {
+                    property bold: true
+                    //property literal: true
+                }
+                flat: true
+                fillHeight: true
+                icon: modelData.index === 0 ? "fs-drive"
+                                            : "ui-arrow_right"
+                text: modelData.value.name
+
+                onClick: () =>
+                {
+                    box.changePath(modelData.value.path);
+                }
+            }
+        }
+    }
+}

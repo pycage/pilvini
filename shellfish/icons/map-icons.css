@@ -1,0 +1,82 @@
+/* Shellfish Icons Stylesheet
+ *
+ * Powered by Webfont - Awesome generator of webfont
+ * https://github.com/itgalaxy/webfont
+ */
+
+@font-face {
+    font-family: shellfish-icons-map;
+    src: url(data:font/woff2;charset=utf-8;base64,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) format('woff2');
+}
+
+[class^="sh-icon-map"], [class*=" sh-icon-map"] {
+    /* use !important to prevent issues with browser extensions that change fonts */
+    font-family: shellfish-icons-map !important;
+    speak: none;
+    font-style: normal;
+    font-weight: normal;
+    font-variant: normal;
+    text-transform: none;
+
+    /* Better Font Rendering =========== */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.sh-icon-map-add_location:before { content: "\ea01"; }
+.sh-icon-map-atm:before { content: "\ea02"; }
+.sh-icon-map-attraction:before { content: "\ea03"; }
+.sh-icon-map-bakery:before { content: "\ea04"; }
+.sh-icon-map-bar:before { content: "\ea05"; }
+.sh-icon-map-beach:before { content: "\ea06"; }
+.sh-icon-map-beenhere:before { content: "\ea07"; }
+.sh-icon-map-bike:before { content: "\ea08"; }
+.sh-icon-map-bus:before { content: "\ea09"; }
+.sh-icon-map-cafe:before { content: "\ea0a"; }
+.sh-icon-map-car:before { content: "\ea0b"; }
+.sh-icon-map-car_rental:before { content: "\ea0c"; }
+.sh-icon-map-car_repair:before { content: "\ea0d"; }
+.sh-icon-map-car_wash:before { content: "\ea0e"; }
+.sh-icon-map-child_care:before { content: "\ea0f"; }
+.sh-icon-map-child_friendly:before { content: "\ea10"; }
+.sh-icon-map-city:before { content: "\ea11"; }
+.sh-icon-map-convenience_store:before { content: "\ea12"; }
+.sh-icon-map-deck:before { content: "\ea13"; }
+.sh-icon-map-directions:before { content: "\ea14"; }
+.sh-icon-map-dry_cleaning:before { content: "\ea15"; }
+.sh-icon-map-earth:before { content: "\ea16"; }
+.sh-icon-map-explore:before { content: "\ea17"; }
+.sh-icon-map-explore_off:before { content: "\ea18"; }
+.sh-icon-map-fastfood:before { content: "\ea19"; }
+.sh-icon-map-ferry:before { content: "\ea1a"; }
+.sh-icon-map-festival:before { content: "\ea1b"; }
+.sh-icon-map-fitness_center:before { content: "\ea1c"; }
+.sh-icon-map-florist:before { content: "\ea1d"; }
+.sh-icon-map-gas_station:before { content: "\ea1e"; }
+.sh-icon-map-gps_fixed:before { content: "\ea1f"; }
+.sh-icon-map-gps_not_fixed:before { content: "\ea20"; }
+.sh-icon-map-gps_off:before { content: "\ea21"; }
+.sh-icon-map-grocery_store:before { content: "\ea22"; }
+.sh-icon-map-home:before { content: "\ea23"; }
+.sh-icon-map-hospital:before { content: "\ea24"; }
+.sh-icon-map-laundry_service:before { content: "\ea25"; }
+.sh-icon-map-library:before { content: "\ea26"; }
+.sh-icon-map-location_history:before { content: "\ea27"; }
+.sh-icon-map-location_off:before { content: "\ea28"; }
+.sh-icon-map-location_on:before { content: "\ea29"; }
+.sh-icon-map-mall:before { content: "\ea2a"; }
+.sh-icon-map-map:before { content: "\ea2b"; }
+.sh-icon-map-movies:before { content: "\ea2c"; }
+.sh-icon-map-not_listed_location:before { content: "\ea2d"; }
+.sh-icon-map-offer:before { content: "\ea2e"; }
+.sh-icon-map-park:before { content: "\ea2f"; }
+.sh-icon-map-parking:before { content: "\ea30"; }
+.sh-icon-map-pharmacy:before { content: "\ea31"; }
+.sh-icon-map-pizza:before { content: "\ea32"; }
+.sh-icon-map-print_shop:before { content: "\ea33"; }
+.sh-icon-map-railway:before { content: "\ea34"; }
+.sh-icon-map-restaurant:before { content: "\ea35"; }
+.sh-icon-map-subway:before { content: "\ea36"; }
+.sh-icon-map-taxi:before { content: "\ea37"; }
+.sh-icon-map-walk:before { content: "\ea38"; }
+

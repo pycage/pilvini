@@ -1,0 +1,230 @@
+require "shellfish/ui";
+
+MouseBox {
+    id: box
+
+    property originalWidth: 100
+    property originalHeight: 100
+
+    property minScale: Math.min(Math.max(1, bbox.width) / Math.max(1, originalWidth),
+                                Math.max(1, bbox.height) / Math.max(1, originalHeight))
+    property maxScale: minScale * 32;
+    property scale: 1.0
+
+    property viewX: 0
+    property viewY: 0
+
+    property adapter: Object {
+        property bbox: box.bbox
+
+        property contentX: 0
+        property contentY: 0
+        property contentWidth: box.originalWidth * box.scale
+        property contentHeight: box.originalHeight * box.scale
+
+        property _contentX: box.viewX * box.scale
+        property _contentY: box.viewY * box.scale
+
+        onContentXChanged: () =>
+        {
+            const v = Math.max(0, Math.min(contentWidth - bbox.width, contentX));
+            box.confineViewport(v / scale, box.viewY);
+            if (contentX !== v)
+            {
+                contentX = v;
+            }
+        }
+
+        onContentYChanged: () =>
+        {
+            const v = Math.max(0, Math.min(contentHeight - bbox.height, contentY));
+            box.confineViewport(box.viewX, v / scale);
+            if (contentY !== v)
+            {
+                contentY = v;
+            }
+        }
+
+        on_contentXChanged: () =>
+        {
+            if (contentX !== _contentX)
+            {
+                contentX = _contentX;
+            }
+        }
+
+        on_contentYChanged: () =>
+        {
+            if (contentY !== _contentY)
+            {
+                contentY = _contentY;
+            }
+        }
+    }
+
+    Object {
+        id: priv
+
+        property grabX: 0
+        property grabY: 0
+
+        property prevScale: 1.0
+        property scaleAnchorX: 0.5
+        property scaleAnchorY: 0.5
+    }
+
+    function confineViewport(vx, vy)
+    {
+        if (bbox.width * bbox.height === 0)
+        {
+            return;
+        }
+
+        const viewWidth = bbox.width / scale;
+        const viewHeight = bbox.height / scale;
+
+        if (viewWidth <= originalWidth)
+        {
+            if (vx < 0)
+            {
+                vx = 0;
+            }
+            if (vx + viewWidth > originalWidth)
+            {
+                vx = originalWidth - viewWidth;
+            }
+        }
+        else
+        {
+            vx = (originalWidth - viewWidth) / 2;
+        }
+
+        if (viewHeight <= originalHeight)
+        {
+            if (vy < 0)
+            {
+                vy = 0;
+            }
+            if (vy + viewHeight > originalHeight)
+            {
+                vy = originalHeight - viewHeight;
+            }
+        }
+        else
+        {
+            vy = (originalHeight - viewHeight) / 2;
+        }
+
+        viewX = vx;
+        viewY = vy;
+    }
+
+    function scaleToFit()
+    {
+        if (originalWidth * originalHeight > 0 && bbox.width * bbox.height > 0)
+        {
+            const factor1 = bbox.width / originalWidth;
+            const factor2 = bbox.height / originalHeight;
+            scale = Math.max(minScale, Math.min(maxScale, Math.min(factor1, factor2)));
+            confineViewport(0, 0);
+        }
+    }
+
+    onScaleChanged: () =>
+    {
+        if (! scale)
+        {
+            return;
+        }
+
+        // convert anchors to viewport coordinates
+        const anchorXBefore = viewX + priv.scaleAnchorX * bbox.width / priv.prevScale;
+        const anchorYBefore = viewY + priv.scaleAnchorY * bbox.height / priv.prevScale;
+
+        const anchorXAfter = viewX + priv.scaleAnchorX * bbox.width / scale;
+        const anchorYAfter = viewY + priv.scaleAnchorY * bbox.height / scale;
+       
+        const dx = anchorXAfter - anchorXBefore;
+        const dy = anchorYAfter - anchorYBefore;
+
+        confineViewport(viewX - dx, viewY - dy);
+
+        priv.prevScale = scale;
+    }
+
+    onBboxChanged: () =>
+    {
+        scale = Math.max(minScale, Math.min(maxScale, scale));
+        confineViewport(viewX, viewY);
+    }
+
+    onPointerDown: ev =>
+    {
+        if (touchPoints > 1 || pinchGesture.pinching)
+        {
+            return;
+        }
+
+        priv.grabX = ev.x;
+        priv.grabY = ev.y;
+        ev.accepted = true;
+    }
+
+    onPointerMove: ev =>
+    {
+        if (touchPoints > 1 || pinchGesture.pinching)
+        {
+            return;
+        }
+
+        if (ev.buttons !== 0)
+        {
+            const dx = (priv.grabX - ev.x) / scale;
+            const dy = (priv.grabY - ev.y) / scale;
+            priv.grabX = ev.x;
+            priv.grabY = ev.y;
+
+            confineViewport(viewX + dx, viewY + dy);
+            ev.accepted = true;
+        }
+    }
+
+    onDoubleClick: ev =>
+    {
+        scaleToFit();
+        ev.accepted = true;
+    }
+
+    onWheel: ev =>
+    {
+        ev.accepted = true;
+        priv.scaleAnchorX = ev.x / bbox.width;
+        priv.scaleAnchorY = ev.y / bbox.height;
+
+        if (ev.deltaY < 0)
+        {
+            scale = Math.max(minScale, Math.min(maxScale, scale * 1.1));
+        }
+        else if (ev.deltaY > 0)
+        {
+            scale = Math.max(minScale, Math.min(maxScale, scale * 0.9));
+        }
+    }
+
+    PinchGesture {
+        id: pinchGesture
+
+        onDistanceChanged: () =>
+        {
+            if (previousDistance > 0)
+            {
+                const factor = distance / previousDistance;
+                priv.scaleAnchorX = (x1 + (x2 - x1) / 2) / box.bbox.width;
+                priv.scaleAnchorY = (y1 + (y2 - y1) / 2) / box.bbox.height;
+                box.scale = Math.max(box.minScale, Math.min(box.maxScale, box.scale * factor));
+            }
+        }
+
+    }
+
+}

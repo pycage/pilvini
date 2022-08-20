@@ -1,0 +1,198 @@
+require "shellfish/ui";
+require "./FilesBox.shui";
+require "./FileViewer.shui";
+require "./GridLayout.shui";
+require "./SettingsDialog.shui";
+require "/icons/comm-icons.css";
+require "/icons/fs-icons.css";
+require "/icons/media-icons.css";
+require "/icons/ui-icons.css";
+
+Document {
+    id: doc
+
+    property loggedIn: false
+
+    property darkMode: systemDarkMode
+    property darkTheme: DarkTheme { }
+    property lightTheme: Theme { }
+    theme: darkMode ? darkTheme : lightTheme
+
+    color: theme.primaryBackgroundColor
+
+    onContextMenu: ev => { ev.accepted = true; }
+
+    onInitialization: () =>
+    {
+        remoteFs.list("/")
+        .then(f =>
+        {
+            loggedIn = true;
+        })
+        .catch(err =>
+        {
+            alert("Login Failed.");
+        });
+    }
+
+    DavFS {
+        id: remoteFs
+    }
+
+    OfflineFS {
+        id: offlineFs
+        volume: "offline"
+    }
+
+    ListModel {
+        id: panesModel
+
+        data: ["/"]
+    }
+
+    Box {
+        visible: doc.loggedIn
+
+        fillWidth: true
+        height: documentRoot.windowHeight
+        color: theme.contentBackgroundColor
+
+        Box {
+            fillWidth: true
+            height: theme.itemHeightMedium
+            color: theme.secondaryBackgroundColor
+
+            layout: "center-row"
+
+            Label {
+                marginLeft: theme.paddingSmall
+                fillWidth: true
+                bold: true
+                text: "Pilvini Secure Cloud Drive"
+            }
+
+            Button {
+                fillHeight: true
+                flat: true
+                icon: "ui-menu"
+
+                onClick: (ev) =>
+                {
+                    ev.accepted = true;
+                    const menu = menuT();
+                    menu.popup(self);
+                }
+
+                property menuT: template Menu {
+
+                    MenuItem {
+                        text: "About..."
+                    }
+
+                    MenuItem {
+                        text: doc.darkMode ? "Light Mode"
+                                           : "Dark Mode"
+                        onClick: () =>
+                        {
+                            doc.darkMode = ! doc.darkMode;
+                        }
+                    }
+
+                    MenuItem {
+                        text: "Settings..."
+                        onClick: () =>
+                        {
+                            const dlg = doc.settingsDialogT();
+                            dlg.show();
+                        }
+                    }
+
+                    MenuItem {
+                        text: "Log Out"
+                        onClick: () =>
+                        {
+                            window.fetch("/logout")
+                            .then(() => { window.location.reload(); })
+                            .catch(err => { });
+                        }
+                    }
+
+                }
+            }
+            
+        }
+
+        Box {
+            fillWidth: true
+            fillHeight: true
+            layout: bbox.width > bbox.height ? "row" : "column"
+
+            GridLayout {
+                visible: ! viewer.visible || ! viewer.fullSize
+
+                fillWidth: true
+                fillHeight: true
+
+                layout: bbox.width > bbox.height ? "row" : "column"
+
+                Repeater {
+                    model: panesModel
+
+                    delegate: template FilesBox {
+                        fillWidth: true
+                        fillHeight: ! collapsed
+                        height: collapsed ? theme.itemHeightMedium : -1
+
+                        fs: remoteFs
+                        path: modelData.value
+
+                        onNewPane: (path) =>
+                        {
+                            panesModel.insert(panesModel.size, path);
+                        }
+
+                        onClosePane: () =>
+                        {
+                            panesModel.remove(modelData.index);
+                        }
+
+                        onFilesOpen: (files, idx) =>
+                        {
+                            viewer.current = -1;
+                            viewer.model.reset(files);
+                            viewer.current = idx;
+                        }
+                    }
+                }
+
+            }
+
+            FileViewer {
+                id: viewer
+
+                visible: current !== -1
+
+                marginTop: 2
+                marginLeft: 2
+                marginRight: 2
+                marginBottom: 2
+                fillWidth: true
+                fillHeight: true
+            }
+        }
+
+
+    }
+
+    Placeholder {
+        visible: ! doc.loggedIn
+
+        fillWidth: true
+        height: documentRoot.windowHeight
+
+        text: "Pilvini Secure Cloud Drive"
+    }
+
+    property settingsDialogT: template SettingsDialog { }
+
+}

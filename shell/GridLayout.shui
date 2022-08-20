@@ -1,0 +1,45 @@
+require "shellfish/ui";
+
+Box {
+
+    function update()
+    {
+        const items = children().filter(c => c.visible);
+        const amount = items.length;
+
+        const cols = Math.ceil(Math.sqrt(amount));
+        const rows = Math.ceil(amount / cols);
+
+        let cx = 0;
+        let cy = 0;
+        const cw = bbox.width / cols;
+        const ch = bbox.height / rows;
+        let col = 0;
+
+        console.log("amount: " + amount + ", cols: " + cols + ", rows: " + rows);
+        console.log("cw: " + cw + ", ch: " + ch);
+
+        items.forEach((item, idx) =>
+        {
+            item.position = "free";
+            item.fillWidth = false;
+            item.fillHeight = false;
+            console.log("cx: " + cx + ", cy: " + cy);
+            item.x = cx + 2;
+            item.y = cy + 2;
+            item.width = cw - 4;
+            item.height = ch - 4;
+            cx += cw;
+            ++col;
+            if (col >= cols)
+            {
+                cx = 0;
+                cy += ch;
+                col = 0;
+            }
+        });
+    }
+
+    onBboxChanged: () => { update(); }
+    onChildrenChanged: () => { wait(100).then(() => { update(); }); }
+}

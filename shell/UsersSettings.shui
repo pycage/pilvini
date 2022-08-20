@@ -1,0 +1,178 @@
+require "shellfish/ui";
+
+Box {
+    id: usersBox
+
+    onInitialization: () =>
+    {
+        window.fetch("/::config/users")
+        .then(response => response.text())
+        .then(data =>
+        {
+            priv.users = JSON.parse(data);
+            priv.modified = false;
+        })
+        .catch(err =>
+        {
+
+        });
+    }
+
+    onDestruction: () =>
+    {
+        if (priv.modified)
+        {
+            const obj = {
+                key: "users",
+                data: priv.users
+            };
+            window.fetch("/::config/set", { method: "POST", body: JSON.stringify(obj) });
+        }
+    }
+
+    Object {
+        id: priv
+
+        property modified: false
+        property users: []
+    }
+
+    Box {
+        width: theme.itemWidthLarge * 2
+        height: 300
+
+        Box {
+            fillWidth: true
+            layout: "row"
+
+            Button {
+                text: "New User"
+
+                onClick: ev =>
+                {
+                    ev.accepted = true;
+                    const dlg = usersBox.dialogT();
+                    dlg.show();
+                }
+            }
+        }
+
+        Box {
+            marginTop: theme.paddingSmall
+            fillWidth: true
+            fillHeight: true
+            color: theme.contentBackgroundColor
+            borderColor: theme.borderColor
+            borderWidth: 1
+
+            ListView {
+                id: listView
+
+                property currentIndex: 0
+
+                fillWidth: true
+                fillHeight: true
+
+                cellWidth: bbox.width
+                cellHeight: theme.itemHeightMedium
+
+                model: ListModel {
+                    data: priv.users
+                }
+
+                delegate: template MouseBox {
+                    property selected: listView.currentIndex === modelData.index
+
+                    color: selected ? theme.highlightBackgroundColor
+                                    : "transparent"
+
+                    layout: "center-row"
+
+                    onClick: ev =>
+                    {
+                        ev.accepted = true;
+                        listView.currentIndex = modelData.index;
+                    }
+
+                    Label {
+                        marginLeft: theme.paddingMedium
+                        marginRight: theme.paddingMedium
+                        fillWidth: true
+                        color: parent.selected ? theme.highlightColor
+                                            : theme.primaryColor
+                        text: parent.modelData.value.name
+                    }
+
+                    Button {
+                        text: "Delete"
+
+                        onClick: () =>
+                        {
+                            const items = priv.users;
+                            items.splice(parent.modelData.index, 1);
+                            priv.users = items;
+                            listView.model.reset(priv.users);
+                            priv.modified = true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+
+    property dialogT: template Dialog {
+        id: dlg
+
+        into buttons Button {
+            text: "Add"
+
+            onClick: () =>
+            {
+                const name = nameEntry.text;
+                const pw = passwordEntry.text;
+
+                dlg.close();
+
+                const obj = {
+                    user: name,
+                    password: pw
+                };
+                console.log(JSON.stringify(obj));
+                window.fetch("/::config/passwordHash", { method: "POST", body: JSON.stringify(obj) })
+                .then(response => response.text())
+                .then(data =>
+                {
+                    priv.users.push({
+                        name: name,
+                        hash: data
+                    });
+                    listView.model.reset(priv.users);
+                    priv.modified = true;
+                })
+                .catch(err =>
+                {
+
+                });
+            }
+        }
+
+        into buttons Button {
+            text: "Cancel"
+
+            onClick: () =>
+            {
+                dlg.close();
+            }
+        }
+
+        TextEntry {
+            id: nameEntry
+        }
+
+        TextEntry {
+            id: passwordEntry
+        }
+    }
+}

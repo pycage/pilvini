@@ -1,0 +1,63 @@
+/* Shellfish Icons Stylesheet
+ *
+ * Powered by Webfont - Awesome generator of webfont
+ * https://github.com/itgalaxy/webfont
+ */
+
+@font-face {
+    font-family: shellfish-icons-emote;
+    src: url(data:font/woff2;charset=utf-8;base64,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) format('woff2');
+}
+
+[class^="sh-icon-emote"], [class*=" sh-icon-emote"] {
+    /* use !important to prevent issues with browser extensions that change fonts */
+    font-family: shellfish-icons-emote !important;
+    speak: none;
+    font-style: normal;
+    font-weight: normal;
+    font-variant: normal;
+    text-transform: none;
+
+    /* Better Font Rendering =========== */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.sh-icon-emote-angry:before { content: "\ea01"; }
+.sh-icon-emote-angry-outline:before { content: "\ea02"; }
+.sh-icon-emote-baffled:before { content: "\ea03"; }
+.sh-icon-emote-baffled-outline:before { content: "\ea04"; }
+.sh-icon-emote-confused:before { content: "\ea05"; }
+.sh-icon-emote-confused-outline:before { content: "\ea06"; }
+.sh-icon-emote-cool:before { content: "\ea07"; }
+.sh-icon-emote-cool-outline:before { content: "\ea08"; }
+.sh-icon-emote-crying:before { content: "\ea09"; }
+.sh-icon-emote-crying-outline:before { content: "\ea0a"; }
+.sh-icon-emote-evil:before { content: "\ea0b"; }
+.sh-icon-emote-evil-outline:before { content: "\ea0c"; }
+.sh-icon-emote-frustrated:before { content: "\ea0d"; }
+.sh-icon-emote-frustrated-outline:before { content: "\ea0e"; }
+.sh-icon-emote-grin:before { content: "\ea0f"; }
+.sh-icon-emote-grin-outline:before { content: "\ea10"; }
+.sh-icon-emote-happy:before { content: "\ea11"; }
+.sh-icon-emote-happy-outline:before { content: "\ea12"; }
+.sh-icon-emote-hipster:before { content: "\ea13"; }
+.sh-icon-emote-hipster-outline:before { content: "\ea14"; }
+.sh-icon-emote-neutral:before { content: "\ea15"; }
+.sh-icon-emote-neutral-outline:before { content: "\ea16"; }
+.sh-icon-emote-pets:before { content: "\ea17"; }
+.sh-icon-emote-sad:before { content: "\ea18"; }
+.sh-icon-emote-sad-outline:before { content: "\ea19"; }
+.sh-icon-emote-shocked:before { content: "\ea1a"; }
+.sh-icon-emote-shocked-outline:before { content: "\ea1b"; }
+.sh-icon-emote-sleepy:before { content: "\ea1c"; }
+.sh-icon-emote-sleepy-outline:before { content: "\ea1d"; }
+.sh-icon-emote-smile:before { content: "\ea1e"; }
+.sh-icon-emote-smile-outline:before { content: "\ea1f"; }
+.sh-icon-emote-tongue:before { content: "\ea20"; }
+.sh-icon-emote-tongue-outline:before { content: "\ea21"; }
+.sh-icon-emote-wink:before { content: "\ea22"; }
+.sh-icon-emote-wink-outline:before { content: "\ea23"; }
+.sh-icon-emote-wondering:before { content: "\ea24"; }
+.sh-icon-emote-wondering-outline:before { content: "\ea25"; }
+

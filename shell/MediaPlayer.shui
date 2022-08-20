@@ -1,0 +1,636 @@
+require "shellfish/ui";
+require "./SeekBar.shui";
+
+MouseBox {
+    id: playerBox
+
+    function formatTime(seconds)
+    {
+        let t = seconds;
+        const secs = Math.floor(t) % 60;
+        t /= 60;
+        const minutes = Math.floor(t) % 60;
+        t /= 60;
+        const hours = Math.floor(t);
+
+        let h = hours.toFixed(0);
+        let m = minutes.toFixed(0);
+        let s = secs.toFixed(0);
+
+        if (h.length === 1) h = "0" + h;
+        if (m.length === 1) m = "0" + m;
+        if (s.length === 1) s = "0" + s;
+
+        return (hours > 0 ? h + ":" : "") + m + ":" + s;
+    }
+
+    function stripExtension(filename)
+    {
+        const pos = filename.lastIndexOf(".");
+        if (pos !== -1)
+        {
+            return filename.substr(0, pos);
+        }
+        else
+        {
+            return pos;
+        }
+    }
+
+    property model: ListModel { }
+    property current: -1
+    property minimized: true
+
+    onCurrentChanged: () =>
+    {
+        if (current === -1)
+        {
+            videoPlayer.source = "";
+            coverArt.source = "";
+        }
+        else
+        {
+            const mediaItem = model.at(current);
+            if (mediaItem.mimetype.startsWith("video/"))
+            {
+                coverArt.visible = false;
+                coverArt.source = "";
+                videoPlayer.visible = true;
+                videoPlayer.source = mediaItem.path;
+            }
+            else if (mediaItem.mimetype.startsWith("audio/"))
+            {
+                videoPlayer.visible = false;
+                coverArt.visible = true;
+                controls.visible = true;
+                videoPlayer.source = mediaItem.path;
+                const newSource = "/::thumbnail" + mediaItem.path + "?maxWidth=1080&maxHeight=1080";
+                if (coverArt.source !== newSource)
+                {
+                    coverArt.source = newSource;
+                }
+            }
+        }
+    }
+
+    // minimized player
+    Box {
+        visible: playerBox.minimized
+        fillWidth: true
+        fillHeight: true
+        layout: "row"
+
+        MouseBox {
+            visible: coverArt.source !== ""
+            fillHeight: true
+            width: height
+            marginTop: theme.paddingSmall
+            marginLeft: theme.paddingSmall
+            marginRight: theme.paddingSmall
+            marginBottom: theme.paddingSmall
+            color: theme.primaryColor
+
+            onClick: (ev) =>
+            {
+                playerBox.minimized = false;
+                ev.accepted = true;
+            }
+
+            Image {
+                visible: status === "success"
+                fillWidth: true
+                fillHeight: true
+                marginTop: 2
+                marginLeft: 2
+                marginRight: 2
+                marginBottom: 2
+                fitMode: "cover"
+                source: coverArt.source
+            }
+        }
+
+        Button {
+            fillHeight: true
+            width: bbox.height
+            flat: true
+            icon: controls.player.playing ? "media-pause" : "media-play"
+            onClick: (ev) =>
+            {
+                if (controls.player.playing)
+                {
+                    controls.player.pause();
+                }
+                else
+                {
+                    controls.player.play();
+                }
+                ev.accepted = true;
+            }
+        }
+
+        Button {
+            fillHeight: true
+            width: bbox.height
+            flat: true
+            icon: "media-previous"
+
+            onClick: (ev) =>
+            {
+                if (controls.player.currentTime < 3 && playerBox.current > 0)
+                {
+                    playerBox.current = playerBox.current - 1;
+                }
+                else
+                {
+                    controls.player.currentTime = 0;
+                }
+                ev.accepted = true;
+            }
+        }
+
+        Button {
+            enabled: !! playerBox.model && playerBox.current < playerBox.model.size - 1
+            fillHeight: true
+            width: bbox.height
+            flat: true
+            icon: "media-next"
+
+            onClick: (ev) =>
+            {
+                playerBox.current = playerBox.current + 1;
+                ev.accepted = true;
+            }
+        }
+
+        Box {
+            fillWidth: true
+            fillHeight: true
+
+            Box {
+                fillWidth: true
+                fillHeight: true
+                layout: "center"
+
+                Label {
+                    fillWidth: true
+                    overflowBehavior: "ellipsis"
+                    literal: true
+                    text: titleLabel.text
+                }
+            }
+
+            SeekBar {
+                fillWidth: true
+                fillHeight: true
+                player: controls.player
+            }
+        }
+
+        Button {
+            fillHeight: true
+            width: bbox.height
+            flat: true
+            icon: "ui-unfold_more"
+
+            onClick: (ev) =>
+            {
+                playerBox.minimized = false;
+                ev.accepted = true;
+            }
+        }
+
+        Box {
+            position: "free"
+            marginLeft: theme.paddingSmall
+            marginRight: theme.paddingSmall
+            fillWidth: true
+            height: 1
+            color: theme.primaryColor
+        }
+    }
+
+    // normal player
+    MouseBox {
+        visible: ! playerBox.minimized
+        fillWidth: true
+        fillHeight: true
+
+        onClick: () =>
+        {
+            controls.visible = ! controls.visible;
+        }
+
+        Box {
+            fillWidth: true
+            fillHeight: true
+            color: "black"
+            layout: "center"
+
+            Video {
+                id: videoPlayer
+
+                property ratio: 0
+
+                visible: false
+                width: parent.bbox.width
+                height: parent.bbox.height
+                fitMode: "fill"
+                aspectRatio: (() =>
+                {
+                    switch (ratio)
+                    {
+                    case 0:
+                        return originalHeight > 0 ? originalWidth / originalHeight : 1;
+                    case 1:
+                        return 4 / 3;
+                    case 2:
+                        return 16 / 9;
+                    default:
+                        return 0;
+                    }
+                })()
+
+                onFinish: () =>
+                {
+                    if (playerBox.current < playerBox.model.size - 1)
+                    {
+                        playerBox.current = playerBox.current + 1;
+                    }
+                }
+            }
+
+            Box {
+                id: coverArt
+
+                property source: ""
+
+                visible: false
+                fillWidth: true
+                fillHeight: true
+                layout: "center"
+
+                Image {
+                    visible: status === "success"
+                    position: "free"
+                    fillWidth: true
+                    fillHeight: true
+                    opacity: 0.1
+                    fitMode: "cover"
+                    source: coverArt.source
+                }
+
+                Image {
+                    visible: status === "success"
+                    style: ["sh-dropshadow"]
+                    marginTop: theme.paddingLarge * 3
+                    marginLeft: theme.paddingLarge * 3
+                    marginRight: theme.paddingLarge * 3
+                    marginBottom: theme.paddingLarge * 3
+                    fillWidth: true
+                    fillHeight: true
+                    fitMode: "contain"
+                    source:coverArt.source
+                }
+            }
+
+        }
+
+        Box {
+            visible: controls.visible
+
+            position: "free"
+            origin: "bottom-left"
+            fillWidth: true
+            height: controls.bbox.height * 1.3
+
+            LinearGradient {
+                id: grd
+
+                GradientStop { position: 0.0; color: theme.primaryBackgroundColor.alpha(0.8) }
+                GradientStop { position: 0.5; color: theme.primaryBackgroundColor.alpha(0.8) }
+                GradientStop { position: 1.0; color: "transparent" }
+            }
+
+            gradient: grd.expression
+        }
+
+        Box {
+            id: controls
+
+            property player: videoPlayer
+
+            visible: false
+            position: "free"
+            origin: "bottom-left"
+            fillWidth: true
+            //marginLeft: parent.bbox.width * 0.1
+            //marginRight: marginLeft
+            //marginBottom: theme.paddingLarge
+
+            Box {
+                visible: coverArt.visible && !! playerBox.model && playerBox.model.size > 1
+                fillWidth: true
+                layout: "center-row"
+                overflowBehavior: "wrap"
+
+                onAncestorsVisibleChanged: () =>
+                {
+                    if (! ancestorsVisible)
+                    {
+                        trackButtonRuler.reset();
+                    }
+                }
+
+                Ruler {
+                    id: trackButtonRuler
+                }
+
+                Repeater {
+                    model: playerBox.model
+                    delegate: template Button {
+                        ruler: trackButtonRuler
+                        minWidth: trackButtonRuler.max.width
+                        flat: true
+                        checked: modelData.index === playerBox.current
+
+                        onInitialization: () =>
+                        {
+                            if (! modelData.value.mimetype.startsWith("audio/"))
+                            {
+                                return;
+                            }
+
+                            fetchManager.fetch("/::tags" + modelData.value.path)
+                            .then(response =>
+                            {
+                                if (response.ok)
+                                {
+                                    return response.text();
+                                }
+                            })
+                            .then(data =>
+                            {
+                                const tags = JSON.parse(data);
+                                text = tags.TITLE || stripExtension(modelData.value.name);
+                            })
+                            .catch(err =>
+                            {
+
+                            });
+                        }
+
+                        onClick: (ev) =>
+                        {
+                            playerBox.current = modelData.index;
+                            ev.accepted = true;
+                        }
+                    }
+                }
+            }
+
+            Box {
+                visible: videoPlayer.visible
+                fillWidth: true
+                height: theme.itemHeightSmall
+                layout: "row"
+
+                Box { fillWidth: true }
+
+                Button {
+                    checked: controls.player.ratio === 0
+                    fillHeight: true
+                    flat: true
+                    text: "Auto"
+                    onClick: (ev) => { controls.player.ratio = 0; ev.accepted = true; }
+                }
+
+                Button {
+                    checked: controls.player.ratio === 1
+                    fillHeight: true
+                    flat: true
+                    text: "4:3"
+                    onClick: (ev) => { controls.player.ratio = 1; ev.accepted = true; }
+                }
+
+                Button {
+                    checked: controls.player.ratio === 2
+                    fillHeight: true
+                    flat: true
+                    text: "16:9"
+                    onClick: (ev) => { controls.player.ratio = 2; ev.accepted = true; }
+                }
+
+                Button {
+                    checked: controls.player.ratio === 3
+                    fillHeight: true
+                    flat: true
+                    text: "Fit"
+                    onClick: (ev) => { controls.player.ratio = 3; ev.accepted = true; }
+                }
+
+            }
+
+            Box {
+                fillWidth: true
+                height: theme.itemHeightLarge * 1.5
+                layout: "center-row"
+
+                Button {
+                    fillHeight: true
+                    width: bbox.height
+                    flat: true
+                    icon: "media-previous"
+
+                    onClick: (ev) =>
+                    {
+                        if (controls.player.currentTime < 3 && playerBox.current > 0)
+                        {
+                            playerBox.current = playerBox.current - 1;
+                        }
+                        else
+                        {
+                            controls.player.currentTime = 0;
+                        }
+                        ev.accepted = true;
+                    }
+                }
+
+                Button {
+                    fillHeight: true
+                    width: bbox.height
+                    flat: true
+                    icon: "media-replay_10"
+
+                    onClick: (ev) =>
+                    {
+                        controls.player.currentTime = Math.max(0, controls.player.currentTime - 10);
+                        ev.accepted = true;
+                    }
+                }
+
+                Box { fillWidth: true }
+
+                Button {
+                    fillHeight: true
+                    width: bbox.height
+                    flat: true
+                    icon: controls.player.playing ? "media-pause" : "media-play"
+
+                    onClick: (ev) =>
+                    {
+                        if (controls.player.playing)
+                        {
+                            controls.player.pause();
+                        }
+                        else
+                        {
+                            controls.player.play();
+                        }
+                        ev.accepted = true;
+                    }
+                }
+
+                Box { fillWidth: true }
+
+                Button {
+                    fillHeight: true
+                    width: bbox.height
+                    flat: true
+                    icon: "media-forward_10"
+
+                    onClick: (ev) =>
+                    {
+                        controls.player.currentTime = Math.min(controls.player.duration, controls.player.currentTime + 10);
+                        ev.accepted = true;
+                    }
+                }
+
+                Button {
+                    enabled: !! playerBox.model && playerBox.current < playerBox.model.size - 1
+                    fillHeight: true
+                    width: bbox.height
+                    flat: true
+                    icon: "media-next"
+
+                    onClick: (ev) =>
+                    {
+                        playerBox.current = playerBox.current + 1;
+                        ev.accepted = true;
+                    }
+                }
+
+            }
+
+            SeekBar {
+                id: seekbar
+
+                marginLeft: theme.paddingMedium
+                marginRight: theme.paddingMedium
+                fillWidth: true
+                height: theme.itemHeightLarge
+                player: controls.player
+            }
+
+            Box {
+                marginLeft: theme.paddingMedium
+                marginRight: theme.paddingMedium
+                fillWidth: true
+                layout: "row"
+
+                Label {
+                    text: formatTime(seekbar.seeking ? seekbar.seekTime : controls.player.currentTime)
+                }
+
+                Box { fillWidth: true }
+
+                Label {
+                    text: formatTime(controls.player.duration)
+                }
+            }
+
+            Box {
+                marginTop: theme.paddingLarge
+                fillWidth: true
+                height: theme.itemHeightLarge * 1.5
+                layout: "center-row"
+
+                Button {
+                    fillHeight: true
+                    width: bbox.height
+                    flat: true
+                    icon: "media-eject"
+
+                    onClick: (ev) =>
+                    {
+                        playerBox.current = -1;
+                        docHistory.back();
+                        ev.accepted = true;
+                    }
+                }
+
+                Label {
+                    id: titleLabel
+
+                    fillWidth: true
+                    horizontalAlignment: "center"
+                    fontSize: theme.fontSizeLarge
+                    overflowBehavior: "ellipsis"
+                    literal: true
+
+                    playerBox.onCurrentChanged: () =>
+                    {
+                        if (playerBox.current === -1)
+                        {
+                            text = "";
+                            return;
+                        }
+
+                        const file = playerBox.model.at(playerBox.current);
+                        if (file.mimetype.startsWith("audio/"))
+                        {
+                            text = "Loading...";
+                            fetchManager.fetch("/::tags" + file.path)
+                            .then(response =>
+                            {
+                                if (response.ok)
+                                {
+                                    return response.text();
+                                }
+                            })
+                            .then(data =>
+                            {
+                                const tags = JSON.parse(data);
+                                text = tags.TITLE || stripExtension(file.name);
+                            })
+                            .catch(err =>
+                            {
+
+                            });
+                        }
+                        else
+                        {
+                            text = stripExtension(file.name);
+                        }
+                    }
+                }
+
+                Button {
+                    fillHeight: true
+                    width: bbox.height
+                    flat: true
+                    icon: "ui-unfold_less"
+
+                    onClick: (ev) =>
+                    {
+                        docHistory.back();
+                        //playerBox.minimized = true;
+                        ev.accepted = true;
+                    }
+                }
+            }
+
+        }
+
+    }
+
+}

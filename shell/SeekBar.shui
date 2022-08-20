@@ -1,0 +1,60 @@
+require "shellfish/ui";
+
+MouseBox {
+    id: seekBar
+
+    property player: null
+    property seekTime: 0
+    property seeking: false
+
+    onPointerDown: (ev) =>
+    {
+        if (ev.buttons === 1)
+        {
+            seeking = true;
+            seekTime = (ev.x / bbox.width) * player.duration;
+            ev.accepted = true;
+        }
+    }
+
+    onPointerMove: (ev) =>
+    {
+        if (seeking)
+        {
+            seekTime = (ev.x / bbox.width) * player.duration;
+            ev.accepted = true;
+        }
+    }
+
+    onPointerUp: (ev) =>
+    {
+        player.currentTime = seekTime;
+        seeking = false;
+        ev.accepted = true;
+    }
+
+    Box {
+        position: "free"
+        fillWidth: true
+        fillHeight: true
+
+        marginTop: (parent.bbox.height - theme.paddingSmall / 2) / 2
+        marginBottom: (parent.bbox.height - theme.paddingSmall / 2) / 2
+
+        color: theme.primaryBackgroundColor.alpha(0.5)
+        borderRadius: theme.borderRadius
+    }
+
+    Box {
+        position: "free"
+        marginTop: (parent.bbox.height - theme.paddingSmall / 2) / 2
+        marginBottom: (parent.bbox.height - theme.paddingSmall / 2) / 2
+        width: player.duration > 0 ? ((seekBar.seeking ? seekBar.seekTime : player.currentTime) / player.duration) * parent.bbox.width
+                                   : 0
+        fillHeight: true
+        
+        color: theme.primaryColor
+        borderRadius: theme.borderRadius
+    }
+
+}

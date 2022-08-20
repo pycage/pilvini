@@ -1,0 +1,51 @@
+/* Shellfish Icons Stylesheet
+ *
+ * Powered by Webfont - Awesome generator of webfont
+ * https://github.com/itgalaxy/webfont
+ */
+
+@font-face {
+    font-family: shellfish-icons-input;
+    src: url(data:font/woff2;charset=utf-8;base64,d09GMgABAAAAAAqMAAsAAAAAF6wAAAo6AAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHIYQBlYAiDAKk1CQWQtmAAE2AiQDgUgEIAWDcgeDZhsIFRFVrOsl+zJ5Y/IjQzAMSSRYX64OpdGGbTck38z2K/Hw//t92+eOGa5jlqahzVxfJeGd/EoiJNKHSGYdQmb9H+5Hvl+ZV8Fn0cugASWNBxZFOPFdvVN/T7IDJ2MQHKQCu8g6ncpOCkCejuQ8lgoULiDbRTSV4C95yELYBjLs2+Ph2/l+EElUIl0JxSW6uwEOvP39Nud2nZBscde3rvWbAg8xxoA7IBwG3P9aK+2+2/vBH6LyS+cjDKqoGBkZ1enJbG1f1xzwZI6I3bkASgIXRYg6cVA+FWFIqTNGR+VazrqLbJISUSpQEX3dDJz4HymAbrNj6M7eAwmYblctnA0JcAACtOvH7WlTqiCMcuBwcNHvvZyAMKa3sBS+hi1whFnP7AAdVm3XCTBEHl8gFIklUpFMJpDCUFNUrosKOAqLSokKywIInGS3SEOIxlJp2fblhCYokkiH8cQMjUDOAevt9Ua5gCh0AnOhHq7ARxSCclFfNBlVoy3oHHoGnXSBRiviSRU6CExFet33PnJNEiRtLl3AxsQo9bUzgUGCpbZUizVDtVLe3fkAQ1nTjio5broKsWaulInWtj6ejHbEz/09sYLUvUpLBddk+zGZqEpKk/FIli0QdHjV15cRx8tllr8QUPAHlvC0VLVivVGMQMvrDROVk8lsOIimhYJnQXP5ErlSbbZACiAfQQ/Ke+YB8EF/+/gHsxEGUBAtkH1h+yf3mggeONccrwPgtA5gMRAAtAEtwDjQCqIBAfATWiDAOAwLogGtfgLoRUPhnsA0WALLmuM1DcA5qIIZsKwZWUGwAy+m+TYdMHaOpoUKZ+Cez/PVMr5YJDdLn6kTLXoNBAp7CfD/NBqDxeEJRBKZQqXRGUwWmwOiHbJ/AsZ4LSUruSihpBjqkpSWmllqy07PKSuERmt8r5nlNJTNAOdCjNEFrKSLGKVLWEOXsZmuYDVdxQRdwwq6jim6gUm6hWG6jY10B6voLtbRPayl+9hEDzBND7GBHmGQHmM9PcEQPcUMPcM4vXCNcCLgZICTBU4dcOqBMwQ4Q4EzDDjDgRMDJwecBuA0AqcJOM3AaQFOK3BGAGckcEYBZzRwxgBnLHDGAWc85GAWcXn+XQDlL2j5Qz90q/KheIiwQEIIRKFwGKECliCoNp4VHm6IDrewhHfQwXhLSGa4LiRv7Da6cBzLihQuwTgsgxepD9MXYb0xIjHZYjEu4RhMiSiA4axAMDuHUGRcoB50HVD2yftpJ4UgnLvAxT1wzNruw0o+NZB9yjM0emeQM6r+dKfqdl1RLsmXCQymszddoD6FUj3BFn5q1uXl5qhB8YYPqv2T6cFY87CqX/aRTZvVErcYlHcgcMA2fFgJIFdQTKhtrN2DFXJp36VMX3rY4Mmjsdeza50Iw3WJG/d1mgHux0W3wAUFS9DWhE2TqekMQRxG6IKhNCqcIlJe4CnDRcHMcYLpyIhqIjLDfcIbz1ECCGH47NMRXEGOQziC6gc9EUH2YQzcESnIT1Wv6xk2KE/IRoifM07kmJBxcDEOcSCMX6klSm0MJRt3HWiMFevq1JpooaY+auPGCdQ4+nDSnByz36/QPMegHEAsVmobm2Kn1KnRk2oa6jdizMj7xhtZ10GOo4RT94OT0+HJvECGiyZk1rMTmNGFn6mKGc+O+JsanYzBFRyDzPDZtzIww++H3lc62YcNyvDJXq6OU6MF1uVWLwPTo8NQkZNQsW6G09TIc6cIEzEKvnr1ifNlLwLjEU4R8LErAcXXScBIuB5U/WOB1J/DBiWf2us4bq1yA1udd56HCSPUGoqngfOfAxVB5zfmEZeenQCOQABxsl8NEiWA2KmHL5XPPb0ZUpLcbinLbYYtVfNIr+SXJ2JJZu6qi+shxRJa1BUUUpJPaH2o2OC8bv3KCzWHA4Kr1Ma8KS4RVjj4rp93cQhN0CpakiraYdVVUgLfjm9FlXYLRJYpGmGVvDxbhY1gFMSf+umzpLb9Qge47QMSTGXST/36tNWELtm9Oi6fszm6z/GtNu/F1n0cS+aTYbP0PaZPn8p943R2bzdkUJvuS9bMiszSN7w6H9Vu0br4zX8IvaInOPqmRPfJ6PHbq3Os6IfZ241kU3mJRBYkbr7eQUpoQYE5UuInm90tbVbboTILDp7rwfiLmgPrsnXoor0G3MkeNaXjqj2XosmYugYQrA1ozRSo1jDX4S7CO6n72LHdK+XKSH9e9Nmosl3DuUuGRom5Hp1SqclRkts+ynE4cvlKuxG8s4ee7nn7U37b36wri//mndbqpulmq3faN/H1FTtBi9p/kEheSigvhWEFbj5yvzkmb6QkTDa7WbZI24HSOqTawHqvUvi64VAF3Eo5fJO6Gm3GShn/XVVO7fb6hHq7nZZX/Y3TIqOt0A7KNvI/Z4pP28PWbiFAplxf9tGOI+MA5t6KmfZFWj8PNO0erc9S+xypVUcZks/l4YXVh92Hux04dGDl3btxRab0ZoV54M6rC+HooJm9J03o3aavdYjAM6+iTKfPTvk3QWglJBTm196TOUm1+TOj1TMLv9WNoO10Dxq0dWtZeDHz4oQJIlNzB4OmwEe0DWDqOzzh/7ZDvc/GD675ofqdc1tfj9sOW3+vIUN8PlFM3NnxCQ8ldoQhBjL/ON/jPbuq1D5hqe/apsbZ4iq8T61vovC61HtbOjSk+ZeraBiUj17DcqdP/RDbeV6C1es9EjOMWZd8L4lvxSdR4w9MaDt16Jw529glDp3Ot95W+N+IN4Xwv7nvzJrt08wryUoSnUoz+477wnkOq35IbzVgQCtAa2pYByTtjQeynJaarYEZ39noGb+ZlhkVO8Oqx02Hvskpn5kWQK2B/gbRlR3+X5ABVjCrXldwnqgL40x76lH28nabLWyA3ba+ilZ/VKPwMyIgQL322maHudNvYamDTM4frwOc0Ql1BVo718MFWrM4qstRLnUciXMBRoaiutEDmgBl8/yDmK+MAEKmUQiGFuI9rQiKpw3HRDslnm6d8vA9NOfAQlrDASHrZd+DEr1TGNJ7hQN98RBMXxUJ9NfDuoFjJRzKYJBeIfPnqQ0wKvNVKScJY7vLe4yqV62617V8W0l+mU66d4N/O2J68y3JpDvsh42MDGjU3gSl4RFlq3PX/hOxqkjltPdAIhQTXjqbHkjUBG5TQ1210lLuEFiTAtLOpUw/1yPnVD5XudIwvsgSGHNCeomDAw+RiIydEFuLMyFbCtbnsgYqFFXTDdOStuN6PoVKozOYLDaHy+MLhCKxRCqTK5QqtUar0xuMJrPFaiMzv1/koer+6xZx5dJMAcLT4P/Tr1GKldvg4Yu6ihAqxWxxHXLydTssXX8Luhk+weHOIqOBSyAdhoZ7sdMM2YxA5VAdezL9wYP2co269Jb0eI49rnLJRh/I8NxG7/gaNaEypzPZ3A1deQrNpjBWubjxfl6NFKjnHlo996ZWHitESj85JpeplTzAVRrOgEI6kqEV2owAVgBl) format('woff2');
+}
+
+[class^="sh-icon-input"], [class*=" sh-icon-input"] {
+    /* use !important to prevent issues with browser extensions that change fonts */
+    font-family: shellfish-icons-input !important;
+    speak: none;
+    font-style: normal;
+    font-weight: normal;
+    font-variant: normal;
+    text-transform: none;
+
+    /* Better Font Rendering =========== */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.sh-icon-input-game:before { content: "\ea01"; }
+.sh-icon-input-gamecontroller:before { content: "\ea02"; }
+.sh-icon-input-gamepad:before { content: "\ea03"; }
+.sh-icon-input-gesture:before { content: "\ea04"; }
+.sh-icon-input-keyboard:before { content: "\ea05"; }
+.sh-icon-input-keyboard_arrow_down:before { content: "\ea06"; }
+.sh-icon-input-keyboard_arrow_left:before { content: "\ea07"; }
+.sh-icon-input-keyboard_arrow_right:before { content: "\ea08"; }
+.sh-icon-input-keyboard_arrow_up:before { content: "\ea09"; }
+.sh-icon-input-keyboard_backspace:before { content: "\ea0a"; }
+.sh-icon-input-keyboard_capslock:before { content: "\ea0b"; }
+.sh-icon-input-keyboard_command:before { content: "\ea0c"; }
+.sh-icon-input-keyboard_ctrl:before { content: "\ea0d"; }
+.sh-icon-input-keyboard_hide:before { content: "\ea0e"; }
+.sh-icon-input-keyboard_return:before { content: "\ea0f"; }
+.sh-icon-input-keyboard_shift:before { content: "\ea10"; }
+.sh-icon-input-keyboard_tab:before { content: "\ea11"; }
+.sh-icon-input-keyboard_win:before { content: "\ea12"; }
+.sh-icon-input-mouse:before { content: "\ea13"; }
+.sh-icon-input-pan:before { content: "\ea14"; }
+.sh-icon-input-pen:before { content: "\ea15"; }
+.sh-icon-input-quill:before { content: "\ea16"; }
+.sh-icon-input-swipe:before { content: "\ea17"; }
+.sh-icon-input-touch:before { content: "\ea18"; }
+.sh-icon-input-voice:before { content: "\ea19"; }
+

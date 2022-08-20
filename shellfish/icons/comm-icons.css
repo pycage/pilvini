@@ -1,0 +1,83 @@
+/* Shellfish Icons Stylesheet
+ *
+ * Powered by Webfont - Awesome generator of webfont
+ * https://github.com/itgalaxy/webfont
+ */
+
+@font-face {
+    font-family: shellfish-icons-comm;
+    src: url(data:font/woff2;charset=utf-8;base64,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) format('woff2');
+}
+
+[class^="sh-icon-comm"], [class*=" sh-icon-comm"] {
+    /* use !important to prevent issues with browser extensions that change fonts */
+    font-family: shellfish-icons-comm !important;
+    speak: none;
+    font-style: normal;
+    font-weight: normal;
+    font-variant: normal;
+    text-transform: none;
+
+    /* Better Font Rendering =========== */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.sh-icon-comm-airplanemode_active:before { content: "\ea01"; }
+.sh-icon-comm-airplanemode_inactive:before { content: "\ea02"; }
+.sh-icon-comm-attachment:before { content: "\ea03"; }
+.sh-icon-comm-bluetooth:before { content: "\ea04"; }
+.sh-icon-comm-bluetooth_connected:before { content: "\ea05"; }
+.sh-icon-comm-bluetooth_disabled:before { content: "\ea06"; }
+.sh-icon-comm-bluetooth_searching:before { content: "\ea07"; }
+.sh-icon-comm-call:before { content: "\ea08"; }
+.sh-icon-comm-call_end:before { content: "\ea09"; }
+.sh-icon-comm-chat:before { content: "\ea0a"; }
+.sh-icon-comm-chat_bubble:before { content: "\ea0b"; }
+.sh-icon-comm-chat_bubble_outline:before { content: "\ea0c"; }
+.sh-icon-comm-connected:before { content: "\ea0d"; }
+.sh-icon-comm-device_hub:before { content: "\ea0e"; }
+.sh-icon-comm-dialer_sip:before { content: "\ea0f"; }
+.sh-icon-comm-disconnected:before { content: "\ea10"; }
+.sh-icon-comm-forum:before { content: "\ea11"; }
+.sh-icon-comm-group:before { content: "\ea12"; }
+.sh-icon-comm-group_add:before { content: "\ea13"; }
+.sh-icon-comm-headset:before { content: "\ea14"; }
+.sh-icon-comm-headset_mic:before { content: "\ea15"; }
+.sh-icon-comm-headset_off:before { content: "\ea16"; }
+.sh-icon-comm-http:before { content: "\ea17"; }
+.sh-icon-comm-https:before { content: "\ea18"; }
+.sh-icon-comm-mail:before { content: "\ea19"; }
+.sh-icon-comm-mark_as_unread:before { content: "\ea1a"; }
+.sh-icon-comm-markunread_mailbox:before { content: "\ea1b"; }
+.sh-icon-comm-mic:before { content: "\ea1c"; }
+.sh-icon-comm-mic_none:before { content: "\ea1d"; }
+.sh-icon-comm-mic_off:before { content: "\ea1e"; }
+.sh-icon-comm-mms:before { content: "\ea1f"; }
+.sh-icon-comm-person:before { content: "\ea20"; }
+.sh-icon-comm-person_outline:before { content: "\ea21"; }
+.sh-icon-comm-phone:before { content: "\ea22"; }
+.sh-icon-comm-phone_bluetooth_speaker:before { content: "\ea23"; }
+.sh-icon-comm-phone_callback:before { content: "\ea24"; }
+.sh-icon-comm-phone_disabled:before { content: "\ea25"; }
+.sh-icon-comm-phone_enabled:before { content: "\ea26"; }
+.sh-icon-comm-phone_forwarded:before { content: "\ea27"; }
+.sh-icon-comm-phone_in_talk:before { content: "\ea28"; }
+.sh-icon-comm-phone_locked:before { content: "\ea29"; }
+.sh-icon-comm-phone_missed:before { content: "\ea2a"; }
+.sh-icon-comm-phone_paused:before { content: "\ea2b"; }
+.sh-icon-comm-radio:before { content: "\ea2c"; }
+.sh-icon-comm-router:before { content: "\ea2d"; }
+.sh-icon-comm-rss_feed:before { content: "\ea2e"; }
+.sh-icon-comm-rss_feed2:before { content: "\ea2f"; }
+.sh-icon-comm-sim_card:before { content: "\ea30"; }
+.sh-icon-comm-sim_card_alert:before { content: "\ea31"; }
+.sh-icon-comm-textsms:before { content: "\ea32"; }
+.sh-icon-comm-usb:before { content: "\ea33"; }
+.sh-icon-comm-voice_chat:before { content: "\ea34"; }
+.sh-icon-comm-voicemail:before { content: "\ea35"; }
+.sh-icon-comm-wifi:before { content: "\ea36"; }
+.sh-icon-comm-wifi_lock:before { content: "\ea37"; }
+.sh-icon-comm-wifi_off:before { content: "\ea38"; }
+.sh-icon-comm-world:before { content: "\ea39"; }
+

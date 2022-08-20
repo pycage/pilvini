@@ -1,0 +1,148 @@
+require "shellfish/server";
+require "./virtualfs.js";
+require "./zipfs.js";
+require "./ConfigSession.shui";
+
+HTTPServer {
+
+    enabled: configStore.ready
+    secure: configStore.server.use_ssl
+    certificate: __dirname + "/cert/server.cert"
+    key: __dirname + "/cert/server.key"
+    port: configStore.server.port
+
+    function log(domain, level, message)
+    {
+        if (domain === "HTTP" || domain === "HTTPServer" || domain === "Config" || level !== "info")
+        {
+            const now = new Date();
+            console.log(now.toLocaleString() + " [" + domain + "] " + message);
+        }
+    }
+
+    LocalFS {
+        id: localFs
+    }
+    
+    FileStorage {
+        id: configStore
+
+        filesystem: localFs
+        path: __dirname + "/../config.json"
+
+        property server: ({
+            port: 8000,
+            use_ssl: false,
+            root: localFs.homeDirectory
+        })
+        property users: []
+    }
+
+    HTTPAuth {
+        id: auth
+
+        users: (() =>
+        {
+            const m = { };
+            configStore.users.forEach(entry => m[entry.name] = entry.hash);
+            return m;
+        })()
+    }
+
+
+    VirtualFS {
+        id: vfs
+
+        filesystem: localFs
+
+        ZipFS {
+            property vfsMimeTypes: ["application/zip"]
+        }
+    }
+
+    HTTPRoute {
+        when: req => { return req.url === "/logout"; }
+
+        delegate: template HTTPSession {
+            onRequest: req =>
+            {
+                response(401, "Unauthorized")
+                .send();
+            }
+        }
+    }
+
+    // Server configuration
+    HTTPRoute {
+        authentication: auth
+
+        when: req => { return req.url.startsWith("/::config/"); }
+
+        delegate: template ConfigSession {
+            target: configStore
+            authentication: auth
+        }
+    }
+
+    // Shellfish resources accessible without authentication
+    HTTPRoute {
+
+        property WHITELIST: [
+            "/shellfish.pkg",
+            "/shellfish-ui.pkg",
+            "/icons/comm-icons.css",
+            "/icons/fs-icons.css",
+            "/icons/media-icons.css",
+            "/icons/ui-icons.css",
+            "/require.js"
+        ]
+
+        when: req =>
+        {
+	        //console.log(__dirname + ", " + "/shellfish" + ", " + req.url);
+            return WHITELIST.indexOf(req.url) !== -1;
+        }
+
+        delegate: template WebSession {
+            filesystem: localFs
+            //root: __dirname + "/../shellfish"
+            root: __dirname + "/../../shellfish/dist"
+        }
+
+    }//HTTPRoute
+
+    // UI
+    HTTPRoute {
+        when: req => { return req.url.startsWith("/shell/"); }
+
+        delegate: template WebSession {
+            filesystem: localFs
+            root: __dirname + "/.." // + "/shell"
+        }
+
+    }
+
+    // WebDAV access
+    HTTPRoute {
+        authentication: auth
+
+        delegate: template DAVSession {
+            /*
+            urlMapper: url =>
+            {
+                if (! url.startsWith("/Pictures"))
+                {
+                    url = "/Pictures";
+                }
+                return url;
+            }
+            */
+
+            filesystem: vfs
+            //root: configStore.server.root
+            root: user ? (configStore.users.find(item => item.name === user).root || "/") : "/"
+        }
+
+    }
+
+}

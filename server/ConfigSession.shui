@@ -1,0 +1,86 @@
+require "shellfish/server";
+
+HTTPSession {
+
+    property target: null
+    property authentication: null
+
+    function callMethod(method, data)
+    {
+        if (method === "set")
+        {
+            const obj = JSON.parse(data);
+            const parts = obj.key.split(".");
+            const key = parts.pop();
+            let item = target;
+            parts.forEach(p => item = item ? item[p] : null);
+            item[key] = obj.data;
+            log("Config", "info", "Set " + obj.key + " = " + JSON.stringify(obj.data));
+            return "";
+        }
+        else if (method === "passwordHash")
+        {
+            console.log(data);
+            const obj = JSON.parse(data);
+            return authentication.passwordHash(obj.user, "", obj.password);
+        }
+        return "";
+    }
+
+    onRequest: ev =>
+    {
+        if (ev.method === "GET")
+        {
+            const parts = ev.url.split("/").slice(2);
+            let item = target;
+            parts.forEach(p => item = item ? item[p] : null);
+
+            if (item !== null)
+            {
+                log("Config", "info", "Read: " + parts.join("."));
+                try
+                {
+                    response(200, "OK")
+                    .body(JSON.stringify(item))
+                    .send();
+                }
+                catch (err)
+                {
+                    log("Config", "error", "" + err);
+                    response(500, "Internal Error")
+                    .send();
+                }
+            }
+            else
+            {
+                response(404, "Not Found")
+                .send();
+            }
+        }
+        else if (ev.method === "POST")
+        {
+            const parts = ev.url.split("/").slice(2);
+            const method = parts[0];
+
+            ev.body()
+            .then(data =>
+            {
+                const result = callMethod(method, data);
+                response(200, "OK")
+                .body(result)
+                .send();
+            })
+            .catch(err =>
+            {
+                log("Config", "error", "" + err);
+                response(500, "Internal Error")
+                .send();
+            });
+        }
+        else
+        {
+            response(403, "Not Authorized")
+            .send();
+        }
+    }
+}
