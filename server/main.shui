@@ -7,8 +7,8 @@ HTTPServer {
 
     enabled: configStore.ready
     secure: configStore.server.use_ssl
-    certificate: __dirname + "/cert/server.cert"
-    key: __dirname + "/cert/server.key"
+    certificate: __dirname + "/../cert/server.cert"
+    key: __dirname + "/../cert/server.key"
     port: configStore.server.port
 
     function log(domain, level, message)
