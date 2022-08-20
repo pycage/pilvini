@@ -13,7 +13,11 @@ HTTPServer {
 
     function log(domain, level, message)
     {
-        if (domain === "HTTP" || domain === "HTTPServer" || domain === "Config" || level !== "info")
+        if (domain === "HTTP" ||
+            domain === "HTTPServer" ||
+            domain === "Config" ||
+            domain === "WWW" ||
+            level !== "info")
         {
             const now = new Date();
             console.log(now.toLocaleString() + " [" + domain + "] " + message);
@@ -60,6 +64,7 @@ HTTPServer {
         }
     }
 
+    // Logout
     HTTPRoute {
         when: req => { return req.url === "/logout"; }
 
@@ -111,7 +116,19 @@ HTTPServer {
 
     }//HTTPRoute
 
-    // UI
+    // Applications
+    HTTPRoute {
+        when: req => { return req.url.startsWith("/::"); }
+
+        delegate: template WebSession {
+            urlMapper: url => { return "/" + url.substr(3); }
+            filesystem: localFs
+            root: __dirname + "/../app"
+        }
+
+    }
+
+    // Shell UI
     HTTPRoute {
         when: req => { return req.url.startsWith("/shell/"); }
 
