@@ -1,6 +1,5 @@
 require "shellfish/ui";
 require "./BreadCrumbs.shui";
-require "./MediaPlayer.shui";
 require "./videotools.js" as videotools;
 
 Box {
@@ -8,7 +7,9 @@ Box {
 
     property fs: null
     property path: "/"
-    property collapsed: false
+    property maximized: false
+
+    event toggleMaximized
 
     event newPane
     event closePane
@@ -75,18 +76,8 @@ Box {
 
         layout: "center-row"
         
-        Button {
-            fillHeight: true
-            flat: true
-            icon: box.collapsed ? "ui-unfold_more" : "ui-unfold_less"
-            onClick: ev =>
-            {
-                box.collapsed = ! box.collapsed;
-                ev.accepted = true;
-            }
-        }
-
         BreadCrumbs {
+            marginLeft: theme.paddingSmall
             fillHeight: true
             path: box.path
 
@@ -98,87 +89,37 @@ Box {
 
         Box { fillWidth: true }
 
-        Label {
-            marginRight: theme.paddingSmall
-            text: fsview.count + " items"
+        Button {
+            fillHeight: true
+            flat: true
+            icon: "ui-tab"
+            onClick: ev =>
+            {
+                box.newPane(box.path);
+            }
         }
 
         Button {
             fillHeight: true
             flat: true
-            icon: "ui-menu"
-
-            onClick: (ev) =>
+            icon: box.maximized ? "ui-unfold_less" : "ui-unfold_more"
+            onClick: ev =>
             {
+                box.toggleMaximized();
                 ev.accepted = true;
-                const menu = menuT();
-                menu.popup(self);
-            }
-
-            property menuT: template Menu {
-                Box {
-                    ruler: thisMenu.menuRuler
-                    layout: "center-row"
-                    width: theme.itemWidthLarge * 1.5
-                    height: theme.itemHeightMedium
-
-                    Slider {
-                        fillWidth: true
-                        marginLeft: theme.paddingSmall
-                        marginRight: theme.paddingSmall
-                        minValue: 0.5
-                        maxValue: 3
-                        value: fsview.iconScale
-
-                        onValueChanged: () => { fsview.iconScale = value;}
-                    }
-
-                    Button {
-                        fillHeight: true
-                        flat: true
-                        icon: "ui-view_grid"
-                        checked: fsview.displayMode === "grid"
-                        onClick: (ev) =>
-                        {
-                            fsview.displayMode = "grid";
-                            ev.accepted = true;
-                        }
-                    }
-
-                    Button {
-                        fillHeight: true
-                        flat: true
-                        icon: "ui-view_list"
-                        checked: fsview.displayMode === "list"
-                        onClick: (ev) =>
-                        {
-                            fsview.displayMode = "list";
-                            ev.accepted = true;
-                        }
-                    }
-
-                }
-
-                MenuItem {
-                    icon: "ui-tab"
-                    text: "Clone Pane"
-                    onClick: () =>
-                    {
-                        box.newPane(box.path);
-                    }
-                }
-
-                MenuItem {
-                    icon: "ui-clear"
-                    text: "Close Pane"
-                    onClick: () =>
-                    {
-                        box.closePane();
-                    }
-                }
             }
         }
 
+        Button {
+            fillHeight: true
+            flat: true
+            icon: "ui-clear"
+
+            onClick: () =>
+            {
+                box.closePane();
+            }
+        }
     }
 
     DropArea {
@@ -290,9 +231,12 @@ Box {
                     {
                         console.log("drag start");
                         const uris = [];
+                        const items = [];
                         selector.selection.forEach(idx =>
                         {
-                            uris.push(fsview.model.at(idx).path);
+                            const item = fsview.model.at(idx);
+                            uris.push(item.path);
+                            items.push(item);
                         });
 
                         if (uris.length > 0)
@@ -301,6 +245,7 @@ Box {
 
                             ev.setData("text/uri-list", uris.join("\r\n"));
                             ev.setData("text/plain", uris.join("\r\n"));
+                            ev.setData("text/x-fileitems", JSON.stringify(items));
                             ev.accepted = true;
                         }
                     }
@@ -310,6 +255,7 @@ Box {
 
                         fillWidth: true
                         fillHeight: true
+
                         displayMode: fsview.displayMode
                         highlighted: selector.selection.has(parent.modelData.index)
 
@@ -317,22 +263,65 @@ Box {
                         filesystem: box.fs
 
                         thumbnail: file.type === "d" ? file.path + "/cover.jpg"
-                                                     : file.mimetype.startsWith("image/") ? file.path
+                                                     : file.mimetype.startsWith("image/") ? "/.thumbnails/" + box.fs.encodeName(btoa(file.path))
                                                                                           : file.mimetype === "video/mp4" ? "/.thumbnails/" + box.fs.encodeName(btoa(file.path))
                                                                                                                           : ""
 
                         onFileChanged: () =>
                         {
-                            if (file && file.mimetype === "video/mp4")
+                            if (! file)
                             {
-                                const forPath = file.path;
+                                thumbnail = "";
+                                return;
+                            }
 
-                                const condition = () =>
+                            const forPath = file.path;
+
+                            const condition = () =>
+                            {
+                                return lifeCycleStatus !== "destroyed" &&
+                                        file.path === forPath;
+                            }
+
+                            if (file.mimetype.startsWith("image"))
+                            {
+                               const f = async () =>
                                 {
-                                    return lifeCycleStatus !== "destroyed" &&
-                                           file.path === forPath;
-                                }
+                                    await wait(300);
+                                    if (! condition) return;
 
+                                    const tn = thumbnail;
+                                    const exists = await box.fs.exists(tn);
+                                    if (! condition) return;
+
+                                    if (! exists)
+                                    {
+                                        const next = await queue.enqueue();
+                                        try
+                                        {
+                                            const blob = await videotools.makeImageThumbnail(forPath);
+                                            await box.fs.write(tn, blob);
+
+                                            if (condition())
+                                            {
+                                                thumbnailChanged();
+                                            }
+                                        }
+                                        catch (err)
+                                        {
+                                            console.log("Thumbnail Error: " + err);
+                                        }
+                                        finally
+                                        {
+                                            next();
+                                        }
+                                    }
+                                };
+
+                                f();
+                            }
+                            else if (file.mimetype === "video/mp4")
+                            {
                                 const f = async () =>
                                 {
                                     await wait(300);
@@ -397,37 +386,20 @@ Box {
                                 selector.clear();
                                 box.path = file.path;
                             }
-                            else
-                            {
-                                box.filesOpen([file], 0);
-                            }
-                            /*
                             else if (file.mimetype === "application/zip")
                             {
                                 selector.clear();
                                 console.log("open ZIP: " + file.path);
                                 box.path = file.path;
                             }
-                            else if (file.mimetype.startsWith("image/"))
+                            else if (file.mimetype === "application/pdf" ||
+                                     file.mimetype.startsWith("audio/") ||
+                                     file.mimetype.startsWith("image/") ||
+                                     file.mimetype.startsWith("text/") ||
+                                     file.mimetype.startsWith("video/"))
                             {
                                 box.filesOpen([file], 0);
                             }
-                            else if (file.mimetype === "video/mp4")
-                            {
-                                box.filesOpen([file], 0);
-                                //const dlg = mediaPlayerDialogT();
-                                //dlg.file = file;
-                                //dlg.show();
-                                //documentRoot.add(dlg);
-                            }
-                            else if (file.mimetype.startsWith("audio/"))
-                            {
-                                const dlg = mediaPlayerDialogT();
-                                dlg.file = file;
-                                //dlg.show();
-                                documentRoot.add(dlg);
-                            }
-                            */
                             ev.accepted = true;
                         }
                     }
@@ -509,6 +481,55 @@ Box {
                         });
                     }
                 }
+            }
+        }
+
+    }
+
+    Box {
+        fillWidth: true
+        height: theme.itemHeightMedium
+        color: theme.secondaryBackgroundColor
+        layout: "center-row"
+
+        Label {
+            marginLeft: theme.paddingSmall
+            text: fsview.count + " items"
+        }
+
+        Box { fillWidth: true }
+
+        Slider {
+            marginLeft: theme.paddingSmall
+            marginRight: theme.paddingSmall
+            minValue: 0.5
+            maxValue: 3
+            value: fsview.iconScale
+
+            onValueChanged: () => { fsview.iconScale = value;}
+        }
+
+        Button {
+            fillHeight: true
+            flat: true
+            icon: "ui-view_grid"
+            checked: fsview.displayMode === "grid"
+            onClick: (ev) =>
+            {
+                fsview.displayMode = "grid";
+                ev.accepted = true;
+            }
+        }
+
+        Button {
+            fillHeight: true
+            flat: true
+            icon: "ui-view_list"
+            checked: fsview.displayMode === "list"
+            onClick: (ev) =>
+            {
+                fsview.displayMode = "list";
+                ev.accepted = true;
             }
         }
 
@@ -608,41 +629,4 @@ Box {
         }
     }
 
-    property mediaPlayerDialogT: template Box {
-        id: dialog
-
-        position: "global"
-        width: documentRoot.windowWidth
-        height: documentRoot.windowHeight
-        color: "black"
-
-        //title: file ? file.name : ""
-        property file: null
-
-        onFileChanged: () =>
-        {
-            if (file)
-            {
-                player.model.reset([file]);
-                player.current = 0;
-            }
-        }
-
-        Button {
-            flat: true
-            text: "Back"
-            onClick: () => { dialog.parent = null; }
-        }
-
-        MediaPlayer {
-            id: player
-
-            fillWidth: true
-            fillHeight: true
-            //width: documentRoot.windowWidth * 0.5
-            //height: documentRoot.windowHeight * 0.5
-
-            minimized: false
-        }
-    }
 }

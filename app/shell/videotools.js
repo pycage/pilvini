@@ -133,3 +133,69 @@ async function makeThumbnail(path)
     return blob;
 }
 exports.makeThumbnail = makeThumbnail;
+
+async function makeImageThumbnail(path)
+{
+    const load = (img, path) =>
+    {
+        return new Promise((resolve, reject) =>
+        {
+            img.onload = () =>
+            {
+                resolve();
+            };
+            img.onerror = () =>
+            {
+                reject();
+            };
+            img.src = path;
+        });
+    }
+
+    const image = new Image();
+    await load(image, path);
+
+    const canvas = document.createElement("canvas");
+    canvas.width = 80;
+    canvas.height = 80;
+
+    const ctx = canvas.getContext("2d");
+
+    const w = image.naturalWidth;
+    const h = image.naturalHeight;
+
+    // crop viewport
+    const cw = Math.min(w, h);
+    const ch = cw;
+    const cx = (w - cw) / 2;
+    const cy = (h - ch) / 2;
+
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, 80, 80);
+
+    let blob = null;
+    let error = null;
+    try
+    {
+        ctx.drawImage(image, cx, cy, cw, ch, 0, 0, 80, 80);
+
+        // get JPEG data
+        const dataUrl = canvas.toDataURL("image/jpeg");
+        const response = await fetch(dataUrl);
+        blob = response.blob();
+    }
+    catch (err)
+    {
+        error = err;
+    }
+
+    image.remove();
+    canvas.remove();
+
+    if (error)
+    {
+        throw(error);
+    }
+    return blob;
+}
+exports.makeImageThumbnail = makeImageThumbnail;

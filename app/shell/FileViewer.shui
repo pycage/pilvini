@@ -8,10 +8,12 @@ Box {
 
     property model: ListModel { }
     property current: -1
-    property fullSize: true
+    property maximized: false
 
     borderWidth: 1
     borderColor: theme.borderColor
+
+    event toggleMaximized
 
     Box {
         fillWidth: true
@@ -32,18 +34,18 @@ Box {
         Button {
             fillHeight: true
             flat: true
-            text: "[ ]"
+            icon: box.maximized ? "ui-unfold_less" : "ui-unfold_more"
 
             onClick: () =>
             {
-                box.fullSize = ! box.fullSize;
+                box.toggleMaximized();
             }
         }
 
         Button {
             fillHeight: true
             flat: true
-            text: "Close"
+            icon: "ui-clear"
 
             onClick: () =>
             {
@@ -53,48 +55,69 @@ Box {
         }
     }
 
-
-    Loader {
-        id: loader
-
-        property fileItem: box.current !== -1 && box.model.size > box.current ? box.model.at(box.current)
-                                                                              : null
-
+    DropArea {
         fillWidth: true
         fillHeight: true
 
-        sourceTemplate: (() =>
+        onDropAccept: ev =>
         {
-            if (! fileItem)
+            if (ev.types.includes("text/x-fileitems"))
             {
-                return null;
+                ev.accepted = true;
             }
+        }
 
-            const item = fileItem;
-            if (item.mimetype === "application/pdf")
+        onDrop: ev =>
+        {
+            const items = JSON.parse(ev.data["text/x-fileitems"]);
+            box.model.reset(items);
+            box.current = 0;
+        }
+
+        Loader {
+            id: loader
+
+            property fileItem: box.current !== -1 && box.model.size > box.current ? box.model.at(box.current)
+                                                                                : null
+
+            fillWidth: true
+            fillHeight: true
+
+            sourceTemplate: (() =>
             {
-                return pdfViewerT;
-            }
-            else if (item.mimetype.startsWith("image/"))
-            {
-                return imageViewerT;
-            }
-            else if (item.mimetype.startsWith("audio/") ||
-                     item.mimetype.startsWith("video/"))
-            {
-                return mediaPlayerT;
-            }
-            else if (item.mimetype.startsWith("text/"))
-            {
-                console.log("TEXT: " + item.path);
-                return textViewerT;
-            }
-            else
-            {
-                return null;
-            }
-        })()
+                if (! fileItem)
+                {
+                    return null;
+                }
+
+                const item = fileItem;
+                if (item.mimetype === "application/pdf")
+                {
+                    return pdfViewerT;
+                }
+                else if (item.mimetype.startsWith("image/"))
+                {
+                    return imageViewerT;
+                }
+                else if (item.mimetype.startsWith("audio/") ||
+                        item.mimetype.startsWith("video/"))
+                {
+                    return mediaPlayerT;
+                }
+                else if (item.mimetype.startsWith("text/"))
+                {
+                    console.log("TEXT: " + item.path);
+                    return textViewerT;
+                }
+                else
+                {
+                    return null;
+                }
+            })()
+        }
+
     }
+
 
     property imageViewerT: template ImageViewer {
         fillWidth: true

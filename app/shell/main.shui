@@ -50,6 +50,12 @@ Document {
         data: ["/"]
     }
 
+    ListModel {
+        id: mediaModel
+
+        data: []
+    }
+
     Box {
         visible: doc.loggedIn
 
@@ -128,7 +134,9 @@ Document {
             layout: bbox.width > bbox.height ? "row" : "column"
 
             GridLayout {
-                visible: ! viewer.visible || ! viewer.fullSize
+                id: grid
+
+                property maximizedItem: null
 
                 fillWidth: true
                 fillHeight: true
@@ -139,12 +147,27 @@ Document {
                     model: panesModel
 
                     delegate: template FilesBox {
+                        visible: ! grid.maximizedItem || grid.maximizedItem === objectId
+
+                        maximized: grid.maximizedItem === objectId
                         fillWidth: true
-                        fillHeight: ! collapsed
-                        height: collapsed ? theme.itemHeightMedium : -1
+                        fillHeight: true
 
                         fs: remoteFs
                         path: modelData.value
+
+                        onToggleMaximized: () =>
+                        {
+                            if (grid.maximizedItem)
+                            {
+                                grid.maximizedItem = null;
+                            }
+                            else
+                            {
+                                grid.maximizedItem = objectId;
+                            }
+                            grid.update();
+                        }
 
                         onNewPane: (path) =>
                         {
@@ -158,26 +181,59 @@ Document {
 
                         onFilesOpen: (files, idx) =>
                         {
-                            viewer.current = -1;
-                            viewer.model.reset(files);
-                            viewer.current = idx;
+                            mediaModel.insert(mediaModel.size, files);
                         }
                     }
                 }
 
-            }
+                Repeater {
+                    model: mediaModel
 
-            FileViewer {
-                id: viewer
+                    delegate: template FileViewer {
+                        property files: modelData.value
 
-                visible: current !== -1
+                        visible: ! grid.maximizedItem || grid.maximizedItem === objectId
 
-                marginTop: 2
-                marginLeft: 2
-                marginRight: 2
-                marginBottom: 2
-                fillWidth: true
-                fillHeight: true
+                        maximized: grid.maximizedItem === objectId
+                        fillWidth: true
+                        fillHeight: true
+
+                        current: 0
+
+                        onToggleMaximized: () =>
+                        {
+                            if (grid.maximizedItem)
+                            {
+                                grid.maximizedItem = null;
+                            }
+                            else
+                            {
+                                grid.maximizedItem = objectId;
+                            }
+                            grid.update();
+                        }
+
+                        onFilesChanged: () =>
+                        {
+                            grid.maximizedItem = objectId;
+                            console.log("SET FILES: " + JSON.stringify(files));
+                            model.reset(files);
+                            current = 0;
+                        }
+
+                        onCurrentChanged: () =>
+                        {
+                            if (current === -1)
+                            {
+                                if (grid.maximizedItem === objectId)
+                                {
+                                    grid.maximizedItem = null;
+                                }
+                                mediaModel.remove(modelData.index);
+                            }
+                        }
+                    }
+                }
             }
         }
 
