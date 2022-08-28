@@ -105,6 +105,21 @@ Document {
                     }
 
                     MenuItem {
+                        text: "Toggle Fullscreen"
+                        onClick: () =>
+                        {
+                            if (documentRoot.fullscreenItem)
+                            {
+                                documentRoot.fullscreenItem = null;
+                            }
+                            else
+                            {
+                                documentRoot.fullscreenItem = documentRoot;
+                            }
+                        }
+                    }
+
+                    MenuItem {
                         text: "Settings..."
                         onClick: () =>
                         {

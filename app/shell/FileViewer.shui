@@ -1,7 +1,8 @@
 require "shellfish/ui";
-require "./pdf.js";
 require "./ImageViewer.shui";
 require "./MediaPlayer.shui";
+require "./PdfViewer.shui";
+require "./ViewportBox.shui";
 
 Box {
     id: box
@@ -125,10 +126,9 @@ Box {
         source: loader.fileItem ? loader.fileItem.path : ""
     }
 
-    property pdfViewerT: template Pdf {
+    property pdfViewerT: template PdfViewer {
         fillWidth: true
         fillHeight: true
-
         source: loader.fileItem ? loader.fileItem.path : ""
     }
 

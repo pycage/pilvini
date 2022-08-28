@@ -1,0 +1,125 @@
+require "shellfish/ui";
+require "./pdfdocument.js";
+require "./pdfpage.js";
+require "./ViewportBox.shui";
+
+Box {
+    id: box
+
+    property source: ""
+
+    Box {       
+        fillWidth: true
+        height: theme.itemHeightMedium
+        color: theme.primaryBackgroundColor
+
+        layout: "center-row"
+
+        Button {
+            fillHeight: true
+            flat: true
+            text: "<"
+            onClick: () =>
+            {
+                if (pdf.page > 0) --pdf.page;
+            }
+        }
+
+        Box { fillWidth: true }
+
+        Button {
+            fillHeight: true
+            flat: true
+            marginRight: theme.paddingSmall
+            text: "Page " + (pdf.page + 1) + " / " + pdf.document.pages
+
+            onClick: () =>
+            {
+                const menu = menuT();
+                menu.popup(self);
+            }
+
+            property menuT: template Menu {
+                Repeater {
+                    model: pdf.document.pages
+
+                    delegate: template MenuItem {
+                        text: "Page " + (modelData.index + 1)
+                        onClick: () =>
+                        {
+                            pdf.page = modelData.index;
+                        }
+                    }
+                }
+            }
+        }
+
+        Box { fillWidth: true }
+
+        Button {
+            fillHeight: true
+            flat: true
+            text: ">"
+            onClick: () =>
+            {
+                if (pdf.page < pdf.document.pages - 1)
+                {
+                    ++pdf.page;
+                }
+            }
+        }
+    }
+
+    Box {
+        fillWidth: true
+        fillHeight: true
+
+        ViewportBox {
+            id: vp
+
+            fillWidth: true
+            fillHeight: true
+
+            PDFPage {
+                id: pdf
+
+                document: PDFDocument {
+                    source: box.source
+                }
+
+                visible: status === "success"
+
+                position: "free"
+                x: -vp.viewX * vp.scale
+                y: -vp.viewY * vp.scale
+                width: originalWidth * vp.scale
+                height: originalHeight * vp.scale
+                scale: 1.0
+
+                onStatusChanged: () =>
+                {
+                    if (status === "success")
+                    {
+                        vp.originalWidth = originalWidth;
+                        vp.originalHeight = originalHeight;
+                        vp.scaleToFit();
+                    }
+                }
+            }
+        }
+
+        ScrollIndicator { id: sh; target: vp.adapter; other: sv; orientation: "horizontal" }
+        ScrollIndicator { id: sv; target: vp.adapter; other: sh; orientation: "vertical" }
+
+        Box {
+            visible: pdf.document.status === "loading"
+            
+            position: "free"
+            width: box.bbox * pdf.document.progress
+            height: theme.paddingSmall
+            color: theme.highlightBackgroundColor
+        }
+    }
+
+
+}

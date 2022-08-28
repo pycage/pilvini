@@ -25,6 +25,21 @@ MouseBox {
         property _contentX: box.viewX * box.scale
         property _contentY: box.viewY * box.scale
 
+        property updatePending: false
+
+        function updatePos()
+        {
+            if (contentX !== _contentX)
+            {
+                contentX = _contentX;
+            }
+            if (contentY !== _contentY)
+            {
+                contentY = _contentY;
+            }
+            updatePending = false;
+        }
+
         onContentXChanged: () =>
         {
             const v = Math.max(0, Math.min(contentWidth - bbox.width, contentX));
@@ -47,17 +62,27 @@ MouseBox {
 
         on_contentXChanged: () =>
         {
-            if (contentX !== _contentX)
+            if (! updatePending)
             {
-                contentX = _contentX;
+                updatePending = true;
+                wait(0).then(safeCallback(() =>
+                {
+                    updatePos();
+                    updatePending = false;
+                }));
             }
         }
 
         on_contentYChanged: () =>
         {
-            if (contentY !== _contentY)
+            if (! updatePending)
             {
-                contentY = _contentY;
+                updatePending = true;
+                wait(0).then(safeCallback(() =>
+                {
+                    updatePos();
+                    updatePending = false;
+                }));
             }
         }
     }
@@ -83,7 +108,7 @@ MouseBox {
         const viewWidth = bbox.width / scale;
         const viewHeight = bbox.height / scale;
 
-        if (viewWidth <= originalWidth)
+        if (viewWidth < originalWidth)
         {
             if (vx < 0)
             {
@@ -99,7 +124,7 @@ MouseBox {
             vx = (originalWidth - viewWidth) / 2;
         }
 
-        if (viewHeight <= originalHeight)
+        if (viewHeight < originalHeight)
         {
             if (vy < 0)
             {
@@ -143,7 +168,7 @@ MouseBox {
 
         const anchorXAfter = viewX + priv.scaleAnchorX * bbox.width / scale;
         const anchorYAfter = viewY + priv.scaleAnchorY * bbox.height / scale;
-       
+      
         const dx = anchorXAfter - anchorXBefore;
         const dy = anchorYAfter - anchorYBefore;
 
@@ -154,6 +179,9 @@ MouseBox {
 
     onBboxChanged: () =>
     {
+        const minScale = Math.min(Math.max(1, bbox.width) / Math.max(1, originalWidth),
+                         Math.max(1, bbox.height) / Math.max(1, originalHeight));
+        const maxScale = minScale * 32.0;
         scale = Math.max(minScale, Math.min(maxScale, scale));
         confineViewport(viewX, viewY);
     }

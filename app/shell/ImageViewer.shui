@@ -15,6 +15,14 @@ Box {
         Image {
             id: image
 
+            position: "free"
+            x: -vp.viewX * vp.scale
+            y: -vp.viewY * vp.scale
+            width: originalWidth * vp.scale
+            height: originalHeight * vp.scale
+
+            source: box.source
+
             onStatusChanged: () =>
             {
                 if (status === "success")
@@ -24,14 +32,6 @@ Box {
                     vp.scaleToFit();
                 }
             }
-
-            position: "free"
-            x: -vp.viewX * vp.scale
-            y: -vp.viewY * vp.scale
-            width: originalWidth * vp.scale
-            height: originalHeight * vp.scale
-
-            source: box.source
         }
 
     }
