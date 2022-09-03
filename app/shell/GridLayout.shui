@@ -16,15 +16,15 @@ Box {
         const ch = bbox.height / rows;
         let col = 0;
 
-        console.log("amount: " + amount + ", cols: " + cols + ", rows: " + rows);
-        console.log("cw: " + cw + ", ch: " + ch);
+        //console.log("amount: " + amount + ", cols: " + cols + ", rows: " + rows);
+        //console.log("cw: " + cw + ", ch: " + ch);
 
         items.forEach((item, idx) =>
         {
             item.position = "free";
             item.fillWidth = false;
             item.fillHeight = false;
-            console.log("cx: " + cx + ", cy: " + cy);
+            //console.log("cx: " + cx + ", cy: " + cy);
             item.x = cx + 2;
             item.y = cy + 2;
             item.width = cw - 4;
