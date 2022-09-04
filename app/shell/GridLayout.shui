@@ -7,13 +7,20 @@ Box {
         const items = children().filter(c => c.visible);
         const amount = items.length;
 
-        const cols = Math.ceil(Math.sqrt(amount));
-        const rows = Math.ceil(amount / cols);
+        let cols = Math.ceil(Math.sqrt(amount));
+        let rows = Math.ceil(amount / cols);
+
+        if (bbox.width < bbox.height)
+        {
+            const tmp = rows;
+            rows = cols;
+            cols = tmp;
+        }
 
         let cx = 0;
         let cy = 0;
-        const cw = bbox.width / cols;
-        const ch = bbox.height / rows;
+        let cw = bbox.width / cols;
+        let ch = bbox.height / rows;
         let col = 0;
 
         //console.log("amount: " + amount + ", cols: " + cols + ", rows: " + rows);
@@ -21,6 +28,12 @@ Box {
 
         items.forEach((item, idx) =>
         {
+            if (idx === (rows - 1) * cols)
+            {
+                // last row begins
+                cw = bbox.width / (amount - idx);
+            }
+
             item.position = "free";
             item.fillWidth = false;
             item.fillHeight = false;
