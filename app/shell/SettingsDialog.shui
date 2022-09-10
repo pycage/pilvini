@@ -51,6 +51,14 @@ Dialog {
 
                     layout: "center-row"
 
+                    onInitialization: () =>
+                    {
+                        if (modelData.index === listView.currentIndex)
+                        {
+                            setupLoader.source = __dirname + "/" + modelData.value.panel;
+                        }
+                    }
+
                     onClick: (ev) =>
                     {
                         listView.currentIndex = modelData.index;

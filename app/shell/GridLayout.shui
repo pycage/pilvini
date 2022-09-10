@@ -2,10 +2,13 @@ require "shellfish/ui";
 
 Box {
 
+    property items: []
+
     function update()
     {
-        const items = children().filter(c => c.visible);
-        const amount = items.length;
+        items = children().slice(2);
+        const vitems = items.filter(c => c.visible);
+        const amount = vitems.length;
 
         let cols = Math.ceil(Math.sqrt(amount));
         let rows = Math.ceil(amount / cols);
@@ -26,7 +29,7 @@ Box {
         //console.log("amount: " + amount + ", cols: " + cols + ", rows: " + rows);
         //console.log("cw: " + cw + ", ch: " + ch);
 
-        items.forEach((item, idx) =>
+        vitems.forEach((item, idx) =>
         {
             if (idx === (rows - 1) * cols)
             {
@@ -38,10 +41,10 @@ Box {
             item.fillWidth = false;
             item.fillHeight = false;
             //console.log("cx: " + cx + ", cy: " + cy);
-            item.x = cx + 2;
-            item.y = cy + 2;
-            item.width = cw - 4;
-            item.height = ch - 4;
+            item.x = cx + 1;
+            item.y = cy + 1;
+            item.width = cw - 2;
+            item.height = ch - 2;
             cx += cw;
             ++col;
             if (col >= cols)

@@ -12,6 +12,8 @@ Document {
     id: doc
 
     property loggedIn: false
+    property filesBag: []
+    property filesBagSource: null
 
     property darkMode: systemDarkMode
     property darkTheme: DarkTheme { }
@@ -70,12 +72,18 @@ Document {
 
             layout: "center-row"
 
-            Label {
-                marginLeft: theme.paddingSmall
-                fillWidth: true
-                bold: true
-                text: "Pilvini Secure Cloud Drive"
+            Button {
+                fillHeight: true
+                flat: true
+                icon: "fs-folder"
+                text: "Files"
+                onClick: () =>
+                {
+                    panesModel.insert(panesModel.size, path);
+                }
             }
+
+            Box { fillWidth: true }
 
             Button {
                 fillHeight: true
@@ -143,116 +151,145 @@ Document {
             
         }
 
-        Box {
+        GridLayout {
+            id: grid
+
+            property maximizedItem: null
+
             fillWidth: true
             fillHeight: true
+
             layout: bbox.width > bbox.height ? "row" : "column"
 
-            GridLayout {
-                id: grid
+            onMaximizedItemChanged: () =>
+            {
+                wait(100).then(() => { update(); });
+            }
 
-                property maximizedItem: null
+            Repeater {
+                model: panesModel
 
-                fillWidth: true
-                fillHeight: true
+                delegate: template FilesBox {
+                    visible: ! grid.maximizedItem || grid.maximizedItem === objectId
 
-                layout: bbox.width > bbox.height ? "row" : "column"
+                    maximized: grid.maximizedItem === objectId
+                    fillWidth: true
+                    fillHeight: true
 
-                Repeater {
-                    model: panesModel
+                    fs: remoteFs
+                    path: modelData.value
 
-                    delegate: template FilesBox {
-                        visible: ! grid.maximizedItem || grid.maximizedItem === objectId
-
-                        maximized: grid.maximizedItem === objectId
-                        fillWidth: true
-                        fillHeight: true
-
-                        fs: remoteFs
-                        path: modelData.value
-
-                        onToggleMaximized: () =>
+                    onToggleMaximized: () =>
+                    {
+                        if (grid.maximizedItem)
                         {
-                            if (grid.maximizedItem)
-                            {
-                                grid.maximizedItem = null;
-                            }
-                            else
-                            {
-                                grid.maximizedItem = objectId;
-                            }
-                            grid.update();
+                            grid.maximizedItem = null;
                         }
-
-                        onNewPane: (path) =>
-                        {
-                            panesModel.insert(panesModel.size, path);
-                        }
-
-                        onClosePane: () =>
-                        {
-                            panesModel.remove(modelData.index);
-                        }
-
-                        onFilesOpen: (files, idx) =>
-                        {
-                            mediaModel.insert(mediaModel.size, files);
-                        }
-                    }
-                }
-
-                Repeater {
-                    model: mediaModel
-
-                    delegate: template FileViewer {
-                        property files: modelData.value
-
-                        visible: ! grid.maximizedItem || grid.maximizedItem === objectId
-
-                        maximized: grid.maximizedItem === objectId
-                        fillWidth: true
-                        fillHeight: true
-
-                        current: 0
-
-                        onToggleMaximized: () =>
-                        {
-                            if (grid.maximizedItem)
-                            {
-                                grid.maximizedItem = null;
-                            }
-                            else
-                            {
-                                grid.maximizedItem = objectId;
-                            }
-                            grid.update();
-                        }
-
-                        onFilesChanged: () =>
+                        else
                         {
                             grid.maximizedItem = objectId;
-                            console.log("SET FILES: " + JSON.stringify(files));
-                            model.reset(files);
-                            current = 0;
                         }
+                        grid.update();
+                    }
 
-                        onCurrentChanged: () =>
+                    onNewPane: (path) =>
+                    {
+                        panesModel.insert(panesModel.size, path);
+                    }
+
+                    onClosePane: () =>
+                    {
+                        panesModel.remove(modelData.index);
+                    }
+
+                    onFilesOpen: (files, idx) =>
+                    {
+                        mediaModel.insert(mediaModel.size, files);
+                    }
+
+                    onTakeFiles: (files) =>
+                    {
+                        filesBag = files;
+                    }
+                }
+            }
+
+            Repeater {
+                model: mediaModel
+
+                delegate: template FileViewer {
+                    property files: modelData.value
+
+                    visible: ! grid.maximizedItem || grid.maximizedItem === objectId
+
+                    maximized: grid.maximizedItem === objectId
+                    fillWidth: true
+                    fillHeight: true
+
+                    current: 0
+
+                    onToggleMaximized: () =>
+                    {
+                        if (grid.maximizedItem)
                         {
-                            if (current === -1)
+                            grid.maximizedItem = null;
+                        }
+                        else
+                        {
+                            grid.maximizedItem = objectId;
+                        }
+                        grid.update();
+                    }
+
+                    onFilesChanged: () =>
+                    {
+                        grid.maximizedItem = objectId;
+                        console.log("SET FILES: " + JSON.stringify(files));
+                        model.reset(files);
+                        current = 0;
+                    }
+
+                    onCurrentChanged: () =>
+                    {
+                        if (current === -1)
+                        {
+                            if (grid.maximizedItem === objectId)
                             {
-                                if (grid.maximizedItem === objectId)
-                                {
-                                    grid.maximizedItem = null;
-                                }
-                                mediaModel.remove(modelData.index);
+                                grid.maximizedItem = null;
                             }
+                            mediaModel.remove(modelData.index);
                         }
                     }
                 }
             }
+        }//GridLayout
+
+        Box {
+            visible: grid.items.length > 1 && grid.maximizedItem !== null
+            fillWidth: true
+            height: theme.itemHeightMedium
+            color: theme.secondaryBackgroundColor
+
+            layout: "row"
+
+            Repeater {
+                model: grid.items.length
+
+                delegate: template Button {
+                    fillWidth: true
+                    fillHeight: true
+                    flat: true
+                    checked: grid.items[modelData.index].objectId === grid.maximizedItem
+                    icon: grid.items[modelData.index].windowIcon
+                    text: grid.items[modelData.index].windowTitle
+
+                    onClick: () =>
+                    {
+                        grid.maximizedItem = grid.items[modelData.index].objectId;
+                    }
+                }
+            }
         }
-
-
     }
 
     Placeholder {

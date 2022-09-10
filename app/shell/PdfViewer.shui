@@ -31,7 +31,7 @@ Box {
             fillHeight: true
             flat: true
             marginRight: theme.paddingSmall
-            text: "Page " + (pdf.page + 1) + " / " + pdf.document.pages
+            text: "Page " + (Math.round(pageSlider.value) + 1) + " / " + pdf.document.pages
 
             onClick: () =>
             {
@@ -111,6 +111,12 @@ Box {
         ScrollIndicator { id: sh; target: vp.adapter; other: sv; orientation: "horizontal" }
         ScrollIndicator { id: sv; target: vp.adapter; other: sh; orientation: "vertical" }
 
+        Placeholder {
+            visible: pdf.status === "loading" || pdf.document.status === "loading"
+            text: "[icon:ui-spinner5]"
+        }
+
+        /*
         Box {
             visible: pdf.document.status === "loading"
             
@@ -118,6 +124,49 @@ Box {
             width: box.bbox * pdf.document.progress
             height: theme.paddingSmall
             color: theme.highlightBackgroundColor
+        }
+        */
+    }
+
+    Box {
+        fillWidth: true
+        height: theme.itemHeightMedium
+        color: theme.primaryBackgroundColor
+        layout: "center-row"
+
+        Slider {
+            id: pageSlider
+
+            fillWidth: true
+            minValue: 0
+            maxValue: pdf.document.pages - 1
+            value: 0
+
+            onValueChanged: () =>
+            {
+                const v = Math.round(value);
+                if (pdf.status !== "loading" && pdf.page !== v)
+                {
+                    pdf.page = v;
+                }
+            }
+
+            pdf.onPageChanged: () =>
+            {
+                if (pdf.page !== value)
+                {
+                    value = pdf.page;
+                }
+            }
+
+            pdf.onStatusChanged: () =>
+            {
+                const v = Math.round(value);
+                if (pdf.status !== "loading" && pdf.page !== v)
+                {
+                    pdf.page = v;
+                }
+            }
         }
     }
 

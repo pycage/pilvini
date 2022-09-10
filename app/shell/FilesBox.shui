@@ -5,6 +5,9 @@ require "./thumbnailgenerator.js";
 Box {
     id: box
 
+    property windowIcon: "fs-folder"
+    property windowTitle: path
+
     property fs: null
     property path: "/"
     property maximized: false
@@ -14,6 +17,7 @@ Box {
     event newPane
     event closePane
     event filesOpen
+    event takeFiles
 
     borderWidth: 1
     borderColor: theme.borderColor
@@ -39,7 +43,7 @@ Box {
         layout: "center-row"
         
         BreadCrumbs {
-            marginLeft: theme.paddingSmall
+            fillWidth: true
             fillHeight: true
             path: box.path
 
@@ -49,15 +53,65 @@ Box {
             }
         }
 
-        Box { fillWidth: true }
+        //Box { fillWidth: true }
 
         Button {
+            visible: filesBag.length > 0 && filesBagSource !== box.objectId
             fillHeight: true
             flat: true
-            icon: "ui-tab"
+            icon: "fs-save"
+            text: "Drop"
+
             onClick: ev =>
             {
-                box.newPane(box.path);
+                menuT().popup(self);
+                ev.accepted = true;
+            }
+
+            property menuT: template Menu {
+                MenuItem {
+                    text: "Copy"
+                    onClick: () =>
+                    {
+                        filesBag.forEach(item =>
+                        {
+                            const uri = item.path;
+                            const destPath = box.fs.pathJoin(box.path, box.fs.filename(uri));
+                            box.fs.copy(uri, destPath)
+                            .then(() =>
+                            {
+                                console.log("files moved");
+                            })
+                            .catch(err =>
+                            {
+                                console.log("failed to copy files: " + err);
+                            });
+                        });
+                    }
+                }
+
+                MenuItem {
+                    text: "Move"
+
+                    onClick: () =>
+                    {
+                        filesBag.forEach(item =>
+                        {
+                            const uri = item.path;
+                            const destPath = box.fs.pathJoin(box.path, box.fs.filename(uri));
+                            box.fs.move(uri, destPath)
+                            .then(() =>
+                            {
+                                console.log("files moved");
+                            })
+                            .catch(err =>
+                            {
+                                console.log("failed to move files: " + err);
+                            });
+                        });
+                        filesBag = [];
+                    }
+                }
             }
         }
 
@@ -172,7 +226,6 @@ Box {
             ListView {
                 id: fsview
 
-                property iconScale: 1
                 property displayMode: "grid"
 
                 visible: ! fsModel.loading
@@ -181,8 +234,8 @@ Box {
                 canFocus: true
 
                 cellWidth: displayMode === "list" ? bbox.width - 1
-                                                  : theme.itemWidthLarge * iconScale
-                cellHeight: displayMode === "list" ? theme.itemHeightMedium * iconScale
+                                                  : theme.itemWidthLarge * sizeSelector.value
+                cellHeight: displayMode === "list" ? theme.itemHeightMedium * sizeSelector.value
                                                    : cellWidth
                 cacheMargin: cellHeight //contentHeight
 
@@ -321,6 +374,14 @@ Box {
                 ListViewSelector {
                     id: selector
                     multiple: true
+
+                    onSelectionChanged: () =>
+                    {
+                        const items = [];
+                        selection.forEach(idx => items.push(fsModel.at(idx)));
+                        filesBag = items;
+                        filesBagSource = box.objectId;
+                    }
                 }
 
                 ScrollIndicator { }
@@ -404,14 +465,15 @@ Box {
 
         Box { fillWidth: true }
 
-        Slider {
+        SpinBox {
+            id: sizeSelector
+
             marginLeft: theme.paddingSmall
             marginRight: theme.paddingSmall
-            minValue: 0.5
-            maxValue: 3
-            value: fsview.iconScale
-
-            onValueChanged: () => { fsview.iconScale = value;}
+            minValue: 1
+            maxValue: 6
+            stepSize: 1
+            value: 1
         }
 
         Button {

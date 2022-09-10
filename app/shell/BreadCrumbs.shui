@@ -7,6 +7,7 @@ Box {
 
     event changePath
 
+    overflowBehavior: "scroll"
     layout: "center-row"
 
     onPathChanged: () =>
@@ -14,7 +15,6 @@ Box {
         const parts = path.split("/");
 
         let m = [];
-        m.push({ name: "", path: "/" });
         let currentPath = parts[0];
         for (let i = 1; i < parts.length; ++i)
         {
@@ -24,6 +24,8 @@ Box {
                 m.push({ name: decodeURIComponent(parts[i]), path: currentPath });
             }
         }
+        m.reverse();
+        m.push({ name: "", path: "/" });
         breadCrumbsModel.reset(m);
     }
 
@@ -31,6 +33,59 @@ Box {
         id: breadCrumbsModel
     }
 
+    Button {
+        enabled: breadCrumbsModel.size > 1
+        fillHeight: true
+        flat: true
+        icon: "ui-arrow_back"
+
+        onClick: ev =>
+        {
+            const path = breadCrumbsModel.at(1).path;
+            box.changePath(path);
+        }
+    }
+
+    Button {
+        fillHeight: true
+        flat: true
+
+        labelProfile: Object { property bold: true }
+
+        icon: text === "" ? "fs-drive"
+                          : "fs-folder"
+        text: breadCrumbsModel.size > 0 ? (breadCrumbsModel.at(0).name || "/")
+                                        : ""
+
+        onClick: ev =>
+        {
+            if (breadCrumbsModel.size > 1)
+            {
+                const menu = menuT();
+                menu.popup(self);
+                ev.accepted = true;
+            }
+        }
+
+        property menuT: template Menu {
+            Repeater {
+                model: breadCrumbsModel
+                delegate: template MenuItem {
+                    visible: modelData.index > 0
+                    icon: modelData.index === breadCrumbsModel.size - 1 ? "fs-drive"
+                                                                        : "fs-folder"
+                    text: modelData.value.name || "/"
+
+                    onClick: () =>
+                    {
+                        box.changePath(modelData.value.path);
+                    }
+                }
+            }
+        }
+    }
+
+    /*
     Box {
         fillHeight: true
         layout: "row"
@@ -55,4 +110,7 @@ Box {
             }
         }
     }
+    */
+
+    Box { fillWidth: true }
 }

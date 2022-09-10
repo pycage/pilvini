@@ -7,6 +7,9 @@ require "./ViewportBox.shui";
 Box {
     id: box
 
+    property windowIcon: "media-image"
+    property windowTitle: loader.fileItem ? loader.fileItem.name : ""
+
     property model: ListModel { }
     property current: -1
     property maximized: false
@@ -30,6 +33,21 @@ Box {
             bold: true
             literal: true
             text: loader.fileItem ? loader.fileItem.name : ""
+        }
+
+        Button {
+            visible: filesBag.length > 0
+            fillHeight: true
+            flat: true
+            icon: "fs-save"
+            text: "Drop"
+
+            onClick: ev =>
+            {
+                box.model.reset(filesBag.slice());
+                box.current = 0;
+                ev.accepted = true;
+            }
         }
 
         Button {
@@ -79,7 +97,7 @@ Box {
             id: loader
 
             property fileItem: box.current !== -1 && box.model.size > box.current ? box.model.at(box.current)
-                                                                                : null
+                                                                                  : null
 
             fillWidth: true
             fillHeight: true
