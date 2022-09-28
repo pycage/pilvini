@@ -1,3 +1,4 @@
+require "shellfish/low" as low;
 require "shellfish/ui";
 require "./SeekBar.shui";
 
@@ -40,6 +41,8 @@ MouseBox {
     property model: ListModel { }
     property current: -1
     property minimized: true
+
+    color: "black"
 
     onCurrentChanged: () =>
     {
@@ -174,8 +177,7 @@ MouseBox {
                 Label {
                     fillWidth: true
                     overflowBehavior: "ellipsis"
-                    literal: true
-                    text: titleLabel.text
+                    text: low.escapeMarkup(titleLabel.text)
                 }
             }
 
@@ -223,7 +225,6 @@ MouseBox {
         Box {
             fillWidth: true
             fillHeight: true
-            color: "black"
             layout: "center"
 
             Video {
@@ -360,6 +361,9 @@ MouseBox {
                                 return;
                             }
 
+                            text = low.escapeMarkup(stripExtension(modelData.value.name));
+
+                            /*
                             fetchManager.fetch("/::tags" + modelData.value.path)
                             .then(response =>
                             {
@@ -377,6 +381,7 @@ MouseBox {
                             {
 
                             });
+                            */
                         }
 
                         onClick: (ev) =>
@@ -534,6 +539,7 @@ MouseBox {
             Box {
                 marginLeft: theme.paddingMedium
                 marginRight: theme.paddingMedium
+                marginBottom: theme.paddingMedium
                 fillWidth: true
                 layout: "row"
 
@@ -541,41 +547,15 @@ MouseBox {
                     text: formatTime(seekbar.seeking ? seekbar.seekTime : controls.player.currentTime)
                 }
 
-                Box { fillWidth: true }
-
-                Label {
-                    text: formatTime(controls.player.duration)
-                }
-            }
-
-            Box {
-                marginTop: theme.paddingLarge
-                fillWidth: true
-                height: theme.itemHeightLarge * 1.5
-                layout: "center-row"
-
-                Button {
-                    fillHeight: true
-                    width: bbox.height
-                    flat: true
-                    icon: "media-eject"
-
-                    onClick: (ev) =>
-                    {
-                        playerBox.current = -1;
-                        docHistory.back();
-                        ev.accepted = true;
-                    }
-                }
-
                 Label {
                     id: titleLabel
 
                     fillWidth: true
+                    marginLeft: theme.paddingMedium
+                    marginRight: theme.paddingMedium
+                    bold: true
                     horizontalAlignment: "center"
-                    fontSize: theme.fontSizeLarge
                     overflowBehavior: "ellipsis"
-                    literal: true
 
                     playerBox.onCurrentChanged: () =>
                     {
@@ -588,6 +568,9 @@ MouseBox {
                         const file = playerBox.model.at(playerBox.current);
                         if (file.mimetype.startsWith("audio/"))
                         {
+                            text = low.escapeMarkup(stripExtension(file.name));
+
+                            /*
                             text = "Loading...";
                             fetchManager.fetch("/::tags" + file.path)
                             .then(response =>
@@ -606,26 +589,17 @@ MouseBox {
                             {
 
                             });
+                            */
                         }
                         else
                         {
-                            text = stripExtension(file.name);
+                            text = low.escapeMarkup(stripExtension(file.name));
                         }
                     }
                 }
 
-                Button {
-                    fillHeight: true
-                    width: bbox.height
-                    flat: true
-                    icon: "ui-unfold_less"
-
-                    onClick: (ev) =>
-                    {
-                        docHistory.back();
-                        //playerBox.minimized = true;
-                        ev.accepted = true;
-                    }
+                Label {
+                    text: formatTime(controls.player.duration)
                 }
             }
 

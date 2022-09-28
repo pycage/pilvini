@@ -251,6 +251,37 @@ shRequire(["shellfish/core", __dirname + "/pdfdocument.js"], (core, pdfdoc) =>
         return blob;
     }
 
+    async function makeArchiveThumbnail(fs, path, size)
+    {
+        console.log("make archive TN " + path);
+
+        const findImage = async(path) =>
+        {
+            const files = await fs.list(path);
+            for (let i = 0; i < files.length; ++i)
+            {
+                if (files[i].mimetype.startsWith("image/"))
+                {
+                    return files[i];
+                }
+                else if (files[i].type === "d")
+                {
+                    return await findImage(files[i].path);
+                }
+            }
+            return null;
+        };
+
+        const imageFile = await findImage(path);
+        console.log("image: " + imageFile);
+        if (! imageFile)
+        {
+            return null;
+        }
+
+        return makeImageThumbnail(imageFile.path, size);
+    }
+
     const d = new WeakMap();
 
     class ThumbnailGenerator extends core.Object
@@ -260,12 +291,14 @@ shRequire(["shellfish/core", __dirname + "/pdfdocument.js"], (core, pdfdoc) =>
             super();
             d.set(this, {
                 capacity: 512,
+                enabled: true,
                 filesystem: null,
                 path: "/",
                 size: 160
             });
 
             this.notifyable("capacity");
+            this.notifyable("enabled");
             this.notifyable("filesystem");
             this.notifyable("path");
             this.notifyable("size");
@@ -277,6 +310,13 @@ shRequire(["shellfish/core", __dirname + "/pdfdocument.js"], (core, pdfdoc) =>
             d.get(this).capacity = c;
             this.capacityChanged();
             this.cleanup();
+        }
+
+        get enabled() { return d.get(this).enabled; }
+        set enabled(e)
+        {
+            d.get(this).enabled = e;
+            this.enabledChanged();
         }
 
         get filesystem() { return d.get(this).filesystem; }
@@ -345,15 +385,23 @@ shRequire(["shellfish/core", __dirname + "/pdfdocument.js"], (core, pdfdoc) =>
                     return;
                 }
 
+                if (! d.get(this).enabled)
+                {
+                    resolve(null);
+                    return;
+                }
+
                 const next = await this.waitQueued("thumbnails");
                 if (! condition())
                 {
                     next();
                     return;
                 }
+                console.log("check file: " + file.path + " " + file.mimetype);
                 if (file.mimetype.startsWith("image/") ||
                     file.mimetype === "video/mp4" ||
                     file.mimetype === "application/pdf" ||
+                    file.mimetype === "application/zip" ||
                     file.type === "d")
                 {
                     try
@@ -376,6 +424,12 @@ shRequire(["shellfish/core", __dirname + "/pdfdocument.js"], (core, pdfdoc) =>
                             await priv.filesystem.write(tnPath, blob);
                             resolve(blob);
                         }
+                        else if (file.mimetype === "application/zip")
+                        {
+                            const blob = await makeArchiveThumbnail(fs, file.path, priv.size);
+                            await priv.filesystem.write(tnPath, blob);
+                            resolve(blob);                            
+                        }
                         else if (file.type === "d" && await fs.exists(file.path + "/cover.jpg"))
                         {
                             const blob = await makeImageThumbnail(file.path + "/cover.jpg", priv.size);
@@ -385,6 +439,7 @@ shRequire(["shellfish/core", __dirname + "/pdfdocument.js"], (core, pdfdoc) =>
                     }
                     catch (err)
                     {
+                        console.error(err);
                         reject(err);
                     }
                 }

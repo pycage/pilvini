@@ -26,7 +26,9 @@ shRequire(["shellfish/core", "shellfish/core/mime"], (core, mime) =>
         {
             super();
             d.set(this, {
-                filesystem: null
+                filesystem: null,
+                dataCache: new Map(),
+                cachedPaths: []
             });
 
             this.notifyable("filesystem");
@@ -115,19 +117,36 @@ shRequire(["shellfish/core", "shellfish/core/mime"], (core, mime) =>
         {
             const priv = d.get(this);
 
+            if (priv.dataCache.has(dataPath))
+            {
+                if (priv.dataCache.size > 3)
+                {
+                    // LRU cache
+                    const toDelete = priv.cachedPaths.shift();
+                    priv.dataCache.delete(toDelete);
+                }
+
+                console.log("From cache: " + dataPath);
+                return priv.dataCache.get(dataPath);
+            }
+
             const pathInfo = this.analyzePath(dataPath);
+            let data = null;
             if (! pathInfo.fs)
             {
                 const blob = await priv.filesystem.read(dataPath);
-                return await blob.arrayBuffer();
+                data = await blob.arrayBuffer();
             }
             else
             {
                 const data = await this.readData(pathInfo.path1);
                 pathInfo.fs.data = data;
                 const blob = await pathInfo.fs.read(pathInfo.path2);
-                return await blob.arrayBuffer();
+                data = await blob.arrayBuffer();
             }
+            priv.dataCache.set(dataPath, data);
+            priv.cachedPaths.push(dataPath);
+            return data;
         }
 
         async fileInfo(path)

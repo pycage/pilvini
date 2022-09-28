@@ -1,5 +1,7 @@
 require "shellfish/server";
 require "./virtualfs.js";
+require "./archivefs.js";
+require "./rarfs.js";
 require "./zipfs.js";
 require "./ConfigSession.shui";
 
@@ -58,6 +60,10 @@ HTTPServer {
         id: vfs
 
         filesystem: localFs
+
+        RarFS {
+            property vfsMimeTypes: ["application/x-rar-compressed"]
+        }
 
         ZipFS {
             property vfsMimeTypes: ["application/zip"]

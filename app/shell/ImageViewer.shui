@@ -4,38 +4,140 @@ require "./ViewportBox.shui";
 Box {
     id: box
 
+    property model: ListModel { }
+    property current: 0
     property source: ""
 
-    ViewportBox {
-        id: vp
-
+    Box {
         fillWidth: true
         fillHeight: true
 
-        Image {
-            id: image
+        ViewportBox {
+            id: vp
 
-            position: "free"
-            x: -vp.viewX * vp.scale
-            y: -vp.viewY * vp.scale
-            width: originalWidth * vp.scale
-            height: originalHeight * vp.scale
+            fillWidth: true
+            fillHeight: true
 
-            source: box.source
-
-            onStatusChanged: () =>
+            onClick: () =>
             {
-                if (status === "success")
+                imagesBox.visible = ! imagesBox.visible;
+            }
+
+            Image {
+                id: image
+
+                position: "free"
+                x: -vp.viewX * vp.scale
+                y: -vp.viewY * vp.scale
+                width: originalWidth * vp.scale
+                height: originalHeight * vp.scale
+
+                source: box.current < box.model.size ? box.model.at(box.current).path : ""
+
+                onStatusChanged: () =>
                 {
-                    vp.originalWidth = originalWidth;
-                    vp.originalHeight = originalHeight;
-                    vp.scaleToFit();
+                    if (status === "success")
+                    {
+                        vp.originalWidth = originalWidth;
+                        vp.originalHeight = originalHeight;
+                        vp.scaleToFit();
+                    }
                 }
             }
         }
 
+        ScrollIndicator { id: sh; target: vp.adapter; other: sv; orientation: "horizontal" }
+        ScrollIndicator { id: sv; target: vp.adapter; other: sh; orientation: "vertical" }
     }
 
-    ScrollIndicator { id: sh; target: vp.adapter; other: sv; orientation: "horizontal" }
-    ScrollIndicator { id: sv; target: vp.adapter; other: sh; orientation: "vertical" }
+    Box {
+        id: imagesBox
+
+        visible: false
+
+        //position: "free"
+        //origin: "bottom-left"
+        fillWidth: true
+        //marginLeft: theme.paddingLarge
+        //marginRight: theme.paddingLarge
+        //y: theme.paddingLarge
+        height: theme.itemHeightLarge * 2
+
+        color: theme.contentBackgroundColor
+
+        layout: "row"
+
+        Button {
+            enabled: box.current > 0
+            width: theme.itemWidthSmall
+            fillHeight: true
+            flat: true
+            icon: "ui-arrow_left"
+
+            onClick: () =>
+            {
+                box.current -= 1;
+            }
+        }
+
+        Box {
+            fillWidth: true
+            fillHeight: true
+
+            ListView {
+                id: listView
+
+                fillWidth: true
+                fillHeight: true
+
+                orientation: "horizontal"
+                model: box.model
+                cellWidth: bboxHeight
+                cellHeight: bboxHeight
+
+                box.onCurrentChanged: () =>
+                {
+                    positionViewAt(box.current);
+                }
+
+                delegate: template MouseBox {
+                    color: box.current === modelData.index ? theme.highlightBackgroundColor
+                                                        : "transparent"
+
+                    Image {
+                        fillWidth: true
+                        fillHeight: true
+                        marginTop: theme.paddingSmall
+                        marginLeft: theme.paddingSmall
+                        marginRight: theme.paddingSmall
+                        marginBottom: theme.paddingSmall
+                        fitMode: "cover"
+                        source: parent.modelData.value.path
+                    }
+
+                    onClick: () =>
+                    {
+                        box.current = modelData.index;
+                    }
+                }
+            }
+
+            ScrollIndicator { target: listView; orientation: "horizontal" }
+        }
+
+        Button {
+            enabled: box.current < box.model.size - 1
+            width: theme.itemWidthSmall
+            fillHeight: true
+            flat: true
+            icon: "ui-arrow_right"
+
+            onClick: () =>
+            {
+                box.current += 1;
+            }
+        }
+
+
+    }
 }

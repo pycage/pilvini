@@ -1,3 +1,4 @@
+require "shellfish/low" as low;
 require "shellfish/ui";
 require "./FilesBox.shui";
 require "./FileViewer.shui";
@@ -65,28 +66,19 @@ Document {
         height: documentRoot.windowHeight
         color: theme.contentBackgroundColor
 
-        Box {
-            fillWidth: true
-            height: theme.itemHeightMedium
-            color: theme.secondaryBackgroundColor
+        layout: "row"
 
-            layout: "center-row"
+        MouseBox {
+            //visible: grid.maximizedItem === null
+            width: theme.itemHeightMedium
+            fillHeight: true
+            color: theme.contentBackgroundColor
 
-            Button {
-                fillHeight: true
-                flat: true
-                icon: "fs-folder"
-                text: "Files"
-                onClick: () =>
-                {
-                    panesModel.insert(panesModel.size, path);
-                }
-            }
-
-            Box { fillWidth: true }
+            layout: "center-column"
 
             Button {
-                fillHeight: true
+                width: parent.width
+                height: width
                 flat: true
                 icon: "ui-menu"
 
@@ -148,140 +140,30 @@ Document {
 
                 }
             }
+
+            Button {
+                width: parent.width
+                height: width
+                flat: true
+                icon: "fs-folder"
+                onClick: () =>
+                {
+                    panesModel.insert(panesModel.size, path);
+                }
+            }
+
+            Box { fillHeight: true }
             
-        }
-
-        GridLayout {
-            id: grid
-
-            property maximizedItem: null
-
-            fillWidth: true
-            fillHeight: true
-
-            layout: bbox.width > bbox.height ? "row" : "column"
-
-            onMaximizedItemChanged: () =>
-            {
-                wait(100).then(() => { update(); });
-            }
-
-            Repeater {
-                model: panesModel
-
-                delegate: template FilesBox {
-                    visible: ! grid.maximizedItem || grid.maximizedItem === objectId
-
-                    maximized: grid.maximizedItem === objectId
-                    fillWidth: true
-                    fillHeight: true
-
-                    fs: remoteFs
-                    path: modelData.value
-
-                    onToggleMaximized: () =>
-                    {
-                        if (grid.maximizedItem)
-                        {
-                            grid.maximizedItem = null;
-                        }
-                        else
-                        {
-                            grid.maximizedItem = objectId;
-                        }
-                        grid.update();
-                    }
-
-                    onNewPane: (path) =>
-                    {
-                        panesModel.insert(panesModel.size, path);
-                    }
-
-                    onClosePane: () =>
-                    {
-                        panesModel.remove(modelData.index);
-                    }
-
-                    onFilesOpen: (files, idx) =>
-                    {
-                        mediaModel.insert(mediaModel.size, files);
-                    }
-
-                    onTakeFiles: (files) =>
-                    {
-                        filesBag = files;
-                    }
-                }
-            }
-
-            Repeater {
-                model: mediaModel
-
-                delegate: template FileViewer {
-                    property files: modelData.value
-
-                    visible: ! grid.maximizedItem || grid.maximizedItem === objectId
-
-                    maximized: grid.maximizedItem === objectId
-                    fillWidth: true
-                    fillHeight: true
-
-                    current: 0
-
-                    onToggleMaximized: () =>
-                    {
-                        if (grid.maximizedItem)
-                        {
-                            grid.maximizedItem = null;
-                        }
-                        else
-                        {
-                            grid.maximizedItem = objectId;
-                        }
-                        grid.update();
-                    }
-
-                    onFilesChanged: () =>
-                    {
-                        grid.maximizedItem = objectId;
-                        console.log("SET FILES: " + JSON.stringify(files));
-                        model.reset(files);
-                        current = 0;
-                    }
-
-                    onCurrentChanged: () =>
-                    {
-                        if (current === -1)
-                        {
-                            if (grid.maximizedItem === objectId)
-                            {
-                                grid.maximizedItem = null;
-                            }
-                            mediaModel.remove(modelData.index);
-                        }
-                    }
-                }
-            }
-        }//GridLayout
-
-        Box {
-            visible: grid.items.length > 1 && grid.maximizedItem !== null
-            fillWidth: true
-            height: theme.itemHeightMedium
-            color: theme.secondaryBackgroundColor
-
-            layout: "row"
-
             Repeater {
                 model: grid.items.length
 
                 delegate: template Button {
-                    fillWidth: true
-                    fillHeight: true
+                    width: parent.width
+                    height: width
                     flat: true
                     checked: grid.items[modelData.index].objectId === grid.maximizedItem
                     icon: grid.items[modelData.index].windowIcon
-                    text: grid.items[modelData.index].windowTitle
+                    //text: low.escapeMarkup(grid.items[modelData.index].windowTitle)
 
                     onClick: () =>
                     {
@@ -290,6 +172,167 @@ Document {
                 }
             }
         }
+
+
+        Box {
+            fillWidth: true
+            fillHeight: true
+
+            GridLayout {
+                id: grid
+
+                property maximizedItem: null
+
+                fillWidth: true
+                fillHeight: true
+
+                layout: bbox.width > bbox.height ? "row" : "column"
+
+                onMaximizedItemChanged: () =>
+                {
+                    wait(100).then(() => { update(); });
+                }
+
+                Repeater {
+                    model: panesModel
+
+                    delegate: template FilesBox {
+                        visible: ! grid.maximizedItem || grid.maximizedItem === objectId
+
+                        maximized: grid.maximizedItem === objectId
+                        fillWidth: true
+                        fillHeight: true
+
+                        fs: remoteFs
+                        path: modelData.value
+
+                        onToggleMaximized: () =>
+                        {
+                            if (grid.maximizedItem)
+                            {
+                                grid.maximizedItem = null;
+                            }
+                            else
+                            {
+                                grid.maximizedItem = objectId;
+                            }
+                            grid.update();
+                        }
+
+                        onNewPane: (path) =>
+                        {
+                            panesModel.insert(panesModel.size, path);
+                        }
+
+                        onClosePane: () =>
+                        {
+                            panesModel.remove(modelData.index);
+                        }
+
+                        onFilesOpen: (files, idx) =>
+                        {
+                            if (mediaModel.size === 0)
+                            {
+                                mediaModel.insert(mediaModel.size, { files: files, index: idx });
+                            }
+                            else
+                            {
+                                mediaModel.replace(mediaModel.size - 1, { files: files, index: idx });
+                            }
+                        }
+
+                        onTakeFiles: (files) =>
+                        {
+                            filesBag = files;
+                        }
+                    }
+                }
+
+                Repeater {
+                    model: mediaModel
+
+                    delegate: template FileViewer {
+                        property files: modelData.value.files
+
+                        visible: ! grid.maximizedItem || grid.maximizedItem === objectId
+
+                        maximized: grid.maximizedItem === objectId
+                        fillWidth: true
+                        fillHeight: true
+
+                        current: 0
+
+                        onToggleMaximized: () =>
+                        {
+                            if (grid.maximizedItem)
+                            {
+                                grid.maximizedItem = null;
+                            }
+                            else
+                            {
+                                grid.maximizedItem = objectId;
+                            }
+                            grid.update();
+                        }
+
+                        onFilesChanged: () =>
+                        {
+                            if (grid.maximizedItem)
+                            {
+                                grid.maximizedItem = objectId;
+                            }
+                            console.log("SET FILES: " + JSON.stringify(files));
+                            console.log("Index: " + modelData.value.index);
+                            model.reset(files);
+                            current = modelData.value.index;
+                        }
+
+                        onCurrentChanged: () =>
+                        {
+                            if (current === -1)
+                            {
+                                if (grid.maximizedItem === objectId)
+                                {
+                                    grid.maximizedItem = null;
+                                }
+                                mediaModel.remove(modelData.index);
+                            }
+                        }
+                    }
+                }
+            }//GridLayout
+
+            /*
+            Box {
+                visible: grid.items.length > 1 && grid.maximizedItem !== null
+                fillWidth: true
+                height: theme.itemHeightSmall
+                color: theme.secondaryBackgroundColor
+
+                layout: "row"
+
+                Repeater {
+                    model: grid.items.length
+
+                    delegate: template Button {
+                        fillWidth: true
+                        fillHeight: true
+                        flat: true
+                        checked: grid.items[modelData.index].objectId === grid.maximizedItem
+                        icon: grid.items[modelData.index].windowIcon
+                        text: low.escapeMarkup(grid.items[modelData.index].windowTitle)
+
+                        onClick: () =>
+                        {
+                            grid.maximizedItem = grid.items[modelData.index].objectId;
+                        }
+                    }
+                }
+            }
+            */
+
+        }
+
     }
 
     Placeholder {

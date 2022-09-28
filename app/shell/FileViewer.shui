@@ -1,3 +1,4 @@
+require "shellfish/low" as low;
 require "shellfish/ui";
 require "./ImageViewer.shui";
 require "./MediaPlayer.shui";
@@ -14,69 +15,15 @@ Box {
     property current: -1
     property maximized: false
 
-    borderWidth: 1
+    borderWidth: maximized ? 0 : 1
     borderColor: theme.borderColor
 
     event toggleMaximized
 
-    Box {
-        fillWidth: true
-        height: theme.itemHeightMedium
-        color: theme.secondaryBackgroundColor
-
-        layout: "center-row"
-
-        Label {
-            marginLeft: theme.paddingSmall
-            marginRight: theme.paddingSmall
-            fillWidth: true
-            bold: true
-            literal: true
-            text: loader.fileItem ? loader.fileItem.name : ""
-        }
-
-        Button {
-            visible: filesBag.length > 0
-            fillHeight: true
-            flat: true
-            icon: "fs-save"
-            text: "Drop"
-
-            onClick: ev =>
-            {
-                box.model.reset(filesBag.slice());
-                box.current = 0;
-                ev.accepted = true;
-            }
-        }
-
-        Button {
-            fillHeight: true
-            flat: true
-            icon: box.maximized ? "ui-unfold_less" : "ui-unfold_more"
-
-            onClick: () =>
-            {
-                box.toggleMaximized();
-            }
-        }
-
-        Button {
-            fillHeight: true
-            flat: true
-            icon: "ui-clear"
-
-            onClick: () =>
-            {
-                box.current = -1;
-                box.model.reset([]);
-            }
-        }
-    }
-
     DropArea {
         fillWidth: true
         fillHeight: true
+        marginTop: box.maximized ? 0 : theme.itemHeightMedium
 
         onDropAccept: ev =>
         {
@@ -137,10 +84,60 @@ Box {
 
     }
 
+    MouseBox {
+        opacity: box.maximized && ! containsMouse ? 0 : 1
+
+        position: "free"
+        fillWidth: true
+        height: theme.itemHeightMedium
+        color: theme.secondaryBackgroundColor
+
+        layout: "center-row"
+
+        onDoubleClick: ev =>
+        {
+            box.toggleMaximized();
+            ev.accepted = true;
+        }
+
+        Label {
+            marginLeft: theme.paddingSmall
+            marginRight: theme.paddingSmall
+            fillWidth: true
+            bold: true
+            text: loader.fileItem ? low.escapeMarkup(loader.fileItem.name) : ""
+        }
+
+        Button {
+            fillHeight: true
+            flat: true
+            icon: box.maximized ? "ui-unfold_less" : "ui-unfold_more"
+
+            onClick: () =>
+            {
+                box.toggleMaximized();
+            }
+        }
+
+        Button {
+            fillHeight: true
+            flat: true
+            icon: "ui-clear"
+
+            onClick: () =>
+            {
+                box.current = -1;
+                box.model.reset([]);
+            }
+        }
+    }
 
     property imageViewerT: template ImageViewer {
         fillWidth: true
         fillHeight: true
+
+        model: box.model
+        current: box.current
         source: loader.fileItem ? loader.fileItem.path : ""
     }
 

@@ -19,12 +19,13 @@ Box {
     event filesOpen
     event takeFiles
 
-    borderWidth: 1
+    borderWidth: maximized ? 0 : 1
     borderColor: theme.borderColor
 
     ThumbnailGenerator {
         id: thumbnailer
 
+        enabled: thumbnailCheckbox.checked
         filesystem: OfflineFS { volume: "Thumbnails" }
     }
 
@@ -33,15 +34,37 @@ Box {
 
         filesystem: box.fs
         path: box.path
+        sortRole: sortSelector.role
+        sortAscending: sortSelector.ascending
+
+        function getFiles(predicate)
+        {
+            const result = [];
+            for (let i = 0; i < size; ++i)
+            {
+                const f = at(i);
+                if (predicate(f))
+                {
+                    result.push(f);
+                }
+            }
+            return result;
+        }
     }
 
-    Box {
+    MouseBox {
         fillWidth: true
         height: theme.itemHeightMedium
         color: theme.secondaryBackgroundColor
 
         layout: "center-row"
         
+        onDoubleClick: ev =>
+        {
+            box.toggleMaximized();
+            ev.accepted = true;
+        }
+
         BreadCrumbs {
             fillWidth: true
             fillHeight: true
@@ -77,14 +100,17 @@ Box {
                         {
                             const uri = item.path;
                             const destPath = box.fs.pathJoin(box.path, box.fs.filename(uri));
+                            statusLabel.text = "Copying: " + box.fs.filename(uri);
                             box.fs.copy(uri, destPath)
                             .then(() =>
                             {
                                 console.log("files moved");
+                                statusLabel.text = "";
                             })
                             .catch(err =>
                             {
-                                console.log("failed to copy files: " + err);
+                                showErrorDialog("Error Copying File", "" + err);
+                                statusLabel.text = "";
                             });
                         });
                     }
@@ -106,7 +132,7 @@ Box {
                             })
                             .catch(err =>
                             {
-                                console.log("failed to move files: " + err);
+                                showErrorDialog("Error Moving File", "" + err);
                             });
                         });
                         filesBag = [];
@@ -168,10 +194,16 @@ Box {
                     continue;
                 }
                 const fileItem = item.getAsFile();
+                statusLabel.text = "Uploading: " + fileItem.name;
                 box.fs.write(box.fs.pathJoin(box.path, box.fs.encodeName(fileItem.name)), fileItem)
                 .then(() =>
                 {
-
+                    statusLabel.text = "";
+                })
+                .catch(err =>
+                {
+                    statusLabel.text = "";
+                    showErrorDialog("Error Uploading File", "" + err);
                 });
             }
 
@@ -185,14 +217,17 @@ Box {
                     console.log("DROP EFFECT " + ev.dropEffect);
                     if (ev.dropEffect === "copy")
                     {
+                        statusLabel.text = "Copying: " + box.fs.filename(uri);
                         box.fs.copy(uri, destPath)
                         .then(() =>
                         {
+                            statusLabel.text = "";
                             console.log("files copied");
                         })
                         .catch(err =>
                         {
-                            console.log("failed to copy files: " + err);
+                            statusLabel.text = "";
+                            showErrorDialog("Error Copying File", "" + err);
                         });
                     }
                     else
@@ -204,7 +239,7 @@ Box {
                         })
                         .catch(err =>
                         {
-                            console.log("failed to move files: " + err);
+                            showErrorDialog("Error Moving File", "" + err);
                         });
                     }
                 });
@@ -234,8 +269,8 @@ Box {
                 canFocus: true
 
                 cellWidth: displayMode === "list" ? bbox.width - 1
-                                                  : theme.itemWidthLarge * sizeSelector.value
-                cellHeight: displayMode === "list" ? theme.itemHeightMedium * sizeSelector.value
+                                                  : (theme.itemWidthLarge / 2) * (sizeSelector.value + 1)
+                cellHeight: displayMode === "list" ? (theme.itemHeightMedium / 2) * (sizeSelector.value + 1)
                                                    : cellWidth
                 cacheMargin: cellHeight //contentHeight
 
@@ -308,7 +343,10 @@ Box {
                                 thumbnailer.generate(box.fs, file, condition)
                                 .then(safeCallback(blob =>
                                 {
-                                    thumbnail = blobUrl(blob);
+                                    if (blob)
+                                    {
+                                        thumbnail = blobUrl(blob);
+                                    }
                                 }, condition))
                                 .catch(err =>
                                 {
@@ -344,14 +382,26 @@ Box {
                                 selector.clear();
                                 box.path = file.path;
                             }
-                            else if (file.mimetype === "application/zip")
+                            else if (file.mimetype === "application/zip" ||
+                                     file.mimetype === "application/x-rar-compressed")
                             {
                                 selector.clear();
                                 console.log("open ZIP: " + file.path);
                                 box.path = file.path;
                             }
+                            else if (file.mimetype.startsWith("audio/"))
+                            {
+                                const files = fsModel.getFiles(f => f.mimetype.startsWith("audio/"));
+                                const idx = files.findIndex(f => f.path === file.path);
+                                box.filesOpen(files, idx);
+                            }
+                            else if (file.mimetype.startsWith("image/"))
+                            {
+                                const files = fsModel.getFiles(f => f.mimetype.startsWith("image/"));
+                                const idx = files.findIndex(f => f.path === file.path);
+                                box.filesOpen(files, idx);
+                            }
                             else if (file.mimetype === "application/pdf" ||
-                                     file.mimetype.startsWith("audio/") ||
                                      file.mimetype.startsWith("image/") ||
                                      file.mimetype.startsWith("text/") ||
                                      file.mimetype.startsWith("video/"))
@@ -463,7 +513,29 @@ Box {
             text: fsview.count + " items"
         }
 
-        Box { fillWidth: true }
+        Label {
+            id: statusLabel
+
+            fillWidth: true
+            marginLeft: theme.paddingSmall
+            overflowBehavior: "ellipsis"
+        }
+
+        SelectionBox {
+            id: sortSelector
+
+            property role: ["name", "time", "size"][selection % 3]
+            property ascending: selection < 3
+
+            labelProfile: Object { property literal: false }
+
+            model: ListModel {
+                data: [
+                    "[icon:ui-arrow_up] By Name", "[icon:ui-arrow_up] By Date", "[icon:ui-arrow_up] By Size",
+                    "[icon:ui-arrow_down] By Name", "[icon:ui-arrow_down] By Date", "[icon:ui-arrow_down] By Size"
+                ]
+            }
+        }
 
         SpinBox {
             id: sizeSelector
@@ -474,6 +546,21 @@ Box {
             maxValue: 6
             stepSize: 1
             value: 1
+        }
+
+        Button {
+            id: thumbnailCheckbox
+
+            fillHeight: true
+            flat: true
+            icon: "media-image"
+            checked: false
+
+            onClick: (ev) =>
+            {
+                checked = ! checked;
+                ev.accepted = true;
+            }
         }
 
         Button {
@@ -499,7 +586,6 @@ Box {
                 ev.accepted = true;
             }
         }
-
     }
 
     property newDirectoryDialogT: template Dialog {

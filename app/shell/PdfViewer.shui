@@ -8,68 +8,6 @@ Box {
 
     property source: ""
 
-    Box {       
-        fillWidth: true
-        height: theme.itemHeightMedium
-        color: theme.primaryBackgroundColor
-
-        layout: "center-row"
-
-        Button {
-            fillHeight: true
-            flat: true
-            text: "<"
-            onClick: () =>
-            {
-                if (pdf.page > 0) --pdf.page;
-            }
-        }
-
-        Box { fillWidth: true }
-
-        Button {
-            fillHeight: true
-            flat: true
-            marginRight: theme.paddingSmall
-            text: "Page " + (Math.round(pageSlider.value) + 1) + " / " + pdf.document.pages
-
-            onClick: () =>
-            {
-                const menu = menuT();
-                menu.popup(self);
-            }
-
-            property menuT: template Menu {
-                Repeater {
-                    model: pdf.document.pages
-
-                    delegate: template MenuItem {
-                        text: "Page " + (modelData.index + 1)
-                        onClick: () =>
-                        {
-                            pdf.page = modelData.index;
-                        }
-                    }
-                }
-            }
-        }
-
-        Box { fillWidth: true }
-
-        Button {
-            fillHeight: true
-            flat: true
-            text: ">"
-            onClick: () =>
-            {
-                if (pdf.page < pdf.document.pages - 1)
-                {
-                    ++pdf.page;
-                }
-            }
-        }
-    }
-
     Box {
         fillWidth: true
         fillHeight: true
@@ -134,6 +72,31 @@ Box {
         color: theme.primaryBackgroundColor
         layout: "center-row"
 
+        Button {
+            fillHeight: true
+            flat: true
+            icon: "ui-arrow_back"
+            
+            onClick: () =>
+            {
+                if (pdf.page > 0) --pdf.page;
+            }
+        }
+
+        Button {
+            fillHeight: true
+            flat: true
+            icon: "ui-arrow_forward"
+
+            onClick: () =>
+            {
+                if (pdf.page < pdf.document.pages - 1)
+                {
+                    ++pdf.page;
+                }
+            }
+        }
+
         Slider {
             id: pageSlider
 
@@ -165,6 +128,33 @@ Box {
                 if (pdf.status !== "loading" && pdf.page !== v)
                 {
                     pdf.page = v;
+                }
+            }
+        }
+
+        Button {
+            fillHeight: true
+            flat: true
+            marginRight: theme.paddingSmall
+            text: "Page " + (Math.round(pageSlider.value) + 1) + " / " + pdf.document.pages
+
+            onClick: () =>
+            {
+                const menu = menuT();
+                menu.popup(self);
+            }
+
+            property menuT: template Menu {
+                Repeater {
+                    model: pdf.document.pages
+
+                    delegate: template MenuItem {
+                        text: "Page " + (modelData.index + 1)
+                        onClick: () =>
+                        {
+                            pdf.page = modelData.index;
+                        }
+                    }
                 }
             }
         }

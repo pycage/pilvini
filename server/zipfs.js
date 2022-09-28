@@ -43,13 +43,43 @@ shRequire(["shellfish/core", "shellfish/core/mime", __dirname + "/jszip.min.js"]
             });
 
             this.notifyable("data");
+
+            this.onDestruction = () =>
+            {
+                this.freeSharedResource("archive-" + this.objectId);
+            };
         }
 
         get data() { return d.get(this).data; }
         set data(dt)
         {
-            d.get(this).data = dt;
-            this.dataChanged();
+            if (dt !== d.get(this).data)
+            {
+                d.get(this).data = dt;
+                this.freeSharedResource("archive-" + this.objectId);
+                this.dataChanged();
+            }
+        }
+
+        async openArchive()
+        {
+            const wait = () =>
+            {
+                return new Promise(async (resolve, reject) =>
+                {
+                    if (this.awaitSharedResource("archive-" + this.objectId, () => resolve()))
+                    {
+                        const archive = await jszip.loadAsync(d.get(this).data);
+                        this.sharedResource("archive-" + this.objectId, () => archive);
+                    }
+                });
+            };
+
+            console.log("OPEN ARCHIVE");
+            await wait();
+            console.log("OPENED");
+
+            return this.sharedResource("archive-" + this.objectId);
         }
 
         async fileInfo(path)
@@ -75,10 +105,9 @@ shRequire(["shellfish/core", "shellfish/core/mime", __dirname + "/jszip.min.js"]
 
         async list(path)
         {
-            console.log("ZIP LIST: " + path);
-            const zip = await jszip.loadAsync(d.get(this).data);
+            const zip = await this.openArchive();
 
-            console.log(zip.files);
+            //console.log(zip.files);
 
             const seen = new Set();
             const implicitDirectories = Object.values(zip.files)
@@ -129,7 +158,7 @@ shRequire(["shellfish/core", "shellfish/core/mime", __dirname + "/jszip.min.js"]
         async read(path)
         {
             console.log("VFS READ " + path);
-            const zip = await jszip.loadAsync(d.get(this).data);
+            const zip = await this.openArchive();
 
             if (zip.files[path])
             {

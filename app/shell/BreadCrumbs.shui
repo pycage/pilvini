@@ -1,3 +1,4 @@
+require "shellfish/low" as low;
 require "shellfish/ui";
 
 Box {
@@ -54,7 +55,7 @@ Box {
 
         icon: text === "" ? "fs-drive"
                           : "fs-folder"
-        text: breadCrumbsModel.size > 0 ? (breadCrumbsModel.at(0).name || "/")
+        text: breadCrumbsModel.size > 0 ? low.escapeMarkup(breadCrumbsModel.at(0).name || "/")
                                         : ""
 
         onClick: ev =>
@@ -74,7 +75,7 @@ Box {
                     visible: modelData.index > 0
                     icon: modelData.index === breadCrumbsModel.size - 1 ? "fs-drive"
                                                                         : "fs-folder"
-                    text: modelData.value.name || "/"
+                    text: low.escapeMarkup(modelData.value.name || "/")
 
                     onClick: () =>
                     {

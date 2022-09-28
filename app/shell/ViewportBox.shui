@@ -16,6 +16,8 @@ MouseBox {
 
     property adapter: Object {
         property bbox: box.bbox
+        property bboxWidth: box.bboxWidth
+        property bboxHeight: box.bboxHeight
 
         property contentX: 0
         property contentY: 0
