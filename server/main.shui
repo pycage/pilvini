@@ -1,6 +1,5 @@
 require "shellfish/server";
 require "./virtualfs.js";
-require "./archivefs.js";
 require "./rarfs.js";
 require "./zipfs.js";
 require "./ConfigSession.shui";
