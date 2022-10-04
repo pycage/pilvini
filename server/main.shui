@@ -1,4 +1,5 @@
 require "shellfish/server";
+require "./proxysession.js";
 require "./virtualfs.js";
 require "./rarfs.js";
 require "./zipfs.js";
@@ -120,6 +121,17 @@ HTTPServer {
         }
 
     }//HTTPRoute
+
+    // Proxy Access
+    HTTPRoute {
+        authentication: auth
+
+        when: req => { return req.url.startsWith("/::proxy"); }
+
+        delegate: template ProxySession {
+
+        }
+    }
 
     // Applications
     HTTPRoute {

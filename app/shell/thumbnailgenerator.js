@@ -251,6 +251,27 @@ shRequire(["shellfish/core", __dirname + "/pdfdocument.js"], (core, pdfdoc) =>
         return blob;
     }
 
+    async function makeYouTubeThumbnail(fs, path, size)
+    {
+        console.log("GET " + path);
+        let jsonBlob = await fs.read(path);
+        const json = await jsonBlob.text();
+        console.log(json);
+        const obj = JSON.parse(json);
+
+        const opts = {
+            headers: {
+                "location": obj.thumbnail
+            }
+        };
+        response = await window.fetch("/::proxy", opts);
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const imageBlob = await makeImageThumbnail(blobUrl, size);
+        URL.revokeObjectURL(blobUrl);
+        return imageBlob;
+    }
+
     async function makeArchiveThumbnail(fs, path, size)
     {
         console.log("make archive TN " + path);
@@ -401,6 +422,7 @@ shRequire(["shellfish/core", __dirname + "/pdfdocument.js"], (core, pdfdoc) =>
                 if (file.mimetype.startsWith("image/") ||
                     file.mimetype === "video/mp4" ||
                     file.mimetype === "application/pdf" ||
+                    file.mimetype === "application/x-youtube-link" ||
                     file.mimetype === "application/zip" ||
                     file.type === "d")
                 {
@@ -421,6 +443,12 @@ shRequire(["shellfish/core", __dirname + "/pdfdocument.js"], (core, pdfdoc) =>
                         else if (file.mimetype === "application/pdf")
                         {
                             const blob = await makePdfThumbnail(file.path, priv.size);
+                            await priv.filesystem.write(tnPath, blob);
+                            resolve(blob);
+                        }
+                        else if (file.mimetype === "application/x-youtube-link")
+                        {
+                            const blob = await makeYouTubeThumbnail(fs, file.path, priv.size);
                             await priv.filesystem.write(tnPath, blob);
                             resolve(blob);
                         }

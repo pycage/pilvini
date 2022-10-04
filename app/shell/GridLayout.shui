@@ -1,24 +1,49 @@
 require "shellfish/ui";
 
-Box {
+MouseBox {
 
     property items: []
+    property columns: 2
+
+    function swap(child, direction)
+    {
+        const childIndex = items.indexOf(child);
+        const otherIndex = childIndex + direction;
+
+        if (childIndex >= 0 && otherIndex >= 0 &&
+            childIndex < items.length && otherIndex < items.length)
+        {
+            const other = items[otherIndex];
+            const tmp = child.sortIndex;
+            child.sortIndex = other.sortIndex;
+            other.sortIndex = tmp;
+            update();
+        }
+    }
 
     function update()
     {
-        items = children().slice(2);
+        const childItems = children().slice(1);
+        childItems.sort((a, b) => { return a.sortIndex - b.sortIndex; });
+        items = childItems.slice();
+
+        //items = children().slice(1);
+        //items.sort((a, b) => { return a.sortIndex - b.sortIndex; });
+
         const vitems = items.filter(c => c.visible);
         const amount = vitems.length;
 
-        let cols = Math.ceil(Math.sqrt(amount));
+        let cols = bbox.width > bbox.height ? amount : 1; //Math.min(columns, amount); //Math.ceil(Math.sqrt(amount));
         let rows = Math.ceil(amount / cols);
 
+        /*
         if (bbox.width < bbox.height)
         {
             const tmp = rows;
             rows = cols;
             cols = tmp;
         }
+        */
 
         let cx = 0;
         let cy = 0;
@@ -28,6 +53,9 @@ Box {
 
         //console.log("amount: " + amount + ", cols: " + cols + ", rows: " + rows);
         //console.log("cw: " + cw + ", ch: " + ch);
+
+        const marginH = cols > 1 && vitems.length > 1 ? 3 : 0;
+        const marginV = rows > 1 && vitems.length > 1 ? 3 : 0;
 
         vitems.forEach((item, idx) =>
         {
@@ -41,10 +69,10 @@ Box {
             item.fillWidth = false;
             item.fillHeight = false;
             //console.log("cx: " + cx + ", cy: " + cy);
-            item.x = cx + 1;
-            item.y = cy + 1;
-            item.width = cw - 2;
-            item.height = ch - 2;
+            item.x = cx + marginH;
+            item.y = cy + marginV;
+            item.width = cw - 2 * marginH;
+            item.height = ch - 2 * marginV;
             cx += cw;
             ++col;
             if (col >= cols)
@@ -58,4 +86,5 @@ Box {
 
     onBboxChanged: () => { update(); }
     onChildrenChanged: () => { wait(100).then(() => { update(); }); }
+    onColumnsChanged: () => { update(); }
 }

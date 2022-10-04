@@ -10,17 +10,19 @@ Box {
 
     property fs: null
     property path: "/"
+    property searchBox: false
     property maximized: false
 
     event toggleMaximized
-
-    event newPane
+    event swapPanes
     event closePane
     event filesOpen
     event takeFiles
 
-    borderWidth: maximized ? 0 : 1
-    borderColor: theme.borderColor
+    fillWidth: true
+    fillHeight: true
+
+    borderRadius: 6
 
     ThumbnailGenerator {
         id: thumbnailer
@@ -66,6 +68,7 @@ Box {
         }
 
         BreadCrumbs {
+            visible: ! box.searchBox
             fillWidth: true
             fillHeight: true
             path: box.path
@@ -76,7 +79,54 @@ Box {
             }
         }
 
-        //Box { fillWidth: true }
+        Label {
+            visible: box.searchBox
+            marginLeft: theme.paddingSmall
+            marginRight: theme.paddingSmall
+            text: "[icon:ui-search]"
+        }
+
+        TextEntry {
+            id: searchEntry
+
+            visible: box.searchBox
+            width: theme.itemWidthLarge * 1.5
+
+            onKeyDown: ev =>
+            {
+                if (ev.key === "Enter" || ev.key === "Tab")
+                {
+                    fsModel.query = text;
+                }
+            }
+        }
+
+        Button {
+            visible: box.searchBox
+            fillHeight: true
+            flat: true
+            text: "Clear"
+
+            onClick: () =>
+            {
+                fsModel.query = "";
+                searchEntry.text = "";
+            }
+        }
+
+        Button {
+            visible: box.searchBox
+            fillHeight: true
+            flat: true
+            text: "Search"
+
+            onClick: () =>
+            {
+                fsModel.query = searchEntry.text;
+            }
+        }
+
+        Box { visible: box.searchBox; fillWidth: true }
 
         Button {
             visible: filesBag.length > 0 && filesBagSource !== box.objectId
@@ -142,13 +192,26 @@ Box {
         }
 
         Button {
+            visible: ! box.maximized
             fillHeight: true
             flat: true
-            icon: box.maximized ? "ui-unfold_less" : "ui-unfold_more"
-            onClick: ev =>
+            icon: "ui-arrow_left"
+
+            onClick: () =>
             {
-                box.toggleMaximized();
-                ev.accepted = true;
+                box.swapPanes(-1);
+            }
+        }
+
+        Button {
+            visible: ! box.maximized
+            fillHeight: true
+            flat: true
+            icon: "ui-arrow_right"
+
+            onClick: () =>
+            {
+                box.swapPanes(1);
             }
         }
 
@@ -250,6 +313,8 @@ Box {
             fillWidth: true
             fillHeight: true
             layout: "center"
+
+            color: theme.secondaryBackgroundColor
 
             onContextMenu: (ev) =>
             {
@@ -376,6 +441,8 @@ Box {
 
                         onDoubleClick: (ev) =>
                         {
+                            const asNew = ev.original.shiftKey;
+
                             const file = parent.modelData.value;
                             if (file.type === "d")
                             {
@@ -393,20 +460,26 @@ Box {
                             {
                                 const files = fsModel.getFiles(f => f.mimetype.startsWith("audio/"));
                                 const idx = files.findIndex(f => f.path === file.path);
-                                box.filesOpen(files, idx);
+                                box.filesOpen(files, idx, asNew);
                             }
                             else if (file.mimetype.startsWith("image/"))
                             {
                                 const files = fsModel.getFiles(f => f.mimetype.startsWith("image/"));
                                 const idx = files.findIndex(f => f.path === file.path);
-                                box.filesOpen(files, idx);
+                                box.filesOpen(files, idx, asNew);
+                            }
+                            else if (file.mimetype.startsWith("video/"))
+                            {
+                                const files = fsModel.getFiles(f => f.mimetype.startsWith("video/"));
+                                const idx = files.findIndex(f => f.path === file.path);
+                                box.filesOpen(files, idx, asNew);
                             }
                             else if (file.mimetype === "application/pdf" ||
+                                     file.mimetype === "application/x-youtube-link" ||
                                      file.mimetype.startsWith("image/") ||
-                                     file.mimetype.startsWith("text/") ||
-                                     file.mimetype.startsWith("video/"))
+                                     file.mimetype.startsWith("text/"))
                             {
-                                box.filesOpen([file], 0);
+                                box.filesOpen([file], 0, asNew);
                             }
                             ev.accepted = true;
                         }
@@ -434,6 +507,7 @@ Box {
                     }
                 }
 
+                OverflowScroller { }
                 ScrollIndicator { }
             }
 
@@ -508,6 +582,21 @@ Box {
         color: theme.secondaryBackgroundColor
         layout: "center-row"
 
+        Button {
+            id: thumbnailCheckbox
+
+            fillHeight: true
+            flat: true
+            icon: "media-image"
+            checked: false
+
+            onClick: (ev) =>
+            {
+                checked = ! checked;
+                ev.accepted = true;
+            }
+        }
+
         Label {
             marginLeft: theme.paddingSmall
             text: fsview.count + " items"
@@ -521,25 +610,10 @@ Box {
             overflowBehavior: "ellipsis"
         }
 
-        SelectionBox {
-            id: sortSelector
-
-            property role: ["name", "time", "size"][selection % 3]
-            property ascending: selection < 3
-
-            labelProfile: Object { property literal: false }
-
-            model: ListModel {
-                data: [
-                    "[icon:ui-arrow_up] By Name", "[icon:ui-arrow_up] By Date", "[icon:ui-arrow_up] By Size",
-                    "[icon:ui-arrow_down] By Name", "[icon:ui-arrow_down] By Date", "[icon:ui-arrow_down] By Size"
-                ]
-            }
-        }
-
         SpinBox {
             id: sizeSelector
 
+            visible: false
             marginLeft: theme.paddingSmall
             marginRight: theme.paddingSmall
             minValue: 1
@@ -549,17 +623,49 @@ Box {
         }
 
         Button {
-            id: thumbnailCheckbox
+            id: sortSelector
+
+            property role: ["name", "time", "size"][selection % 3]
+            property ascending: selection < 3
+            property selection: 0
+
+            property model: ListModel {
+                data: [
+                    { icon: "ui-sort-alpha-asc", label: "By Name" },
+                    { icon: "ui-sort-numeric-asc", label: "By Date" },
+                    { icon: "ui-sort-amount-asc", label: "By Size" },
+                    { icon: "ui-sort-alpha-desc", label: "By Name" },
+                    { icon: "ui-sort-numeric-desc", label: "By Date" },
+                    { icon: "ui-sort-amount-desc", label: "By Size" }
+                ]
+            }
 
             fillHeight: true
             flat: true
-            icon: "media-image"
-            checked: false
+            icon: model.at(selection).icon
 
-            onClick: (ev) =>
+            onClick: ev =>
             {
-                checked = ! checked;
                 ev.accepted = true;
+                const menu = menuT();
+                menu.popup(self);
+            }
+
+            property menuT: template Menu {
+                Repeater {
+                    model: sortSelector.model
+
+                    delegate: template MenuItem {
+                        icon: modelData.value.icon
+                        text: modelData.value.label
+
+                        onClick: () =>
+                        {
+                            sortSelector.selection = modelData.index;
+                            thisMenu.close();
+                        }
+                    }
+                }
             }
         }
 
@@ -586,6 +692,8 @@ Box {
                 ev.accepted = true;
             }
         }
+
+
     }
 
     property newDirectoryDialogT: template Dialog {

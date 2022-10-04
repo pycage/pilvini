@@ -4,6 +4,7 @@ require "./ImageViewer.shui";
 require "./MediaPlayer.shui";
 require "./PdfViewer.shui";
 require "./ViewportBox.shui";
+require "./youtubevideo.js";
 
 Box {
     id: box
@@ -11,14 +12,22 @@ Box {
     property windowIcon: "media-image"
     property windowTitle: loader.fileItem ? loader.fileItem.name : ""
 
-    property model: ListModel { }
+    property files: []
+
+    property fs: null
+    property model: ListModel { data: files }
     property current: -1
     property maximized: false
 
-    borderWidth: maximized ? 0 : 1
-    borderColor: theme.borderColor
+    borderRadius: maximized ? 0 : 6
+    color: theme.secondaryBackgroundColor
 
     event toggleMaximized
+    event swapPanes
+    event closePane
+
+    fillWidth: true
+    fillHeight: true
 
     DropArea {
         fillWidth: true
@@ -48,6 +57,9 @@ Box {
 
             fillWidth: true
             fillHeight: true
+            //marginLeft: box.maximized ? 0 : theme.paddingSmall
+            //marginRight: box.maximized ? 0 : theme.paddingSmall
+            //marginBottom: box.maximized ? 0 : theme.paddingSmall
 
             sourceTemplate: (() =>
             {
@@ -74,6 +86,10 @@ Box {
                 {
                     console.log("TEXT: " + item.path);
                     return textViewerT;
+                }
+                else if (item.mimetype === "application/x-youtube-link")
+                {
+                    return youTubeViewerT;
                 }
                 else
                 {
@@ -104,18 +120,32 @@ Box {
             marginLeft: theme.paddingSmall
             marginRight: theme.paddingSmall
             fillWidth: true
+            overflowBehavior: "ellipsis"
             bold: true
-            text: loader.fileItem ? low.escapeMarkup(loader.fileItem.name) : ""
+            text: loader.fileItem && loader.fileItem.name ? low.escapeMarkup(loader.fileItem.name) : ""
         }
 
         Button {
+            visible: ! box.maximized
             fillHeight: true
             flat: true
-            icon: box.maximized ? "ui-unfold_less" : "ui-unfold_more"
+            icon: "ui-arrow_left"
 
             onClick: () =>
             {
-                box.toggleMaximized();
+                box.swapPanes(-1);
+            }
+        }
+
+        Button {
+            visible: ! box.maximized
+            fillHeight: true
+            flat: true
+            icon: "ui-arrow_right"
+
+            onClick: () =>
+            {
+                box.swapPanes(1);
             }
         }
 
@@ -126,8 +156,7 @@ Box {
 
             onClick: () =>
             {
-                box.current = -1;
-                box.model.reset([]);
+                box.closePane();
             }
         }
     }
@@ -155,6 +184,25 @@ Box {
 
         model: box.model
         current: box.current
+    }
+
+    property youTubeViewerT: template YouTubeVideo {
+        fillWidth: true
+        fillHeight: true
+
+        property path: loader.fileItem ? loader.fileItem.path : ""
+
+        onPathChanged: () =>
+        {
+            box.fs.read(path)
+            .then(blob => blob.text())
+            .then(json =>
+            {
+                const obj = JSON.parse(json);
+                videoId = obj.videoId;
+            })
+            .catch(err => { });
+        }
     }
 
     property textViewerT: template Box {

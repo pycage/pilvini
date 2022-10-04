@@ -4,6 +4,8 @@ require "./FilesBox.shui";
 require "./FileViewer.shui";
 require "./GridLayout.shui";
 require "./SettingsDialog.shui";
+require "./TimeLabel.shui";
+require "./youtubefs.js";
 require "/icons/comm-icons.css";
 require "/icons/fs-icons.css";
 require "/icons/media-icons.css";
@@ -16,8 +18,8 @@ Document {
     property filesBag: []
     property filesBagSource: null
 
-    property darkMode: systemDarkMode
-    property darkTheme: DarkTheme { }
+    property darkMode: true //systemDarkMode
+    property darkTheme: DarkTheme { contentBackgroundColor: "black" }
     property lightTheme: Theme { }
     theme: darkMode ? darkTheme : lightTheme
 
@@ -38,8 +40,23 @@ Document {
         });
     }
 
+    onKeyDown: ev =>
+    {
+        // dump debug information
+        if (ev.key === "d" && ev.ctrlKey)
+        {
+            console.log("Objects Dump:");
+            console.log(core.dumpStatus());
+            ev.accepted = true;
+        }
+    }
+
     DavFS {
         id: remoteFs
+    }
+
+    YouTubeFS {
+        id: youTubeFs
     }
 
     OfflineFS {
@@ -48,15 +65,21 @@ Document {
     }
 
     ListModel {
-        id: panesModel
+        id: windowsModel
 
-        data: ["/"]
+        data: [{
+            component: filesBoxT, //__dirname + "/FilesBox.shui",
+            properties: {
+                fs: remoteFs,
+                path: "/"
+            }
+        }]
     }
 
     ListModel {
-        id: mediaModel
+        id: panesModel
 
-        data: []
+        data: ["/"]
     }
 
     Box {
@@ -66,19 +89,160 @@ Document {
         height: documentRoot.windowHeight
         color: theme.contentBackgroundColor
 
-        layout: "row"
+        Box {
+            fillWidth: true
+            height: theme.itemHeightSmall / 2
+            layout: "center"
+
+            TimeLabel {
+                color: theme.secondaryColor
+                fontSize: parent.bboxHeight * 0.9
+            }
+        }
+
+        Box {
+            fillWidth: true
+            fillHeight: true
+            marginLeft: toolbar.orientation === "vertical" ? toolbar.bboxWidth : 0
+            marginBottom: toolbar.orientation === "horizontal" ? toolbar.bboxHeight : 0
+
+            GridLayout {
+                id: grid
+
+                property maximizedItem: null
+                property fileViewers: []
+
+                fillWidth: true
+                fillHeight: true
+
+                layout: bbox.width > bbox.height ? "row" : "column"
+
+                Repeater {
+                    model: windowsModel
+
+                    delegate: template Loader {
+                        visible: ! grid.maximizedItem || grid.maximizedItem === objectId
+
+                        property sortIndex: objectId
+
+                        fillWidth: true
+                        fillHeight: true
+
+                        sourceTemplate: modelData.value.component
+
+                        onItemChanged: () =>
+                        {
+                            if (item)
+                            {
+                                for (let key in modelData.value.properties)
+                                {
+                                    item[key] = modelData.value.properties[key];
+                                }
+
+                                item.onToggleMaximized = () =>
+                                {
+                                    if (grid.maximizedItem)
+                                    {
+                                        grid.maximizedItem = null;
+                                    }
+                                    else
+                                    {
+                                        grid.maximizedItem = objectId;
+                                    }
+                                    grid.update();
+                                };
+
+                                item.onSwapPanes = direction =>
+                                {
+                                    grid.swap(self, direction);
+                                };
+
+                                item.onClosePane = () =>
+                                {
+                                    if (grid.maximizedItem === objectId)
+                                    {
+                                        grid.maximizedItem = null;
+                                    }
+
+                                    windowsModel.remove(modelData.index);
+                                    dumpRecycleBin();
+
+                                    grid.update();
+                                };
+
+                                grid.get().onMaximizedItemChanged = safeCallback(() =>
+                                {
+                                    item.maximized = grid.maximizedItem === objectId;
+                                });
+
+                                grid.maximizedItem = objectId;
+                                grid.update();
+                            }
+                        }
+                    }
+                }
+
+            }//GridLayout
+
+            /*
+            Box {
+                visible: grid.items.length > 1 && grid.maximizedItem === null
+                fillWidth: true
+                height: theme.itemHeightSmall
+                color: theme.contentBackgroundColor
+
+                layout: "center-row"
+
+                Button {
+                    flat: true
+                    fillHeight: true
+                    checked: grid.columns === 1
+                    text: "1"
+                    onClick: () => { grid.columns = 1; }
+                }
+
+                Button {
+                    flat: true
+                    fillHeight: true
+                    checked: grid.columns === 2
+                    text: "2"
+                    onClick: () => { grid.columns = 2; }
+                }
+
+                Button {
+                    flat: true
+                    fillHeight: true
+                    checked: grid.columns === 3
+                    text: "3"
+                    onClick: () => { grid.columns = 3; }
+                }
+
+            }
+            */
+
+        }
 
         MouseBox {
-            //visible: grid.maximizedItem === null
-            width: theme.itemHeightMedium
-            fillHeight: true
-            color: theme.contentBackgroundColor
+            id: toolbar
 
-            layout: "center-column"
+            property orientation: documentRoot.windowWidth > documentRoot.windowHeight ? "vertical"
+                                                                                       : "horizontal"
+           
+            //opacity: containsMouse ? 1.0 : 0.0
+            opacity: 0.6
+
+            position: "free"
+            origin: orientation === "horizontal" ? "bottom-left" : "top-left"
+            fillWidth: orientation === "horizontal"
+            fillHeight: orientation === "vertical"
+            width: fillWidth ? -1 : theme.itemHeightMedium
+            height: fillHeight ? -1 : theme.itemHeightMedium
+
+            layout: orientation === "horizontal" ? "row" : "column"
 
             Button {
-                width: parent.width
-                height: width
+                width: height
+                height: theme.itemHeightMedium
                 flat: true
                 icon: "ui-menu"
 
@@ -92,30 +256,46 @@ Document {
                 property menuT: template Menu {
 
                     MenuItem {
-                        text: "About..."
-                    }
+                        icon: "fs-folder"
+                        text: "File Browser"
 
-                    MenuItem {
-                        text: doc.darkMode ? "Light Mode"
-                                           : "Dark Mode"
                         onClick: () =>
                         {
-                            doc.darkMode = ! doc.darkMode;
+                            windowsModel.insert(windowsModel.size, {
+                                component: filesBoxT,
+                                properties: {
+                                    fs: remoteFs,
+                                    path: "/"
+                                }
+                            });
                         }
                     }
 
                     MenuItem {
-                        text: "Toggle Fullscreen"
+                        icon: "media-movie"
+                        text: "YouTube Browser"
+
                         onClick: () =>
                         {
-                            if (documentRoot.fullscreenItem)
-                            {
-                                documentRoot.fullscreenItem = null;
-                            }
-                            else
-                            {
-                                documentRoot.fullscreenItem = documentRoot;
-                            }
+                            windowsModel.insert(windowsModel.size, {
+                                component: filesBoxT,
+                                properties: {
+                                    fs: youTubeFs,
+                                    path: "/",
+                                    searchBox: true
+                                }
+                            });
+                        }
+                    }
+
+                    MenuSeparator { }
+
+                    MenuItem {
+                        text: doc.darkMode ? "Bright Mode"
+                                           : "Dark Mode"
+                        onClick: () =>
+                        {
+                            doc.darkMode = ! doc.darkMode;
                         }
                     }
 
@@ -127,6 +307,12 @@ Document {
                             dlg.show();
                         }
                     }
+
+                    MenuItem {
+                        text: "About..."
+                    }
+
+                    MenuSeparator { }
 
                     MenuItem {
                         text: "Log Out"
@@ -141,175 +327,18 @@ Document {
                 }
             }
 
-            Button {
-                width: parent.width
-                height: width
-                flat: true
-                icon: "fs-folder"
-                onClick: () =>
-                {
-                    panesModel.insert(panesModel.size, path);
-                }
+            Box {
+                visible: grid.items.length <= 1
+                fillWidth: toolbar.orientation === "horizontal"
+                fillHeight: toolbar.orientation === "vertical"
             }
 
-            Box { fillHeight: true }
-            
-            Repeater {
-                model: grid.items.length
-
-                delegate: template Button {
-                    width: parent.width
-                    height: width
-                    flat: true
-                    checked: grid.items[modelData.index].objectId === grid.maximizedItem
-                    icon: grid.items[modelData.index].windowIcon
-                    //text: low.escapeMarkup(grid.items[modelData.index].windowTitle)
-
-                    onClick: () =>
-                    {
-                        grid.maximizedItem = grid.items[modelData.index].objectId;
-                    }
-                }
-            }
-        }
-
-
-        Box {
-            fillWidth: true
-            fillHeight: true
-
-            GridLayout {
-                id: grid
-
-                property maximizedItem: null
+            Box {
+                visible: grid.items.length > 1
 
                 fillWidth: true
                 fillHeight: true
-
-                layout: bbox.width > bbox.height ? "row" : "column"
-
-                onMaximizedItemChanged: () =>
-                {
-                    wait(100).then(() => { update(); });
-                }
-
-                Repeater {
-                    model: panesModel
-
-                    delegate: template FilesBox {
-                        visible: ! grid.maximizedItem || grid.maximizedItem === objectId
-
-                        maximized: grid.maximizedItem === objectId
-                        fillWidth: true
-                        fillHeight: true
-
-                        fs: remoteFs
-                        path: modelData.value
-
-                        onToggleMaximized: () =>
-                        {
-                            if (grid.maximizedItem)
-                            {
-                                grid.maximizedItem = null;
-                            }
-                            else
-                            {
-                                grid.maximizedItem = objectId;
-                            }
-                            grid.update();
-                        }
-
-                        onNewPane: (path) =>
-                        {
-                            panesModel.insert(panesModel.size, path);
-                        }
-
-                        onClosePane: () =>
-                        {
-                            panesModel.remove(modelData.index);
-                        }
-
-                        onFilesOpen: (files, idx) =>
-                        {
-                            if (mediaModel.size === 0)
-                            {
-                                mediaModel.insert(mediaModel.size, { files: files, index: idx });
-                            }
-                            else
-                            {
-                                mediaModel.replace(mediaModel.size - 1, { files: files, index: idx });
-                            }
-                        }
-
-                        onTakeFiles: (files) =>
-                        {
-                            filesBag = files;
-                        }
-                    }
-                }
-
-                Repeater {
-                    model: mediaModel
-
-                    delegate: template FileViewer {
-                        property files: modelData.value.files
-
-                        visible: ! grid.maximizedItem || grid.maximizedItem === objectId
-
-                        maximized: grid.maximizedItem === objectId
-                        fillWidth: true
-                        fillHeight: true
-
-                        current: 0
-
-                        onToggleMaximized: () =>
-                        {
-                            if (grid.maximizedItem)
-                            {
-                                grid.maximizedItem = null;
-                            }
-                            else
-                            {
-                                grid.maximizedItem = objectId;
-                            }
-                            grid.update();
-                        }
-
-                        onFilesChanged: () =>
-                        {
-                            if (grid.maximizedItem)
-                            {
-                                grid.maximizedItem = objectId;
-                            }
-                            console.log("SET FILES: " + JSON.stringify(files));
-                            console.log("Index: " + modelData.value.index);
-                            model.reset(files);
-                            current = modelData.value.index;
-                        }
-
-                        onCurrentChanged: () =>
-                        {
-                            if (current === -1)
-                            {
-                                if (grid.maximizedItem === objectId)
-                                {
-                                    grid.maximizedItem = null;
-                                }
-                                mediaModel.remove(modelData.index);
-                            }
-                        }
-                    }
-                }
-            }//GridLayout
-
-            /*
-            Box {
-                visible: grid.items.length > 1 && grid.maximizedItem !== null
-                fillWidth: true
-                height: theme.itemHeightSmall
-                color: theme.secondaryBackgroundColor
-
-                layout: "row"
+                layout: toolbar.orientation === "horizontal" ? "row" : "column"
 
                 Repeater {
                     model: grid.items.length
@@ -318,20 +347,48 @@ Document {
                         fillWidth: true
                         fillHeight: true
                         flat: true
-                        checked: grid.items[modelData.index].objectId === grid.maximizedItem
-                        icon: grid.items[modelData.index].windowIcon
-                        text: low.escapeMarkup(grid.items[modelData.index].windowTitle)
+                        checked: modelData.index < grid.items.length && grid.items[modelData.index].objectId === grid.maximizedItem
+                        icon: modelData.index < grid.items.length && grid.items[modelData.index].item.windowIcon
+                        //text: low.escapeMarkup(grid.items[modelData.index].windowTitle)
 
                         onClick: () =>
                         {
-                            grid.maximizedItem = grid.items[modelData.index].objectId;
+                            if (checked)
+                            {
+                                grid.maximizedItem = null;
+                            }
+                            else
+                            {
+                                grid.maximizedItem = grid.items[modelData.index].objectId;
+                            }
+                            grid.update();
                         }
                     }
                 }
             }
-            */
+
+            Button {
+                width: height
+                height: theme.itemHeightMedium
+                flat: true
+                icon: documentRoot.fullscreenItem ? "ui-fullscreen_exit"
+                                                  : "ui-fullscreen"
+
+                onClick: () =>
+                {
+                    if (documentRoot.fullscreenItem)
+                    {
+                        documentRoot.fullscreenItem = null;
+                    }
+                    else
+                    {
+                        documentRoot.fullscreenItem = documentRoot;
+                    }
+                }
+            }
 
         }
+
 
     }
 
@@ -345,5 +402,55 @@ Document {
     }
 
     property settingsDialogT: template SettingsDialog { }
+
+    property filesBoxT: template FilesBox {
+
+        onFilesOpen: (files, idx, asNew) =>
+        {
+            if (grid.fileViewers.length === 0 || asNew)
+            {
+                windowsModel.insert(windowsModel.size, {
+                    component: mediaViewerT,
+                    properties: {
+                        fs: fs,
+                        files: files,
+                        current: idx
+                    }
+                });
+            }
+            else
+            {
+                const viewer = grid.fileViewers[grid.fileViewers.length - 1];
+                viewer.fs = fs;
+                viewer.files = files;
+                viewer.current = idx;
+
+                if (grid.maximizedItem)
+                {
+                    grid.maximizedItem = viewer.parent.objectId;
+                }
+            }
+
+        }
+
+        onTakeFiles: (files) =>
+        {
+            filesBag = files;
+        }
+    }
+
+    property mediaViewerT: template FileViewer {
+
+        onInitialization: () =>
+        {
+            grid.fileViewers.push(self);
+        }
+
+        onDestruction: () =>
+        {
+            grid.fileViewers = grid.fileViewers.filter(obj => obj !== self);
+        }
+
+    }
 
 }
