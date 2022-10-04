@@ -243,12 +243,6 @@ shRequire(["shellfish/core", "shellfish/core/mime"], (core, mime) =>
             else
             {
                 throw "Not supported";
-                /*
-                const data = await this.readData(pathInfo.path1);
-                pathInfo.fs.data = data;
-                const result = await pathInfo.fs.mkdir(pathInfo.path2, name);
-                this.writeData(pathInfo.path1, pathInfo.fs.data);
-                */
             }
         }
 
@@ -314,8 +308,6 @@ shRequire(["shellfish/core", "shellfish/core/mime"], (core, mime) =>
 
         async read(path)
         {
-            console.log("READ " + path);
-
             const priv = d.get(this);
 
             if (! priv.filesystem)
@@ -330,7 +322,6 @@ shRequire(["shellfish/core", "shellfish/core/mime"], (core, mime) =>
             }
 
             const pathInfo = this.analyzePath(path);
-            //console.log(JSON.stringify(pathInfo));
             if (! pathInfo.fs)
             {
                 return await priv.filesystem.read(path);

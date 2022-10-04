@@ -1,14 +1,7 @@
-const { Stream } = require("stream");
-
-console.log(__filename);
-require.main.paths.push((__dirname).replace(/\//g, "\\"));
-console.log(require.main.paths);
-
-const unrar = require("./server/node-unrar-js/index.js");
-
 shRequire(["shellfish/core", "shellfish/core/mime"], (core, mime) =>
 {
     const modStream = require("stream");
+    const unrar = require("./server/node-unrar-js/index.js");
 
     class FileStream extends modStream.Readable
     {
@@ -48,77 +41,6 @@ shRequire(["shellfish/core", "shellfish/core/mime"], (core, mime) =>
         }
     }
 
-    /*
-    function __awaiter(thisArg, _arguments, P, generator) {
-        return new (P || (P = Promise))(function (resolve, reject) {
-            function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-            function rejected(value) { try { step(generator.throw(value)); } catch (e) { reject(e); } }
-            function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-            step((generator = generator.apply(thisArg, _arguments)).next());
-        });
-    }
-    
-    class DataReader extends rar.Reader
-    {
-        constructor(data)
-        {
-            super();
-            this.data = data;
-            this.size = data.length;
-        }
-
-        readBlob(length, position, blobType) {
-            return __awaiter(this, void 0, void 0, function* () {
-                if (! blobType) {
-                    blobType = 'application/octet-stream';
-                }
-                const data = this.read(length, position);
-                return data;
-            });
-        }
-
-        open()
-        {
-            return Promise.resolve();
-        }
-
-        close()
-        {
-            return Promise.resolve();
-        }
-
-        reset()
-        {
-            return;
-        }
-
-        read(length, position)
-        {
-            return __awaiter(this, void 0, void 0, function* ()
-            {
-                return new Promise((resolve, reject) =>
-                {
-                    try
-                    {
-                        const buf = this.data.subarray(position, position + length);
-                        const ab = new ArrayBuffer(buf.length);
-                        const view = new Uint8Array(ab);
-                        for (let i = 0; i < buf.length; ++i)
-                        {
-                            view[i] = buf[i];
-                        }
-                        resolve(ab);
-                    }
-                    catch (err)
-                    {
-                        reject(err);
-                    }
-                });
-            });
-        }
-    }
-    */
-
 
     const d = new WeakMap();
 
@@ -129,7 +51,6 @@ shRequire(["shellfish/core", "shellfish/core/mime"], (core, mime) =>
             super();
             d.set(this, {
                 data: null
-                //archive: null
             });
 
             this.notifyable("data");
@@ -185,7 +106,6 @@ shRequire(["shellfish/core", "shellfish/core/mime"], (core, mime) =>
                     mtime: new Date()
                 };
             }
-            console.log("VFS FILE INFO: " + path);
             const files = await this.list(this.dirname(path));
             const item = files.find(item => item.path === path || "/" + item.path === path);
             return item;
@@ -194,9 +114,6 @@ shRequire(["shellfish/core", "shellfish/core/mime"], (core, mime) =>
         async list(path)
         {
             const archive = await this.openArchive();
-
-            //const archive = await unrar.createExtractorFromData({ data: d.get(this).data });
-            console.log(archive);
 
             const fileList = archive.getFileList();
             const headers = [...fileList.fileHeaders];
@@ -217,8 +134,6 @@ shRequire(["shellfish/core", "shellfish/core/mime"], (core, mime) =>
                 };
             });
 
-            //d.get(this).archive = archive;
-
             return items;
         }
 
@@ -226,7 +141,6 @@ shRequire(["shellfish/core", "shellfish/core/mime"], (core, mime) =>
         {
             const archive = await this.openArchive();
 
-            console.log(path);
             const extracted = archive.extract({ files: [path.substr(1)] });
             const files = [...extracted.files];
             

@@ -75,9 +75,7 @@ shRequire(["shellfish/core", "shellfish/core/mime", __dirname + "/jszip.min.js"]
                 });
             };
 
-            console.log("OPEN ARCHIVE");
             await wait();
-            console.log("OPENED");
 
             return this.sharedResource("archive-" + this.objectId);
         }
@@ -97,7 +95,6 @@ shRequire(["shellfish/core", "shellfish/core/mime", __dirname + "/jszip.min.js"]
                     mtime: new Date()
                 };
             }
-            console.log("VFS FILE INFO: " + path);
             const files = await this.list(this.dirname(path));
             const item = files.find(item => item.path === path || "/" + item.path === path);
             return item;
@@ -106,7 +103,6 @@ shRequire(["shellfish/core", "shellfish/core/mime", __dirname + "/jszip.min.js"]
         async list(path)
         {
             const zip = await this.openArchive();
-
             //console.log(zip.files);
 
             const seen = new Set();
@@ -157,7 +153,6 @@ shRequire(["shellfish/core", "shellfish/core/mime", __dirname + "/jszip.min.js"]
 
         async read(path)
         {
-            console.log("VFS READ " + path);
             const zip = await this.openArchive();
 
             if (zip.files[path])
