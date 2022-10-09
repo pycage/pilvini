@@ -33,7 +33,7 @@ shRequire(["shellfish/core"], (core) =>
         return result;
     }
 
-
+   
     const d = new WeakMap();
 
     /**
@@ -49,6 +49,65 @@ shRequire(["shellfish/core"], (core) =>
             });
         }
 
+        parseSearchResult(ytData)
+        {
+            // find the video entries
+            const itemSectionRenderers = findNodes(ytData, "itemSectionRenderer");
+            const videoRenderers = findNodes(itemSectionRenderers, "videoRenderer");
+
+            const items = videoRenderers.map(videoRenderer =>
+            {
+                const name = findNodes(findNodes(videoRenderer, "title"), "text")[0];
+                const videoId = videoRenderer.videoId;
+
+                d.get(this).cache.set(videoId, {
+                    thumbnails: videoRenderer.thumbnail.thumbnails
+                });
+
+                return {
+                    path: "/video/" + videoId,
+                    dir: "/video",
+                    name: name,
+                    type: "f",
+                    size: 0,
+                    mimetype: "application/x-youtube-link",
+                    ctime: 0,
+                    mtime: 0
+                };
+            });
+
+            return items;
+        }
+
+        parseRelatedResult(ytData)
+        {
+            const secondaryResults = findNodes(ytData, "secondaryResults");
+            const videoRenderers = findNodes(secondaryResults, "compactVideoRenderer");
+
+            const items = videoRenderers.map(videoRenderer =>
+            {
+                const name = findNodes(findNodes(videoRenderer, "title"), "simpleText")[0];
+                const videoId = videoRenderer.videoId;
+
+                d.get(this).cache.set(videoId, {
+                    thumbnails: videoRenderer.thumbnail.thumbnails
+                });
+
+                return {
+                    path: "/video/" + videoId,
+                    dir: "/video",
+                    name: name,
+                    type: "f",
+                    size: 0,
+                    mimetype: "application/x-youtube-link",
+                    ctime: 0,
+                    mtime: 0
+                };
+            });
+
+            return items;
+        }
+
         async list(path)
         {
             return [];
@@ -58,49 +117,49 @@ shRequire(["shellfish/core"], (core) =>
         {
             try
             {
-                const opts = {
-                    headers: {
-                        "location": "https://www.youtube.com/results?q=" + encodeURI(query) + "&hl=en"
-                    }
-                };
-                const response = await fetch("/::proxy", opts);
-                const html = await response.text();
-                //console.log(html);
-    
-                // find the JSON document buried in the HTML
-                const findBegin = html.indexOf("var ytInitialData");
-                const jsonBegin = html.indexOf("{", findBegin);
-                const jsonEnd = html.indexOf("</script>", findBegin) - 1;
-                const json = html.substring(jsonBegin, jsonEnd);
-                console.log(JSON.stringify(JSON.parse(json), null, 4));
-                const ytData = JSON.parse(json);
-        
-                // find the video entries
-                const itemSectionRenderers = findNodes(ytData, "itemSectionRenderer");
-                const videoRenderers = findNodes(itemSectionRenderers, "videoRenderer");
-        
-                const items = videoRenderers.map(videoRenderer =>
+                if (query.startsWith("related:"))
                 {
-                    const name = findNodes(findNodes(videoRenderer, "title"), "text")[0];
-                    const videoId = videoRenderer.videoId;
-
-                    d.get(this).cache.set(videoId, {
-                        thumbnails: videoRenderer.thumbnail.thumbnails
-                    });
-
-                    return {
-                        path: "/video/" + videoId,
-                        dir: "/video",
-                        name: name,
-                        type: "f",
-                        size: 0,
-                        mimetype: "application/x-youtube-link",
-                        ctime: 0,
-                        mtime: 0
+                    const videoId = query.split(":")[1];
+                    
+                    const opts = {
+                        headers: {
+                            "location": "https://www.youtube.com/watch?v=" + videoId + "&hl=en"
+                        }
                     };
-                });
-    
-                return items;
+
+                    const response = await fetch("/::proxy", opts);
+                    const html = await response.text();
+                    const findBegin = html.indexOf("var ytInitialData");
+                    const jsonBegin = html.indexOf("{", findBegin);
+                    const jsonEnd = html.indexOf("</script>", findBegin) - 1;
+                    const json = html.substring(jsonBegin, jsonEnd);
+                    console.log(json);
+                    const ytData = JSON.parse(json);
+                    
+                    return this.parseRelatedResult(ytData);
+                }
+                else
+                {
+                    const opts = {
+                        headers: {
+                            "location": "https://www.youtube.com/results?q=" + encodeURI(query) + "&hl=en"
+                        }
+                    };
+                    const response = await fetch("/::proxy", opts);
+                    const html = await response.text();
+                    console.log(html);
+           
+                    // find the JSON document buried in the HTML
+                    const findBegin = html.indexOf("var ytInitialData");
+                    const jsonBegin = html.indexOf("{", findBegin);
+                    const jsonEnd = html.indexOf("</script>", findBegin) - 1;
+                    const json = html.substring(jsonBegin, jsonEnd);
+                    console.log(JSON.stringify(JSON.parse(json), null, 4));
+                    const ytData = JSON.parse(json);
+            
+                    return this.parseSearchResult(ytData);
+                }
+
             }
             catch (err)
             {

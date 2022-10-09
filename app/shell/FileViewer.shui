@@ -57,9 +57,6 @@ Box {
 
             fillWidth: true
             fillHeight: true
-            //marginLeft: box.maximized ? 0 : theme.paddingSmall
-            //marginRight: box.maximized ? 0 : theme.paddingSmall
-            //marginBottom: box.maximized ? 0 : theme.paddingSmall
 
             sourceTemplate: (() =>
             {
@@ -184,6 +181,14 @@ Box {
 
         model: box.model
         current: box.current
+
+        onCurrentChanged: () =>
+        {
+            if (box.current !== current)
+            {
+                box.current = current;
+            }
+        }
     }
 
     property youTubeViewerT: template YouTubeVideo {

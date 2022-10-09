@@ -128,7 +128,10 @@ Document {
                         fillWidth: true
                         fillHeight: true
 
-                        sourceTemplate: modelData.value.component
+                        onInitialization: () =>
+                        {
+                            sourceTemplate = modelData.value.component;
+                        }
 
                         onItemChanged: () =>
                         {
