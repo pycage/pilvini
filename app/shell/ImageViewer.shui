@@ -1,4 +1,5 @@
 require "shellfish/ui";
+require "./inertialengine.js";
 require "./ViewportBox.shui";
 
 Box {
@@ -8,40 +9,141 @@ Box {
     property current: 0
     property source: ""
 
-    Box {
+    MouseBox {
         fillWidth: true
         fillHeight: true
+
+        onPointerDown: ev =>
+        {
+            if (pinchGesture.pinching)
+            {
+                return;
+            }
+
+            inertialEngine.reset(ev.x, ev.y);
+            ev.accepted = true;
+        }
+
+        onPointerMove: ev =>
+        {
+            if (pinchGesture.pinching)
+            {
+                return;
+            }
+
+            if (ev.buttons !== 0)
+            {
+                inertialEngine.takeSample(ev.x, ev.y);
+                ev.accepted = true;
+            }
+        }
+
+        onPointerUp: ev =>
+        {
+            if (pinchGesture.pinching)
+            {
+                return;
+            }
+
+            inertialEngine.start();
+            ev.accepted = true;
+        }
+
+        onDoubleClick: ev =>
+        {
+            vp.scaleToFit();
+            ev.accepted = true;
+        }
+
+        onWheel: ev =>
+        {
+            const scaleAnchorX = ev.x / bbox.width;
+            const scaleAnchorY = ev.y / bbox.height;
+
+            if (ev.deltaY < 0)
+            {
+                vp.setScale(vp.scale * 1.1, scaleAnchorX, scaleAnchorY);
+                ev.accepted = true;
+            }
+            else if (ev.deltaY > 0)
+            {
+                vp.setScale(vp.scale * 0.9, scaleAnchorX, scaleAnchorY);
+                ev.accepted = true;
+            }
+        }
+
+        InertialEngine {
+            id: inertialEngine
+
+            onMotion: (dx, dy) =>
+            {
+                vp.confineViewport(vp.viewX + dx / vp.scale, vp.viewY + dy / vp.scale);
+            }
+        }
+
+        PinchGesture {
+            id: pinchGesture
+
+            onDistanceChanged: () =>
+            {
+                if (previousDistance > 0)
+                {
+                    const factor = distance / previousDistance;
+                    const scaleAnchorX = (x1 + (x2 - x1) / 2) / parent.bbox.width;
+                    const scaleAnchorY = (y1 + (y2 - y1) / 2) / parent.bbox.height;
+                    vp.setScale(vp.scale * factor, scaleAnchorX, scaleAnchorY);
+                }
+            }
+        }
+
+        onClick: ev =>
+        {
+            if (ev.y > bboxHeight * 0.66)
+            {
+                imagesBox.visible = ! imagesBox.visible;
+            }
+            else if (ev.x < bboxWidth * 0.5)
+            {
+                if (box.current > 0)
+                {
+                    box.current -= 1;
+                }
+            }
+            else
+            {
+                if (box.current < box.model.size - 1)
+                {
+                    box.current += 1;
+                }
+            }
+            ev.accepted = true;
+        }
 
         ViewportBox {
             id: vp
 
             fillWidth: true
             fillHeight: true
+        }
 
-            onClick: () =>
+        Image {
+            id: image
+
+            position: "free"
+            x: -vp.viewX * vp.scale
+            y: -vp.viewY * vp.scale
+            width: originalWidth * vp.scale
+            height: originalHeight * vp.scale
+
+            source: box.current < box.model.size ? box.model.at(box.current).path : ""
+
+            onStatusChanged: () =>
             {
-                imagesBox.visible = ! imagesBox.visible;
-            }
-
-            Image {
-                id: image
-
-                position: "free"
-                x: -vp.viewX * vp.scale
-                y: -vp.viewY * vp.scale
-                width: originalWidth * vp.scale
-                height: originalHeight * vp.scale
-
-                source: box.current < box.model.size ? box.model.at(box.current).path : ""
-
-                onStatusChanged: () =>
+                if (status === "success")
                 {
-                    if (status === "success")
-                    {
-                        vp.originalWidth = originalWidth;
-                        vp.originalHeight = originalHeight;
-                        vp.scaleToFit();
-                    }
+                    vp.originalWidth = originalWidth;
+                    vp.originalHeight = originalHeight;
+                    vp.scaleToFit();
                 }
             }
         }

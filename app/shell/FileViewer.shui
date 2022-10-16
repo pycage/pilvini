@@ -165,6 +165,14 @@ Box {
         model: box.model
         current: box.current
         source: loader.fileItem ? loader.fileItem.path : ""
+
+        onCurrentChanged: () =>
+        {
+            if (box.current !== current)
+            {
+                box.current = current;
+            }
+        }
     }
 
     property pdfViewerT: template PdfViewer {

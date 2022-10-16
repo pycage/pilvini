@@ -1,9 +1,11 @@
 require "shellfish/ui";
 
-MouseBox {
+Box {
     id: box
 
+    // original width of the displayed target item
     property originalWidth: 100
+    // original height of the displayed target item 
     property originalHeight: 100
 
     property minScale: Math.min(Math.max(1, bbox.width) / Math.max(1, originalWidth),
@@ -11,6 +13,7 @@ MouseBox {
     property maxScale: minScale * 32;
     property scale: 1.0
 
+    // the viewport position in target coordinates
     property viewX: 0
     property viewY: 0
 
@@ -92,9 +95,6 @@ MouseBox {
     Object {
         id: priv
 
-        property grabX: 0
-        property grabY: 0
-
         property prevScale: 1.0
         property scaleAnchorX: 0.5
         property scaleAnchorY: 0.5
@@ -157,6 +157,13 @@ MouseBox {
         }
     }
 
+    function setScale(newScale, anchorX, anchorY)
+    {
+        priv.scaleAnchorX = anchorX;
+        priv.scaleAnchorY = anchorY;
+        scale = Math.max(minScale, Math.min(maxScale, newScale));
+    }
+
     onScaleChanged: () =>
     {
         if (! scale)
@@ -188,73 +195,5 @@ MouseBox {
         confineViewport(viewX, viewY);
     }
 
-    onPointerDown: ev =>
-    {
-        if (touchPoints > 1 || pinchGesture.pinching)
-        {
-            return;
-        }
-
-        priv.grabX = ev.x;
-        priv.grabY = ev.y;
-        ev.accepted = true;
-    }
-
-    onPointerMove: ev =>
-    {
-        if (touchPoints > 1 || pinchGesture.pinching)
-        {
-            return;
-        }
-
-        if (ev.buttons !== 0)
-        {
-            const dx = (priv.grabX - ev.x) / scale;
-            const dy = (priv.grabY - ev.y) / scale;
-            priv.grabX = ev.x;
-            priv.grabY = ev.y;
-
-            confineViewport(viewX + dx, viewY + dy);
-            ev.accepted = true;
-        }
-    }
-
-    onDoubleClick: ev =>
-    {
-        scaleToFit();
-        ev.accepted = true;
-    }
-
-    onWheel: ev =>
-    {
-        ev.accepted = true;
-        priv.scaleAnchorX = ev.x / bbox.width;
-        priv.scaleAnchorY = ev.y / bbox.height;
-
-        if (ev.deltaY < 0)
-        {
-            scale = Math.max(minScale, Math.min(maxScale, scale * 1.1));
-        }
-        else if (ev.deltaY > 0)
-        {
-            scale = Math.max(minScale, Math.min(maxScale, scale * 0.9));
-        }
-    }
-
-    PinchGesture {
-        id: pinchGesture
-
-        onDistanceChanged: () =>
-        {
-            if (previousDistance > 0)
-            {
-                const factor = distance / previousDistance;
-                priv.scaleAnchorX = (x1 + (x2 - x1) / 2) / box.bbox.width;
-                priv.scaleAnchorY = (y1 + (y2 - y1) / 2) / box.bbox.height;
-                box.scale = Math.max(box.minScale, Math.min(box.maxScale, box.scale * factor));
-            }
-        }
-
-    }
-
+ 
 }
