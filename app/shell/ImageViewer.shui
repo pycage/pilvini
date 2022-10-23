@@ -9,237 +9,267 @@ Box {
     property current: 0
     property source: ""
 
-    MouseBox {
+    property title: model.at(current) ? model.at(current).name : ""
+
+    color: "black"
+
+    ListView {
+        id: imagesListView
+
         fillWidth: true
         fillHeight: true
 
-        onPointerDown: ev =>
-        {
-            if (pinchGesture.pinching)
-            {
-                return;
-            }
+        orientation: "horizontal"
 
-            inertialEngine.reset(ev.x, ev.y);
-            ev.accepted = true;
+        model: box.model
+
+        cellWidth: bboxWidth
+        cellHeight: bboxHeight
+        cacheMargin: bboxWidth
+
+        snapMode: "begin"
+
+        onContentWidthChanged: () =>
+        {
+            positionViewAt(box.current);
         }
 
-        onPointerMove: ev =>
+        onContentXChanged: () =>
         {
-            if (pinchGesture.pinching)
+            const atCenter = Math.floor((contentX + cellWidth / 2) / cellWidth);
+            if (atCenter !== box.current)
             {
-                return;
+                box.current = atCenter;
             }
+        }
 
-            if (ev.buttons !== 0)
+        delegate: template MouseBox {
+
+            onPointerDown: ev =>
             {
-                inertialEngine.takeSample(ev.x, ev.y);
+                if (pinchGesture.pinching)
+                {
+                    return;
+                }
+
+                inertialEngine.reset(ev.x, ev.y);
                 ev.accepted = true;
             }
-        }
 
-        onPointerUp: ev =>
-        {
-            if (pinchGesture.pinching)
+            onPointerMove: ev =>
             {
-                return;
+                if (pinchGesture.pinching)
+                {
+                    return;
+                }
+
+                if (ev.buttons !== 0)
+                {
+                    inertialEngine.takeSample(ev.x, ev.y);
+                    ev.accepted = true;
+                }
             }
 
-            inertialEngine.start();
-            ev.accepted = true;
-        }
-
-        onDoubleClick: ev =>
-        {
-            vp.scaleToFit();
-            ev.accepted = true;
-        }
-
-        onWheel: ev =>
-        {
-            const scaleAnchorX = ev.x / bbox.width;
-            const scaleAnchorY = ev.y / bbox.height;
-
-            if (ev.deltaY < 0)
+            onPointerUp: ev =>
             {
-                vp.setScale(vp.scale * 1.1, scaleAnchorX, scaleAnchorY);
+                if (pinchGesture.pinching)
+                {
+                    return;
+                }
+
+                inertialEngine.start();
                 ev.accepted = true;
             }
-            else if (ev.deltaY > 0)
+
+            onDoubleClick: ev =>
             {
-                vp.setScale(vp.scale * 0.9, scaleAnchorX, scaleAnchorY);
+                vp.scaleToFit();
                 ev.accepted = true;
             }
-        }
 
-        InertialEngine {
-            id: inertialEngine
-
-            onMotion: (dx, dy) =>
+            onWheel: ev =>
             {
-                vp.confineViewport(vp.viewX + dx / vp.scale, vp.viewY + dy / vp.scale);
-            }
-        }
-
-        PinchGesture {
-            id: pinchGesture
-
-            onDistanceChanged: () =>
-            {
-                if (previousDistance > 0)
+                if (imagesListView.scrolling)
                 {
-                    const factor = distance / previousDistance;
-                    const scaleAnchorX = (x1 + (x2 - x1) / 2) / parent.bbox.width;
-                    const scaleAnchorY = (y1 + (y2 - y1) / 2) / parent.bbox.height;
-                    vp.setScale(vp.scale * factor, scaleAnchorX, scaleAnchorY);
+                    return;
+                }
+
+                const scaleAnchorX = ev.x / bbox.width;
+                const scaleAnchorY = ev.y / bbox.height;
+
+                if (ev.deltaY < 0)
+                {
+                    vp.setScale(vp.scale * 1.1, scaleAnchorX, scaleAnchorY);
+                    ev.accepted = true;
+                }
+                else if (ev.deltaY > 0)
+                {
+                    vp.setScale(vp.scale * 0.9, scaleAnchorX, scaleAnchorY);
+                    ev.accepted = true;
                 }
             }
-        }
 
-        onClick: ev =>
-        {
-            if (ev.y > bboxHeight * 0.66)
-            {
-                imagesBox.visible = ! imagesBox.visible;
-            }
-            else if (ev.x < bboxWidth * 0.5)
-            {
-                if (box.current > 0)
-                {
-                    box.current -= 1;
-                }
-            }
-            else
-            {
-                if (box.current < box.model.size - 1)
-                {
-                    box.current += 1;
-                }
-            }
-            ev.accepted = true;
-        }
-
-        ViewportBox {
-            id: vp
-
-            fillWidth: true
-            fillHeight: true
-        }
-
-        Image {
-            id: image
-
-            position: "free"
-            x: -vp.viewX * vp.scale
-            y: -vp.viewY * vp.scale
-            width: originalWidth * vp.scale
-            height: originalHeight * vp.scale
-
-            source: box.current < box.model.size ? box.model.at(box.current).path : ""
-
-            onStatusChanged: () =>
-            {
-                if (status === "success")
-                {
-                    vp.originalWidth = originalWidth;
-                    vp.originalHeight = originalHeight;
-                    vp.scaleToFit();
-                }
-            }
-        }
-
-        ScrollIndicator { id: sh; target: vp.adapter; other: sv; orientation: "horizontal" }
-        ScrollIndicator { id: sv; target: vp.adapter; other: sh; orientation: "vertical" }
-    }
-
-    Box {
-        id: imagesBox
-
-        visible: false
-
-        //position: "free"
-        //origin: "bottom-left"
-        fillWidth: true
-        //marginLeft: theme.paddingLarge
-        //marginRight: theme.paddingLarge
-        //y: theme.paddingLarge
-        height: theme.itemHeightLarge * 2
-
-        color: theme.contentBackgroundColor
-
-        layout: "row"
-
-        Button {
-            enabled: box.current > 0
-            width: theme.itemWidthSmall
-            fillHeight: true
-            flat: true
-            icon: "ui-arrow_left"
-
-            onClick: () =>
-            {
-                box.current -= 1;
-            }
-        }
-
-        Box {
-            fillWidth: true
-            fillHeight: true
-
-            ListView {
-                id: listView
+            ViewportBox {
+                id: vp
 
                 fillWidth: true
                 fillHeight: true
 
-                orientation: "horizontal"
-                model: box.model
-                cellWidth: bboxHeight
-                cellHeight: bboxHeight
-
-                box.onCurrentChanged: () =>
+                onScaleChanged: () =>
                 {
-                    positionViewAt(box.current);
+                    imagesListView.overflowBehavior = scale > minScale + 0.0001 ? "none" : "scroll";
                 }
+            }
 
-                delegate: template MouseBox {
-                    color: box.current === modelData.index ? theme.highlightBackgroundColor
-                                                        : "transparent"
+            InertialEngine {
+                id: inertialEngine
 
-                    Image {
-                        fillWidth: true
-                        fillHeight: true
-                        marginTop: theme.paddingSmall
-                        marginLeft: theme.paddingSmall
-                        marginRight: theme.paddingSmall
-                        marginBottom: theme.paddingSmall
-                        fitMode: "cover"
-                        source: parent.modelData.value.path
-                    }
+                onMotion: (dx, dy) =>
+                {
+                    vp.confineViewport(vp.viewX + dx / vp.scale, vp.viewY + dy / vp.scale);
+                }
+            }
 
-                    onClick: () =>
+            PinchGesture {
+                id: pinchGesture
+
+                onDistanceChanged: () =>
+                {
+                    if (! imagesListView.scrolling && previousDistance > 0)
                     {
-                        box.current = modelData.index;
+                        const factor = distance / previousDistance;
+                        const scaleAnchorX = (x1 + (x2 - x1) / 2) / parent.bbox.width;
+                        const scaleAnchorY = (y1 + (y2 - y1) / 2) / parent.bbox.height;
+                        vp.setScale(vp.scale * factor, scaleAnchorX, scaleAnchorY);
                     }
                 }
             }
 
-            ScrollIndicator { target: listView; orientation: "horizontal" }
-        }
+            /*
+            Image {
+                id: image
 
-        Button {
-            enabled: box.current < box.model.size - 1
-            width: theme.itemWidthSmall
-            fillHeight: true
-            flat: true
-            icon: "ui-arrow_right"
+                visible: status === "success"
 
-            onClick: () =>
-            {
-                box.current += 1;
+                position: "free"
+                x: -vp.viewX * vp.scale
+                y: -vp.viewY * vp.scale
+                width: originalWidth * vp.scale
+                height: originalHeight * vp.scale
+
+                source: parent.x >= 0 ? parent.modelData.value.path : ""
+
+                onStatusChanged: () =>
+                {
+                    if (status === "success")
+                    {
+                        vp.originalWidth = originalWidth;
+                        vp.originalHeight = originalHeight;
+                        vp.scaleToFit();
+                    }
+                }
             }
-        }
+            */
 
+            Canvas {
+                id: image
+
+                property status: cnvImg.status
+                property source: parent.x >= 0 ? parent.modelData.value.path : ""
+
+                visible: status === "success"
+                position: "free"
+                fillWidth: true
+                fillHeight: true
+
+                originalWidth: bboxWidth
+                originalHeight: bboxHeight
+
+                function update()
+                {
+                    if (originalWidth * originalHeight === 0)
+                    {
+                        return;
+                    }
+
+                    const sx = vp.viewX;
+                    const sy = vp.viewY;
+                    const sw = originalWidth / vp.scale;
+                    const sh = originalHeight / vp.scale;
+
+                    const ctx = context2d;
+                    ctx.clearRect(0, 0, originalWidth, originalHeight);
+                    ctx.drawImage(cnvImg.get().get(), sx, sy, sw, sh, 0, 0, originalWidth, originalHeight);
+                }
+
+                vp.onViewXChanged: () => { update(); }
+                vp.onViewYChanged: () => { update(); }
+                vp.onScaleChanged: () => { update(); }
+                onOriginalWidthChanged: () => { update(); }
+                onOriginalHeightChanged: () => { update(); }
+
+                onStatusChanged: () =>
+                {
+                    if (status === "success")
+                    {
+                        vp.originalWidth = cnvImg.originalWidth;
+                        vp.originalHeight = cnvImg.originalHeight;
+                        vp.scaleToFit();
+                        update();
+                    }
+                }
+
+                Image {
+                    id: cnvImg
+
+                    visible: false
+                    source: parent.source
+                }
+
+            }
+
+            Label {
+                visible: ! image.visible
+                position: "free"
+                x: (parent.bboxWidth - bboxWidth) / 2
+                y: (parent.bboxHeight - bboxHeight) / 2
+                fontSize: theme.fontSizeLarge
+                text: "[icon:ui-spinner5]"
+            }
+
+            ScrollIndicator { id: sh; target: vp.adapter; other: sv; orientation: "horizontal" }
+            ScrollIndicator { id: sv; target: vp.adapter; other: sh; orientation: "vertical" }
+        }
 
     }
+
+    Button {
+        position: "free"
+        visible: imagesListView.overflowBehavior === "scroll" && box.current > 0
+        fillHeight: true
+        flat: true
+        icon: "ui-arrow_left"
+
+        onClick: ev =>
+        {
+            imagesListView.positionViewAt(box.current - 1);
+            ev.accepted = true;
+        }
+    }
+
+    Button {
+        position: "free"
+        origin: "top-right"
+        visible: imagesListView.overflowBehavior === "scroll" && box.current < box.model.size - 1
+        fillHeight: true
+        flat: true
+        icon: "ui-arrow_right"
+
+        onClick: ev =>
+        {
+            imagesListView.positionViewAt(box.current + 1);
+            ev.accepted = true;
+        }
+    }
+
 }

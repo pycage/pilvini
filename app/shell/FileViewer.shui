@@ -9,6 +9,12 @@ require "./youtubevideo.js";
 Box {
     id: box
 
+    function open(files, idx)
+    {
+        box.files = files;
+        box.current = idx;
+    }
+
     property windowIcon: "media-image"
     property windowTitle: loader.fileItem ? loader.fileItem.name : ""
 
@@ -19,41 +25,46 @@ Box {
     property current: -1
     property maximized: false
 
-    borderRadius: maximized ? 0 : 6
-    color: theme.secondaryBackgroundColor
-
     event toggleMaximized
     event swapPanes
     event closePane
 
-    fillWidth: true
-    fillHeight: true
+    Box {
+        visible: ! box.maximized
+        fillWidth: true
+        marginLeft: theme.paddingMedium
+        marginRight: theme.paddingMedium
 
-    DropArea {
+        Label {
+            fillWidth: true
+            overflowBehavior: "ellipsis"
+            bold: true
+            text: loader.fileItem ? low.escapeMarkup(loader.fileItem.name) : ""
+        }
+
+        /*
+        Label {
+            fillWidth: true
+            overflowBehavior: "ellipsis"
+            text: loader.fileItem ? loader.fileItem.mimetype + "\n" + loader.fileItem.size + " Bytes" : ""
+        }
+        */
+    }
+
+    Box {
         fillWidth: true
         fillHeight: true
-        marginTop: box.maximized ? 0 : theme.itemHeightMedium
-
-        onDropAccept: ev =>
-        {
-            if (ev.types.includes("text/x-fileitems"))
-            {
-                ev.accepted = true;
-            }
-        }
-
-        onDrop: ev =>
-        {
-            const items = JSON.parse(ev.data["text/x-fileitems"]);
-            box.model.reset(items);
-            box.current = 0;
-        }
+        marginTop: box.maximized ? 0 : theme.paddingMedium
+        marginLeft: box.maximized ? 0 : theme.paddingMedium
+        marginRight: box.maximized ? 0 : theme.paddingMedium
+        marginBottom: box.maximized ? 0 : theme.paddingMedium
+        //borderRadius: box.maximized ? 0 : 6
 
         Loader {
             id: loader
 
             property fileItem: box.current !== -1 && box.model.size > box.current ? box.model.at(box.current)
-                                                                                  : null
+                                                                                    : null
 
             fillWidth: true
             fillHeight: true
@@ -95,67 +106,45 @@ Box {
             })()
         }
 
-    }
+        Button {
+            position: "free"
+            origin: "top-right"
+            opacity: containsMouse ? 1 : 0
+            width: height
+            height: theme.itemHeightMedium
+            flat: true
+            icon: fileViewer.maximized ? "ui-fullscreen_exit"
+                                       : "ui-fullscreen"
 
-    MouseBox {
-        opacity: box.maximized && ! containsMouse ? 0 : 1
-
-        position: "free"
-        fillWidth: true
-        height: theme.itemHeightMedium
-        color: theme.secondaryBackgroundColor
-
-        layout: "center-row"
-
-        onDoubleClick: ev =>
-        {
-            box.toggleMaximized();
-            ev.accepted = true;
-        }
-
-        Label {
-            marginLeft: theme.paddingSmall
-            marginRight: theme.paddingSmall
-            fillWidth: true
-            overflowBehavior: "ellipsis"
-            bold: true
-            text: loader.fileItem && loader.fileItem.name ? low.escapeMarkup(loader.fileItem.name) : ""
+            onClick: () =>
+            {
+                fileViewer.maximized = ! fileViewer.maximized;
+            }
         }
 
         Button {
-            visible: ! box.maximized
-            fillHeight: true
+            position: "free"
+            origin: "top-left"
+            opacity: containsMouse ? 1 : 0
+            width: height
+            height: theme.itemHeightMedium
             flat: true
             icon: "ui-arrow_left"
 
             onClick: () =>
             {
-                box.swapPanes(-1);
+                fileViewer.current = -1;
+                fileViewer.files = [];
+                fileViewer.visible = false;
+                fileViewer.maximized = false;
             }
         }
+    }
 
-        Button {
-            visible: ! box.maximized
-            fillHeight: true
-            flat: true
-            icon: "ui-arrow_right"
 
-            onClick: () =>
-            {
-                box.swapPanes(1);
-            }
-        }
-
-        Button {
-            fillHeight: true
-            flat: true
-            icon: "ui-clear"
-
-            onClick: () =>
-            {
-                box.closePane();
-            }
-        }
+    Placeholder {
+        visible: box.current === -1
+        text: "No File Selected"
     }
 
     property imageViewerT: template ImageViewer {
@@ -170,7 +159,7 @@ Box {
         {
             if (box.current !== current)
             {
-                box.current = current;
+                //box.current = current;
             }
         }
     }
@@ -204,6 +193,7 @@ Box {
         fillHeight: true
 
         property path: loader.fileItem ? loader.fileItem.path : ""
+        property title: path
 
         onPathChanged: () =>
         {

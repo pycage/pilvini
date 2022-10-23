@@ -1,5 +1,6 @@
 require "shellfish/ui";
 require "./BreadCrumbs.shui";
+require "./FileViewer.shui";
 require "./thumbnailgenerator.js";
 
 Box {
@@ -12,6 +13,7 @@ Box {
     property path: "/"
     property searchBox: false
     property maximized: false
+    property mayClose: true
 
     event toggleMaximized
     event swapPanes
@@ -23,6 +25,8 @@ Box {
     fillHeight: true
 
     borderRadius: 6
+
+    color: theme.secondaryBackgroundColor
 
     ThumbnailGenerator {
         id: thumbnailer
@@ -54,7 +58,40 @@ Box {
         }
     }
 
+    Image {
+        id: backdrop
+
+        visible: status === "success"
+        position: "free"
+        fillWidth: true
+        fillHeight: true
+        fitMode: "cover"
+
+        fsModel.onSizeChanged: () =>
+        {
+            source = "";
+            if (fsModel.size > 0)
+            {
+                const items = fsModel.getFiles(f => f.name === "background.jpg");
+                if (items.length > 0)
+                {
+                    source = items[0].path;
+                }
+            }
+        }
+    }
+
+    Box {
+        visible: backdrop.visible
+        position: "free"
+        fillWidth: true
+        fillHeight: true
+        color: parent.color.alpha(0.8)
+    }
+
+    // title bar
     MouseBox {
+        visible: ! fileViewer.maximized
         fillWidth: true
         height: theme.itemHeightMedium
         color: theme.secondaryBackgroundColor
@@ -192,7 +229,7 @@ Box {
         }
 
         Button {
-            visible: ! box.maximized
+            visible: ! box.maximized && box.mayClose
             fillHeight: true
             flat: true
             icon: "ui-arrow_left"
@@ -204,7 +241,7 @@ Box {
         }
 
         Button {
-            visible: ! box.maximized
+            visible: ! box.maximized && box.mayClose
             fillHeight: true
             flat: true
             icon: "ui-arrow_right"
@@ -216,6 +253,7 @@ Box {
         }
 
         Button {
+            visible: box.mayClose
             fillHeight: true
             flat: true
             icon: "ui-clear"
@@ -227,356 +265,455 @@ Box {
         }
     }
 
-    DropArea {
-        fillWidth: true
-        fillHeight: true
+    // banner
+    Box {
+        visible: ! fileViewer.maximized && bannerLabel.text !== ""
 
-        onDropAccept: (ev) =>
+        height: parent.bboxHeight * 0.3
+        overflowBehavior: "scroll"
+
+        layout: "row"
+
+        fsModel.onSizeChanged: () =>
         {
-            if (ev.types.includes("Files"))
+            const items = fsModel.getFiles(f => f.name === "description.txt");
+            if (items.length > 0)
             {
-                ev.dropEffect = "copy";
-                ev.accepted = true;
-            }
-            else if (ev.types.includes("text/plain"))
-            {
-                ev.dropEffect = ev.original.shiftKey ? "copy" : "move";
-                ev.accepted = true;
-            }
-        }
-
-        onDrop: (ev) =>
-        {
-            console.log(JSON.stringify(ev));
-
-            for (let i = 0; i < ev.items.length; ++i)
-            {
-                const item = ev.items[i];
-                if (item.kind !== "file")
+                box.fs.read(items[0].path)
+                .then(blob => { return blob.text(); })
+                .then(data =>
                 {
-                    continue;
-                }
-                const fileItem = item.getAsFile();
-                statusLabel.text = "Uploading: " + fileItem.name;
-                box.fs.write(box.fs.pathJoin(box.path, box.fs.encodeName(fileItem.name)), fileItem)
-                .then(() =>
-                {
-                    statusLabel.text = "";
+                    console.log(data);
+                    bannerLabel.text = data;
                 })
-                .catch(err =>
-                {
-                    statusLabel.text = "";
-                    showErrorDialog("Error Uploading File", "" + err);
-                });
+                .catch(err => { });
+            }
+            else
+            {
+                bannerLabel.text = "";
             }
 
-            if (ev.data["text/plain"])
+            const items2 = fsModel.getFiles(f => f.name === "cover.jpg");
+            if (items2.length > 0)
             {
-                const uris = ev.data["text/plain"].split("\r\n");
-                console.log(JSON.stringify(uris));
-                uris.forEach(uri =>
-                {
-                    const destPath = box.fs.pathJoin(box.path, box.fs.filename(uri));
-                    console.log("DROP EFFECT " + ev.dropEffect);
-                    if (ev.dropEffect === "copy")
-                    {
-                        statusLabel.text = "Copying: " + box.fs.filename(uri);
-                        box.fs.copy(uri, destPath)
-                        .then(() =>
-                        {
-                            statusLabel.text = "";
-                            console.log("files copied");
-                        })
-                        .catch(err =>
-                        {
-                            statusLabel.text = "";
-                            showErrorDialog("Error Copying File", "" + err);
-                        });
-                    }
-                    else
-                    {
-                        box.fs.move(uri, destPath)
-                        .then(() =>
-                        {
-                            console.log("files moved");
-                        })
-                        .catch(err =>
-                        {
-                            showErrorDialog("Error Moving File", "" + err);
-                        });
-                    }
-                });
+                bannerImage.source = items2[0].path;
+            }
+            else
+            {
+                bannerImage.source = "";
             }
         }
 
-        MouseBox {
+        Image {
+            id: bannerImage
+
+            visible: status === "success"
+
+            marginTop: theme.paddingLarge
+            marginLeft: theme.paddingLarge
+            width: theme.itemWidthLarge
+            height: width
+            fitMode: "contain"
+        }
+
+        Label {
+            id: bannerLabel
+
             fillWidth: true
-            fillHeight: true
-            layout: "center"
-
-            color: theme.secondaryBackgroundColor
-
-            onContextMenu: (ev) =>
-            {
-                ev.accepted = true;
-                const menu = fileMenuT();
-                menu.popup(null);
-            }
-
-            ListView {
-                id: fsview
-
-                property displayMode: "grid"
-
-                visible: ! fsModel.loading
-                fillWidth: true
-                fillHeight: true
-                canFocus: true
-
-                cellWidth: displayMode === "list" ? bbox.width - 1
-                                                  : (theme.itemWidthLarge / 2) * (sizeSelector.value + 1)
-                cellHeight: displayMode === "list" ? (theme.itemHeightMedium / 2) * (sizeSelector.value + 1)
-                                                   : cellWidth
-                cacheMargin: cellHeight //contentHeight
-
-                model: fsModel
-
-                delegate: template Draggable {
-
-                    onXChanged: () =>
-                    {
-                        if (x < 0)
-                        {
-                            fsitem.thumbnail = "";
-                        }
-                    }
-
-                    onDragStart: ev =>
-                    {
-                        console.log("drag start");
-                        const uris = [];
-                        const items = [];
-                        selector.selection.forEach(idx =>
-                        {
-                            const item = fsview.model.at(idx);
-                            uris.push(item.path);
-                            items.push(item);
-                        });
-
-                        if (uris.length > 0)
-                        {
-                            console.log(JSON.stringify(uris));
-
-                            ev.setData("text/uri-list", uris.join("\r\n"));
-                            ev.setData("text/plain", uris.join("\r\n"));
-                            ev.setData("text/x-fileitems", JSON.stringify(items));
-                            ev.accepted = true;
-                        }
-                    }
-
-                    FSItem {
-                        id: fsitem
-
-                        property inView: file &&
-                                         parent.x >= 0 &&
-                                         parent.y >= fsview.contentY - fsview.cellHeight &&
-                                         parent.y <= fsview.contentY + fsview.bboxHeight
-
-                        fillWidth: true
-                        fillHeight: true
-
-                        displayMode: fsview.displayMode
-                        highlighted: selector.selection.has(parent.modelData.index)
-
-                        file: parent.modelData.value
-
-                        onInViewChanged: () =>
-                        {
-                            if (inView && thumbnail === "")
-                            {
-                                const forPath = file.path;
-
-                                const condition = () =>
-                                {
-                                    return lifeCycleStatus !== "destroyed" &&
-                                           file.path === forPath &&
-                                           thumbnail === "" &&
-                                           inView;
-                                }
-
-                                thumbnail = "";
-                                thumbnailer.generate(box.fs, file, condition)
-                                .then(safeCallback(blob =>
-                                {
-                                    if (blob)
-                                    {
-                                        thumbnail = blobUrl(blob);
-                                    }
-                                }, condition))
-                                .catch(err =>
-                                {
-
-                                });
-                            }
-
-                        }
-
-                        onPointerDown: (ev) =>
-                        {
-                            const idx = parent.modelData.index;
-
-                            if (ev.original.ctrlKey)
-                            {
-                                selector.select(idx, "toggle");
-                            }
-                            else if (ev.original.shiftKey)
-                            {
-                                selector.select(idx, "range");
-                            }
-                            else
-                            {
-                                selector.select(idx, "replace");
-                            }
-                        }
-
-                        onDoubleClick: (ev) =>
-                        {
-                            const asNew = ev.original.shiftKey;
-
-                            const file = parent.modelData.value;
-                            if (file.type === "d")
-                            {
-                                selector.clear();
-                                box.path = file.path;
-                            }
-                            else if (file.mimetype === "application/zip" ||
-                                     file.mimetype === "application/x-rar-compressed")
-                            {
-                                selector.clear();
-                                console.log("open ZIP: " + file.path);
-                                box.path = file.path;
-                            }
-                            else if (file.mimetype.startsWith("audio/"))
-                            {
-                                const files = fsModel.getFiles(f => f.mimetype.startsWith("audio/"));
-                                const idx = files.findIndex(f => f.path === file.path);
-                                box.filesOpen(files, idx, asNew);
-                            }
-                            else if (file.mimetype.startsWith("image/"))
-                            {
-                                const files = fsModel.getFiles(f => f.mimetype.startsWith("image/"));
-                                const idx = files.findIndex(f => f.path === file.path);
-                                box.filesOpen(files, idx, asNew);
-                            }
-                            else if (file.mimetype.startsWith("video/"))
-                            {
-                                const files = fsModel.getFiles(f => f.mimetype.startsWith("video/"));
-                                const idx = files.findIndex(f => f.path === file.path);
-                                box.filesOpen(files, idx, asNew);
-                            }
-                            else if (file.mimetype === "application/pdf" ||
-                                     file.mimetype === "application/x-youtube-link" ||
-                                     file.mimetype.startsWith("image/") ||
-                                     file.mimetype.startsWith("text/"))
-                            {
-                                box.filesOpen([file], 0, asNew);
-                            }
-                            ev.accepted = true;
-                        }
-                    }
-
-                    //Label { text: parent.modelData.index; color: "red"; fontSize: theme.fontSizeSmall }
-                }
-
-                model.onPathChanged: () =>
-                {
-                    selector.clear();
-                    thumbnailer.cancel();
-                }
-
-                ListViewSelector {
-                    id: selector
-                    multiple: true
-
-                    onSelectionChanged: () =>
-                    {
-                        const items = [];
-                        selection.forEach(idx => items.push(fsModel.at(idx)));
-                        filesBag = items;
-                        filesBagSource = box.objectId;
-                    }
-                }
-
-                OverflowScroller { }
-                ScrollIndicator { }
-            }
-
-            Label {
-                visible: ! fsview.visible
-                fontSize: theme.fontSizeLarge
-                text: "[icon:ui-spinner5]"
-            }
-
-            property fileMenuT: template Menu {
-                MenuItem {
-                    text: "New Directory"
-                    onClick: () =>
-                    {
-                        const dlg = newDirectoryDialogT();
-                        dlg.callback = newName =>
-                        {
-                            box.fs.mkdir(box.path, box.fs.encodeName(newName));
-                        };
-                        dlg.show();
-                    }
-                }
-
-                MenuSeparator { }
-
-                MenuItem {
-                    text: "Rename"
-                    onClick: () =>
-                    {
-                        if (selector.selection.size !== 1)
-                        {
-                            return;
-
-                        }
-
-                        const idx = [...selector.selection][0];
-                        const item = fsModel.at(idx);
-
-                        const dlg = renameDialogT();
-                        dlg.name = item.name;
-                        dlg.callback = newName =>
-                        {
-                            box.fs.move(item.path, box.fs.pathJoin(box.fs.dirname(item.path), box.fs.encodeName(newName)));
-                        };
-                        dlg.show();
-                    }
-                }
-
-                MenuItem {
-                    text: "Delete"
-                    onClick: () =>
-                    {
-                        const idx = [...selector.selection][0];
-                        const item = fsModel.at(idx);
-
-                        showQuestionDialog("Delete File",
-                                           "Do you want to delete this file?\n" + item.name,
-                                           () =>
-                        {
-                            box.fs.remove(item.path);
-                        });
-                    }
-                }
-            }
+            marginTop: theme.paddingLarge
+            marginLeft: theme.paddingLarge
+            marginRight: theme.paddingLarge
+            marginBottom: theme.paddingLarge
+            literal: true
+            overflowBehavior: "wrap"
         }
-
     }
 
     Box {
+        fillWidth: true
+        fillHeight: true
+        layout: "row"
+
+        DropArea {
+            visible: ! fileViewer.maximized
+            fillWidth: true
+            //width: parent.bboxWidth * 0.25
+            fillHeight: true
+
+            onDropAccept: (ev) =>
+            {
+                if (ev.types.includes("Files"))
+                {
+                    ev.dropEffect = "copy";
+                    ev.accepted = true;
+                }
+                else if (ev.types.includes("text/plain"))
+                {
+                    ev.dropEffect = ev.original.shiftKey ? "copy" : "move";
+                    ev.accepted = true;
+                }
+            }
+
+            onDrop: (ev) =>
+            {
+                console.log(JSON.stringify(ev));
+
+                for (let i = 0; i < ev.items.length; ++i)
+                {
+                    const item = ev.items[i];
+                    if (item.kind !== "file")
+                    {
+                        continue;
+                    }
+                    const fileItem = item.getAsFile();
+                    statusLabel.text = "Uploading: " + fileItem.name;
+                    box.fs.write(box.fs.pathJoin(box.path, box.fs.encodeName(fileItem.name)), fileItem)
+                    .then(() =>
+                    {
+                        statusLabel.text = "";
+                    })
+                    .catch(err =>
+                    {
+                        statusLabel.text = "";
+                        showErrorDialog("Error Uploading File", "" + err);
+                    });
+                }
+
+                if (ev.data["text/plain"])
+                {
+                    const uris = ev.data["text/plain"].split("\r\n");
+                    console.log(JSON.stringify(uris));
+                    uris.forEach(uri =>
+                    {
+                        const destPath = box.fs.pathJoin(box.path, box.fs.filename(uri));
+                        console.log("DROP EFFECT " + ev.dropEffect);
+                        if (ev.dropEffect === "copy")
+                        {
+                            statusLabel.text = "Copying: " + box.fs.filename(uri);
+                            box.fs.copy(uri, destPath)
+                            .then(() =>
+                            {
+                                statusLabel.text = "";
+                                console.log("files copied");
+                            })
+                            .catch(err =>
+                            {
+                                statusLabel.text = "";
+                                showErrorDialog("Error Copying File", "" + err);
+                            });
+                        }
+                        else
+                        {
+                            box.fs.move(uri, destPath)
+                            .then(() =>
+                            {
+                                console.log("files moved");
+                            })
+                            .catch(err =>
+                            {
+                                showErrorDialog("Error Moving File", "" + err);
+                            });
+                        }
+                    });
+                }
+            }
+
+            MouseBox {
+                fillWidth: true
+                fillHeight: true
+                layout: "center"
+
+                onContextMenu: (ev) =>
+                {
+                    ev.accepted = true;
+                    const menu = fileMenuT();
+                    menu.popup(null);
+                }
+
+                ListView {
+                    id: fsview
+
+                    property displayMode: "grid"
+
+                    visible: ! fsModel.loading
+                    fillWidth: true
+                    fillHeight: true
+                    canFocus: true
+
+                    cellWidth: displayMode === "list" ? bbox.width - 1
+                                                      : (theme.itemWidthLarge / 2) * (sizeSelector.value + 1)
+                    cellHeight: displayMode === "list" ? (theme.itemHeightMedium / 2) * (sizeSelector.value + 1)
+                                                    : cellWidth
+                    cacheMargin: cellHeight //contentHeight
+
+                    model: fsModel
+
+                    delegate: template Draggable {
+
+                        onXChanged: () =>
+                        {
+                            if (x < 0)
+                            {
+                                fsitem.thumbnail = "";
+                            }
+                        }
+
+                        onDragStart: ev =>
+                        {
+                            console.log("drag start");
+                            const uris = [];
+                            const items = [];
+                            selector.selection.forEach(idx =>
+                            {
+                                const item = fsview.model.at(idx);
+                                uris.push(item.path);
+                                items.push(item);
+                            });
+
+                            if (uris.length > 0)
+                            {
+                                console.log(JSON.stringify(uris));
+
+                                ev.setData("text/uri-list", uris.join("\r\n"));
+                                ev.setData("text/plain", uris.join("\r\n"));
+                                ev.setData("text/x-fileitems", JSON.stringify(items));
+                                ev.accepted = true;
+                            }
+                        }
+
+                        FSItem {
+                            id: fsitem
+
+                            property inView: file &&
+                                            parent.x >= 0 &&
+                                            parent.y >= fsview.contentY - fsview.cellHeight &&
+                                            parent.y <= fsview.contentY + fsview.bboxHeight
+
+                            property readyForThumbnail: inView && ! fsview.scrolling
+
+                            fillWidth: true
+                            fillHeight: true
+
+                            displayMode: fsview.displayMode
+                            highlighted: selector.selection.has(parent.modelData.index)
+
+                            file: parent.modelData.value
+
+                            onReadyForThumbnailChanged: () =>
+                            {
+                                if (readyForThumbnail && thumbnail === "")
+                                {
+                                    const forPath = file.path;
+
+                                    const condition = () =>
+                                    {
+                                        return lifeCycleStatus !== "destroyed" &&
+                                            file.path === forPath &&
+                                            thumbnail === "" &&
+                                            readyForThumbnail;
+                                    }
+
+                                    thumbnail = "";
+                                    thumbnailer.generate(box.fs, file, condition)
+                                    .then(safeCallback(blob =>
+                                    {
+                                        if (blob)
+                                        {
+                                            thumbnail = blobUrl(blob);
+                                        }
+                                    }, condition))
+                                    .catch(err =>
+                                    {
+
+                                    });
+                                }
+
+                            }
+
+                            onPointerDown: (ev) =>
+                            {
+                                const idx = parent.modelData.index;
+
+                                if (ev.original.ctrlKey)
+                                {
+                                    selector.select(idx, "toggle");
+                                }
+                                else if (ev.original.shiftKey)
+                                {
+                                    selector.select(idx, "range");
+                                }
+                                else
+                                {
+                                    selector.select(idx, "replace");
+                                }
+                            }
+
+                            onClick: (ev) =>
+                            {
+                                const asNew = ev.original.shiftKey;
+
+                                const file = parent.modelData.value;
+                                if (file.type === "d")
+                                {
+                                    selector.clear();
+                                    box.path = file.path;
+                                }
+                                else if (file.mimetype === "application/zip" ||
+                                        file.mimetype === "application/x-rar-compressed")
+                                {
+                                    selector.clear();
+                                    console.log("open ZIP: " + file.path);
+                                    box.path = file.path;
+                                }
+                                else if (file.mimetype.startsWith("audio/"))
+                                {
+                                    const files = fsModel.getFiles(f => f.mimetype.startsWith("audio/"));
+                                    const idx = files.findIndex(f => f.path === file.path);
+                                    fileViewer.open(files, idx);
+                                    //box.filesOpen(files, idx, asNew);
+                                }
+                                else if (file.mimetype.startsWith("image/"))
+                                {
+                                    const files = fsModel.getFiles(f => f.mimetype.startsWith("image/"));
+                                    const idx = files.findIndex(f => f.path === file.path);
+                                    fileViewer.open(files, idx);
+                                    //box.filesOpen(files, idx, asNew);
+                                }
+                                else if (file.mimetype.startsWith("video/"))
+                                {
+                                    const files = fsModel.getFiles(f => f.mimetype.startsWith("video/"));
+                                    const idx = files.findIndex(f => f.path === file.path);
+                                    fileViewer.open(files, idx);
+                                    //box.filesOpen(files, idx, asNew);
+                                }
+                                else if (file.mimetype === "application/pdf" ||
+                                        file.mimetype === "application/x-youtube-link" ||
+                                        file.mimetype.startsWith("image/") ||
+                                        file.mimetype.startsWith("text/"))
+                                {
+                                    fileViewer.open([file], 0);
+                                    //box.filesOpen([file], 0, asNew);
+                                }
+                                ev.accepted = true;
+                            }
+                        }
+
+                        //Label { text: parent.modelData.index; color: "red"; fontSize: theme.fontSizeSmall }
+                    }
+
+                    model.onPathChanged: () =>
+                    {
+                        selector.clear();
+                        thumbnailer.cancel();
+                    }
+
+                    ListViewSelector {
+                        id: selector
+                        multiple: true
+
+                        onSelectionChanged: () =>
+                        {
+                            const items = [];
+                            selection.forEach(idx => items.push(fsModel.at(idx)));
+                            filesBag = items;
+                            filesBagSource = box.objectId;
+                        }
+                    }
+
+                    OverflowScroller { stepSize: theme.paddingLarge }
+                    ScrollIndicator { }
+                }
+
+                Label {
+                    visible: ! fsview.visible
+                    fontSize: theme.fontSizeLarge
+                    text: "[icon:ui-spinner5]"
+                }
+
+                property fileMenuT: template Menu {
+                    MenuItem {
+                        text: "New Directory"
+                        onClick: () =>
+                        {
+                            const dlg = newDirectoryDialogT();
+                            dlg.callback = newName =>
+                            {
+                                box.fs.mkdir(box.path, box.fs.encodeName(newName));
+                            };
+                            dlg.show();
+                        }
+                    }
+
+                    MenuSeparator { }
+
+                    MenuItem {
+                        text: "Rename"
+                        onClick: () =>
+                        {
+                            if (selector.selection.size !== 1)
+                            {
+                                return;
+
+                            }
+
+                            const idx = [...selector.selection][0];
+                            const item = fsModel.at(idx);
+
+                            const dlg = renameDialogT();
+                            dlg.name = item.name;
+                            dlg.callback = newName =>
+                            {
+                                box.fs.move(item.path, box.fs.pathJoin(box.fs.dirname(item.path), box.fs.encodeName(newName)));
+                            };
+                            dlg.show();
+                        }
+                    }
+
+                    MenuItem {
+                        text: "Delete"
+                        onClick: () =>
+                        {
+                            const idx = [...selector.selection][0];
+                            const item = fsModel.at(idx);
+
+                            showQuestionDialog("Delete File",
+                                            "Do you want to delete this file?\n" + item.name,
+                                            () =>
+                            {
+                                box.fs.remove(item.path);
+                            });
+                        }
+                    }
+                }
+            }
+
+        }
+
+        FileViewer {
+            id: fileViewer
+
+            visible: false
+            fillWidth: maximized
+            width: parent.bboxWidth - (theme.itemWidthLarge / 2) * (sizeSelector.value + 1) - theme.paddingMedium
+            //fillWidth: true //width: parent.bboxWidth * 0.75
+            fillHeight: true
+
+            fs: box.fs
+
+            onCurrentChanged: () =>
+            {
+                if (current !== -1 && ! visible)
+                {
+                    maximized = true;
+                    visible = true;
+                }
+            }
+        }
+    }
+
+    // status bar
+    Box {
+        visible: ! fileViewer.maximized
         fillWidth: true
         height: theme.itemHeightMedium
         color: theme.secondaryBackgroundColor
@@ -595,31 +732,6 @@ Box {
                 checked = ! checked;
                 ev.accepted = true;
             }
-        }
-
-        Label {
-            marginLeft: theme.paddingSmall
-            text: fsview.count + " items"
-        }
-
-        Label {
-            id: statusLabel
-
-            fillWidth: true
-            marginLeft: theme.paddingSmall
-            overflowBehavior: "ellipsis"
-        }
-
-        SpinBox {
-            id: sizeSelector
-
-            visible: false
-            marginLeft: theme.paddingSmall
-            marginRight: theme.paddingSmall
-            minValue: 1
-            maxValue: 6
-            stepSize: 1
-            value: 1
         }
 
         Button {
@@ -669,8 +781,34 @@ Box {
             }
         }
 
+        Label {
+            marginLeft: theme.paddingSmall
+            text: fsview.count + " items"
+        }
+
+        Label {
+            id: statusLabel
+
+            fillWidth: true
+            marginLeft: theme.paddingSmall
+            overflowBehavior: "ellipsis"
+        }
+
+        SelectionBox {
+            id: sizeSelector
+
+            property value: selection + 1
+
+            model: ListModel {
+                data: ["1x", "2x", "3x", "4x", "5x", "6x"]
+            }
+
+            selection: 0
+        }
+
         Button {
             fillHeight: true
+            marginLeft: theme.paddingSmall
             flat: true
             icon: "ui-view_grid"
             checked: fsview.displayMode === "grid"
@@ -693,6 +831,17 @@ Box {
             }
         }
 
+        Button {
+            fillHeight: true
+            flat: true
+            icon: "media-slideshow"
+            checked: fileViewer.visible
+            onClick: (ev) =>
+            {
+                fileViewer.visible = ! fileViewer.visible;
+                ev.accepted = true;
+            }
+        }
 
     }
 

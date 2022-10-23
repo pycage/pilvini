@@ -41,6 +41,7 @@ MouseBox {
     property model: ListModel { }
     property current: -1
     property minimized: true
+    property title: model.at(current) ? model.at(current).name : ""
 
     color: "black"
 
