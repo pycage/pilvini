@@ -7,6 +7,7 @@ Box {
     property path: ""
 
     event changePath
+    event search
 
     overflowBehavior: "scroll"
     layout: "center-row"
@@ -60,7 +61,7 @@ Box {
 
         onClick: ev =>
         {
-            if (breadCrumbsModel.size > 1)
+            if (true) //breadCrumbsModel.size > 1)
             {
                 const menu = menuT();
                 menu.popup(self);
@@ -69,18 +70,32 @@ Box {
         }
 
         property menuT: template Menu {
-            Repeater {
-                model: breadCrumbsModel
-                delegate: template MenuItem {
-                    visible: modelData.index > 0
-                    icon: modelData.index === breadCrumbsModel.size - 1 ? "fs-drive"
-                                                                        : "fs-folder"
-                    text: low.escapeMarkup(modelData.value.name || "/")
+            Box {
+                Repeater {
+                    model: breadCrumbsModel
+                    delegate: template MenuItem {
+                        visible: modelData.index > 0
+                        icon: modelData.index === breadCrumbsModel.size - 1 ? "fs-drive"
+                                                                            : "fs-folder"
+                        text: low.escapeMarkup(modelData.value.name || "/")
 
-                    onClick: () =>
-                    {
-                        box.changePath(modelData.value.path);
+                        onClick: () =>
+                        {
+                            box.changePath(modelData.value.path);
+                        }
                     }
+                }
+            }
+
+            MenuSeparator { visible: breadCrumbsModel.size > 1 }
+
+            MenuItem {
+                icon: "ui-search"
+                text: "Search"
+
+                onClick: () =>
+                {
+                    box.search();
                 }
             }
         }

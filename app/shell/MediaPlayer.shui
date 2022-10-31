@@ -325,9 +325,9 @@ MouseBox {
             position: "free"
             origin: "bottom-left"
             fillWidth: true
-            //marginLeft: parent.bbox.width * 0.1
-            //marginRight: marginLeft
-            //marginBottom: theme.paddingLarge
+            marginLeft: theme.paddingSmall
+            marginRight: marginLeft
+            marginBottom: marginLeft
 
             Box {
                 visible: coverArt.visible && !! playerBox.model && playerBox.model.size > 1
@@ -438,7 +438,7 @@ MouseBox {
 
             Box {
                 fillWidth: true
-                height: theme.itemHeightLarge * 1.5
+                height: theme.itemHeightLarge
                 layout: "center-row"
 
                 Button {
@@ -542,7 +542,7 @@ MouseBox {
                 marginRight: theme.paddingMedium
                 marginBottom: theme.paddingMedium
                 fillWidth: true
-                layout: "row"
+                layout: "center-row"
 
                 Label {
                     text: formatTime(seekbar.seeking ? seekbar.seekTime : controls.player.currentTime)

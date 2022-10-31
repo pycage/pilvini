@@ -113,7 +113,7 @@ shRequire(["shellfish/core"], (core) =>
             return [];
         }
 
-        async search(query)
+        async search(path, query)
         {
             try
             {

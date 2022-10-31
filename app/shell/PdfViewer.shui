@@ -1,4 +1,7 @@
 require "shellfish/ui";
+require "./inertialengine.js";
+require "./PageBrowser.shui";
+require "./PageItem.shui";
 require "./pdfdocument.js";
 require "./pdfpage.js";
 require "./ViewportBox.shui";
@@ -7,158 +10,73 @@ Box {
     id: box
 
     property source: ""
+    property title: ""
 
-    Box {
+    color: "black"
+
+    PDFDocument {
+        id: pdfDoc
+
+        source: box.source
+    }
+
+    PageBrowser {
+        id: browser
+
         fillWidth: true
         fillHeight: true
 
-        ViewportBox {
-            id: vp
+        model: pdfDoc.pages
+        current: 0
 
-            fillWidth: true
-            fillHeight: true
+        delegate: template PageItem {
+            id: pageItem
+
+            pageBrowser: browser
 
             PDFPage {
                 id: pdf
 
-                document: PDFDocument {
-                    source: box.source
-                }
+                property vpScale: pageItem.viewport.scale
+
+                document: pdfDoc
+                page: pageItem.modelData.index
 
                 visible: status === "success"
 
                 position: "free"
-                x: -vp.viewX * vp.scale
-                y: -vp.viewY * vp.scale
-                width: originalWidth * vp.scale
-                height: originalHeight * vp.scale
+                x: -pageItem.viewport.viewX * pageItem.viewport.scale
+                y: -pageItem.viewport.viewY * pageItem.viewport.scale
+                width: originalWidth * pageItem.viewport.scale
+                height: originalHeight * pageItem.viewport.scale
                 scale: 1.0
 
                 onStatusChanged: () =>
                 {
                     if (status === "success")
                     {
-                        vp.originalWidth = originalWidth;
-                        vp.originalHeight = originalHeight;
-                        vp.scaleToFit();
+                        pageItem.viewport.originalWidth = originalWidth;
+                        pageItem.viewport.originalHeight = originalHeight;
+                        pageItem.viewport.scaleToFit();
                     }
                 }
-            }
-        }
 
-        ScrollIndicator { id: sh; target: vp.adapter; other: sv; orientation: "horizontal" }
-        ScrollIndicator { id: sv; target: vp.adapter; other: sh; orientation: "vertical" }
-
-        Placeholder {
-            visible: pdf.status === "loading" || pdf.document.status === "loading"
-            text: "[icon:ui-spinner5]"
-        }
-
-        /*
-        Box {
-            visible: pdf.document.status === "loading"
-            
-            position: "free"
-            width: box.bbox * pdf.document.progress
-            height: theme.paddingSmall
-            color: theme.highlightBackgroundColor
-        }
-        */
-    }
-
-    Box {
-        fillWidth: true
-        height: theme.itemHeightMedium
-        color: theme.primaryBackgroundColor
-        layout: "center-row"
-
-        Button {
-            fillHeight: true
-            flat: true
-            icon: "ui-arrow_back"
-            
-            onClick: () =>
-            {
-                if (pdf.page > 0) --pdf.page;
-            }
-        }
-
-        Button {
-            fillHeight: true
-            flat: true
-            icon: "ui-arrow_forward"
-
-            onClick: () =>
-            {
-                if (pdf.page < pdf.document.pages - 1)
+                onVpScaleChanged: () =>
                 {
-                    ++pdf.page;
-                }
-            }
-        }
-
-        Slider {
-            id: pageSlider
-
-            fillWidth: true
-            minValue: 0
-            maxValue: pdf.document.pages - 1
-            value: 0
-
-            onValueChanged: () =>
-            {
-                const v = Math.round(value);
-                if (pdf.status !== "loading" && pdf.page !== v)
-                {
-                    pdf.page = v;
+                    browser.scrollable = pageItem.viewport.scale < pageItem.viewport.minScale + 0.0001;
                 }
             }
 
-            pdf.onPageChanged: () =>
-            {
-                if (pdf.page !== value)
-                {
-                    value = pdf.page;
-                }
+            Label {
+                visible: ! pdf.visible
+                position: "free"
+                x: (parent.bboxWidth - bboxWidth) / 2
+                y: (parent.bboxHeight - bboxHeight) / 2
+                fontSize: theme.fontSizeLarge
+                text: "[icon:ui-spinner5]"
             }
 
-            pdf.onStatusChanged: () =>
-            {
-                const v = Math.round(value);
-                if (pdf.status !== "loading" && pdf.page !== v)
-                {
-                    pdf.page = v;
-                }
-            }
-        }
-
-        Button {
-            fillHeight: true
-            flat: true
-            marginRight: theme.paddingSmall
-            text: "Page " + (Math.round(pageSlider.value) + 1) + " / " + pdf.document.pages
-
-            onClick: () =>
-            {
-                const menu = menuT();
-                menu.popup(self);
-            }
-
-            property menuT: template Menu {
-                Repeater {
-                    model: pdf.document.pages
-
-                    delegate: template MenuItem {
-                        text: "Page " + (modelData.index + 1)
-                        onClick: () =>
-                        {
-                            pdf.page = modelData.index;
-                        }
-                    }
-                }
-            }
         }
     }
-
 
 }

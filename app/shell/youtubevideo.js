@@ -13,6 +13,7 @@ shRequire(["shellfish/low", "shellfish/html"], (low, ui) =>
             super();
             d.set(this, {
                 videoId: "",
+                server: "www.youtube.com",
                 item: low.createElementTree(
                     low.tag("iframe")
                     .attr("title", "YouTube video player")
@@ -23,7 +24,15 @@ shRequire(["shellfish/low", "shellfish/html"], (low, ui) =>
                 )
             });
 
+            this.notifyable("server");
             this.notifyable("videoId");
+        }
+
+        get server() { return d.get(this).server; }
+        set server(s)
+        {
+            d.get(this).server = s;
+            this.serverChanged();
         }
 
         get videoId() { return d.get(this).videoId; }
@@ -34,8 +43,7 @@ shRequire(["shellfish/low", "shellfish/html"], (low, ui) =>
 
             if (v !== "")
             {
-                d.get(this).item.src = "https://www.youtube.com/embed/" + v + "?autoplay=1";
-                //d.get(this).item.src = "https://yewtu.be/embed/" + v + "?autoplay=1";
+                d.get(this).item.src = "https://" + d.get(this).server +  "/embed/" + v + "?autoplay=1";
             }
             else
             {

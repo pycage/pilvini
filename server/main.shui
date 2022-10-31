@@ -55,7 +55,6 @@ HTTPServer {
         })()
     }
 
-
     VirtualFS {
         id: vfs
 
@@ -140,18 +139,8 @@ HTTPServer {
         delegate: template WebSession {
             urlMapper: url => { return "/" + url.substr(3); }
             filesystem: localFs
+            indexFile: "index.html"
             root: __dirname + "/../app"
-        }
-
-    }
-
-    // Shell UI
-    HTTPRoute {
-        when: req => { return req.url.startsWith("/shell/"); }
-
-        delegate: template WebSession {
-            filesystem: localFs
-            root: __dirname + "/.." // + "/shell"
         }
 
     }
@@ -161,17 +150,6 @@ HTTPServer {
         authentication: auth
 
         delegate: template DAVSession {
-            /*
-            urlMapper: url =>
-            {
-                if (! url.startsWith("/Pictures"))
-                {
-                    url = "/Pictures";
-                }
-                return url;
-            }
-            */
-
             filesystem: vfs
             //root: configStore.server.root
             root: user ? (configStore.users.find(item => item.name === user).root || "/") : "/"

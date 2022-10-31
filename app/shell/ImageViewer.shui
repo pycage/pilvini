@@ -1,5 +1,7 @@
 require "shellfish/ui";
 require "./inertialengine.js";
+require "./PageBrowser.shui";
+require "./PageItem.shui";
 require "./ViewportBox.shui";
 
 Box {
@@ -7,175 +9,31 @@ Box {
 
     property model: ListModel { }
     property current: 0
-    property source: ""
 
     property title: model.at(current) ? model.at(current).name : ""
 
-    color: "black"
-
-    ListView {
-        id: imagesListView
+    PageBrowser {
+        id: browser
 
         fillWidth: true
         fillHeight: true
 
-        orientation: "horizontal"
-
         model: box.model
+        current: box.current
 
-        cellWidth: bboxWidth
-        cellHeight: bboxHeight
-        cacheMargin: bboxWidth
+        delegate: template PageItem {
+            id: page
 
-        snapMode: "begin"
-
-        onContentWidthChanged: () =>
-        {
-            positionViewAt(box.current);
-        }
-
-        onContentXChanged: () =>
-        {
-            const atCenter = Math.floor((contentX + cellWidth / 2) / cellWidth);
-            if (atCenter !== box.current)
-            {
-                box.current = atCenter;
-            }
-        }
-
-        delegate: template MouseBox {
-
-            onPointerDown: ev =>
-            {
-                if (pinchGesture.pinching)
-                {
-                    return;
-                }
-
-                inertialEngine.reset(ev.x, ev.y);
-                ev.accepted = true;
-            }
-
-            onPointerMove: ev =>
-            {
-                if (pinchGesture.pinching)
-                {
-                    return;
-                }
-
-                if (ev.buttons !== 0)
-                {
-                    inertialEngine.takeSample(ev.x, ev.y);
-                    ev.accepted = true;
-                }
-            }
-
-            onPointerUp: ev =>
-            {
-                if (pinchGesture.pinching)
-                {
-                    return;
-                }
-
-                inertialEngine.start();
-                ev.accepted = true;
-            }
-
-            onDoubleClick: ev =>
-            {
-                vp.scaleToFit();
-                ev.accepted = true;
-            }
-
-            onWheel: ev =>
-            {
-                if (imagesListView.scrolling)
-                {
-                    return;
-                }
-
-                const scaleAnchorX = ev.x / bbox.width;
-                const scaleAnchorY = ev.y / bbox.height;
-
-                if (ev.deltaY < 0)
-                {
-                    vp.setScale(vp.scale * 1.1, scaleAnchorX, scaleAnchorY);
-                    ev.accepted = true;
-                }
-                else if (ev.deltaY > 0)
-                {
-                    vp.setScale(vp.scale * 0.9, scaleAnchorX, scaleAnchorY);
-                    ev.accepted = true;
-                }
-            }
-
-            ViewportBox {
-                id: vp
-
-                fillWidth: true
-                fillHeight: true
-
-                onScaleChanged: () =>
-                {
-                    imagesListView.overflowBehavior = scale > minScale + 0.0001 ? "none" : "scroll";
-                }
-            }
-
-            InertialEngine {
-                id: inertialEngine
-
-                onMotion: (dx, dy) =>
-                {
-                    vp.confineViewport(vp.viewX + dx / vp.scale, vp.viewY + dy / vp.scale);
-                }
-            }
-
-            PinchGesture {
-                id: pinchGesture
-
-                onDistanceChanged: () =>
-                {
-                    if (! imagesListView.scrolling && previousDistance > 0)
-                    {
-                        const factor = distance / previousDistance;
-                        const scaleAnchorX = (x1 + (x2 - x1) / 2) / parent.bbox.width;
-                        const scaleAnchorY = (y1 + (y2 - y1) / 2) / parent.bbox.height;
-                        vp.setScale(vp.scale * factor, scaleAnchorX, scaleAnchorY);
-                    }
-                }
-            }
-
-            /*
-            Image {
-                id: image
-
-                visible: status === "success"
-
-                position: "free"
-                x: -vp.viewX * vp.scale
-                y: -vp.viewY * vp.scale
-                width: originalWidth * vp.scale
-                height: originalHeight * vp.scale
-
-                source: parent.x >= 0 ? parent.modelData.value.path : ""
-
-                onStatusChanged: () =>
-                {
-                    if (status === "success")
-                    {
-                        vp.originalWidth = originalWidth;
-                        vp.originalHeight = originalHeight;
-                        vp.scaleToFit();
-                    }
-                }
-            }
-            */
+            pageBrowser: browser
 
             Canvas {
                 id: image
 
                 property status: cnvImg.status
-                property source: parent.x >= 0 ? parent.modelData.value.path : ""
+                property source: page.x >= 0 ? page.modelData.value.path : ""
+                property vpX: page.viewport.viewX
+                property vpY: page.viewport.viewY
+                property vpScale: page.viewport.scale
 
                 visible: status === "success"
                 position: "free"
@@ -192,19 +50,23 @@ Box {
                         return;
                     }
 
-                    const sx = vp.viewX;
-                    const sy = vp.viewY;
-                    const sw = originalWidth / vp.scale;
-                    const sh = originalHeight / vp.scale;
+                    const sx = page.viewport.viewX;
+                    const sy = page.viewport.viewY;
+                    const sw = originalWidth / page.viewport.scale;
+                    const sh = originalHeight / page.viewport.scale;
 
                     const ctx = context2d;
                     ctx.clearRect(0, 0, originalWidth, originalHeight);
                     ctx.drawImage(cnvImg.get().get(), sx, sy, sw, sh, 0, 0, originalWidth, originalHeight);
                 }
 
-                vp.onViewXChanged: () => { update(); }
-                vp.onViewYChanged: () => { update(); }
-                vp.onScaleChanged: () => { update(); }
+                onVpXChanged: () => { update(); }
+                onVpYChanged: () => { update(); }
+                onVpScaleChanged: () =>
+                {
+                    browser.scrollable = page.viewport.scale < page.viewport.minScale + 0.0001;
+                    update();
+                }
                 onOriginalWidthChanged: () => { update(); }
                 onOriginalHeightChanged: () => { update(); }
 
@@ -212,9 +74,9 @@ Box {
                 {
                     if (status === "success")
                     {
-                        vp.originalWidth = cnvImg.originalWidth;
-                        vp.originalHeight = cnvImg.originalHeight;
-                        vp.scaleToFit();
+                        page.viewport.originalWidth = cnvImg.originalWidth;
+                        page.viewport.originalHeight = cnvImg.originalHeight;
+                        page.viewport.scaleToFit();
                         update();
                     }
                 }
@@ -237,38 +99,6 @@ Box {
                 text: "[icon:ui-spinner5]"
             }
 
-            ScrollIndicator { id: sh; target: vp.adapter; other: sv; orientation: "horizontal" }
-            ScrollIndicator { id: sv; target: vp.adapter; other: sh; orientation: "vertical" }
-        }
-
-    }
-
-    Button {
-        position: "free"
-        visible: imagesListView.overflowBehavior === "scroll" && box.current > 0
-        fillHeight: true
-        flat: true
-        icon: "ui-arrow_left"
-
-        onClick: ev =>
-        {
-            imagesListView.positionViewAt(box.current - 1);
-            ev.accepted = true;
-        }
-    }
-
-    Button {
-        position: "free"
-        origin: "top-right"
-        visible: imagesListView.overflowBehavior === "scroll" && box.current < box.model.size - 1
-        fillHeight: true
-        flat: true
-        icon: "ui-arrow_right"
-
-        onClick: ev =>
-        {
-            imagesListView.positionViewAt(box.current + 1);
-            ev.accepted = true;
         }
     }
 

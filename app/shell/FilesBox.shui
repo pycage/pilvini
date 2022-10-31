@@ -13,11 +13,8 @@ Box {
     property path: "/"
     property searchBox: false
     property maximized: false
-    property mayClose: true
 
     event toggleMaximized
-    event swapPanes
-    event closePane
     event filesOpen
     event takeFiles
 
@@ -114,20 +111,44 @@ Box {
             {
                 box.path = path;
             }
+
+            onSearch: () =>
+            {
+                box.searchBox = true;
+            }
         }
 
         Label {
             visible: box.searchBox
             marginLeft: theme.paddingSmall
-            marginRight: theme.paddingSmall
-            text: "[icon:ui-search]"
+            bold: true
+            text: "Search"
         }
 
         TextEntry {
             id: searchEntry
 
             visible: box.searchBox
-            width: theme.itemWidthLarge * 1.5
+            fillWidth: true
+            marginLeft: theme.paddingSmall
+
+            clearButton: true
+
+            onVisibleChanged: () =>
+            {
+                if (visible)
+                {
+                    focus = true;
+                }
+            }
+
+            onTextChanged: () =>
+            {
+                if (text === "")
+                {
+                    fsModel.query = text;
+                }
+            }
 
             onKeyDown: ev =>
             {
@@ -142,20 +163,7 @@ Box {
             visible: box.searchBox
             fillHeight: true
             flat: true
-            text: "Clear"
-
-            onClick: () =>
-            {
-                fsModel.query = "";
-                searchEntry.text = "";
-            }
-        }
-
-        Button {
-            visible: box.searchBox
-            fillHeight: true
-            flat: true
-            text: "Search"
+            icon: "ui-search"
 
             onClick: () =>
             {
@@ -163,10 +171,9 @@ Box {
             }
         }
 
-        Box { visible: box.searchBox; fillWidth: true }
-
         Button {
-            visible: filesBag.length > 0 && filesBagSource !== box.objectId
+            visible: ! box.searchBox &&
+                     filesBag.length > 0 && filesBagSource !== box.objectId
             fillHeight: true
             flat: true
             icon: "fs-save"
@@ -229,47 +236,29 @@ Box {
         }
 
         Button {
-            visible: ! box.maximized && box.mayClose
+            visible: box.searchBox
             fillHeight: true
             flat: true
-            icon: "ui-arrow_left"
+            text: "Close Search"
 
-            onClick: () =>
+            onClick: ev =>
             {
-                box.swapPanes(-1);
-            }
-        }
+                fsModel.query = "";
+                searchEntry.text = "";
+                box.searchBox = false;
 
-        Button {
-            visible: ! box.maximized && box.mayClose
-            fillHeight: true
-            flat: true
-            icon: "ui-arrow_right"
-
-            onClick: () =>
-            {
-                box.swapPanes(1);
-            }
-        }
-
-        Button {
-            visible: box.mayClose
-            fillHeight: true
-            flat: true
-            icon: "ui-clear"
-
-            onClick: () =>
-            {
-                box.closePane();
+                ev.accepted = true;
             }
         }
     }
 
     // banner
     Box {
+        id: banner
+
         visible: ! fileViewer.maximized && bannerLabel.text !== ""
 
-        height: parent.bboxHeight * 0.3
+        height: bannerImage.height + 2 * theme.paddingLarge
         overflowBehavior: "scroll"
 
         layout: "row"
@@ -327,6 +316,18 @@ Box {
             literal: true
             overflowBehavior: "wrap"
         }
+
+        OverflowScroller { }
+    }
+
+    Box {
+        visible: banner.visible
+        fillWidth: true
+        marginLeft: theme.paddingLarge
+        marginRight: theme.paddingLarge
+        marginBottom: theme.paddingSmall
+        height: 1
+        color: theme.primaryColor
     }
 
     Box {
@@ -337,7 +338,6 @@ Box {
         DropArea {
             visible: ! fileViewer.maximized
             fillWidth: true
-            //width: parent.bboxWidth * 0.25
             fillHeight: true
 
             onDropAccept: (ev) =>
@@ -423,7 +423,13 @@ Box {
                 fillHeight: true
                 layout: "center"
 
-                onContextMenu: (ev) =>
+                onClick: ev =>
+                {
+                    ev.accepted = true;
+                    selector.clear();
+                }
+
+                onContextMenu: ev =>
                 {
                     ev.accepted = true;
                     const menu = fileMenuT();
@@ -441,12 +447,17 @@ Box {
                     canFocus: true
 
                     cellWidth: displayMode === "list" ? bbox.width - 1
-                                                      : (theme.itemWidthLarge / 2) * (sizeSelector.value + 1)
-                    cellHeight: displayMode === "list" ? (theme.itemHeightMedium / 2) * (sizeSelector.value + 1)
-                                                    : cellWidth
+                                                      : (theme.itemWidthLarge / 2) * (sizeSelector.scale + 1)
+                    cellHeight: displayMode === "list" ? (theme.itemHeightMedium / 2) * (sizeSelector.scale + 1)
+                                                       : cellWidth + theme.itemHeightMedium
                     cacheMargin: cellHeight //contentHeight
 
                     model: fsModel
+
+                    onCountChanged: () =>
+                    {
+                        wait(0).then(() => { positionViewAt(0); });
+                    }
 
                     delegate: template Draggable {
 
@@ -550,7 +561,11 @@ Box {
 
                             onClick: (ev) =>
                             {
-                                const asNew = ev.original.shiftKey;
+                                ev.accepted = true;
+                                if (ev.original.shiftKey || ev.original.ctrlKey)
+                                {
+                                    return;
+                                }
 
                                 const file = parent.modelData.value;
                                 if (file.type === "d")
@@ -559,7 +574,7 @@ Box {
                                     box.path = file.path;
                                 }
                                 else if (file.mimetype === "application/zip" ||
-                                        file.mimetype === "application/x-rar-compressed")
+                                         file.mimetype === "application/x-rar-compressed")
                                 {
                                     selector.clear();
                                     console.log("open ZIP: " + file.path);
@@ -570,21 +585,18 @@ Box {
                                     const files = fsModel.getFiles(f => f.mimetype.startsWith("audio/"));
                                     const idx = files.findIndex(f => f.path === file.path);
                                     fileViewer.open(files, idx);
-                                    //box.filesOpen(files, idx, asNew);
                                 }
                                 else if (file.mimetype.startsWith("image/"))
                                 {
                                     const files = fsModel.getFiles(f => f.mimetype.startsWith("image/"));
                                     const idx = files.findIndex(f => f.path === file.path);
                                     fileViewer.open(files, idx);
-                                    //box.filesOpen(files, idx, asNew);
                                 }
                                 else if (file.mimetype.startsWith("video/"))
                                 {
                                     const files = fsModel.getFiles(f => f.mimetype.startsWith("video/"));
                                     const idx = files.findIndex(f => f.path === file.path);
                                     fileViewer.open(files, idx);
-                                    //box.filesOpen(files, idx, asNew);
                                 }
                                 else if (file.mimetype === "application/pdf" ||
                                         file.mimetype === "application/x-youtube-link" ||
@@ -592,9 +604,7 @@ Box {
                                         file.mimetype.startsWith("text/"))
                                 {
                                     fileViewer.open([file], 0);
-                                    //box.filesOpen([file], 0, asNew);
                                 }
-                                ev.accepted = true;
                             }
                         }
 
@@ -694,8 +704,7 @@ Box {
 
             visible: false
             fillWidth: maximized
-            width: parent.bboxWidth - (theme.itemWidthLarge / 2) * (sizeSelector.value + 1) - theme.paddingMedium
-            //fillWidth: true //width: parent.bboxWidth * 0.75
+            width: parent.bboxWidth - (theme.itemWidthLarge / 2) * (sizeSelector.scale + 1) - theme.paddingMedium
             fillHeight: true
 
             fs: box.fs
@@ -794,16 +803,23 @@ Box {
             overflowBehavior: "ellipsis"
         }
 
-        SelectionBox {
+        Slider {
             id: sizeSelector
 
-            property value: selection + 1
+            property scale: Math.round(seekValue)
 
-            model: ListModel {
-                data: ["1x", "2x", "3x", "4x", "5x", "6x"]
+            width: theme.itemWidthMedium
+            minValue: 1
+            maxValue: 6
+            value: 0
+
+            styleOfHandle: template Box {
+                width: height
+                height: theme.itemHeightSmall / 2
+                marginTop: (parent.bboxHeight - bboxHeight) / 2
+                borderRadius: width / 2
+                color: theme.primaryColor
             }
-
-            selection: 0
         }
 
         Button {
@@ -827,18 +843,6 @@ Box {
             onClick: (ev) =>
             {
                 fsview.displayMode = "list";
-                ev.accepted = true;
-            }
-        }
-
-        Button {
-            fillHeight: true
-            flat: true
-            icon: "media-slideshow"
-            checked: fileViewer.visible
-            onClick: (ev) =>
-            {
-                fileViewer.visible = ! fileViewer.visible;
                 ev.accepted = true;
             }
         }

@@ -30,7 +30,8 @@ shRequire(["shellfish/html"], (html) =>
                 page: 0,
                 pageWidth: 0,
                 pageHeight: 0,
-                scale: 1.0
+                scale: 1.0,
+                currentTask: null
             });
 
             this.notifyable("document");
@@ -39,6 +40,11 @@ shRequire(["shellfish/html"], (html) =>
             this.notifyable("pageHeight");
             this.notifyable("scale");
             this.notifyable("status");
+
+            this.onInitialization = () =>
+            {
+                this.render();
+            };
         }
 
         get status() { return d.get(this).status; }
@@ -105,7 +111,7 @@ shRequire(["shellfish/html"], (html) =>
         {
             const priv = d.get(this);
 
-            if (! priv.pdf || priv.pdf.status !== "success")
+            if (this.lifeCycleStatus === "new" || ! priv.pdf || priv.pdf.status !== "success")
             {
                 return;
             }
@@ -137,21 +143,28 @@ shRequire(["shellfish/html"], (html) =>
                 this.pageWidthChanged();
                 this.pageHeightChanged();
 
-                page.render({ canvasContext: this.context2d, viewport }).promise
-                .then(() =>
+                if (priv.currentTask)
+                {
+                    priv.currentTask.cancel();
+                }
+
+                priv.currentTask = page.render({ canvasContext: this.context2d, viewport });
+                priv.currentTask.promise.then(this.safeCallback(() =>
                 {
                     priv.status = "success";
                     this.statusChanged();
+                    priv.currentTask = null;
 
-                    //page.cleanup();
-                });
+                    page.cleanup();
+                }))
+                .catch(err => { });
             })
-            .catch(err =>
+            .catch(this.safeCallback(err =>
             {
                 console.error("Failed to render page " + n + ": " + err);
                 priv.status = "error";
                 this.statusChanged();
-            });
+            }));
         }
     }
     exports.PDFPage = PDFPage;

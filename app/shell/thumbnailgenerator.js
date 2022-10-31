@@ -40,7 +40,7 @@ shRequire(["shellfish/core", __dirname + "/pdfdocument.js"], (core, pdfdoc) =>
         });
     }
     
-    async function makeVideoThumbnail(path, size)
+    async function makeVideoThumbnail(path, size, crop)
     {
         const player = document.createElement("video");
         player.autoplay = true;
@@ -61,10 +61,11 @@ shRequire(["shellfish/core", __dirname + "/pdfdocument.js"], (core, pdfdoc) =>
         const h = player.videoHeight;
     
         // crop viewport
-        const cw = Math.min(w, h);
-        const ch = cw;
-        const cx = (w - cw) / 2;
-        const cy = (h - ch) / 2;
+        const cw = crop ? Math.min(w, h) : w;
+        const ch = crop ? cw : h;
+        const cx = crop ? (w - cw) / 2 : 0;
+        const cy = crop ? (h - ch) / 2 : 0;
+        const ratio = crop ? 1.0 : (w / h);
     
         ctx.fillStyle = "#000";
         ctx.fillRect(0, 0, size, size);
@@ -78,7 +79,12 @@ shRequire(["shellfish/core", __dirname + "/pdfdocument.js"], (core, pdfdoc) =>
         let error = null;
         try
         {
-            ctx.drawImage(player, cx, cy, cw, ch, 0, 0, size, size);
+            const targetWidth = size;
+            const targetHeight = crop ? size : size / ratio;
+            ctx.drawImage(player,
+                          cx, cy, cw, ch,
+                          0, (size - targetHeight) / 2,
+                          targetWidth, targetHeight);
     
             // prettify
     
@@ -115,7 +121,7 @@ shRequire(["shellfish/core", __dirname + "/pdfdocument.js"], (core, pdfdoc) =>
         return blob;
     }
     
-    async function makeImageThumbnail(path, size)
+    async function makeImageThumbnail(path, size, crop)
     {
         const load = (img, path) =>
         {
@@ -146,19 +152,25 @@ shRequire(["shellfish/core", __dirname + "/pdfdocument.js"], (core, pdfdoc) =>
         const h = image.naturalHeight;
     
         // crop viewport
-        const cw = Math.min(w, h);
-        const ch = cw;
-        const cx = (w - cw) / 2;
-        const cy = (h - ch) / 2;
+        const cw = crop ? Math.min(w, h) : w;
+        const ch = crop ? cw : h;
+        const cx = crop ? (w - cw) / 2 : 0;
+        const cy = crop ? (h - ch) / 2 : 0;
+        const ratio = crop ? 1.0 : (w / h);
     
-        ctx.fillStyle = "#000";
+        ctx.fillStyle = "#aaa";
         ctx.fillRect(0, 0, size, size);
     
         let blob = null;
         let error = null;
         try
         {
-            ctx.drawImage(image, cx, cy, cw, ch, 0, 0, size, size);
+            const targetWidth = size;
+            const targetHeight = crop ? size : size / ratio;
+            ctx.drawImage(image,
+                          cx, cy, cw, ch,
+                          0, (size - targetHeight) / 2,
+                          targetWidth, targetHeight);
     
             // get JPEG data
             const dataUrl = canvas.toDataURL("image/jpeg");
@@ -267,7 +279,7 @@ shRequire(["shellfish/core", __dirname + "/pdfdocument.js"], (core, pdfdoc) =>
         response = await window.fetch("/::proxy", opts);
         const blob = await response.blob();
         const blobUrl = URL.createObjectURL(blob);
-        const imageBlob = await makeImageThumbnail(blobUrl, size);
+        const imageBlob = await makeImageThumbnail(blobUrl, size, false);
         URL.revokeObjectURL(blobUrl);
         return imageBlob;
     }
@@ -300,7 +312,7 @@ shRequire(["shellfish/core", __dirname + "/pdfdocument.js"], (core, pdfdoc) =>
             return null;
         }
 
-        return makeImageThumbnail(imageFile.path, size);
+        return makeImageThumbnail(imageFile.path, size, true);
     }
 
     const d = new WeakMap();
@@ -430,13 +442,13 @@ shRequire(["shellfish/core", __dirname + "/pdfdocument.js"], (core, pdfdoc) =>
                     {
                         if (file.mimetype.startsWith("image/"))
                         {
-                            const blob = await makeImageThumbnail(file.path, priv.size);
+                            const blob = await makeImageThumbnail(file.path, priv.size, true);
                             await priv.filesystem.write(tnPath, blob);
                             resolve(blob);
                         }
                         else if (file.mimetype === "video/mp4")
                         {
-                            const blob = await makeVideoThumbnail(file.path, priv.size);
+                            const blob = await makeVideoThumbnail(file.path, priv.size, true);
                             await priv.filesystem.write(tnPath, blob);
                             resolve(blob);
                         }
@@ -448,7 +460,7 @@ shRequire(["shellfish/core", __dirname + "/pdfdocument.js"], (core, pdfdoc) =>
                         }
                         else if (file.mimetype === "application/x-youtube-link")
                         {
-                            const blob = await makeYouTubeThumbnail(fs, file.path, priv.size);
+                            const blob = await makeYouTubeThumbnail(fs, file.path, 320);
                             await priv.filesystem.write(tnPath, blob);
                             resolve(blob);
                         }
@@ -460,7 +472,7 @@ shRequire(["shellfish/core", __dirname + "/pdfdocument.js"], (core, pdfdoc) =>
                         }
                         else if (file.type === "d" && await fs.exists(file.path + "/cover.jpg"))
                         {
-                            const blob = await makeImageThumbnail(file.path + "/cover.jpg", priv.size);
+                            const blob = await makeImageThumbnail(file.path + "/cover.jpg", priv.size, true);
                             await priv.filesystem.write(tnPath, blob);
                             resolve(blob);
                         }

@@ -106,11 +106,11 @@ shRequire(["shellfish/core", __dirname + "/pdf.min.js"], (core, pdfjs) =>
             const loadingTask = thePdfJs.getDocument(shRequire.resource(s));
 
             console.log(loadingTask);
-            loadingTask.onProgress = (progress) =>
+            loadingTask.onProgress = this.safeCallback((progress) =>
             {
                 priv.progress = progress.loaded / progress.total;
                 this.progressChanged();
-            };
+            });
 
             loadingTask.promise
             .then(this.safeCallback(doc =>
@@ -125,12 +125,12 @@ shRequire(["shellfish/core", __dirname + "/pdf.min.js"], (core, pdfjs) =>
 
                 this.loadMetadata();
             }))
-            .catch(err =>
+            .catch(this.safeCallback(err =>
             {
                 console.error("Failed to load PDF document: " + err);
                 priv.status = "error";
                 this.statusChanged();
-            });
+            }));
 
             this.sourceChanged();
         }
@@ -166,10 +166,10 @@ shRequire(["shellfish/core", __dirname + "/pdf.min.js"], (core, pdfjs) =>
                 };
                 this.metadataChanged();
             }))
-            .catch(err =>
+            .catch(this.safeCallback(err =>
             {
                 console.error("Failed to retrieve metadata");
-            });
+            }));
         }
 
         /**
@@ -202,14 +202,14 @@ shRequire(["shellfish/core", __dirname + "/pdf.min.js"], (core, pdfjs) =>
             if (priv.doc)
             {
                 priv.doc.getData()
-                .then(data =>
+                .then(this.safeCallback(data =>
                 {
                     callback(data);
-                })
-                .catch(err =>
+                }))
+                .catch(this.safeCallback(err =>
                 {
                     console.error("Failed to retrive document data.");
-                });
+                }));
             }
         }
 

@@ -16,7 +16,7 @@ Box {
     }
 
     property windowIcon: "media-image"
-    property windowTitle: loader.fileItem ? loader.fileItem.name : ""
+    property windowTitle: loader.fileItem?.name ?? ""
 
     property files: []
 
@@ -39,7 +39,7 @@ Box {
             fillWidth: true
             overflowBehavior: "ellipsis"
             bold: true
-            text: loader.fileItem ? low.escapeMarkup(loader.fileItem.name) : ""
+            text: low.escapeMarkup(loader.item?.title ?? "")
         }
 
         /*
@@ -64,7 +64,7 @@ Box {
             id: loader
 
             property fileItem: box.current !== -1 && box.model.size > box.current ? box.model.at(box.current)
-                                                                                    : null
+                                                                                  : null
 
             fillWidth: true
             fillHeight: true
@@ -86,7 +86,7 @@ Box {
                     return imageViewerT;
                 }
                 else if (item.mimetype.startsWith("audio/") ||
-                        item.mimetype.startsWith("video/"))
+                         item.mimetype.startsWith("video/"))
                 {
                     return mediaPlayerT;
                 }
@@ -153,21 +153,13 @@ Box {
 
         model: box.model
         current: box.current
-        source: loader.fileItem ? loader.fileItem.path : ""
-
-        onCurrentChanged: () =>
-        {
-            if (box.current !== current)
-            {
-                //box.current = current;
-            }
-        }
     }
 
     property pdfViewerT: template PdfViewer {
         fillWidth: true
         fillHeight: true
-        source: loader.fileItem ? loader.fileItem.path : ""
+        source: loader.fileItem?.path ?? ""
+        title: loader.fileItem?.name ?? ""
     }
 
     property mediaPlayerT: template MediaPlayer {
@@ -193,7 +185,9 @@ Box {
         fillHeight: true
 
         property path: loader.fileItem ? loader.fileItem.path : ""
-        property title: path
+        property title: loader.fileItem ? loader.fileItem.name : path
+
+        server: "yewtu.be"
 
         onPathChanged: () =>
         {
