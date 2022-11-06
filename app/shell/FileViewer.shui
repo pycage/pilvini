@@ -11,6 +11,15 @@ Box {
 
     function open(files, idx)
     {
+        history.push(() =>
+        {
+            console.log("callback");
+            fileViewer.current = -1;
+            fileViewer.files = [];
+            fileViewer.visible = false;
+            fileViewer.maximized = false;
+        });
+
         box.files = files;
         box.current = idx;
     }
@@ -25,39 +34,15 @@ Box {
     property current: -1
     property maximized: false
 
-    event toggleMaximized
-    event swapPanes
-    event closePane
-
-    Box {
-        visible: ! box.maximized
-        fillWidth: true
-        marginLeft: theme.paddingMedium
-        marginRight: theme.paddingMedium
-
-        Label {
-            fillWidth: true
-            overflowBehavior: "ellipsis"
-            bold: true
-            text: low.escapeMarkup(loader.item?.title ?? "")
-        }
-
-        /*
-        Label {
-            fillWidth: true
-            overflowBehavior: "ellipsis"
-            text: loader.fileItem ? loader.fileItem.mimetype + "\n" + loader.fileItem.size + " Bytes" : ""
-        }
-        */
-    }
-
     Box {
         fillWidth: true
         fillHeight: true
+        /*
         marginTop: box.maximized ? 0 : theme.paddingMedium
         marginLeft: box.maximized ? 0 : theme.paddingMedium
         marginRight: box.maximized ? 0 : theme.paddingMedium
         marginBottom: box.maximized ? 0 : theme.paddingMedium
+        */
         //borderRadius: box.maximized ? 0 : 6
 
         Loader {
@@ -133,10 +118,13 @@ Box {
 
             onClick: () =>
             {
+                history.back();
+                /*
                 fileViewer.current = -1;
                 fileViewer.files = [];
                 fileViewer.visible = false;
                 fileViewer.maximized = false;
+                */
             }
         }
     }

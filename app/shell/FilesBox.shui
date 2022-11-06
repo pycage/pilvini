@@ -25,6 +25,130 @@ Box {
 
     color: theme.secondaryBackgroundColor
 
+    function setPath(newPath)
+    {
+        const currentPath = box.path;
+        history.push(() =>
+        {
+            selector.clear();
+            box.path = currentPath;
+        });
+
+        selector.clear();
+        box.path = newPath;
+    }
+
+    function openAction()
+    {
+        if (selector.selection.size !== 1)
+        {
+            return;
+        }
+
+        const idx = [...selector.selection][0];
+        const file = fsModel.at(idx);
+
+        if (file.type === "d")
+        {
+            setPath(file.path);
+        }
+        else if (file.mimetype === "application/zip" ||
+                    file.mimetype === "application/x-rar-compressed")
+        {
+            console.log("open ZIP: " + file.path);
+            setPath(file.path);
+        }
+        else if (file.mimetype.startsWith("audio/"))
+        {
+            const files = fsModel.getFiles(f => f.mimetype.startsWith("audio/"));
+            const idx = files.findIndex(f => f.path === file.path);
+            fileViewer.open(files, idx);
+        }
+        else if (file.mimetype.startsWith("image/"))
+        {
+            const files = fsModel.getFiles(f => f.mimetype.startsWith("image/"));
+            const idx = files.findIndex(f => f.path === file.path);
+            fileViewer.open(files, idx);
+        }
+        else if (file.mimetype.startsWith("video/"))
+        {
+            const files = fsModel.getFiles(f => f.mimetype.startsWith("video/"));
+            const idx = files.findIndex(f => f.path === file.path);
+            fileViewer.open(files, idx);
+        }
+        else if (file.mimetype === "application/pdf" ||
+                file.mimetype === "application/x-youtube-link" ||
+                file.mimetype.startsWith("image/") ||
+                file.mimetype.startsWith("text/"))
+        {
+            fileViewer.open([file], 0);
+        }
+    }
+
+    function goBackAction()
+    {
+        history.back();
+        //setPath(fs.dirname(box.path));
+    }
+
+    function newDirectoryAction()
+    {
+        const dlg = newDirectoryDialogT();
+        dlg.callback = newName =>
+        {
+            box.fs.mkdir(box.path, box.fs.encodeName(newName));
+        };
+        dlg.show();
+    }
+
+    function newFileAction()
+    {
+        const dlg = newFileDialogT();
+        dlg.callback = newName =>
+        {
+            box.fs.write(box.path + "/" + box.fs.encodeName(newName), new Blob([""]));
+        };
+        dlg.show();
+    }
+
+    function deleteAction()
+    {
+        if (selector.selection.size === 0)
+        {
+            return;
+        }
+
+        const idx = [...selector.selection][0];
+        const item = fsModel.at(idx);
+
+        showQuestionDialog("Delete File",
+                            "Do you want to delete this file?\n\n" +
+                            low.escapeMarkup(item.name),
+                            () =>
+        {
+            box.fs.remove(item.path);
+        });
+    }
+
+    function renameAction()
+    {
+        if (selector.selection.size !== 1)
+        {
+            return;
+        }
+
+        const idx = [...selector.selection][0];
+        const item = fsModel.at(idx);
+
+        const dlg = renameDialogT();
+        dlg.name = item.name;
+        dlg.callback = newName =>
+        {
+            box.fs.move(item.path, box.fs.pathJoin(box.fs.dirname(item.path), box.fs.encodeName(newName)));
+        };
+        dlg.show();
+    }
+
     ThumbnailGenerator {
         id: thumbnailer
 
@@ -109,7 +233,7 @@ Box {
 
             onChangePath: path =>
             {
-                box.path = path;
+                box.setPath(path);
             }
 
             onSearch: () =>
@@ -333,7 +457,7 @@ Box {
     Box {
         fillWidth: true
         fillHeight: true
-        layout: "row"
+        layout: bboxWidth > bboxHeight ? "row" : "column"
 
         DropArea {
             visible: ! fileViewer.maximized
@@ -436,6 +560,33 @@ Box {
                     menu.popup(null);
                 }
 
+                onKeyDown: ev =>
+                {
+                    if (ev.altKey)
+                    {
+                        if (ev.key === "r")
+                        {
+                            ev.accepted = true;
+                            box.renameAction();
+                        }
+                    }
+                    else if (ev.key === "Delete")
+                    {
+                        ev.accepted = true;
+                        box.deleteAction();
+                    }
+                    else if (ev.key === "Enter")
+                    {
+                        ev.accepted = true;
+                        box.openAction();
+                    }
+                    else if (ev.key === "Backspace")
+                    {
+                        ev.accepted = true;
+                        box.goBackAction();
+                    }
+                }
+
                 ListView {
                     id: fsview
 
@@ -447,10 +598,12 @@ Box {
                     canFocus: true
 
                     cellWidth: displayMode === "list" ? bbox.width - 1
-                                                      : (theme.itemWidthLarge / 2) * (sizeSelector.scale + 1)
-                    cellHeight: displayMode === "list" ? (theme.itemHeightMedium / 2) * (sizeSelector.scale + 1)
+                                                      : theme.itemWidthMedium * (sizeSelector.scale + 1) 
+                    cellHeight: displayMode === "list" ? (theme.itemHeightMedium / 2) * (sizeSelector.scale + 2)
                                                        : cellWidth + theme.itemHeightMedium
                     cacheMargin: cellHeight //contentHeight
+
+                    orientation: bboxHeight < cellHeight + theme.paddingLarge ? "horizontal" : "vertical"
 
                     model: fsModel
 
@@ -562,49 +715,12 @@ Box {
                             onClick: (ev) =>
                             {
                                 ev.accepted = true;
-                                if (ev.original.shiftKey || ev.original.ctrlKey)
+                                if (ev.original.shiftKey || ev.original.ctrlKey || ev.buttons !== 1)
                                 {
                                     return;
                                 }
 
-                                const file = parent.modelData.value;
-                                if (file.type === "d")
-                                {
-                                    selector.clear();
-                                    box.path = file.path;
-                                }
-                                else if (file.mimetype === "application/zip" ||
-                                         file.mimetype === "application/x-rar-compressed")
-                                {
-                                    selector.clear();
-                                    console.log("open ZIP: " + file.path);
-                                    box.path = file.path;
-                                }
-                                else if (file.mimetype.startsWith("audio/"))
-                                {
-                                    const files = fsModel.getFiles(f => f.mimetype.startsWith("audio/"));
-                                    const idx = files.findIndex(f => f.path === file.path);
-                                    fileViewer.open(files, idx);
-                                }
-                                else if (file.mimetype.startsWith("image/"))
-                                {
-                                    const files = fsModel.getFiles(f => f.mimetype.startsWith("image/"));
-                                    const idx = files.findIndex(f => f.path === file.path);
-                                    fileViewer.open(files, idx);
-                                }
-                                else if (file.mimetype.startsWith("video/"))
-                                {
-                                    const files = fsModel.getFiles(f => f.mimetype.startsWith("video/"));
-                                    const idx = files.findIndex(f => f.path === file.path);
-                                    fileViewer.open(files, idx);
-                                }
-                                else if (file.mimetype === "application/pdf" ||
-                                        file.mimetype === "application/x-youtube-link" ||
-                                        file.mimetype.startsWith("image/") ||
-                                        file.mimetype.startsWith("text/"))
-                                {
-                                    fileViewer.open([file], 0);
-                                }
+                                box.openAction();
                             }
                         }
 
@@ -631,7 +747,8 @@ Box {
                     }
 
                     OverflowScroller { stepSize: theme.paddingLarge }
-                    ScrollIndicator { }
+                    ScrollIndicator { orientation: "horizontal" }
+                    ScrollIndicator { orientation: "vertical" }
                 }
 
                 Label {
@@ -645,53 +762,35 @@ Box {
                         text: "New Directory"
                         onClick: () =>
                         {
-                            const dlg = newDirectoryDialogT();
-                            dlg.callback = newName =>
-                            {
-                                box.fs.mkdir(box.path, box.fs.encodeName(newName));
-                            };
-                            dlg.show();
+                            box.newDirectoryAction();
+                        }
+                    }
+
+                    MenuItem {
+                        text: "New File"
+                        onClick: () =>
+                        {
+                            box.newFileAction();
                         }
                     }
 
                     MenuSeparator { }
 
                     MenuItem {
+                        enabled: selector.selection.size > 0
                         text: "Rename"
                         onClick: () =>
                         {
-                            if (selector.selection.size !== 1)
-                            {
-                                return;
-
-                            }
-
-                            const idx = [...selector.selection][0];
-                            const item = fsModel.at(idx);
-
-                            const dlg = renameDialogT();
-                            dlg.name = item.name;
-                            dlg.callback = newName =>
-                            {
-                                box.fs.move(item.path, box.fs.pathJoin(box.fs.dirname(item.path), box.fs.encodeName(newName)));
-                            };
-                            dlg.show();
+                            box.renameAction();
                         }
                     }
 
                     MenuItem {
+                        enabled: selector.selection.size > 0
                         text: "Delete"
                         onClick: () =>
                         {
-                            const idx = [...selector.selection][0];
-                            const item = fsModel.at(idx);
-
-                            showQuestionDialog("Delete File",
-                                            "Do you want to delete this file?\n" + item.name,
-                                            () =>
-                            {
-                                box.fs.remove(item.path);
-                            });
+                            box.deleteAction();
                         }
                     }
                 }
@@ -703,9 +802,12 @@ Box {
             id: fileViewer
 
             visible: false
-            fillWidth: maximized
-            width: parent.bboxWidth - (theme.itemWidthLarge / 2) * (sizeSelector.scale + 1) - theme.paddingMedium
-            fillHeight: true
+            fillWidth: maximized || parent.bboxWidth <= parent.bboxHeight
+            fillHeight: maximized || parent.bboxWidth > parent.bboxHeight
+            width: parent.bboxWidth - fsview.cellHeight - theme.paddingMedium
+            height: parent.bboxHeight - fsview.cellHeight - theme.paddingMedium
+
+            order: parent.layout === "column" ? -1 : 0
 
             fs: box.fs
 
@@ -809,9 +911,9 @@ Box {
             property scale: Math.round(seekValue)
 
             width: theme.itemWidthMedium
-            minValue: 1
+            minValue: 0
             maxValue: 6
-            value: 0
+            value: 1
 
             styleOfHandle: template Box {
                 width: height
@@ -859,13 +961,28 @@ Box {
 
         into buttons Button {
             text: "Create"
-            onClick: () => { callback(textEntry.text); dialog.parent = null; }
+            onClick: () => { dialog.callback(textEntry.text); dialog.parent = null; }
         }
 
         into buttons Button {
             marginLeft: theme.paddingSmall
             text: "Cancel"
             onClick: () => { dialog.parent = null; }
+        }
+
+        onKeyDown: ev =>
+        {
+            if (ev.key === "Enter")
+            {
+                ev.accepted = true;
+                callback(textEntry.text);
+                parent = null;
+            }
+            else if (ev.key === "Escape")
+            {
+                ev.accepted = true;
+                parent = null;
+            }
         }
 
         Box {
@@ -892,6 +1009,64 @@ Box {
         }
     }
 
+    property newFileDialogT: template Dialog {
+        id: dialog
+
+        property name: ""
+        property callback: (newName) => { }
+
+        title: "New File"
+
+        into buttons Button {
+            text: "Create"
+            onClick: () => { dialog.callback(textEntry.text); dialog.parent = null; }
+        }
+
+        into buttons Button {
+            marginLeft: theme.paddingSmall
+            text: "Cancel"
+            onClick: () => { dialog.parent = null; }
+        }
+
+        onKeyDown: ev =>
+        {
+            if (ev.key === "Enter")
+            {
+                ev.accepted = true;
+                callback(textEntry.text);
+                parent = null;
+            }
+            else if (ev.key === "Escape")
+            {
+                ev.accepted = true;
+                parent = null;
+            }
+        }
+
+        Box {
+            layout: "center-row"
+
+            Label { text: "Name:" }
+
+            TextEntry {
+                id: textEntry
+
+                marginLeft: theme.paddingSmall
+                width: theme.itemWidthLarge * 2
+                text: "New File.txt"
+
+                onAncestorsVisibleChanged: () =>
+                {
+                    if (ancestorsVisible)
+                    {
+                        active = true;
+                        selectRange(0, text.length);
+                    }
+                }
+            }
+        }
+    }
+
     property renameDialogT: template Dialog {
         id: dialog
 
@@ -902,13 +1077,28 @@ Box {
 
         into buttons Button {
             text: "Rename"
-            onClick: () => { callback(textEntry.text); dialog.parent = null; }
+            onClick: () => { dialog.callback(textEntry.text); dialog.parent = null; }
         }
 
         into buttons Button {
             marginLeft: theme.paddingSmall
             text: "Cancel"
             onClick: () => { dialog.parent = null; }
+        }
+
+        onKeyDown: ev =>
+        {
+            if (ev.key === "Enter")
+            {
+                ev.accepted = true;
+                callback(textEntry.text);
+                parent = null;
+            }
+            else if (ev.key === "Escape")
+            {
+                ev.accepted = true;
+                parent = null;
+            }
         }
 
         Box {

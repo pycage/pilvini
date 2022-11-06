@@ -430,7 +430,7 @@ shRequire(["shellfish/core", __dirname + "/pdfdocument.js"], (core, pdfdoc) =>
                     next();
                     return;
                 }
-                console.log("check file: " + file.path + " " + file.mimetype);
+                console.log("check file: " + file.path + " " + file.mimetype + " " + file.name);
                 if (file.mimetype.startsWith("image/") ||
                     file.mimetype === "video/mp4" ||
                     file.mimetype === "application/pdf" ||

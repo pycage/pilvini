@@ -50,6 +50,38 @@ Document {
         }
     }
 
+    History {
+        id: history
+
+        property callbacks: new Map()
+        property counter: 0
+
+        function push(cb)
+        {
+            console.log("push history callback for " + counter);
+            callbacks.set(counter, cb);
+            ++counter;
+            append(counter);
+        }
+
+        onInitialization: () =>
+        {
+            append(0);
+        }
+
+        onLoad: state =>
+        {
+            console.log("history load " + JSON.stringify(state));
+            if (callbacks.has(state))
+            {
+                const cb = callbacks.get(state);
+                callbacks.delete(state);
+                cb();
+                --counter;
+            }
+        }
+    }
+
     DavFS {
         id: remoteFs
     }
