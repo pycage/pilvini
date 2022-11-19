@@ -24,6 +24,11 @@ Box {
         box.current = idx;
     }
 
+    function close()
+    {
+        history.back();
+    }
+
     property windowIcon: "media-image"
     property windowTitle: loader.fileItem?.name ?? ""
 
@@ -33,6 +38,8 @@ Box {
     property model: ListModel { data: files }
     property current: -1
     property maximized: false
+
+    property thisFileViewer: self
 
     Box {
         fillWidth: true
@@ -50,6 +57,7 @@ Box {
 
             property fileItem: box.current !== -1 && box.model.size > box.current ? box.model.at(box.current)
                                                                                   : null
+            property maximized: item?.maximized || false
 
             fillWidth: true
             fillHeight: true
@@ -91,42 +99,6 @@ Box {
             })()
         }
 
-        Button {
-            position: "free"
-            origin: "top-right"
-            opacity: containsMouse ? 1 : 0
-            width: height
-            height: theme.itemHeightMedium
-            flat: true
-            icon: fileViewer.maximized ? "ui-fullscreen_exit"
-                                       : "ui-fullscreen"
-
-            onClick: () =>
-            {
-                fileViewer.maximized = ! fileViewer.maximized;
-            }
-        }
-
-        Button {
-            position: "free"
-            origin: "top-left"
-            opacity: containsMouse ? 1 : 0
-            width: height
-            height: theme.itemHeightMedium
-            flat: true
-            icon: "ui-arrow_left"
-
-            onClick: () =>
-            {
-                history.back();
-                /*
-                fileViewer.current = -1;
-                fileViewer.files = [];
-                fileViewer.visible = false;
-                fileViewer.maximized = false;
-                */
-            }
-        }
     }
 
 
@@ -153,8 +125,6 @@ Box {
     property mediaPlayerT: template MediaPlayer {
         fillWidth: true
         fillHeight: true
-
-        minimized: false
 
         model: box.model
         current: box.current

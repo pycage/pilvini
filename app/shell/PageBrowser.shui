@@ -93,6 +93,43 @@ Box {
                 fillHeight: true
                 width: bboxHeight
                 flat: true
+                icon: "ui-clear"
+
+                onClick: ev =>
+                {
+                    ev.accepted = true;
+                    thisFileViewer.close();
+                }
+            }
+
+            Button {
+                fillHeight: true
+                width: bboxHeight
+                flat: true
+                checked: ! thisFileViewer.maximized
+                icon: "fs-folder"
+
+                onClick: ev =>
+                {
+                    ev.accepted = true;
+                    thisFileViewer.maximized = ! thisFileViewer.maximized;
+                }
+            }
+        }
+
+        Box {
+            fillWidth: true
+            marginTop: theme.paddingSmall
+            marginLeft: theme.paddingSmall
+            marginRight: theme.paddingSmall
+            height: theme.itemHeightLarge
+            layout: "row"
+
+
+            Button {
+                fillHeight: true
+                width: bboxHeight
+                flat: true
                 icon: "media-previous"
                 onClick: () =>
                 {

@@ -40,7 +40,6 @@ MouseBox {
 
     property model: ListModel { }
     property current: -1
-    property minimized: true
     property title: model.at(current) ? model.at(current).name : ""
 
     color: "black"
@@ -77,144 +76,7 @@ MouseBox {
         }
     }
 
-    // minimized player
-    Box {
-        visible: playerBox.minimized
-        fillWidth: true
-        fillHeight: true
-        layout: "row"
-
-        MouseBox {
-            visible: coverArt.source !== ""
-            fillHeight: true
-            width: height
-            marginTop: theme.paddingSmall
-            marginLeft: theme.paddingSmall
-            marginRight: theme.paddingSmall
-            marginBottom: theme.paddingSmall
-            color: theme.primaryColor
-
-            onClick: (ev) =>
-            {
-                playerBox.minimized = false;
-                ev.accepted = true;
-            }
-
-            Image {
-                visible: status === "success"
-                fillWidth: true
-                fillHeight: true
-                marginTop: 2
-                marginLeft: 2
-                marginRight: 2
-                marginBottom: 2
-                fitMode: "cover"
-                source: coverArt.source
-            }
-        }
-
-        Button {
-            fillHeight: true
-            width: bbox.height
-            flat: true
-            icon: controls.player.playing ? "media-pause" : "media-play"
-            onClick: (ev) =>
-            {
-                if (controls.player.playing)
-                {
-                    controls.player.pause();
-                }
-                else
-                {
-                    controls.player.play();
-                }
-                ev.accepted = true;
-            }
-        }
-
-        Button {
-            fillHeight: true
-            width: bbox.height
-            flat: true
-            icon: "media-previous"
-
-            onClick: (ev) =>
-            {
-                if (controls.player.currentTime < 3 && playerBox.current > 0)
-                {
-                    playerBox.current = playerBox.current - 1;
-                }
-                else
-                {
-                    controls.player.currentTime = 0;
-                }
-                ev.accepted = true;
-            }
-        }
-
-        Button {
-            enabled: !! playerBox.model && playerBox.current < playerBox.model.size - 1
-            fillHeight: true
-            width: bbox.height
-            flat: true
-            icon: "media-next"
-
-            onClick: (ev) =>
-            {
-                playerBox.current = playerBox.current + 1;
-                ev.accepted = true;
-            }
-        }
-
-        Box {
-            fillWidth: true
-            fillHeight: true
-
-            Box {
-                fillWidth: true
-                fillHeight: true
-                layout: "center"
-
-                Label {
-                    fillWidth: true
-                    overflowBehavior: "ellipsis"
-                    text: low.escapeMarkup(titleLabel.text)
-                }
-            }
-
-            SeekBar {
-                fillWidth: true
-                fillHeight: true
-                player: controls.player
-            }
-        }
-
-        Button {
-            fillHeight: true
-            width: bbox.height
-            flat: true
-            icon: "ui-unfold_more"
-
-            onClick: (ev) =>
-            {
-                playerBox.minimized = false;
-                ev.accepted = true;
-            }
-        }
-
-        Box {
-            position: "free"
-            marginLeft: theme.paddingSmall
-            marginRight: theme.paddingSmall
-            fillWidth: true
-            height: 1
-            color: theme.primaryColor
-        }
-    }
-
-    // normal player
     MouseBox {
-        visible: ! playerBox.minimized
         fillWidth: true
         fillHeight: true
 
@@ -397,8 +259,35 @@ MouseBox {
             Box {
                 visible: videoPlayer.visible
                 fillWidth: true
-                height: theme.itemHeightSmall
+                height: theme.itemHeightLarge// Small
                 layout: "row"
+
+                Button {
+                    fillHeight: true
+                    width: bboxHeight
+                    flat: true
+                    icon: "ui-clear"
+
+                    onClick: ev =>
+                    {
+                        ev.accepted = true;
+                        thisFileViewer.close();
+                    }
+                }
+
+                Button {
+                    fillHeight: true
+                    width: bboxHeight
+                    flat: true
+                    checked: ! thisFileViewer.maximized
+                    icon: "fs-folder"
+
+                    onClick: ev =>
+                    {
+                        ev.accepted = true;
+                        thisFileViewer.maximized = ! thisFileViewer.maximized;
+                    }
+                }
 
                 Box { fillWidth: true }
 
