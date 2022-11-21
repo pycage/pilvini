@@ -392,12 +392,6 @@ Document {
 
     property settingsDialogT: template SettingsDialog { }
 
-    property filesBoxT: template FilesBox {
-
-        onTakeFiles: (files) =>
-        {
-            filesBag = files;
-        }
-    }
+    property filesBoxT: template FilesBox { }
 
 }

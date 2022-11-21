@@ -1,6 +1,7 @@
 require "shellfish/ui";
 require "./BreadCrumbs.shui";
 require "./FileViewer.shui";
+require "./uploadfiles.js" as uploadfiles;
 require "./thumbnailgenerator.js";
 
 Box {
@@ -16,7 +17,6 @@ Box {
 
     event toggleMaximized
     event filesOpen
-    event takeFiles
 
     fillWidth: true
     fillHeight: true
@@ -118,6 +118,20 @@ Box {
             return;
         }
 
+        const selected = [...selector.selection];
+
+        showQuestionDialog("Delete File",
+                           "Do you want to delete " + selected.length + " items?\n\n" +
+                           selected.map(idx => low.escapeMarkup(fsModel.at(idx).name)).join("\n"),
+                           () =>
+        {
+            selected.forEach(idx =>
+            {
+                box.fs.remove(fsModel.at(idx).path);
+            });
+        });
+
+        /*
         const idx = [...selector.selection][0];
         const item = fsModel.at(idx);
 
@@ -128,6 +142,7 @@ Box {
         {
             box.fs.remove(item.path);
         });
+        */
     }
 
     function renameAction()
@@ -147,6 +162,20 @@ Box {
             box.fs.move(item.path, box.fs.pathJoin(box.fs.dirname(item.path), box.fs.encodeName(newName)));
         };
         dlg.show();
+    }
+
+    function takeFilesAction()
+    {
+        if (selector.selection.size === 0)
+        {
+            return;
+        }
+
+        const items = [];
+        selector.selection.forEach(idx => items.push(fsModel.at(idx)));
+
+        filesBag = items;
+        filesBagSource = box.objectId;
     }
 
     ThumbnailGenerator {
@@ -296,12 +325,25 @@ Box {
         }
 
         Button {
-            visible: ! box.searchBox &&
-                     filesBag.length > 0 && filesBagSource !== box.objectId
+            visible: ! box.searchBox && selector.selection.size > 0 && filesBag.length === 0
+            fillHeight: true
+            flat: true
+            icon: "fs-upload_file"
+            text: "Take Selected"
+
+            onClick: ev =>
+            {
+                box.takeFilesAction();
+                ev.accepted = true;
+            }
+        }
+
+        Button {
+            visible: ! box.searchBox && filesBag.length > 0
             fillHeight: true
             flat: true
             icon: "fs-save"
-            text: "Drop"
+            text: "Drop Here (" + filesBag.length + ")"
 
             onClick: ev =>
             {
@@ -310,6 +352,7 @@ Box {
             }
 
             property menuT: template Menu {
+
                 MenuItem {
                     text: "Copy"
                     onClick: () =>
@@ -356,6 +399,29 @@ Box {
                         filesBag = [];
                     }
                 }
+
+                MenuSeparator { }
+
+                MenuItem {
+                    text: "Clear"
+
+                    onClick: () =>
+                    {
+                        filesBag = [];
+                    }
+                }
+
+                MenuSeparator { }
+
+                Repeater {
+                    model: filesBag.length
+
+                    delegate: template MenuItem {
+                        enabled: false
+                        text: low.escapeMarkup(filesBag[modelData.index].name)
+                    }
+                }
+
             }
         }
 
@@ -480,7 +546,7 @@ Box {
 
             onDrop: (ev) =>
             {
-                console.log(JSON.stringify(ev));
+                //console.log(JSON.stringify(ev));
 
                 for (let i = 0; i < ev.items.length; ++i)
                 {
@@ -489,8 +555,26 @@ Box {
                     {
                         continue;
                     }
-                    const fileItem = item.getAsFile();
+                    const fileItem = item.webkitGetAsEntry();
                     statusLabel.text = "Uploading: " + fileItem.name;
+
+                    const progressCb = (name, progress) =>
+                    {
+                        statusLabel.text = "Uploading: " + low.escapeMarkup(name) + " " + Math.round(progress * 100) + "%";
+                    };
+
+                    uploadfiles.uploadRecursive(fileItem, box.fs, box.path, progressCb)
+                    .then(() =>
+                    {
+                        statusLabel.text = "";
+                    })
+                    .catch(err =>
+                    {
+                        statusLabel.text = "";
+                        showErrorDialog("Error Uploading File", "" + err);
+                    });
+
+                    /*
                     box.fs.write(box.fs.pathJoin(box.path, box.fs.encodeName(fileItem.name)), fileItem)
                     .then(() =>
                     {
@@ -501,6 +585,7 @@ Box {
                         statusLabel.text = "";
                         showErrorDialog("Error Uploading File", "" + err);
                     });
+                    */
                 }
 
                 if (ev.data["text/plain"])
@@ -600,7 +685,7 @@ Box {
                     cellWidth: displayMode === "list" ? bbox.width - 1
                                                       : theme.itemWidthMedium * (sizeSelector.scale + 1) 
                     cellHeight: displayMode === "list" ? (theme.itemHeightMedium / 2) * (sizeSelector.scale + 2)
-                                                       : cellWidth + theme.itemHeightMedium
+                                                       : cellWidth + theme.fontSizeMedium * 1.2 * 4
                     cacheMargin: cellHeight //contentHeight
 
                     orientation: bboxHeight < cellHeight + theme.paddingLarge ? "horizontal" : "vertical"
@@ -624,7 +709,6 @@ Box {
 
                         onDragStart: ev =>
                         {
-                            console.log("drag start");
                             const uris = [];
                             const items = [];
                             selector.selection.forEach(idx =>
@@ -706,7 +790,7 @@ Box {
                                 {
                                     selector.select(idx, "range");
                                 }
-                                else
+                                else if (! selector.selection.has(idx))
                                 {
                                     selector.select(idx, "replace");
                                 }
@@ -737,6 +821,7 @@ Box {
                         id: selector
                         multiple: true
 
+                        /*
                         onSelectionChanged: () =>
                         {
                             const items = [];
@@ -744,6 +829,7 @@ Box {
                             filesBag = items;
                             filesBagSource = box.objectId;
                         }
+                        */
                     }
 
                     OverflowScroller { stepSize: theme.paddingLarge }
@@ -804,7 +890,7 @@ Box {
             visible: false
             fillWidth: maximized || parent.bboxWidth <= parent.bboxHeight
             fillHeight: maximized || parent.bboxWidth > parent.bboxHeight
-            width: parent.bboxWidth - fsview.cellHeight - theme.paddingMedium
+            width: parent.bboxWidth - fsview.cellWidth - theme.paddingMedium
             height: parent.bboxHeight - fsview.cellHeight - theme.paddingMedium
 
             order: parent.layout === "column" ? -1 : 0
