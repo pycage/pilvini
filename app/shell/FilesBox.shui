@@ -1,6 +1,8 @@
 require "shellfish/ui";
 require "./BreadCrumbs.shui";
 require "./FileViewer.shui";
+require "./HistoryScope.shui";
+require "./NavBar.shui";
 require "./uploadfiles.js" as uploadfiles;
 require "./thumbnailgenerator.js";
 
@@ -28,8 +30,9 @@ Box {
     function setPath(newPath)
     {
         const currentPath = box.path;
-        history.push(() =>
+        thisHistory.push(() =>
         {
+            console.log("go back to " + currentPath);
             selector.clear();
             box.path = currentPath;
         });
@@ -87,7 +90,8 @@ Box {
 
     function goBackAction()
     {
-        history.back();
+        console.log("GO BACK")
+        thisHistory.back();
         //setPath(fs.dirname(box.path));
     }
 
@@ -177,6 +181,8 @@ Box {
         filesBag = items;
         filesBagSource = box.objectId;
     }
+
+    HistoryScope { id: thisHistory }
 
     ThumbnailGenerator {
         id: thumbnailer
@@ -442,471 +448,522 @@ Box {
         }
     }
 
-    // banner
-    Box {
-        id: banner
-
-        visible: ! fileViewer.maximized && bannerLabel.text !== ""
-
-        height: bannerImage.height + 2 * theme.paddingLarge
-        overflowBehavior: "scroll"
-
-        layout: "row"
-
-        fsModel.onSizeChanged: () =>
-        {
-            const items = fsModel.getFiles(f => f.name === "description.txt");
-            if (items.length > 0)
-            {
-                box.fs.read(items[0].path)
-                .then(blob => { return blob.text(); })
-                .then(data =>
-                {
-                    console.log(data);
-                    bannerLabel.text = data;
-                })
-                .catch(err => { });
-            }
-            else
-            {
-                bannerLabel.text = "";
-            }
-
-            const items2 = fsModel.getFiles(f => f.name === "cover.jpg");
-            if (items2.length > 0)
-            {
-                bannerImage.source = items2[0].path;
-            }
-            else
-            {
-                bannerImage.source = "";
-            }
-        }
-
-        Image {
-            id: bannerImage
-
-            visible: status === "success"
-
-            marginTop: theme.paddingLarge
-            marginLeft: theme.paddingLarge
-            width: theme.itemWidthLarge
-            height: width
-            fitMode: "contain"
-        }
-
-        Label {
-            id: bannerLabel
-
-            fillWidth: true
-            marginTop: theme.paddingLarge
-            marginLeft: theme.paddingLarge
-            marginRight: theme.paddingLarge
-            marginBottom: theme.paddingLarge
-            literal: true
-            overflowBehavior: "wrap"
-        }
-
-        OverflowScroller { }
-    }
-
-    Box {
-        visible: banner.visible
-        fillWidth: true
-        marginLeft: theme.paddingLarge
-        marginRight: theme.paddingLarge
-        marginBottom: theme.paddingSmall
-        height: 1
-        color: theme.primaryColor
-    }
-
     Box {
         fillWidth: true
         fillHeight: true
-        layout: bboxWidth > bboxHeight ? "row" : "column"
+        layout: "row"
 
-        DropArea {
-            visible: ! fileViewer.maximized
+        // content box
+        Box {
+            id: contentBox
+
             fillWidth: true
             fillHeight: true
+            layout: bboxWidth > bboxHeight ? "row" : "column"
 
-            onDropAccept: (ev) =>
-            {
-                if (ev.types.includes("Files"))
-                {
-                    ev.dropEffect = "copy";
-                    ev.accepted = true;
-                }
-                else if (ev.types.includes("text/plain"))
-                {
-                    ev.dropEffect = ev.original.shiftKey ? "copy" : "move";
-                    ev.accepted = true;
-                }
-            }
+            NavBar {
+                id: navbar
 
-            onDrop: (ev) =>
-            {
-                //console.log(JSON.stringify(ev));
+                visible: ! fileViewer.maximized
 
-                for (let i = 0; i < ev.items.length; ++i)
+                position: "free"
+                width: fsModel.sortRole === "time" ? theme.itemWidthLarge
+                                                : theme.itemWidthSmall
+                fillHeight: true
+
+                target: fsview
+                getLetter: idx =>
                 {
-                    const item = ev.items[i];
-                    if (item.kind !== "file")
+                    const item = fsModel.at(idx);
+                    if (fsModel.sortRole === "time")
                     {
-                        continue;
+                        return new Date(item.mtime * 1000).toDateString();
                     }
-                    const fileItem = item.webkitGetAsEntry();
-                    statusLabel.text = "Uploading: " + fileItem.name;
-
-                    const progressCb = (name, progress) =>
+                    else
                     {
-                        statusLabel.text = "Uploading: " + low.escapeMarkup(name) + " " + Math.round(progress * 100) + "%";
-                    };
-
-                    uploadfiles.uploadRecursive(fileItem, box.fs, box.path, progressCb)
-                    .then(() =>
-                    {
-                        statusLabel.text = "";
-                    })
-                    .catch(err =>
-                    {
-                        statusLabel.text = "";
-                        showErrorDialog("Error Uploading File", "" + err);
-                    });
-
-                    /*
-                    box.fs.write(box.fs.pathJoin(box.path, box.fs.encodeName(fileItem.name)), fileItem)
-                    .then(() =>
-                    {
-                        statusLabel.text = "";
-                    })
-                    .catch(err =>
-                    {
-                        statusLabel.text = "";
-                        showErrorDialog("Error Uploading File", "" + err);
-                    });
-                    */
+                        return item.name[0].toUpperCase();
+                    }
                 }
 
-                if (ev.data["text/plain"])
-                {
-                    const uris = ev.data["text/plain"].split("\r\n");
-                    console.log(JSON.stringify(uris));
-                    uris.forEach(uri =>
-                    {
-                        const destPath = box.fs.pathJoin(box.path, box.fs.filename(uri));
-                        console.log("DROP EFFECT " + ev.dropEffect);
-                        if (ev.dropEffect === "copy")
-                        {
-                            statusLabel.text = "Copying: " + box.fs.filename(uri);
-                            box.fs.copy(uri, destPath)
-                            .then(() =>
-                            {
-                                statusLabel.text = "";
-                                console.log("files copied");
-                            })
-                            .catch(err =>
-                            {
-                                statusLabel.text = "";
-                                showErrorDialog("Error Copying File", "" + err);
-                            });
-                        }
-                        else
-                        {
-                            box.fs.move(uri, destPath)
-                            .then(() =>
-                            {
-                                console.log("files moved");
-                            })
-                            .catch(err =>
-                            {
-                                showErrorDialog("Error Moving File", "" + err);
-                            });
-                        }
-                    });
-                }
+                fsModel.onLoadingChanged: () => { update(); }
+                fsModel.onSortRoleChanged: () => { update(); }
+                fsModel.onSortAscendingChanged: () => { update(); }
+                fsModel.onDirectoriesFirstChanged: () => { update(); }
+                parent.onBboxChanged: () => { update(); }
+                fsview.onContentWidthChanged: () => { update(); }
+                fsview.onContentHeightChanged: () => { update(); }
             }
 
-            MouseBox {
+            DropArea {
+                visible: ! fileViewer.maximized
+                marginLeft: navbar.bboxWidth
                 fillWidth: true
                 fillHeight: true
-                layout: "center"
 
-                onClick: ev =>
+                onDropAccept: (ev) =>
                 {
-                    ev.accepted = true;
-                    selector.clear();
-                }
-
-                onContextMenu: ev =>
-                {
-                    ev.accepted = true;
-                    const menu = fileMenuT();
-                    menu.popup(null);
-                }
-
-                onKeyDown: ev =>
-                {
-                    if (ev.altKey)
+                    if (ev.types.includes("Files"))
                     {
-                        if (ev.key === "r")
-                        {
-                            ev.accepted = true;
-                            box.renameAction();
-                        }
-                    }
-                    else if (ev.key === "Delete")
-                    {
+                        ev.dropEffect = "copy";
                         ev.accepted = true;
-                        box.deleteAction();
                     }
-                    else if (ev.key === "Enter")
+                    else if (ev.types.includes("text/plain"))
                     {
+                        ev.dropEffect = ev.original.shiftKey ? "copy" : "move";
                         ev.accepted = true;
-                        box.openAction();
-                    }
-                    else if (ev.key === "Backspace")
-                    {
-                        ev.accepted = true;
-                        box.goBackAction();
                     }
                 }
 
-                ListView {
-                    id: fsview
+                onDrop: (ev) =>
+                {
+                    //console.log(JSON.stringify(ev));
 
-                    property displayMode: "grid"
-
-                    visible: ! fsModel.loading
-                    fillWidth: true
-                    fillHeight: true
-                    canFocus: true
-
-                    cellWidth: displayMode === "list" ? bbox.width - 1
-                                                      : theme.itemWidthMedium * (sizeSelector.scale + 1) 
-                    cellHeight: displayMode === "list" ? (theme.itemHeightMedium / 2) * (sizeSelector.scale + 2)
-                                                       : cellWidth + theme.fontSizeMedium * 1.2 * 4
-                    cacheMargin: cellHeight //contentHeight
-
-                    orientation: bboxHeight < cellHeight + theme.paddingLarge ? "horizontal" : "vertical"
-
-                    model: fsModel
-
-                    onCountChanged: () =>
+                    for (let i = 0; i < ev.items.length; ++i)
                     {
-                        wait(0).then(() => { positionViewAt(0); });
-                    }
-
-                    delegate: template Draggable {
-
-                        onXChanged: () =>
+                        const item = ev.items[i];
+                        if (item.kind !== "file")
                         {
-                            if (x < 0)
-                            {
-                                fsitem.thumbnail = "";
-                            }
+                            continue;
                         }
+                        const fileItem = item.webkitGetAsEntry();
+                        statusLabel.text = "Uploading: " + fileItem.name;
 
-                        onDragStart: ev =>
+                        const progressCb = (name, progress) =>
                         {
-                            const uris = [];
-                            const items = [];
-                            selector.selection.forEach(idx =>
-                            {
-                                const item = fsview.model.at(idx);
-                                uris.push(item.path);
-                                items.push(item);
-                            });
+                            statusLabel.text = "Uploading: " + low.escapeMarkup(name) + " " + Math.round(progress * 100) + "%";
+                        };
 
-                            if (uris.length > 0)
-                            {
-                                console.log(JSON.stringify(uris));
-
-                                ev.setData("text/uri-list", uris.join("\r\n"));
-                                ev.setData("text/plain", uris.join("\r\n"));
-                                ev.setData("text/x-fileitems", JSON.stringify(items));
-                                ev.accepted = true;
-                            }
-                        }
-
-                        FSItem {
-                            id: fsitem
-
-                            property inView: file &&
-                                            parent.x >= 0 &&
-                                            parent.y >= fsview.contentY - fsview.cellHeight &&
-                                            parent.y <= fsview.contentY + fsview.bboxHeight
-
-                            property readyForThumbnail: inView && ! fsview.scrolling
-
-                            fillWidth: true
-                            fillHeight: true
-
-                            displayMode: fsview.displayMode
-                            highlighted: selector.selection.has(parent.modelData.index)
-
-                            file: parent.modelData.value
-
-                            onReadyForThumbnailChanged: () =>
-                            {
-                                if (readyForThumbnail && thumbnail === "")
-                                {
-                                    const forPath = file.path;
-
-                                    const condition = () =>
-                                    {
-                                        return lifeCycleStatus !== "destroyed" &&
-                                            file.path === forPath &&
-                                            thumbnail === "" &&
-                                            readyForThumbnail;
-                                    }
-
-                                    thumbnail = "";
-                                    thumbnailer.generate(box.fs, file, condition)
-                                    .then(safeCallback(blob =>
-                                    {
-                                        if (blob)
-                                        {
-                                            thumbnail = blobUrl(blob);
-                                        }
-                                    }, condition))
-                                    .catch(err =>
-                                    {
-
-                                    });
-                                }
-
-                            }
-
-                            onPointerDown: (ev) =>
-                            {
-                                const idx = parent.modelData.index;
-
-                                if (ev.original.ctrlKey)
-                                {
-                                    selector.select(idx, "toggle");
-                                }
-                                else if (ev.original.shiftKey)
-                                {
-                                    selector.select(idx, "range");
-                                }
-                                else if (! selector.selection.has(idx))
-                                {
-                                    selector.select(idx, "replace");
-                                }
-                            }
-
-                            onClick: (ev) =>
-                            {
-                                ev.accepted = true;
-                                if (ev.original.shiftKey || ev.original.ctrlKey || ev.buttons !== 1)
-                                {
-                                    return;
-                                }
-
-                                box.openAction();
-                            }
-                        }
-
-                        //Label { text: parent.modelData.index; color: "red"; fontSize: theme.fontSizeSmall }
-                    }
-
-                    model.onPathChanged: () =>
-                    {
-                        selector.clear();
-                        thumbnailer.cancel();
-                    }
-
-                    ListViewSelector {
-                        id: selector
-                        multiple: true
+                        uploadfiles.uploadRecursive(fileItem, box.fs, box.path, progressCb)
+                        .then(() =>
+                        {
+                            statusLabel.text = "";
+                        })
+                        .catch(err =>
+                        {
+                            statusLabel.text = "";
+                            showErrorDialog("Error Uploading File", "" + err);
+                        });
 
                         /*
-                        onSelectionChanged: () =>
+                        box.fs.write(box.fs.pathJoin(box.path, box.fs.encodeName(fileItem.name)), fileItem)
+                        .then(() =>
                         {
-                            const items = [];
-                            selection.forEach(idx => items.push(fsModel.at(idx)));
-                            filesBag = items;
-                            filesBagSource = box.objectId;
-                        }
+                            statusLabel.text = "";
+                        })
+                        .catch(err =>
+                        {
+                            statusLabel.text = "";
+                            showErrorDialog("Error Uploading File", "" + err);
+                        });
                         */
                     }
 
-                    OverflowScroller { stepSize: theme.paddingLarge }
-                    ScrollIndicator { orientation: "horizontal" }
-                    ScrollIndicator { orientation: "vertical" }
+                    if (ev.data["text/plain"])
+                    {
+                        const uris = ev.data["text/plain"].split("\r\n");
+                        console.log(JSON.stringify(uris));
+                        uris.forEach(uri =>
+                        {
+                            const destPath = box.fs.pathJoin(box.path, box.fs.filename(uri));
+                            console.log("DROP EFFECT " + ev.dropEffect);
+                            if (ev.dropEffect === "copy")
+                            {
+                                statusLabel.text = "Copying: " + box.fs.filename(uri);
+                                box.fs.copy(uri, destPath)
+                                .then(() =>
+                                {
+                                    statusLabel.text = "";
+                                    console.log("files copied");
+                                })
+                                .catch(err =>
+                                {
+                                    statusLabel.text = "";
+                                    showErrorDialog("Error Copying File", "" + err);
+                                });
+                            }
+                            else
+                            {
+                                box.fs.move(uri, destPath)
+                                .then(() =>
+                                {
+                                    console.log("files moved");
+                                })
+                                .catch(err =>
+                                {
+                                    showErrorDialog("Error Moving File", "" + err);
+                                });
+                            }
+                        });
+                    }
                 }
 
-                Label {
-                    visible: ! fsview.visible
-                    fontSize: theme.fontSizeLarge
-                    text: "[icon:ui-spinner5]"
-                }
+                MouseBox {
+                    fillWidth: true
+                    fillHeight: true
+                    layout: "center"
 
-                property fileMenuT: template Menu {
-                    MenuItem {
-                        text: "New Directory"
-                        onClick: () =>
-                        {
-                            box.newDirectoryAction();
-                        }
+                    onClick: ev =>
+                    {
+                        ev.accepted = true;
+                        selector.clear();
                     }
 
-                    MenuItem {
-                        text: "New File"
-                        onClick: () =>
-                        {
-                            box.newFileAction();
-                        }
+                    onContextMenu: ev =>
+                    {
+                        ev.accepted = true;
+                        const menu = fileMenuT();
+                        menu.popup(null);
                     }
 
-                    MenuSeparator { }
-
-                    MenuItem {
-                        enabled: selector.selection.size > 0
-                        text: "Rename"
-                        onClick: () =>
+                    onKeyDown: ev =>
+                    {
+                        if (ev.altKey)
                         {
-                            box.renameAction();
+                            if (ev.key === "r")
+                            {
+                                ev.accepted = true;
+                                box.renameAction();
+                            }
                         }
-                    }
-
-                    MenuItem {
-                        enabled: selector.selection.size > 0
-                        text: "Delete"
-                        onClick: () =>
+                        else if (ev.key === "Delete")
                         {
+                            ev.accepted = true;
                             box.deleteAction();
                         }
+                        else if (ev.key === "Enter")
+                        {
+                            ev.accepted = true;
+                            box.openAction();
+                        }
+                        else if (ev.key === "Backspace")
+                        {
+                            ev.accepted = true;
+                            box.goBackAction();
+                        }
+                    }
+
+                    ListView {
+                        id: fsview
+
+                        property displayMode: "grid"
+
+                        visible: ! fsModel.loading
+                        fillWidth: true
+                        fillHeight: true
+                        canFocus: true
+
+                        cellWidth: displayMode === "list" ? bbox.width - 1
+                                                        : theme.itemWidthMedium * (sizeSelector.scale + 1) 
+                        cellHeight: displayMode === "list" ? (theme.itemHeightMedium / 2) * (sizeSelector.scale + 2)
+                                                        : cellWidth + theme.fontSizeMedium * 1.2 * 4
+                        cacheMargin: cellHeight //contentHeight
+
+                        orientation: bboxHeight < cellHeight + theme.paddingLarge ? "horizontal" : "vertical"
+
+                        model: fsModel
+
+                        onCountChanged: () =>
+                        {
+                            wait(0).then(() => { positionViewAt(0); });
+                        }
+
+                        delegate: template Draggable {
+
+                            onXChanged: () =>
+                            {
+                                if (x < 0)
+                                {
+                                    fsitem.thumbnail = "";
+                                }
+                            }
+
+                            onDragStart: ev =>
+                            {
+                                const uris = [];
+                                const items = [];
+                                selector.selection.forEach(idx =>
+                                {
+                                    const item = fsview.model.at(idx);
+                                    uris.push(item.path);
+                                    items.push(item);
+                                });
+
+                                if (uris.length > 0)
+                                {
+                                    console.log(JSON.stringify(uris));
+
+                                    ev.setData("text/uri-list", uris.join("\r\n"));
+                                    ev.setData("text/plain", uris.join("\r\n"));
+                                    ev.setData("text/x-fileitems", JSON.stringify(items));
+                                    ev.accepted = true;
+                                }
+                            }
+
+                            FSItem {
+                                id: fsitem
+
+                                property inView: file &&
+                                                parent.x >= 0 &&
+                                                parent.y >= fsview.contentY - fsview.cellHeight &&
+                                                parent.y <= fsview.contentY + fsview.bboxHeight
+
+                                property readyForThumbnail: inView && ! fsview.scrolling
+
+                                fillWidth: true
+                                fillHeight: true
+
+                                displayMode: fsview.displayMode
+                                highlighted: selector.selection.has(parent.modelData.index)
+
+                                file: parent.modelData.value
+
+                                onReadyForThumbnailChanged: () =>
+                                {
+                                    if (readyForThumbnail && thumbnail === "")
+                                    {
+                                        const forPath = file.path;
+
+                                        const condition = () =>
+                                        {
+                                            return lifeCycleStatus !== "destroyed" &&
+                                                file.path === forPath &&
+                                                thumbnail === "" &&
+                                                readyForThumbnail;
+                                        }
+
+                                        thumbnail = "";
+                                        thumbnailer.generate(box.fs, file, condition)
+                                        .then(safeCallback(blob =>
+                                        {
+                                            if (blob)
+                                            {
+                                                thumbnail = blobUrl(blob);
+                                            }
+                                        }, condition))
+                                        .catch(err =>
+                                        {
+
+                                        });
+                                    }
+
+                                }
+
+                                onPointerDown: (ev) =>
+                                {
+                                    const idx = parent.modelData.index;
+
+                                    if (ev.original.ctrlKey)
+                                    {
+                                        selector.select(idx, "toggle");
+                                    }
+                                    else if (ev.original.shiftKey)
+                                    {
+                                        selector.select(idx, "range");
+                                    }
+                                    else if (! selector.selection.has(idx))
+                                    {
+                                        selector.select(idx, "replace");
+                                    }
+                                }
+
+                                onClick: (ev) =>
+                                {
+                                    ev.accepted = true;
+                                    if (ev.original.shiftKey || ev.original.ctrlKey || ev.buttons !== 1)
+                                    {
+                                        return;
+                                    }
+
+                                    box.openAction();
+                                }
+                            }
+
+                            //Label { text: parent.modelData.index; color: "red"; fontSize: theme.fontSizeSmall }
+                        }
+
+                        model.onPathChanged: () =>
+                        {
+                            selector.clear();
+                            thumbnailer.cancel();
+                        }
+
+                        ListViewSelector {
+                            id: selector
+                            multiple: true
+
+                            /*
+                            onSelectionChanged: () =>
+                            {
+                                const items = [];
+                                selection.forEach(idx => items.push(fsModel.at(idx)));
+                                filesBag = items;
+                                filesBagSource = box.objectId;
+                            }
+                            */
+                        }
+
+                        OverflowScroller { stepSize: theme.paddingLarge }
+                        ScrollIndicator { orientation: "horizontal" }
+                        ScrollIndicator { orientation: "vertical" }
+                    }
+
+                    Label {
+                        visible: ! fsview.visible
+                        fontSize: theme.fontSizeLarge
+                        text: "[icon:ui-spinner5]"
+                    }
+
+                    property fileMenuT: template Menu {
+                        MenuItem {
+                            text: "New Directory"
+                            onClick: () =>
+                            {
+                                box.newDirectoryAction();
+                            }
+                        }
+
+                        MenuItem {
+                            text: "New File"
+                            onClick: () =>
+                            {
+                                box.newFileAction();
+                            }
+                        }
+
+                        MenuSeparator { }
+
+                        MenuItem {
+                            enabled: selector.selection.size > 0
+                            text: "Rename"
+                            onClick: () =>
+                            {
+                                box.renameAction();
+                            }
+                        }
+
+                        MenuItem {
+                            enabled: selector.selection.size > 0
+                            text: "Delete"
+                            onClick: () =>
+                            {
+                                box.deleteAction();
+                            }
+                        }
+                    }
+                }
+
+            }
+
+            FileViewer {
+                id: fileViewer
+
+                visible: false
+                fillWidth: maximized || parent.bboxWidth <= parent.bboxHeight
+                fillHeight: maximized || parent.bboxWidth > parent.bboxHeight
+                width: parent.bboxWidth - fsview.cellWidth - theme.paddingMedium
+                height: parent.bboxHeight - fsview.cellHeight - theme.paddingMedium
+
+                order: parent.layout === "column" ? -1 : 0
+
+                fs: box.fs
+
+                onCurrentChanged: () =>
+                {
+                    if (current !== -1 && ! visible)
+                    {
+                        maximized = true;
+                        visible = true;
                     }
                 }
             }
-
         }
 
-        FileViewer {
-            id: fileViewer
+        /*
+        Box {
+            visible: banner.visible
+            fillWidth: true
+            marginLeft: theme.paddingLarge
+            marginRight: theme.paddingLarge
+            marginBottom: theme.paddingSmall
+            height: 1
+            color: theme.primaryColor
+        }
+        */
 
-            visible: false
-            fillWidth: maximized || parent.bboxWidth <= parent.bboxHeight
-            fillHeight: maximized || parent.bboxWidth > parent.bboxHeight
-            width: parent.bboxWidth - fsview.cellWidth - theme.paddingMedium
-            height: parent.bboxHeight - fsview.cellHeight - theme.paddingMedium
+        // banner
+        Box {
+            id: banner
 
-            order: parent.layout === "column" ? -1 : 0
+            visible: ! fileViewer.maximized && bannerLabel.text !== ""
 
-            fs: box.fs
+            width: parent.bboxWidth / 3
+            fillHeight: true
+            //height: bannerImage.height + 2 * theme.paddingLarge
+            overflowBehavior: "scroll"
 
-            onCurrentChanged: () =>
+            layout: "column"
+
+            fsModel.onSizeChanged: () =>
             {
-                if (current !== -1 && ! visible)
+                const items = fsModel.getFiles(f => f.name === "description.txt");
+                if (items.length > 0)
                 {
-                    maximized = true;
-                    visible = true;
+                    box.fs.read(items[0].path)
+                    .then(blob => { return blob.text(); })
+                    .then(data =>
+                    {
+                        console.log(data);
+                        bannerLabel.text = data;
+                    })
+                    .catch(err => { });
+                }
+                else
+                {
+                    bannerLabel.text = "";
+                }
+
+                const items2 = fsModel.getFiles(f => f.name === "cover.jpg");
+                if (items2.length > 0)
+                {
+                    bannerImage.source = items2[0].path;
+                }
+                else
+                {
+                    bannerImage.source = "";
                 }
             }
+
+            Image {
+                id: bannerImage
+
+                visible: status === "success"
+
+                marginTop: theme.paddingLarge
+                marginLeft: theme.paddingLarge
+                width: theme.itemWidthLarge
+                height: width
+                fitMode: "contain"
+            }
+
+            Label {
+                id: bannerLabel
+
+                fillWidth: true
+                marginTop: theme.paddingLarge
+                marginLeft: theme.paddingLarge
+                marginRight: theme.paddingLarge
+                marginBottom: theme.paddingLarge
+                literal: true
+                overflowBehavior: "wrap"
+            }
+
+            OverflowScroller { }
         }
+
     }
+
+
+
 
     // status bar
     Box {
@@ -1018,7 +1075,9 @@ Box {
             checked: fsview.displayMode === "grid"
             onClick: (ev) =>
             {
+                fsview.visible = false;
                 fsview.displayMode = "grid";
+                nextFrame(() => { fsview.visible = true; });
                 ev.accepted = true;
             }
         }
@@ -1030,7 +1089,9 @@ Box {
             checked: fsview.displayMode === "list"
             onClick: (ev) =>
             {
+                fsview.visible = false;
                 fsview.displayMode = "list";
+                nextFrame(() => { fsview.visible = true; });
                 ev.accepted = true;
             }
         }

@@ -1,5 +1,6 @@
 require "shellfish/low" as low;
 require "shellfish/ui";
+require "./HistoryScope.shui";
 require "./ImageViewer.shui";
 require "./MediaPlayer.shui";
 require "./PdfViewer.shui";
@@ -11,9 +12,8 @@ Box {
 
     function open(files, idx)
     {
-        history.push(() =>
+        thisHistory.push(() =>
         {
-            console.log("callback");
             fileViewer.current = -1;
             fileViewer.files = [];
             fileViewer.visible = false;
@@ -26,7 +26,7 @@ Box {
 
     function close()
     {
-        history.back();
+        thisHistory.back();
     }
 
     property windowIcon: "media-image"
@@ -40,6 +40,8 @@ Box {
     property maximized: false
 
     property thisFileViewer: self
+
+    HistoryScope { id: thisHistory }
 
     Box {
         fillWidth: true

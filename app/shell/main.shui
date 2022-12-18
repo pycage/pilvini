@@ -1,5 +1,6 @@
 require "shellfish/low" as low;
 require "shellfish/ui";
+require "./CodePad.shui";
 require "./FilesBox.shui";
 require "./GridLayout.shui";
 require "./SettingsDialog.shui";
@@ -13,7 +14,10 @@ require "/icons/ui-icons.css";
 Document {
     id: doc
 
+    property logInPending: true
     property loggedIn: false
+    property user: ""
+
     property filesBag: []
     property filesBagSource: null
 
@@ -31,11 +35,13 @@ Document {
         remoteFs.list("/")
         .then(f =>
         {
+            logInPending = false;
             loggedIn = true;
         })
         .catch(err =>
         {
-            alert("Login Failed.");
+            logInPending = false;
+            //alert("Login Failed.");
         });
     }
 
@@ -50,35 +56,32 @@ Document {
         }
     }
 
+    onLoggedInChanged: () =>
+    {
+        if (loggedIn)
+        {
+            windowsModel.init();
+
+            window.fetch("/whoami")
+            .then(req => req.text())
+            .then(data =>
+            {
+                doc.user = data;
+            });
+        }
+    }
+
     History {
         id: history
 
-        property callbacks: new Map()
-        property counter: 0
+        property scopes: []
 
-        function push(cb)
+        onLoad: nil =>
         {
-            console.log("push history callback for " + counter);
-            callbacks.set(counter, cb);
-            ++counter;
-            append(counter);
-        }
-
-        onInitialization: () =>
-        {
-            append(0);
-        }
-
-        onLoad: state =>
-        {
-            console.log("history load " + JSON.stringify(state));
-            if (callbacks.has(state))
+            accumulateCallback(() =>
             {
-                const cb = callbacks.get(state);
-                callbacks.delete(state);
-                cb();
-                --counter;
-            }
+                scopes.pop();
+            });
         }
     }
 
@@ -98,6 +101,7 @@ Document {
     ListModel {
         id: windowsModel
 
+        /*
         data: [{
             component: filesBoxT,
             properties: {
@@ -105,6 +109,20 @@ Document {
                 path: "/"
             }
         }]
+        */
+
+        function init()
+        {
+            reset([
+                {
+                    component: filesBoxT,
+                    properties: {
+                        fs: remoteFs,
+                        path: "/"
+                    }
+                }
+            ]);
+        }
     }
 
     Box {
@@ -195,6 +213,15 @@ Document {
                     MenuSeparator { }
 
                     MenuItem {
+                        text: "Accept Guest Code"
+                        onClick: () =>
+                        {
+                            const dlg = doc.acceptGuestDialogT();
+                            dlg.show();
+                        }
+                    }
+
+                    MenuItem {
                         text: "Log Out"
                         onClick: () =>
                         {
@@ -264,8 +291,13 @@ Document {
                 }
             }
 
+            Label {
+                marginLeft: theme.paddingMedium
+                text: "[icon:comm-person] " + low.escapeMarkup(doc.user)
+            }
+
             TimeLabel {
-                fontSize: theme.fontSizeSmall
+                marginLeft: theme.paddingMedium
             }
 
             Button {
@@ -381,16 +413,111 @@ Document {
 
     }
 
-    Placeholder {
-        visible: ! doc.loggedIn
+    Box {
+        visible: ! doc.loggedIn && ! doc.logInPending
 
         fillWidth: true
         height: documentRoot.windowHeight
+        layout: "center-column"
 
-        text: "Pilvini Private Cloud Drive"
+        Label {
+            visible: ! codeLabel.visible
+            fontSize: theme.fontSizeLarge
+            text: "Pilvini Private Cloud Drive"
+        }
+
+        Label {
+            visible: ! codeLabel.visible
+            marginBottom: theme.paddingLarge
+            fontSize: theme.fontSizeSmall
+            color: theme.secondaryColor
+            text: "Copyright (c) 2017 - 2022 by Martin Grimme"
+        }
+
+        Button {
+            visible: ! codeLabel.visible
+            marginTop: theme.paddingLarge
+            flat: true
+            text: "Login"
+
+            onClick: () =>
+            {
+                window.fetch("/login")
+                .then(req =>
+                {
+                    if (req.ok)
+                    {
+                        loggedIn = true;
+                        windowsModel.dataChanged();
+                    }
+                })
+                .catch(err =>
+                {
+                    alert(err);
+                });
+            }
+        }
+
+        Button {
+            visible: ! codeLabel.visible
+            marginTop: theme.paddingLarge
+            flat: true
+            text: "Request Guest Access"
+
+            onClick: () =>
+            {
+                const code = Math.round(Math.random() * (9999 - 1000) + 1000);
+                codeLabel.text = code;
+                window.fetch("/login?code=" + code)
+                .then(req =>
+                {
+                    codeLabel.text = "";
+                    if (req.ok)
+                    {
+                        loggedIn = true;
+                        windowsModel.dataChanged();
+                    }
+                })
+                .catch(err =>
+                {
+                    alert("Login Failed.");
+                });
+            }
+        }
+
+        Label {
+            visible: codeLabel.visible
+            fontSize: theme.fontSizeLarge
+            text: "Awaiting Authorization for Code"
+        }
+
+        Label {
+            id: codeLabel
+
+            visible: text !== ""
+            marginTop: theme.paddingLarge
+            fontSize: theme.fontSizeLarge * 2
+        }
     }
 
     property settingsDialogT: template SettingsDialog { }
+
+    property acceptGuestDialogT: template Dialog {
+        id: dialog
+
+        title: "Enter Guest Code"
+
+        CodePad {
+            width: 300
+            height: 340
+
+            onCodeEntered: code =>
+            {
+                window.fetch("/acceptLogin?code=" + code);
+                dialog.parent = null;
+            }
+        }
+    }
 
     property filesBoxT: template FilesBox { }
 

@@ -1,0 +1,29 @@
+Object {
+
+    property callbacks: []
+
+    function push(cb)
+    {
+        callbacks.push(cb);
+        history.append(null);
+        history.scopes.push(objectId);
+    }
+
+    function back()
+    {
+        if (callbacks.length > 0)
+        {
+            const cb = callbacks.pop();
+            cb();
+        }
+    }
+
+    history.onLoad: nil =>
+    {
+        const scope = history.scopes[history.scopes.length - 1];
+        if (scope === objectId)
+        {
+            back();
+        }
+    }
+}

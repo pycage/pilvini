@@ -2,6 +2,7 @@ require "shellfish/server";
 require "./proxysession.js";
 require "./virtualfs.js";
 require "./rarfs.js";
+require "./viewsdavsession.js";
 require "./zipfs.js";
 require "./ConfigSession.shui";
 
@@ -16,6 +17,8 @@ HTTPServer {
     function log(domain, level, message)
     {
         if (domain === "HTTP" ||
+            domain === "TokenAuth" ||
+            domain === "HTTPAuth" ||
             domain === "HTTPServer" ||
             domain === "Config" ||
             domain === "WWW" ||
@@ -37,15 +40,26 @@ HTTPServer {
         path: __dirname + "/../config.json"
 
         property server: ({
+            address: "0.0.0.0",
             port: 8000,
             use_ssl: false,
-            root: localFs.homeDirectory
+            certificate: ""
         })
-        property users: []
+        property users: [
+            {
+                "name": "admin",
+                "hash": "b80648545a30e0999892b517127c0e17",
+                "root": "/"
+            }
+        ]
+    }
+
+    TokenAuth {
+        id: auth
     }
 
     HTTPAuth {
-        id: auth
+        id: httpAuth
 
         users: (() =>
         {
@@ -69,14 +83,94 @@ HTTPServer {
         }
     }
 
+    // Who am I?
+    HTTPRoute {
+        authentication: auth
+
+        when: req => { return req.url === "/whoami"; }
+
+        delegate: template HTTPSession {
+            onRequest: req =>
+            {
+                response(200, "OK")
+                .body(req.user)
+                .send();
+            }
+        }
+    }
+
+    // Login
+    HTTPRoute {
+        authentication: httpAuth
+
+        when: req => { return req.url === "/login"; }
+
+        delegate: template HTTPSession {
+            onRequest: req =>
+            {
+                console.log("Login As: " + req.user);
+                const authToken = auth.issueTokenFor(req.user, req.sourceAddress);
+                response(200, "OK")
+                //.cookie("AuthToken", authToken + "; Max-Age=86400")
+                .header("Set-Cookie", "AuthToken=" + authToken + "; Max-Age=86400")
+                .send();
+            }
+        }
+    }
+
+    // Guest login with code
+    HTTPRoute {
+        when: req => { return req.url.startsWith("/login?"); }
+
+        delegate: template HTTPSession {
+            onRequest: req =>
+            {
+                auth.awaitToken(req.url.parameters.code, "guest", req.sourceAddress)
+                .then(token =>
+                {
+                    console.log("Sending Auth Code " + token);
+                    response(200, "OK")
+                    .header("Set-Cookie", "AuthToken=" + token + "; Max-Age=86400")
+                    .send();
+                })
+                .catch(err =>
+                {
+                    response(401, "Unauthorized")
+                    .send();
+                });
+            }
+        }
+    }
+
     // Logout
     HTTPRoute {
+        authentication: auth
+
         when: req => { return req.url === "/logout"; }
 
         delegate: template HTTPSession {
             onRequest: req =>
             {
+                const token = req.cookies.get("AuthToken");
+                auth.revokeToken(token);
+
                 response(401, "Unauthorized")
+                .send();
+            }
+        }
+    }
+
+    // Accept login request
+    HTTPRoute {
+        authentication: auth
+
+        when: req => { return req.url.startsWith("/acceptLogin?"); }
+
+        delegate: template HTTPSession {
+            onRequest: req =>
+            {
+                auth.authorizeCode(req.url.parameters.code);
+                response(200, "OK")
                 .send();
             }
         }
@@ -90,7 +184,7 @@ HTTPServer {
 
         delegate: template ConfigSession {
             target: configStore
-            authentication: auth
+            authentication: auth  // for passwordHash
         }
     }
 
@@ -141,6 +235,8 @@ HTTPServer {
             filesystem: localFs
             indexFile: "index.html"
             root: __dirname + "/../app"
+
+            onResponseReady: r => { r.enableCrossOriginIsolation(); }
         }
 
     }
@@ -149,10 +245,10 @@ HTTPServer {
     HTTPRoute {
         authentication: auth
 
-        delegate: template DAVSession {
+        delegate: template ViewsDAVSession {
             filesystem: vfs
             //root: configStore.server.root
-            root: user ? (configStore.users.find(item => item.name === user).root || "/") : "/"
+            root: user ? (configStore.users.find(item => item.name === user)?.root || "/") : "/"
         }
 
     }

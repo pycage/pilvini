@@ -433,6 +433,7 @@ shRequire(["shellfish/core", __dirname + "/pdfdocument.js"], (core, pdfdoc) =>
                 console.log("check file: " + file.path + " " + file.mimetype + " " + file.name);
                 if (file.mimetype.startsWith("image/") ||
                     file.mimetype === "video/mp4" ||
+                    file.mimetype === "audio/mp3" ||
                     file.mimetype === "application/pdf" ||
                     file.mimetype === "application/x-youtube-link" ||
                     file.mimetype === "application/zip" ||
@@ -449,6 +450,12 @@ shRequire(["shellfish/core", __dirname + "/pdfdocument.js"], (core, pdfdoc) =>
                         else if (file.mimetype === "video/mp4")
                         {
                             const blob = await makeVideoThumbnail(file.path, priv.size, true);
+                            await priv.filesystem.write(tnPath, blob);
+                            resolve(blob);
+                        }
+                        else if (file.mimetype === "audio/mp3")
+                        {
+                            const blob = await makeImageThumbnail(file.path + "?view=cover", priv.size, true);
                             await priv.filesystem.write(tnPath, blob);
                             resolve(blob);
                         }

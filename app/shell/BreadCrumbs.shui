@@ -43,8 +43,11 @@ Box {
 
         onClick: ev =>
         {
+            thisHistory.back();
+            /*
             const path = breadCrumbsModel.at(1).path;
             box.changePath(path);
+            */
         }
     }
 

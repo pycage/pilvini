@@ -1,0 +1,95 @@
+require "shellfish/ui";
+
+MouseBox {
+    id: navbar
+
+    property target: null
+    property getLetter: (idx) => { return ""; }
+    property count: letterRepeater.count
+
+    color: theme.secondaryBackgroundColor
+
+    layout: "center-column"
+
+    function update()
+    {
+        if (! target)
+        {
+            return;
+        }
+
+        const m = [];
+        let pos = 0;
+        let prevLetter = "";
+        let itemsPerRow = Math.floor(target.bboxWidth / target.cellWidth);
+
+        let factor = 1;
+        let maxItems = bboxHeight / theme.itemHeightSmall;
+        while (itemsPerRow > 0 && target.count / (itemsPerRow * factor) > maxItems)
+        {
+            ++factor;
+        }
+
+        for (let i = 0; itemsPerRow > 0 && i < target.count; i += itemsPerRow * factor)
+        {
+            const letter = navbar.getLetter(i);
+
+            if (letter !== prevLetter)
+            {
+                if (m.length > 0)
+                {
+                    m[m.length - 1].until = pos;
+                }
+                m.push({ position: pos, until: pos + target.cellHeight, letter: letter });
+                prevLetter = letter;
+            }
+            pos += target.cellHeight * factor;
+        }
+        letterRepeater.model.reset(m);
+    }
+
+    Repeater {
+        id: letterRepeater
+
+        model: ListModel { }
+
+        delegate: template Button {
+            fillWidth: true
+            fillHeight: true
+            flat: true
+
+            checked: target.contentY < modelData.value.until &&
+                     target.contentY + target.bboxHeight >= modelData.value.position
+            text: modelData.value.letter
+
+            labelProfile: Object {
+                property fontSize: theme.fontSizeSmall
+                property color: theme.primaryColor
+            }
+
+            onClick: () =>
+            {
+                target.contentY = modelData.value.position;
+            }
+        }
+    }
+
+    onWheel: ev =>
+    {
+        ev.accepted = true;
+        if (letterRepeater.count === 0)
+        {
+            return;
+        }
+
+        const stepSize = bboxHeight / letterRepeater.count;
+        if (ev.deltaY < 0)
+        {
+            target.contentY = target.contentY - stepSize;
+        }
+        else if (ev.deltaY > 0)
+        {
+            target.contentY = target.contentY + stepSize;
+        }
+    }
+}

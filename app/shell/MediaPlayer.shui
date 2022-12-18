@@ -67,7 +67,7 @@ MouseBox {
                 coverArt.visible = true;
                 controls.visible = true;
                 videoPlayer.source = mediaItem.path;
-                const newSource = "/::thumbnail" + mediaItem.path + "?maxWidth=1080&maxHeight=1080";
+                const newSource = mediaItem.path + "?view=cover"; //"/::thumbnail" + mediaItem.path + "?maxWidth=1080&maxHeight=1080";
                 if (coverArt.source !== newSource)
                 {
                     coverArt.source = newSource;
@@ -259,7 +259,7 @@ MouseBox {
             Box {
                 visible: videoPlayer.visible
                 fillWidth: true
-                height: theme.itemHeightLarge// Small
+                height: theme.itemHeightLarge
                 layout: "row"
 
                 Button {
