@@ -23,9 +23,7 @@ Box {
     fillWidth: true
     fillHeight: true
 
-    borderRadius: 6
-
-    color: theme.secondaryBackgroundColor
+    //borderRadius: 6
 
     function setPath(newPath)
     {
@@ -214,40 +212,10 @@ Box {
         }
     }
 
-    Image {
-        id: backdrop
-
-        visible: status === "success"
-        position: "free"
-        fillWidth: true
-        fillHeight: true
-        fitMode: "cover"
-
-        fsModel.onSizeChanged: () =>
-        {
-            source = "";
-            if (fsModel.size > 0)
-            {
-                const items = fsModel.getFiles(f => f.name === "background.jpg");
-                if (items.length > 0)
-                {
-                    source = items[0].path;
-                }
-            }
-        }
-    }
-
-    Box {
-        visible: backdrop.visible
-        position: "free"
-        fillWidth: true
-        fillHeight: true
-        color: parent.color.alpha(0.8)
-    }
-
     // title bar
     MouseBox {
         visible: ! fileViewer.maximized
+        marginTop: box.bboxY < theme.itemHeightMedium ? theme.itemHeightMedium : 0
         fillWidth: true
         height: theme.itemHeightMedium
         color: theme.secondaryBackgroundColor
@@ -451,7 +419,39 @@ Box {
     Box {
         fillWidth: true
         fillHeight: true
+        color: theme.secondaryBackgroundColor
         layout: "row"
+
+        Image {
+            id: backdrop
+
+            visible: status === "success"
+            position: "free"
+            fillWidth: true
+            fillHeight: true
+            fitMode: "cover"
+
+            fsModel.onSizeChanged: () =>
+            {
+                source = "";
+                if (fsModel.size > 0)
+                {
+                    const items = fsModel.getFiles(f => f.name === "background.jpg");
+                    if (items.length > 0)
+                    {
+                        source = items[0].path;
+                    }
+                }
+            }
+        }
+
+        Box {
+            visible: backdrop.visible
+            position: "free"
+            fillWidth: true
+            fillHeight: true
+            color: parent.color.alpha(0.8)
+        }
 
         // content box
         Box {
@@ -459,44 +459,11 @@ Box {
 
             fillWidth: true
             fillHeight: true
-            layout: bboxWidth > bboxHeight ? "row" : "column"
-
-            NavBar {
-                id: navbar
-
-                visible: ! fileViewer.maximized
-
-                position: "free"
-                width: fsModel.sortRole === "time" ? theme.itemWidthLarge
-                                                : theme.itemWidthSmall
-                fillHeight: true
-
-                target: fsview
-                getLetter: idx =>
-                {
-                    const item = fsModel.at(idx);
-                    if (fsModel.sortRole === "time")
-                    {
-                        return new Date(item.mtime * 1000).toDateString();
-                    }
-                    else
-                    {
-                        return item.name[0].toUpperCase();
-                    }
-                }
-
-                fsModel.onLoadingChanged: () => { update(); }
-                fsModel.onSortRoleChanged: () => { update(); }
-                fsModel.onSortAscendingChanged: () => { update(); }
-                fsModel.onDirectoriesFirstChanged: () => { update(); }
-                parent.onBboxChanged: () => { update(); }
-                fsview.onContentWidthChanged: () => { update(); }
-                fsview.onContentHeightChanged: () => { update(); }
-            }
+            layout: "column" //bboxWidth > bboxHeight ? "row" : "column"
 
             DropArea {
                 visible: ! fileViewer.maximized
-                marginLeft: navbar.bboxWidth
+                //marginLeft: navbar.bboxWidth
                 fillWidth: true
                 fillHeight: true
 
@@ -600,7 +567,7 @@ Box {
                 MouseBox {
                     fillWidth: true
                     fillHeight: true
-                    layout: "center"
+                    layout: "row"
 
                     onClick: ev =>
                     {
@@ -642,6 +609,31 @@ Box {
                         }
                     }
 
+                    NavBar {
+                        id: navbar
+
+                        labelWidth: fsModel.sortRole === "time" ? theme.itemWidthLarge
+                                                                : theme.itemWidthSmall
+                        width: labelWidth
+                        fillHeight: true
+
+                        orientation: parent.layout === "row" ? "vertical" : "horizontal"
+
+                        target: fsview
+                        getLabel: idx =>
+                        {
+                            const item = fsModel.at(idx);
+                            if (fsModel.sortRole === "time")
+                            {
+                                return new Date(item.mtime * 1000).toDateString();
+                            }
+                            else
+                            {
+                                return item.name[0].toUpperCase();
+                            }
+                        }
+                    }
+
                     ListView {
                         id: fsview
 
@@ -653,9 +645,9 @@ Box {
                         canFocus: true
 
                         cellWidth: displayMode === "list" ? bbox.width - 1
-                                                        : theme.itemWidthMedium * (sizeSelector.scale + 1) 
+                                                          : (theme.itemWidthSmall / 2) * (sizeSelector.scale + 6)
                         cellHeight: displayMode === "list" ? (theme.itemHeightMedium / 2) * (sizeSelector.scale + 2)
-                                                        : cellWidth + theme.fontSizeMedium * 1.2 * 4
+                                                           : cellWidth + theme.fontSizeMedium * 1.2 * 4
                         cacheMargin: cellHeight //contentHeight
 
                         orientation: bboxHeight < cellHeight + theme.paddingLarge ? "horizontal" : "vertical"
@@ -778,7 +770,7 @@ Box {
                                 }
                             }
 
-                            //Label { text: parent.modelData.index; color: "red"; fontSize: theme.fontSizeSmall }
+                            //Label { text: parent.y; color: "red"; fontSize: theme.fontSizeSmall }
                         }
 
                         model.onPathChanged: () =>
@@ -809,6 +801,10 @@ Box {
 
                     Label {
                         visible: ! fsview.visible
+
+                        position: "free"
+                        x: (parent.bboxWidth - bboxWidth) / 2
+                        y: (parent.bboxHeight - bboxHeight) / 2
                         fontSize: theme.fontSizeLarge
                         text: "[icon:ui-spinner5]"
                     }
@@ -875,20 +871,22 @@ Box {
                         visible = true;
                     }
                 }
+
+                onVisibleChanged: () =>
+                {
+                    if (visible)
+                    {
+                        console.log("hide status bar");
+                        doc.showStatusBar = false;
+                    }
+                    else
+                    {
+                        console.log("show status bar");
+                        doc.showStatusBar = true;
+                    }
+                }
             }
         }
-
-        /*
-        Box {
-            visible: banner.visible
-            fillWidth: true
-            marginLeft: theme.paddingLarge
-            marginRight: theme.paddingLarge
-            marginBottom: theme.paddingSmall
-            height: 1
-            color: theme.primaryColor
-        }
-        */
 
         // banner
         Box {
@@ -898,7 +896,7 @@ Box {
 
             width: parent.bboxWidth / 3
             fillHeight: true
-            //height: bannerImage.height + 2 * theme.paddingLarge
+            color: theme.contentBackgroundColor
             overflowBehavior: "scroll"
 
             layout: "column"

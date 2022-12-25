@@ -3,53 +3,142 @@ require "shellfish/ui";
 MouseBox {
     id: navbar
 
-    property target: null
-    property getLetter: (idx) => { return ""; }
-    property count: letterRepeater.count
+    property target: parent
+    property getLabel: (idx) => { return ""; }
+    property orientation: "vertical"
+    property labelWidth: theme.itemWidthMedium
+    property labelHeight: theme.itemHeightMedium
+    property count: labelRepeater.count
+
+    visible: target.contentHeight > target.bboxHeight
 
     color: theme.secondaryBackgroundColor
 
-    layout: "center-column"
+    layout: orientation === "vertical" ? "center-column"
+                                       : "center-row"
 
     function update()
+    {
+        accumulateCallback(() =>
+        {
+            doUpdate();
+        }, "update");
+    }
+
+    function doUpdate()
     {
         if (! target)
         {
             return;
         }
 
-        const m = [];
-        let pos = 0;
-        let prevLetter = "";
-        let itemsPerRow = Math.floor(target.bboxWidth / target.cellWidth);
-
-        let factor = 1;
-        let maxItems = bboxHeight / theme.itemHeightSmall;
-        while (itemsPerRow > 0 && target.count / (itemsPerRow * factor) > maxItems)
+        let itemsPerRow = 1;
+        let cellSize = 0;
+        if (target.orientation === "vertical")
         {
-            ++factor;
+            itemsPerRow = Math.floor(target.bboxWidth / target.cellWidth);
+            cellSize = target.cellHeight;
+        }
+        else
+        {
+            itemsPerRow = Math.floor(target.bboxHeight / target.cellHeight);
+            cellSize = target.cellWidth;
         }
 
-        for (let i = 0; itemsPerRow > 0 && i < target.count; i += itemsPerRow * factor)
+        let maxItems = 0;
+        if (orientation === "vertical")
         {
-            const letter = navbar.getLetter(i);
+            maxItems = Math.floor(bboxHeight / labelHeight);
+        }
+        else
+        {
+            maxItems = Math.floor(bboxWidth / labelWidth);
+        }
 
-            if (letter !== prevLetter)
+        let m = [];
+        let pos = 0;
+        let posFrom = 0;
+        let posTo = 0;
+        let prevLabel = "";
+
+        let rowIndex = 0;
+        for (let i = 0; i < target.count; ++i)
+        {
+            const label = navbar.getLabel(i);
+
+            if (label !== prevLabel)
             {
                 if (m.length > 0)
                 {
-                    m[m.length - 1].until = pos;
+                    m[m.length - 1].until = posTo;
                 }
-                m.push({ position: pos, until: pos + target.cellHeight, letter: letter });
-                prevLetter = letter;
+
+                posFrom = pos;
+                posTo = pos + cellSize;
+                m.push({ position: posFrom, until: posTo, label: label });
+                prevLabel = label;
             }
-            pos += target.cellHeight * factor;
+            posTo = pos + cellSize;
+
+            ++rowIndex;
+            if (rowIndex === itemsPerRow)
+            {
+                rowIndex = 0;
+                pos += cellSize;
+            }
         }
-        letterRepeater.model.reset(m);
+        
+        // remove exceeding items, but not the first or the last
+        while (m.length > 0 && maxItems > 1 && m.length > maxItems)
+        {
+            const tooMany = m.length - maxItems;
+
+            const sizes = m
+            .map((item, idx) => { return { size: item.until - item.position, index: idx }; })
+            .slice(1, -1)
+            .sort((itemA, itemB) => itemA.size - itemB.size);
+
+            const toRemove = sizes
+            .slice(0, tooMany)
+            .map(item => item.index);
+
+            if (toRemove.length === 0)
+            {
+                break;
+            }
+
+            m = m.filter((nil, idx) => toRemove.indexOf(idx) === -1);
+        }
+
+        labelRepeater.model.reset(m);
+    }
+
+    onBboxChanged: () => { update(); }
+    onLabelWidthChanged: () => { update(); }
+    onGetLabelChanged: () => { update(); }
+    target.onLayoutChange: () => { update(); }
+
+    onWheel: ev =>
+    {
+        ev.accepted = true;
+        if (labelRepeater.count === 0)
+        {
+            return;
+        }
+
+        const stepSize = bboxHeight / labelRepeater.count;
+        if (ev.deltaY < 0)
+        {
+            target.contentY = target.contentY - stepSize;
+        }
+        else if (ev.deltaY > 0)
+        {
+            target.contentY = target.contentY + stepSize;
+        }
     }
 
     Repeater {
-        id: letterRepeater
+        id: labelRepeater
 
         model: ListModel { }
 
@@ -58,9 +147,9 @@ MouseBox {
             fillHeight: true
             flat: true
 
-            checked: target.contentY < modelData.value.until &&
+            checked: target.contentY <= modelData.value.until &&
                      target.contentY + target.bboxHeight >= modelData.value.position
-            text: modelData.value.letter
+            text: modelData.value.label
 
             labelProfile: Object {
                 property fontSize: theme.fontSizeSmall
@@ -74,22 +163,4 @@ MouseBox {
         }
     }
 
-    onWheel: ev =>
-    {
-        ev.accepted = true;
-        if (letterRepeater.count === 0)
-        {
-            return;
-        }
-
-        const stepSize = bboxHeight / letterRepeater.count;
-        if (ev.deltaY < 0)
-        {
-            target.contentY = target.contentY - stepSize;
-        }
-        else if (ev.deltaY > 0)
-        {
-            target.contentY = target.contentY + stepSize;
-        }
-    }
 }

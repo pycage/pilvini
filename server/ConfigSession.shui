@@ -29,9 +29,16 @@ HTTPSession {
 
     onRequest: ev =>
     {
+        if (! target?.ready)
+        {
+            response(500, "Server Not Ready")
+            .send();
+            return;
+        }
+
         if (ev.method === "GET")
         {
-            const parts = ev.url.split("/").slice(2);
+            const parts = ev.url.path.split("/").slice(2);
             let item = target;
             parts.forEach(p => item = item ? item[p] : null);
 
@@ -59,7 +66,7 @@ HTTPSession {
         }
         else if (ev.method === "POST")
         {
-            const parts = ev.url.split("/").slice(2);
+            const parts = ev.url.path.split("/").slice(2);
             const method = parts[0];
 
             ev.body()
