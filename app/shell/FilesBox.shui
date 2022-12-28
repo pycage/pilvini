@@ -1,5 +1,6 @@
 require "shellfish/ui";
 require "./BreadCrumbs.shui";
+require "./downloader.js";
 require "./FileViewer.shui";
 require "./HistoryScope.shui";
 require "./NavBar.shui";
@@ -166,6 +167,22 @@ Box {
         dlg.show();
     }
 
+    function downloadAction()
+    {
+        if (selector.selection.size !== 1)
+        {
+            return;
+        }
+
+        const idx = [...selector.selection][0];
+        const item = fsModel.at(idx);
+
+        if (item.type !== "d")
+        {
+            downloader.download(item.path, item.name);
+        }
+    }
+
     function takeFilesAction()
     {
         if (selector.selection.size === 0)
@@ -181,6 +198,8 @@ Box {
     }
 
     HistoryScope { id: thisHistory }
+
+    Downloader { id: downloader }
 
     ThumbnailGenerator {
         id: thumbnailer
@@ -493,20 +512,23 @@ Box {
                             continue;
                         }
                         const fileItem = item.webkitGetAsEntry();
-                        statusLabel.text = "Uploading: " + fileItem.name;
+                        statusLabel.text = fileItem.name;
 
                         const progressCb = (name, progress) =>
                         {
-                            statusLabel.text = "Uploading: " + low.escapeMarkup(name) + " " + Math.round(progress * 100) + "%";
+                            statusLabel.text = low.escapeMarkup(name) + " " + Math.round(progress * 100) + "%";
                         };
 
+                        statusSpinner.counter += 1;
                         uploadfiles.uploadRecursive(fileItem, box.fs, box.path, progressCb)
                         .then(() =>
                         {
+                            statusSpinner.counter -= 1;
                             statusLabel.text = "";
                         })
                         .catch(err =>
                         {
+                            statusSpinner.counter -= 1;
                             statusLabel.text = "";
                             showErrorDialog("Error Uploading File", "" + err);
                         });
@@ -609,12 +631,11 @@ Box {
                         }
                     }
 
-                    NavBar {
+                    IndexScroller {
                         id: navbar
 
-                        labelWidth: fsModel.sortRole === "time" ? theme.itemWidthLarge
-                                                                : theme.itemWidthSmall
-                        width: labelWidth
+                        labelSize: theme.itemHeightSmall
+                        //width: orientation === "vertical" ? labelsize : -1
                         fillHeight: true
 
                         orientation: parent.layout === "row" ? "vertical" : "horizontal"
@@ -626,6 +647,22 @@ Box {
                             if (fsModel.sortRole === "time")
                             {
                                 return new Date(item.mtime * 1000).toDateString();
+                            }
+                            else if (fsModel.sortRole === "size")
+                            {
+                                let size = Math.ceil(item.size / 1024);
+                                const units = ["KB", "MB", "GB", "TB"];
+
+                                for (let i = 0; i < units.length; ++i)
+                                {
+                                    const unit = units[i];
+                                    if (size < 1024)
+                                    {
+                                        return (i === 0 ? size : size.toFixed(1)) + " " + unit;
+                                    }
+                                    size /= 1024;
+                                }
+                                return "" + item.size;
                             }
                             else
                             {
@@ -699,7 +736,7 @@ Box {
                                                 parent.y >= fsview.contentY - fsview.cellHeight &&
                                                 parent.y <= fsview.contentY + fsview.bboxHeight
 
-                                property readyForThumbnail: inView && ! fsview.scrolling
+                                property readyForThumbnail: inView && ! fsview.scrolling && ! fsview.rendering
 
                                 fillWidth: true
                                 fillHeight: true
@@ -843,6 +880,17 @@ Box {
                             onClick: () =>
                             {
                                 box.deleteAction();
+                            }
+                        }
+
+                        MenuSeparator { }
+
+                        MenuItem {
+                            enabled: selector.selection.size === 1
+                            text: "Download"
+                            onClick: () =>
+                            {
+                                box.downloadAction();
                             }
                         }
                     }
@@ -1036,6 +1084,16 @@ Box {
         Label {
             marginLeft: theme.paddingSmall
             text: fsview.count + " items"
+        }
+
+        Label {
+            id: statusSpinner
+
+            property counter: 0
+
+            visible: counter > 0
+            marginLeft: theme.paddingSmall
+            text: "[icon:ui-spinner5] Uploading"
         }
 
         Label {
