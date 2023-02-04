@@ -23,7 +23,7 @@ Document {
     property filesBagSource: null
 
     property darkMode: true //systemDarkMode
-    property darkTheme: DarkTheme { contentBackgroundColor: "black" }
+    property darkTheme: DarkTheme { contentBackgroundColor: colorName("black") }
     property lightTheme: Theme { }
     theme: darkMode ? darkTheme : lightTheme
 
@@ -35,6 +35,11 @@ Document {
 
     onInitialization: () =>
     {
+        if (window.localStorage)
+        {
+            window.localStorage.setItem("shellfish-use-cache", "true");
+        }
+
         remoteFs.list("/")
         .then(f =>
         {
@@ -65,7 +70,7 @@ Document {
         if (loggedIn)
         {
             // initialize
-            windowsModel.init();
+            windowsModel.initModel();
 
             window.fetch("/whoami")
             .then(req => req.text())
@@ -106,7 +111,7 @@ Document {
     ListModel {
         id: windowsModel
 
-        function init()
+        function initModel()
         {
             reset([
                 {
@@ -132,8 +137,6 @@ Document {
         Box {
             fillWidth: true
             fillHeight: true
-            marginLeft: toolbar.orientation === "vertical" ? toolbar.bboxWidth : 0
-            marginBottom: toolbar.orientation === "horizontal" ? toolbar.bboxHeight : 0
 
             GridLayout {
                 id: grid

@@ -1,40 +1,51 @@
 require "shellfish/ui";
 
 Box {
+    id: box
 
-    onInitialization: () =>
+    function regRead(key)
     {
-        window.fetch("/::config/server")
-        .then(response => response.text())
-        .then(data =>
+        return new Promise((resolve, reject) =>
         {
-            console.log("Got data: " + data);
-            priv.server = JSON.parse(data);
-            priv.modified = false;
-        })
-        .catch(err =>
-        {
-
+            window.fetch("/::config?key=" + key)
+            .then(response => response.text())
+            .then(data => { resolve(JSON.parse(data)); })
+            .catch(err => { reject(err); });
         });
     }
 
-    onDestruction: () =>
+    function regWrite(key, value)
     {
-        if (priv.modified)
+        return new Promise((resolve, reject) =>
         {
-            const obj = {
-                key: "server",
-                data: priv.server
-            };
-            window.fetch("/::config/set", { method: "POST", body: JSON.stringify(obj) });
-        }
+            window.fetch("/::config?key=" + key, { method: "POST", body: JSON.stringify(value) })
+            .then(resolve())
+            .catch(err => { reject(err); });
+        });
     }
+
+    onInitialization: () =>
+    {
+        async function f()
+        {
+            addressEntry.text = await regRead("/server/address");
+            portEntry.value = await regRead("/server/port");
+            sslSwitch.checked = await regRead("/server/use_ssl");
+            certSelector.certificate = await regRead("/server/certificate");
+
+            priv.loaded = true;
+        };
+
+        f();
+    }
+
+    fillWidth: true
+    fillHeight: true
 
     Object {
         id: priv
 
-        property modified: false
-        property server: ({ })
+        property loaded: false
     }
 
     Ruler { id: labelRuler }
@@ -45,19 +56,20 @@ Box {
         Label {
             ruler: labelRuler
             minWidth: labelRuler.max.width
-            bold: true
             text: "Listen Adress"
         }
 
         TextEntry {
+            id: addressEntry
+
             marginLeft: theme.paddingMedium
-            text: priv.server.address
 
             onTextChanged: () =>
             {
-                console.log("Listen Changed: " + text);
-                priv.server.address = text;
-                priv.modified = true;
+                if (priv.loaded)
+                {
+                    box.regWrite("/server/address", text);
+                }
             }
         }
     }
@@ -69,21 +81,23 @@ Box {
         Label {
             ruler: labelRuler
             minWidth: labelRuler.max.width
-            bold: true
             text: "Port"
         }
 
         SpinBox {
+            id: portEntry
+
             marginLeft: theme.paddingMedium
             minValue: 80
             maxValue: 65535
             stepSize: 1
-            value: priv.server.port
 
             onValueChanged: () =>
             {
-                priv.server.port = value;
-                priv.modified = true;
+                if (priv.loaded)
+                {
+                    box.regWrite("/server/port", value);
+                }
             }
 
         }
@@ -96,43 +110,61 @@ Box {
         Label {
             ruler: labelRuler
             minWidth: labelRuler.max.width
-            bold: true
             text: "Use SSL"
         }
 
         Switch {
+            id: sslSwitch
             marginLeft: theme.paddingMedium
-            checked: priv.server.use_ssl
 
             onCheckedChanged: () =>
             {
-                priv.server.use_ssl = checked;
-                priv.modified = true;
+                if (priv.loaded)
+                {
+                    box.regWrite("/server/use_ssl", checked);
+                }
             }
         }
     }
 
     Box {
+        enabled: sslSwitch.checked
         marginTop: theme.paddingMedium
         layout: "center-row"
 
         Label {
             ruler: labelRuler
             minWidth: labelRuler.max.width
-            bold: true
-            text: "Content Root"
+            text: "Certificate"
         }
 
-        TextEntry {
-            marginLeft: theme.paddingMedium
-            text: priv.server.root
+        Button {
+            id: certSelector
 
-            onTextChanged: () =>
+            property certificate: ""
+
+            marginLeft: theme.paddingMedium
+            text: "Select File"
+
+            onClick: () =>
             {
-                priv.server.root = text;
-                priv.modified = true;
+                fileSelector.open(files =>
+                {
+                    const f = files[0];
+                    f.text()
+                    .then(data =>
+                    {
+                        certificate = data;
+                        if (priv.loaded)
+                        {
+                            box.regWrite("/server/certificate", data);
+                        }
+                    });
+                });
             }
         }
+
+        FileSelector { id: fileSelector }
     }
 
 }

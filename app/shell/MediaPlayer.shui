@@ -191,6 +191,7 @@ MouseBox {
             marginRight: marginLeft
             marginBottom: marginLeft
 
+            /*
             Box {
                 visible: coverArt.visible && !! playerBox.model && playerBox.model.size > 1
                 fillWidth: true
@@ -225,26 +226,6 @@ MouseBox {
                             }
 
                             text = low.escapeMarkup(stripExtension(modelData.value.name));
-
-                            /*
-                            fetchManager.fetch("/::tags" + modelData.value.path)
-                            .then(response =>
-                            {
-                                if (response.ok)
-                                {
-                                    return response.text();
-                                }
-                            })
-                            .then(data =>
-                            {
-                                const tags = JSON.parse(data);
-                                text = tags.TITLE || stripExtension(modelData.value.name);
-                            })
-                            .catch(err =>
-                            {
-
-                            });
-                            */
                         }
 
                         onClick: (ev) =>
@@ -255,6 +236,7 @@ MouseBox {
                     }
                 }
             }
+            */
 
             Box {
                 visible: videoPlayer.visible
@@ -275,6 +257,7 @@ MouseBox {
                     }
                 }
 
+                /*
                 Button {
                     fillHeight: true
                     width: bboxHeight
@@ -288,6 +271,7 @@ MouseBox {
                         thisFileViewer.maximized = ! thisFileViewer.maximized;
                     }
                 }
+                */
 
                 Box { fillWidth: true }
 
@@ -437,15 +421,16 @@ MouseBox {
                     text: formatTime(seekbar.seeking ? seekbar.seekTime : controls.player.currentTime)
                 }
 
-                Label {
+                Button {
                     id: titleLabel
 
                     fillWidth: true
                     marginLeft: theme.paddingMedium
                     marginRight: theme.paddingMedium
-                    bold: true
-                    horizontalAlignment: "center"
-                    overflowBehavior: "ellipsis"
+                    flat: true
+                    //bold: true
+                    //horizontalAlignment: "center"
+                    //overflowBehavior: "ellipsis"
 
                     playerBox.onCurrentChanged: () =>
                     {
@@ -485,6 +470,34 @@ MouseBox {
                         {
                             text = low.escapeMarkup(stripExtension(file.name));
                         }
+                    }
+
+                    onClick: ev =>
+                    {
+                        ev.accepted = true;
+
+                        const menu = menuT();
+                        menu.popup(self);
+                    }
+
+                    property menuT: template Menu {
+
+                        Repeater {
+                            model: playerBox.model
+
+                            delegate: template MenuItem {
+                                text: (modelData.index + 1) + " - " +
+                                      low.escapeMarkup(stripExtension(modelData.value.name))
+                                maxWidth: titleLabel.bboxWidth
+
+                                onClick: () =>
+                                {
+                                    playerBox.current = modelData.index;
+                                    thisMenu.parent = null;
+                                }
+                            }
+                        }
+
                     }
                 }
 

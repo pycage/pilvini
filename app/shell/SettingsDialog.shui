@@ -4,6 +4,8 @@ Dialog {
     id: dialog
 
     title: "Settings"
+    windowWidth: 640
+    windowHeight: 480
 
     into buttons Button {
         marginLeft: theme.paddingSmall
@@ -14,14 +16,16 @@ Dialog {
     Box {
         id: box
 
-        //width: documentRoot.windowWidth - 2 * theme.paddingLarge
-        //height: 300
+        fillWidth: true
+        fillHeight: true
 
         layout: "row"
 
+        // categories selector
         Box {
             width: theme.itemWidthLarge
-            height: 300
+            //height: 300
+            fillHeight: true
             color: theme.contentBackgroundColor
             borderColor: theme.borderColor
             borderWidth: 1
@@ -88,19 +92,14 @@ Dialog {
 
         Box {
             marginLeft: theme.paddingMedium
-            width: setupLoader.bbox.width
-            height: setupLoader.bbox.height
-
-            //widthTransition: NumberAnimation { duration: 300 }
-
-            //fillWidth: true
-            //fillHeight: true
+            fillWidth: true
+            fillHeight: true
 
             Loader {
                 id: setupLoader
 
-                //fillWidth: true
-                //fillHeight: true
+                fillWidth: true
+                fillHeight: true
             }
         }
     }

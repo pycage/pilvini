@@ -3,7 +3,6 @@ require "./BreadCrumbs.shui";
 require "./downloader.js";
 require "./FileViewer.shui";
 require "./HistoryScope.shui";
-require "./NavBar.shui";
 require "./uploadfiles.js" as uploadfiles;
 require "./thumbnailgenerator.js";
 
@@ -183,6 +182,20 @@ Box {
         }
     }
 
+    function copyLinkAction()
+    {
+        if (selector.selection.size !== 1)
+        {
+            return;
+        }
+
+        const idx = [...selector.selection][0];
+        const item = fsModel.at(idx);
+
+        const url = window.location.origin + item.path;
+        window.navigator.clipboard.writeText(url);
+    }
+
     function takeFilesAction()
     {
         if (selector.selection.size === 0)
@@ -215,6 +228,29 @@ Box {
         path: box.path
         sortRole: sortSelector.role
         sortAscending: sortSelector.ascending
+        withHidden: sortSelector.showHidden
+
+        function getFiles(predicate)
+        {
+            const result = [];
+            for (let i = 0; i < size; ++i)
+            {
+                const f = at(i);
+                if (predicate(f))
+                {
+                    result.push(f);
+                }
+            }
+            return result;
+        }
+    }
+
+    FSModel {
+        id: fsModel2
+
+        filesystem: box.fs
+        path: box.path
+        withHidden: true
 
         function getFiles(predicate)
         {
@@ -248,6 +284,8 @@ Box {
         }
 
         BreadCrumbs {
+            id: breadcrumbs
+
             visible: ! box.searchBox
             fillWidth: true
             fillHeight: true
@@ -450,12 +488,12 @@ Box {
             fillHeight: true
             fitMode: "cover"
 
-            fsModel.onSizeChanged: () =>
+            fsModel2.onSizeChanged: () =>
             {
                 source = "";
-                if (fsModel.size > 0)
+                if (fsModel2.size > 0)
                 {
-                    const items = fsModel.getFiles(f => f.name === "background.jpg");
+                    const items = fsModel2.getFiles(f => f.name === ".pilvini-background.jpg");
                     if (items.length > 0)
                     {
                         source = items[0].path;
@@ -478,11 +516,10 @@ Box {
 
             fillWidth: true
             fillHeight: true
-            layout: "column" //bboxWidth > bboxHeight ? "row" : "column"
+            layout: bboxWidth > bboxHeight ? "row" : "column"
 
             DropArea {
                 visible: ! fileViewer.maximized
-                //marginLeft: navbar.bboxWidth
                 fillWidth: true
                 fillHeight: true
 
@@ -632,21 +669,27 @@ Box {
                     }
 
                     IndexScroller {
-                        id: navbar
+                        id: indexScroller
 
                         labelSize: theme.itemHeightSmall
                         //width: orientation === "vertical" ? labelsize : -1
                         fillHeight: true
+                        width: theme.itemWidthMedium
 
                         orientation: parent.layout === "row" ? "vertical" : "horizontal"
 
                         target: fsview
+
                         getLabel: idx =>
                         {
                             const item = fsModel.at(idx);
+                            const type = item.type === "d" ? "/"
+                                                           : " ";
+
                             if (fsModel.sortRole === "time")
                             {
-                                return new Date(item.mtime * 1000).toDateString();
+                                const d = new Date(item.mtime * 1000);
+                                return type + ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][d.getMonth()] + " '" + (d.getFullYear() % 100);
                             }
                             else if (fsModel.sortRole === "size")
                             {
@@ -658,15 +701,39 @@ Box {
                                     const unit = units[i];
                                     if (size < 1024)
                                     {
-                                        return (i === 0 ? size : size.toFixed(1)) + " " + unit;
+                                        return type + (i === 0 ? size : size.toFixed(1)) + " " + unit;
                                     }
                                     size /= 1024;
                                 }
-                                return "" + item.size;
+                                return type + item.size;
                             }
                             else
                             {
-                                return item.name[0].toUpperCase();
+                                return type + item.name[0].toUpperCase();
+                            }
+                        }
+
+                        styleOfItem: template Box {
+
+                            property text: parent.text || ""
+                            property highlighted: parent.inView || parent.containsMouse
+                            property isDirectory: text[0] === "/"
+
+                            fillWidth: true
+                            fillHeight: true
+
+                            color: highlighted ? theme.highlightBackgroundColor
+                                               : isDirectory ? theme.primaryBackgroundColor
+                                                             : "transparent"
+
+                            layout: "center"
+
+                            Label {
+                                fontSize: theme.fontSizeSmall
+                                color: parent.highlighted ? theme.highlightColor
+                                                          : theme.primaryColor
+                                bold: true
+                                text: parent.text.substring(1)
                             }
                         }
                     }
@@ -674,7 +741,7 @@ Box {
                     ListView {
                         id: fsview
 
-                        property displayMode: "grid"
+                        property displayMode: "list"
 
                         visible: ! fsModel.loading
                         fillWidth: true
@@ -887,6 +954,15 @@ Box {
 
                         MenuItem {
                             enabled: selector.selection.size === 1
+                            text: "Copy Link"
+                            onClick: () =>
+                            {
+                                box.copyLinkAction();
+                            }
+                        }
+
+                        MenuItem {
+                            enabled: selector.selection.size === 1
                             text: "Download"
                             onClick: () =>
                             {
@@ -902,10 +978,8 @@ Box {
                 id: fileViewer
 
                 visible: false
-                fillWidth: maximized || parent.bboxWidth <= parent.bboxHeight
-                fillHeight: maximized || parent.bboxWidth > parent.bboxHeight
-                width: parent.bboxWidth - fsview.cellWidth - theme.paddingMedium
-                height: parent.bboxHeight - fsview.cellHeight - theme.paddingMedium
+                fillWidth: true
+                fillHeight: true
 
                 order: parent.layout === "column" ? -1 : 0
 
@@ -940,18 +1014,18 @@ Box {
         Box {
             id: banner
 
-            visible: ! fileViewer.maximized && bannerLabel.text !== ""
+            visible: ! fileViewer.visible && bannerLabel.text !== ""
 
             width: parent.bboxWidth / 3
             fillHeight: true
-            color: theme.contentBackgroundColor
+            color: theme.contentBackgroundColor.alpha(0.3)
             overflowBehavior: "scroll"
 
             layout: "column"
 
-            fsModel.onSizeChanged: () =>
+            fsModel2.onSizeChanged: () =>
             {
-                const items = fsModel.getFiles(f => f.name === "description.txt");
+                const items = fsModel2.getFiles(f => f.name === ".pilvini-description.txt");
                 if (items.length > 0)
                 {
                     box.fs.read(items[0].path)
@@ -968,7 +1042,7 @@ Box {
                     bannerLabel.text = "";
                 }
 
-                const items2 = fsModel.getFiles(f => f.name === "cover.jpg");
+                const items2 = fsModel2.getFiles(f => f.name === ".pilvini-cover.jpg");
                 if (items2.length > 0)
                 {
                     bannerImage.source = items2[0].path;
@@ -979,12 +1053,23 @@ Box {
                 }
             }
 
+            Label {
+                fillWidth: true
+                marginTop: theme.paddingLarge
+                marginLeft: theme.paddingLarge
+                marginRight: theme.paddingLarge
+                marginBottom: theme.paddingLarge
+                fontSize: theme.fontSizeLarge
+                literal: true
+                overflowBehavior: "wrap"
+                text: breadcrumbs.text
+            }
+
             Image {
                 id: bannerImage
 
                 visible: status === "success"
 
-                marginTop: theme.paddingLarge
                 marginLeft: theme.paddingLarge
                 width: theme.itemWidthLarge
                 height: width
@@ -1040,6 +1125,7 @@ Box {
             property role: ["name", "time", "size"][selection % 3]
             property ascending: selection < 3
             property selection: 0
+            property showHidden: false
 
             property model: ListModel {
                 data: [
@@ -1064,6 +1150,20 @@ Box {
             }
 
             property menuT: template Menu {
+
+                MenuItem {
+                    icon: sortSelector.showHidden ? "ui-check_box" : "ui-check_box_blank"
+                    text: "Show Hidden"
+
+                    onClick: ev =>
+                    {
+                        ev.accepted = true;
+                        sortSelector.showHidden = ! sortSelector.showHidden;
+                    }
+                }
+
+                MenuSeparator { }
+                
                 Repeater {
                     model: sortSelector.model
 
@@ -1078,6 +1178,7 @@ Box {
                         }
                     }
                 }
+
             }
         }
 
@@ -1333,6 +1434,26 @@ Box {
                     }
                 }
             }
+        }
+    }
+
+    property linkDialogT: template Dialog {
+        id: dialog
+
+        property url: "http://localhost/index.html"
+
+        title: "File Link"
+
+        into buttons Button {
+            marginLeft: theme.paddingSmall
+            text: "Close"
+            onClick: () => { dialog.parent = null; }
+        }
+
+        Html {
+            width: 3 * theme.itemWidthLarge
+            height: theme.itemHeightMedium
+            html: "<a href='" + dialog.url + "'>" + dialog.url + "</a>"
         }
     }
 

@@ -2,34 +2,11 @@ require "shellfish/server";
 
 HTTPSession {
 
-    property target: null
-    property authentication: null
-
-    function callMethod(method, data)
-    {
-        if (method === "set")
-        {
-            const obj = JSON.parse(data);
-            const parts = obj.key.split(".");
-            const key = parts.pop();
-            let item = target;
-            parts.forEach(p => item = item ? item[p] : null);
-            item[key] = obj.data;
-            log("Config", "info", "Set " + obj.key + " = " + JSON.stringify(obj.data));
-            return "";
-        }
-        else if (method === "passwordHash")
-        {
-            console.log(data);
-            const obj = JSON.parse(data);
-            return authentication.passwordHash(obj.user, "", obj.password);
-        }
-        return "";
-    }
+    property registry: null
 
     onRequest: ev =>
     {
-        if (! target?.ready)
+        if (! registry?.ready)
         {
             response(500, "Server Not Ready")
             .send();
@@ -38,43 +15,34 @@ HTTPSession {
 
         if (ev.method === "GET")
         {
-            const parts = ev.url.path.split("/").slice(2);
-            let item = target;
-            parts.forEach(p => item = item ? item[p] : null);
+            const key = ev.url.parameters.key;
+            console.log("Get Registry Key: " + key);
 
-            if (item !== null)
+            const value = registry.read(key);
+            if (value !== undefined)
             {
-                log("Config", "info", "Read: " + parts.join("."));
-                try
-                {
-                    response(200, "OK")
-                    .body(JSON.stringify(item))
-                    .send();
-                }
-                catch (err)
-                {
-                    log("Config", "error", "" + err);
-                    response(500, "Internal Error")
-                    .send();
-                }
+                console.log("-> " + JSON.stringify(value));
+                response(200, "OK")
+                .body(JSON.stringify(value), "application/json")
+                .send();
             }
             else
             {
                 response(404, "Not Found")
                 .send();
             }
+
         }
         else if (ev.method === "POST")
         {
-            const parts = ev.url.path.split("/").slice(2);
-            const method = parts[0];
+            const key = ev.url.parameters.key;
+            console.log("Set Registry Key: " + key);
 
             ev.body()
             .then(data =>
             {
-                const result = callMethod(method, data);
+                registry.write(key, JSON.parse(data));
                 response(200, "OK")
-                .body(result)
                 .send();
             })
             .catch(err =>
@@ -83,6 +51,15 @@ HTTPSession {
                 response(500, "Internal Error")
                 .send();
             });
+        }
+        else if (ev.method === "DELETE")
+        {
+            const key = ev.url.parameters.key;
+            console.log("Delete Registry Key: " + key);
+
+            registry.remove(key);
+            response(200, "OK")
+            .send();
         }
         else
         {

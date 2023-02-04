@@ -355,7 +355,15 @@ shRequire(["shellfish/core", __dirname + "/pdfdocument.js"], (core, pdfdoc) =>
         get filesystem() { return d.get(this).filesystem; }
         set filesystem(fs)
         {
+            if (d.get(this).filesystem)
+            {
+                d.get(this).filesystem.referenceRemove(this);
+            }
             d.get(this).filesystem = fs;
+            if (fs)
+            {
+                fs.referenceAdd(this);
+            }
             this.filesystemChanged();
             this.cleanup();
         }
@@ -477,9 +485,9 @@ shRequire(["shellfish/core", __dirname + "/pdfdocument.js"], (core, pdfdoc) =>
                             await priv.filesystem.write(tnPath, blob);
                             resolve(blob);                            
                         }
-                        else if (file.type === "d" && await fs.exists(file.path + "/cover.jpg"))
+                        else if (file.type === "d" && await fs.exists(file.path + "/.pilvini-cover.jpg"))
                         {
-                            const blob = await makeImageThumbnail(file.path + "/cover.jpg", priv.size, true);
+                            const blob = await makeImageThumbnail(file.path + "/.pilvini-cover.jpg", priv.size, true);
                             await priv.filesystem.write(tnPath, blob);
                             resolve(blob);
                         }

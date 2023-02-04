@@ -2,17 +2,17 @@ require "shellfish/server";
 require "./proxysession.js";
 require "./virtualfs.js";
 require "./rarfs.js";
+require "./registryfile.js";
+require "./registrymonitor.js";
 require "./viewsdavsession.js";
 require "./zipfs.js";
 require "./ConfigSession.shui";
 
 HTTPServer {
 
-    enabled: configStore.ready
-    secure: configStore.server.use_ssl
+    enabled: false
     certificate: __dirname + "/../cert/server.cert"
     key: __dirname + "/../cert/server.key"
-    port: configStore.server.port
 
     function log(domain, level, message)
     {
@@ -29,29 +29,68 @@ HTTPServer {
         }
     }
 
+    registryFile.onReadyChanged: () =>
+    {
+        if (registryFile.ready)
+        {
+            wait(100).then(() =>
+            {
+                host = registryFile.read("/server/address");
+                port = registryFile.read("/server/port");
+                secure = registryFile.read("/server/use_ssl");
+                enabled = true;
+            });
+        }
+    }
+
     LocalFS {
         id: localFs
     }
     
-    FileStorage {
-        id: configStore
+    RegistryFile {
+        id: registryFile
 
         filesystem: localFs
-        path: __dirname + "/../config.json"
+        path: __dirname + "/../config.db"
 
-        property server: ({
-            address: "0.0.0.0",
-            port: 8000,
-            use_ssl: false,
-            certificate: ""
-        })
-        property users: [
+        onReadyChanged: () =>
+        {
+            if (ready)
             {
-                "name": "admin",
-                "hash": "b80648545a30e0999892b517127c0e17",
-                "root": "/"
+                if (! list("/").includes("server"))
+                {
+                    console.log("add server");
+                    mkdir("/server");
+                    create("/server/address", "0.0.0.0");
+                    create("/server/port", 8000);
+                    create("/server/use_ssl", false);
+                    create("/server/certificate", "");
+                }
+                if (! list("/").includes("users"))
+                {
+                    mkdir("/users");
+                    mkdir("/users/admin");
+                    create("/users/admin/name", "admin");
+                    create("/users/admin/hash", "b80648545a30e0999892b517127c0e17");
+                    create("/users/admin/root", "/");
+                }
             }
-        ]
+        }
+    }
+
+    RegistryMonitor {
+        id: registryMonitor
+
+        registry: registryFile
+        mapping: ({
+            "/server/address": "serverAddress",
+            "/server/port": "serverPort",
+            "/server/use_ssl": "serverUseSsl"
+        })
+
+        property serverAddress: ""
+        property serverPort: 8000
+        property serverUseSsl: false
     }
 
     TokenAuth {
@@ -61,12 +100,37 @@ HTTPServer {
     HTTPAuth {
         id: httpAuth
 
-        users: (() =>
+        function updateUsers()
         {
+            console.log("UPDATE USERS DB");
             const m = { };
-            configStore.users.forEach(entry => m[entry.name] = entry.hash);
-            return m;
-        })()
+            registryFile.list("/users").forEach(name =>
+            {
+                const hash = registryFile.read("/users/" + name + "/hash", "");
+                if (hash !== "")
+                {
+                    m[name] = hash;
+                }
+            });
+            console.log(JSON.stringify(m));
+            users = m;
+        }
+
+        registryFile.onReadyChanged: () =>
+        {
+            if (registryFile.ready)
+            {
+                updateUsers();
+            }
+        }
+
+        registryFile.onChangeValue: path =>
+        {
+            if (path.startsWith("/users"))
+            {
+                updateUsers();
+            }
+        }
     }
 
     VirtualFS {
@@ -86,8 +150,7 @@ HTTPServer {
     // Who am I?
     HTTPRoute {
         authentication: auth
-
-        when: req => { return req.url === "/whoami"; }
+        prefix: "/whoami"
 
         delegate: template HTTPSession {
             onRequest: req =>
@@ -99,28 +162,9 @@ HTTPServer {
         }
     }
 
-    // Login
-    HTTPRoute {
-        authentication: httpAuth
-
-        when: req => { return req.url === "/login"; }
-
-        delegate: template HTTPSession {
-            onRequest: req =>
-            {
-                console.log("Login As: " + req.user);
-                const authToken = auth.issueTokenFor(req.user, req.sourceAddress);
-                response(200, "OK")
-                //.cookie("AuthToken", authToken + "; Max-Age=86400")
-                .header("Set-Cookie", "AuthToken=" + authToken + "; Max-Age=86400")
-                .send();
-            }
-        }
-    }
-
     // Guest login with code
     HTTPRoute {
-        when: req => { return req.url.startsWith("/login?"); }
+        prefix: "/login?"
 
         delegate: template HTTPSession {
             onRequest: req =>
@@ -142,11 +186,28 @@ HTTPServer {
         }
     }
 
+    // Login
+    HTTPRoute {
+        authentication: httpAuth
+        prefix: "/login"
+
+        delegate: template HTTPSession {
+            onRequest: req =>
+            {
+                console.log("Login As: " + req.user);
+                const authToken = auth.issueTokenFor(req.user, req.sourceAddress);
+                response(200, "OK")
+                //.cookie("AuthToken", authToken + "; Max-Age=86400")
+                .header("Set-Cookie", "AuthToken=" + authToken + "; Max-Age=86400")
+                .send();
+            }
+        }
+    }
+
     // Logout
     HTTPRoute {
         authentication: auth
-
-        when: req => { return req.url === "/logout"; }
+        prefix: "/logout"
 
         delegate: template HTTPSession {
             onRequest: req =>
@@ -163,8 +224,7 @@ HTTPServer {
     // Accept login request
     HTTPRoute {
         authentication: auth
-
-        when: req => { return req.url.startsWith("/acceptLogin?"); }
+        prefix: "/acceptLogin?"
 
         delegate: template HTTPSession {
             onRequest: req =>
@@ -179,12 +239,30 @@ HTTPServer {
     // Server configuration
     HTTPRoute {
         authentication: auth
-
-        when: req => { return req.url.startsWith("/::config/"); }
+        prefix: "/::config"
 
         delegate: template ConfigSession {
-            target: configStore
-            authentication: auth  // for passwordHash
+            registry: registryFile
+        }
+    }
+
+    // Password hash
+    HTTPRoute {
+        authentication: auth
+        prefix: "/::setPassword"
+
+        delegate: template HTTPSession {
+            onRequest: req =>
+            {
+                const user = req.url.parameters.user;
+                const pw = req.url.parameters.password;
+                const hash = httpAuth.passwordHash(user, "", pw);
+
+                registryFile.write("/users/" + user + "/hash", hash);
+
+                response(200, "OK")
+                .send();
+            }
         }
     }
 
@@ -218,8 +296,7 @@ HTTPServer {
     // Proxy Access
     HTTPRoute {
         authentication: auth
-
-        when: req => { return req.url.startsWith("/::proxy"); }
+        prefix: "/::proxy"
 
         delegate: template ProxySession {
 
@@ -228,7 +305,7 @@ HTTPServer {
 
     // Applications
     HTTPRoute {
-        when: req => { return req.url.startsWith("/::"); }
+        prefix: "/::"
 
         delegate: template WebSession {
             urlMapper: url => { return "/" + url.substr(3); }
@@ -247,8 +324,8 @@ HTTPServer {
 
         delegate: template ViewsDAVSession {
             filesystem: vfs
-            //root: configStore.server.root
-            root: user ? (configStore.users.find(item => item.name === user)?.root || "/") : "/"
+            root: user ? registryFile.read("/users/" + user + "/root", "/")
+                       : "/"
         }
 
     }

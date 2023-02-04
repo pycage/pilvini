@@ -5,6 +5,7 @@ Box {
     id: box
 
     property path: ""
+    property text: ""
 
     event changePath
     event search
@@ -28,6 +29,7 @@ Box {
         }
         m.reverse();
         m.push({ name: "", path: "/" });
+        text = m[0].name;
         breadCrumbsModel.reset(m);
     }
 

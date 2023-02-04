@@ -3,49 +3,124 @@ require "shellfish/ui";
 Box {
     id: usersBox
 
-    onInitialization: () =>
+    function regRead(key, defaultValue)
     {
-        window.fetch("/::config/users")
-        .then(response => response.text())
-        .then(data =>
+        return new Promise((resolve, reject) =>
         {
-            priv.users = JSON.parse(data);
-            priv.modified = false;
-        })
-        .catch(err =>
-        {
-
+            window.fetch("/::config?key=" + key)
+            .then(response => response.text())
+            .then(data => { resolve(JSON.parse(data)); })
+            .catch(err => { resolve(defaultValue); });
         });
     }
 
-    onDestruction: () =>
+    function regWrite(key, value)
     {
-        if (priv.modified)
+        return new Promise((resolve, reject) =>
         {
-            const obj = {
-                key: "users",
-                data: priv.users
-            };
-            window.fetch("/::config/set", { method: "POST", body: JSON.stringify(obj) });
-        }
+            window.fetch("/::config?key=" + key, { method: "POST", body: JSON.stringify(value) })
+            .then(response =>
+            {
+                if (response.ok)
+                {
+                    resolve();
+                }
+                else
+                {
+                    reject("Server Error");
+                }
+            })
+            .catch(err => { reject(err); });
+        });
     }
+
+    function regDelete(key)
+    {
+        return new Promise((resolve, reject) =>
+        {
+            window.fetch("/::config?key=" + key, { method: "DELETE" })
+            .then(resolve)
+            .catch(err => { reject(err); });
+        });
+    }
+
+    function createUser(name)
+    {
+        async function f()
+        {
+
+            try
+            {
+                await regWrite("/users/" + name + "/hash", "");
+                await regWrite("/users/" + name + "/root", "/");
+
+                priv.users.push({
+                    name: name,
+                    root: "/"
+                });
+                listView.model.reset(priv.users);
+            }
+            catch (err)
+            {
+                documentRoot.showErrorDialog("Error", "Failed to create user: " + err);
+            }
+        }
+
+        f();
+    }
+
+    function changePassword(pw)
+    {
+        const userObj = priv.users[listView.currentIndex];
+        window.fetch("/::setPassword?user=" + userObj.name + "&password=" + pw)
+        .then(() => { })
+        .catch(err =>
+        {
+            documentRoot.showErrorDialog("Error", "Failed to change password: " + err);
+        });
+    }
+
+    onInitialization: () =>
+    {
+        async function f()
+        {
+            const users = await regRead("/users");
+            const userObjs = [];
+            for (let i = 0; i < users.length; ++i)
+            {
+                const name = users[i];
+                const hash = await regRead("/users/" + name + "/hash", "");
+                const root = await regRead("/users/" + name + "/root", "/");
+
+                userObjs.push({ name: name, hash: hash, root: root });
+            }
+
+            priv.users = userObjs;
+            unsaved = false;
+        }
+
+        f();
+    }
+
+    fillWidth: true
+    fillHeight: true
 
     Object {
         id: priv
 
-        property modified: false
         property users: []
     }
 
     Box {
-        width: theme.itemWidthLarge * 2
-        height: 300
+        fillWidth: true
+        fillHeight: true
 
         Box {
             fillWidth: true
             layout: "row"
 
             Button {
+                icon: "ui-add"
                 text: "New User"
 
                 onClick: ev =>
@@ -74,10 +149,16 @@ Box {
                 fillHeight: true
 
                 cellWidth: bbox.width
-                cellHeight: theme.itemHeightMedium
+                cellHeight: theme.itemHeightLarge
 
                 model: ListModel {
                     data: priv.users
+                }
+
+                onCurrentIndexChanged: () =>
+                {
+                    const root = priv.users[currentIndex].root || "/";
+                    rootEntry.text = root;
                 }
 
                 delegate: template MouseBox {
@@ -94,16 +175,31 @@ Box {
                         listView.currentIndex = modelData.index;
                     }
 
-                    Label {
-                        marginLeft: theme.paddingMedium
+                    Box {
+                        marginLeft: theme.paddingSmall
                         marginRight: theme.paddingMedium
                         fillWidth: true
-                        color: parent.selected ? theme.highlightColor
-                                            : theme.primaryColor
-                        text: parent.modelData.value.name
+
+                        Label {
+                            fillWidth: true
+                            color: parent.selected ? theme.highlightColor
+                                                   : theme.primaryColor
+                            text: parent.parent.modelData.value.name
+                        }
+
+                        Label {
+                            fillWidth: true
+                            color: parent.selected ? theme.highlightColor
+                                                   : theme.secondaryColor
+                            fontSize: theme.fontSizeSmall
+                            text: parent.parent.modelData.value.root
+                        }
                     }
 
+
                     Button {
+                        marginRight: theme.paddingSmall
+                        icon: "ui-delete"
                         text: "Delete"
 
                         onClick: () =>
@@ -112,11 +208,97 @@ Box {
                             items.splice(parent.modelData.index, 1);
                             priv.users = items;
                             listView.model.reset(priv.users);
-                            priv.modified = true;
+                            usersBox.regDelete("/users/" + parent.modelData.value.name);
                         }
                     }
                 }
+
+                ScrollIndicator { }
             }
+        }
+
+        Box {
+            fillWidth: true
+            fillHeight: true
+            marginTop: theme.paddingMedium
+
+            Ruler { id: labelRuler }
+
+            Box {
+                fillWidth: true
+                height: theme.itemHeightSmall
+                layout: "center-row"
+
+                Label {
+                    ruler: labelRuler
+                    minWidth: labelRuler.max.width
+                    text: "Root"
+                }
+
+                TextEntry {
+                    id: rootEntry
+
+                    fillWidth: true
+                    marginLeft: theme.paddingSmall
+
+                    onTextChanged: () =>
+                    {
+                        const userObj = priv.users[listView.currentIndex];
+                        userObj.root = text;
+                        usersBox.regWrite("/users/" + userObj.name + "/root", text);
+                    }
+                }
+            }
+
+            Button {
+                marginTop: theme.paddingSmall
+                text: "Change Password"
+
+                onClick: ev =>
+                {
+                    ev.accepted = true;
+                    const dlg = usersBox.passwordDialogT();
+                    dlg.show();
+                }
+            }
+
+            /*
+            Box {
+                fillWidth: true
+                height: theme.itemHeightSmall
+                marginTop: theme.paddingSmall
+                layout: "center-row"
+
+                CheckBox {
+
+                }
+
+                Label {
+                    fillWidth: true
+                    marginLeft: theme.paddingSmall
+                    text: "Create Files"
+                }
+
+            }
+
+            Box {
+                fillWidth: true
+                height: theme.itemHeightSmall
+                marginTop: theme.paddingSmall
+                layout: "center-row"
+
+                CheckBox {
+
+                }
+
+                Label {
+                    fillWidth: true
+                    marginLeft: theme.paddingSmall
+                    text: "Delete Files"
+                }
+
+            }
+            */
         }
     }
 
@@ -125,40 +307,21 @@ Box {
     property dialogT: template Dialog {
         id: dlg
 
+        title: "Create User"
+
         into buttons Button {
-            text: "Add"
+            enabled: nameEntry.text !== ""
+            text: "Create"
 
             onClick: () =>
             {
-                const name = nameEntry.text;
-                const pw = passwordEntry.text;
-
+                usersBox.createUser(nameEntry.text);
                 dlg.close();
-
-                const obj = {
-                    user: name,
-                    password: pw
-                };
-                console.log(JSON.stringify(obj));
-                window.fetch("/::config/passwordHash", { method: "POST", body: JSON.stringify(obj) })
-                .then(response => response.text())
-                .then(data =>
-                {
-                    priv.users.push({
-                        name: name,
-                        hash: data
-                    });
-                    listView.model.reset(priv.users);
-                    priv.modified = true;
-                })
-                .catch(err =>
-                {
-
-                });
             }
         }
 
         into buttons Button {
+            marginLeft: theme.paddingSmall
             text: "Cancel"
 
             onClick: () =>
@@ -167,12 +330,61 @@ Box {
             }
         }
 
-        TextEntry {
-            id: nameEntry
-        }
+        Box {
+            layout: "center-row"
 
-        TextEntry {
-            id: passwordEntry
+            Label {
+                text: "Name"
+            }
+
+            TextEntry {
+                id: nameEntry
+
+                marginLeft: theme.paddingMedium
+            }
         }
     }
+
+
+    property passwordDialogT: template Dialog {
+        id: dlg
+
+        title: "Change Password"
+
+        into buttons Button {
+            enabled: passwordEntry.text !== ""
+            text: "Apply"
+
+            onClick: () =>
+            {
+                usersBox.changePassword(passwordEntry.text);
+                dlg.close();
+            }
+        }
+
+        into buttons Button {
+            marginLeft: theme.paddingSmall
+            text: "Cancel"
+
+            onClick: () =>
+            {
+                dlg.close();
+            }
+        }
+
+        Box {
+            layout: "center-row"
+
+            Label {
+                text: "Password"
+            }
+
+            TextEntry {
+                id: passwordEntry
+
+                marginLeft: theme.paddingMedium
+            }
+        }
+    }
+
 }
