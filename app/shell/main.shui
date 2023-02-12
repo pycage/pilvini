@@ -233,6 +233,7 @@ Document {
 
             opacity: doc.showStatusBar || containsMouse ? 1.0 : 0.0
 
+            // menu button
             Button {
                 fillHeight: true
                 flat: true
@@ -328,6 +329,7 @@ Document {
                 }
             }
 
+            // window list
             Box {
                 fillWidth: true
                 fillHeight: true

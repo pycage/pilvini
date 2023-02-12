@@ -117,7 +117,7 @@ shRequire(["shellfish/core"], core =>
             priv.running = true;
             this.runningChanged();
 
-            priv.timerHandle = setInterval(() =>
+            priv.timerHandle = setInterval(this.safeCallback(() =>
             {
                 // apply simple physics
                 const now = Date.now();
@@ -141,7 +141,7 @@ shRequire(["shellfish/core"], core =>
                     clearInterval(priv.timerHandle);
                     priv.timerHandle = null;
                 }
-            }, 10);
+            }), 10);
         }
 
         /**

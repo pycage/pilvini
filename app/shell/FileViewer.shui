@@ -87,7 +87,6 @@ Box {
                 }
                 else if (item.mimetype.startsWith("text/"))
                 {
-                    console.log("TEXT: " + item.path);
                     return textViewerT;
                 }
                 else if (item.mimetype === "application/x-youtube-link")

@@ -102,6 +102,7 @@ Box {
                 }
             }
 
+            /*
             Button {
                 fillHeight: true
                 width: bboxHeight
@@ -115,6 +116,7 @@ Box {
                     thisFileViewer.maximized = ! thisFileViewer.maximized;
                 }
             }
+            */
         }
 
         Box {
@@ -201,7 +203,7 @@ Box {
             fillWidth: true
 
             minValue: 0
-            maxValue: box.model.size - 1
+            maxValue: imagesListView.count - 1
             value: 0
 
             onPosChanged: () =>
@@ -213,6 +215,7 @@ Box {
             {
                 if (pos === targetPos && box.current !== value && ! seeking)
                 {
+                    console.log("setValue from current " + box.current);
                     value = box.current;
                 }
             }
@@ -253,11 +256,11 @@ Box {
                 horizontalAlignment: "center"
                 bold: true
                 overflowBehavior: "ellipsis"
-                text: low.escapeMarkup(box.model.at(Math.round(pageSlider.seekValue))?.name ?? "")
+                text: low.escapeMarkup(imagesListView.model.at(Math.round(pageSlider.seekValue))?.name ?? "")
             }
 
             Label {
-                text: box.model.size
+                text: imagesListView.count
             }
         }
 

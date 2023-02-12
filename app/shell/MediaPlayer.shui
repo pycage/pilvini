@@ -60,6 +60,17 @@ MouseBox {
                 coverArt.source = "";
                 videoPlayer.visible = true;
                 videoPlayer.source = mediaItem.path;
+
+                if (mediaItem.subtitles)
+                {
+                    console.log("Have subs: " + mediaItem.subtitles);
+                    videoPlayer.subtitles = mediaItem.subtitles;
+                    subtitlesToggle.checked = true;
+                }
+                else
+                {
+                    videoPlayer.subtitles = "";
+                }
             }
             else if (mediaItem.mimetype.startsWith("audio/"))
             {
@@ -121,6 +132,21 @@ MouseBox {
                         playerBox.current = playerBox.current + 1;
                     }
                 }
+            }
+
+            Label {
+                visible: subtitlesToggle.checked
+                position: "free"
+                origin: "bottom-left"
+                marginBottom: theme.paddingLarge
+                color: "yellow"
+                fillWidth: true
+                horizontalAlignment: "center"
+                overflowBehavior: "wrap"
+                fontSize: theme.fontSizeLarge
+                outlineWidth: 1
+                text: videoPlayer.cues[0] || "";
+                filter: t => " " + t + " "
             }
 
             Box {
@@ -241,7 +267,7 @@ MouseBox {
             Box {
                 visible: videoPlayer.visible
                 fillWidth: true
-                height: theme.itemHeightLarge
+                height: theme.itemHeightMedium
                 layout: "row"
 
                 Button {
@@ -276,6 +302,17 @@ MouseBox {
                 Box { fillWidth: true }
 
                 Button {
+                    id: subtitlesToggle
+
+                    visible: videoPlayer.subtitles !== ""
+                    fillHeight: true
+                    flat: true
+                    text: "CC"
+                    onClick: (ev) => { checked = ! checked; ev.accepted = true; }
+                }
+
+                Button {
+                    marginLeft: theme.paddingLarge
                     checked: controls.player.ratio === 0
                     fillHeight: true
                     flat: true
@@ -385,7 +422,7 @@ MouseBox {
                 }
 
                 Button {
-                    enabled: !! playerBox.model && playerBox.current < playerBox.model.size - 1
+                    enabled: !! playerBox.model && (playerBox.current < playerBox.model.size - 1)
                     fillHeight: true
                     width: bbox.height
                     flat: true
