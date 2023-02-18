@@ -77,7 +77,7 @@ shRequire(["shellfish/core"], core =>
             {
                 if (d.get(this).modified)
                 {
-                    this.accumulateCallback(() => { this.writeRegistry(); }, "writeRegistry");
+                    this.defer(() => { this.writeRegistry(); }, "writeRegistry");
                 }
             };
 
@@ -95,7 +95,7 @@ shRequire(["shellfish/core"], core =>
         {
             d.get(this).fs = fs;
             this.filesystemChanged();
-            this.accumulateCallback(() => { this.readRegistry(); }, "readRegistry");
+            this.defer(() => { this.readRegistry(); }, "readRegistry");
         }
 
         get path() { return d.get(this).path; }
@@ -103,7 +103,7 @@ shRequire(["shellfish/core"], core =>
         {
             d.get(this).path = p;
             this.pathChanged();
-            this.accumulateCallback(() => { this.readRegistry(); }, "readRegistry");
+            this.defer(() => { this.readRegistry(); }, "readRegistry");
         }
 
         get ready() { return d.get(this).ready; }

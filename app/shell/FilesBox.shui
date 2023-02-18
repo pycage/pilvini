@@ -3,7 +3,6 @@ require "./BreadCrumbs.shui";
 require "./downloader.js";
 require "./FileViewer.shui";
 require "./HistoryScope.shui";
-require "./ListHeader.shui";
 require "./uploadfiles.js" as uploadfiles;
 require "./thumbnailgenerator.js";
 
@@ -239,11 +238,30 @@ Box {
     FSModel {
         id: fsModel
 
+        property extensionFilter: []
+
+        function makeFileFilter(showHidden, extensions)
+        {
+            console.log("EXT: " + JSON.stringify(extensions));
+            return item =>
+            {
+                if (item.name.startsWith(".") && ! showHidden)
+                {
+                    return false;
+                }
+                const ext = item.name.split(".").pop();
+                if (item.type === "f" && extensions.length > 0 && ! showHidden && ! extensions.includes(ext))
+                {
+                    return false;
+                }
+                return true;
+            };
+        }
+
         filesystem: box.fs
         path: box.path
-        sortRole: sortSelector.role
-        sortAscending: sortSelector.ascending
-        withHidden: sortSelector.showHidden
+        filter: makeFileFilter(sortSelector.showHidden, fsModel.extensionFilter)
+        sorter: makeSorter(sortSelector.role, sortSelector.ascending)
 
         function getFiles(predicate)
         {
@@ -265,7 +283,7 @@ Box {
 
         filesystem: box.fs
         path: box.path
-        withHidden: true
+        filter: makeFilter(true, true, true)
 
         function getFiles(predicate)
         {
@@ -279,6 +297,29 @@ Box {
                 }
             }
             return result;
+        }
+
+        onSizeChanged: () =>
+        {
+            if (size > 0)
+            {
+                const items = getFiles(f => f.name === ".pilvini-filter.txt");
+                if (items.length > 0)
+                {
+                    box.fs.read(items[0].path)
+                    .then(async blob =>
+                    {
+                        const data = await blob.text();
+                        const entries = data.replace(/\r/g, "").split("\n").filter(s => s !== "");
+                        fsModel.extensionFilter = entries.slice();
+                    })
+                    .catch(err => { });
+                }
+                else
+                {
+                    fsModel.extensionFilter = [];
+                }
+            }
         }
     }
 
@@ -492,7 +533,7 @@ Box {
         fillWidth: true
         fillHeight: true
         color: theme.secondaryBackgroundColor
-        layout: "row"
+        layout: bboxWidth < bboxHeight ? "column" : "row"
 
         Image {
             id: backdrop
@@ -701,12 +742,12 @@ Box {
                             const type = item.type === "d" ? "/"
                                                            : " ";
 
-                            if (fsModel.sortRole === "time")
+                            if (sortSelector.role === "mtime")
                             {
                                 const d = new Date(item.mtime * 1000);
                                 return type + ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][d.getMonth()] + " '" + (d.getFullYear() % 100);
                             }
-                            else if (fsModel.sortRole === "size")
+                            else if (sortSelector.role === "size")
                             {
                                 let size = Math.ceil(item.size / 1024);
                                 const units = ["KB", "MB", "GB", "TB"];
@@ -767,8 +808,20 @@ Box {
                                 data: [
                                     { title: "Name", width: -1 },
                                     { title: "Type", width: theme.itemWidthMedium, resizable: false },
-                                    { title: "Size", width: theme.itemWidthLarge }
+                                    { title: "Size", width: theme.itemWidthMedium }
                                 ]
+                            }
+
+                            onColumnClick: idx =>
+                            {
+                                if (idx === 0)
+                                {
+                                    sortSelector.selection = 0;
+                                }
+                                else if (idx === 2)
+                                {
+                                    sortSelector.selection = 2;
+                                }
                             }
                         }
 
@@ -1055,7 +1108,9 @@ Box {
             visible: ! fileViewer.visible && bannerLabel.text !== ""
 
             width: parent.bboxWidth / 3
-            fillHeight: true
+            height: parent.bboxHeight / 3
+            fillWidth: parent.layout === "column"
+            fillHeight: parent.layout === "row"
             color: theme.contentBackgroundColor.alpha(0.3)
             overflowBehavior: "scroll"
 
@@ -1106,7 +1161,7 @@ Box {
             Image {
                 id: bannerImage
 
-                visible: status === "success"
+                visible: status === "success" && banner.bboxWidth < banner.bboxHeight
 
                 marginLeft: theme.paddingLarge
                 width: theme.itemWidthLarge
@@ -1160,7 +1215,7 @@ Box {
         Button {
             id: sortSelector
 
-            property role: ["name", "time", "size"][selection % 3]
+            property role: ["name", "mtime", "size"][selection % 3]
             property ascending: selection < 3
             property selection: 0
             property showHidden: false

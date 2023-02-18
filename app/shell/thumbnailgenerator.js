@@ -1,4 +1,4 @@
-shRequire(["shellfish/core", __dirname + "/pdfdocument.js"], (core, pdfdoc) =>
+shRequire(["shellfish/core", __dirname + "/pdfdocument.js", __dirname + "/folderinfo.js"], (core, pdfdoc, folderinfo) =>
 {
     function waitForPlayer(player)
     {
@@ -133,7 +133,7 @@ shRequire(["shellfish/core", __dirname + "/pdfdocument.js"], (core, pdfdoc) =>
                 };
                 img.onerror = () =>
                 {
-                    reject();
+                    reject("failed to load image");
                 };
                 img.src = path;
             });
@@ -484,6 +484,15 @@ shRequire(["shellfish/core", __dirname + "/pdfdocument.js"], (core, pdfdoc) =>
                             const blob = await makeArchiveThumbnail(fs, file.path, priv.size);
                             await priv.filesystem.write(tnPath, blob);
                             resolve(blob);                            
+                        }
+                        else if (file.type === "d" && await fs.exists(file.path + "/" + folderinfo.infoFile))
+                        {
+                            const info = await folderinfo.load(fs, file.path);
+                            const url = URL.createObjectURL(info.cover);
+                            const blob = await makeImageThumbnail(url, priv.size, true);
+                            URL.revokeObjectURL(url);
+                            await priv.filesystem.write(tnPath, blob);
+                            resolve(blob);
                         }
                         else if (file.type === "d" && await fs.exists(file.path + "/.pilvini-cover.jpg"))
                         {

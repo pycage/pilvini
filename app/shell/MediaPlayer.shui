@@ -138,13 +138,28 @@ MouseBox {
                 visible: subtitlesToggle.checked
                 position: "free"
                 origin: "bottom-left"
+                marginLeft: 2
                 marginBottom: theme.paddingLarge
+                color: "black"
+                fillWidth: true
+                horizontalAlignment: "center"
+                overflowBehavior: "wrap"
+                fontSize: theme.fontSizeLarge
+                text: videoPlayer.cues[0] || "";
+                filter: t => " " + t + " "
+            }
+
+            Label {
+                visible: subtitlesToggle.checked
+                position: "free"
+                origin: "bottom-left"
+                marginRight: 2
+                marginBottom: theme.paddingLarge + 2
                 color: "yellow"
                 fillWidth: true
                 horizontalAlignment: "center"
                 overflowBehavior: "wrap"
                 fontSize: theme.fontSizeLarge
-                outlineWidth: 1
                 text: videoPlayer.cues[0] || "";
                 filter: t => " " + t + " "
             }
