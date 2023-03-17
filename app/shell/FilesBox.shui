@@ -2,6 +2,8 @@ require "shellfish/ui";
 require "./BreadCrumbs.shui";
 require "./downloader.js";
 require "./FileViewer.shui";
+require "./folderinfo.js" as folderInfo;
+require "./FolderInfoDialog.shui";
 require "./HistoryScope.shui";
 require "./uploadfiles.js" as uploadfiles;
 require "./thumbnailgenerator.js";
@@ -37,6 +39,42 @@ Box {
 
         selector.clear();
         box.path = newPath;
+    }
+
+    function readFolderInfo()
+    {
+        const f = async () =>
+        {
+            const infoObj = await folderInfo.load(fs, path);
+            fsModel.path = path;
+
+            bannerLabel.text = infoObj.description || "";
+            const background = infoObj.background;
+            if (background)
+            {
+                const url = URL.createObjectURL(background);
+                backdrop.source = url;
+                wait(500).then(() => { URL.revokeObjectURL(url); });
+            }
+            else
+            {
+                backdrop.source = "";
+            }
+            const icon = infoObj.icon;
+            if (icon)
+            {
+                console.log("set icon");
+                console.log(icon);
+                const url = URL.createObjectURL(icon);
+                bannerImage.source = url;
+                wait(500).then(() => {URL.revokeObjectURL(url); });
+            }
+            else
+            {
+                bannerImage.source = "";
+            }
+        };
+        f();
     }
 
     function openAction()
@@ -92,9 +130,10 @@ Box {
             fileViewer.open(files, idx);
         }
         else if (file.mimetype === "application/pdf" ||
-                file.mimetype === "application/x-youtube-link" ||
-                file.mimetype.startsWith("image/") ||
-                file.mimetype.startsWith("text/"))
+                 file.mimetype === "application/x-shellscript" ||
+                 file.mimetype === "application/x-youtube-link" ||
+                 file.mimetype.startsWith("image/") ||
+                 file.mimetype.startsWith("text/"))
         {
             fileViewer.open([file], 0);
         }
@@ -196,6 +235,35 @@ Box {
         }
     }
 
+    function uploadAction(files)
+    {
+        for (let i = 0; i < files.length; ++i)
+        {
+            const fileItem = files[i];
+            console.log(fileItem);
+            statusLabel.text = fileItem.name;
+
+            const progressCb = (name, progress) =>
+            {
+                statusLabel.text = low.escapeMarkup(name) + " " + Math.round(progress * 100) + "%";
+            };
+
+            statusSpinner.counter += 1;
+            uploadfiles.uploadRecursive(fileItem, box.fs, box.path, progressCb)
+            .then(() =>
+            {
+                statusSpinner.counter -= 1;
+                statusLabel.text = "";
+            })
+            .catch(err =>
+            {
+                statusSpinner.counter -= 1;
+                statusLabel.text = "";
+                showErrorDialog("Error Uploading File", "" + err);
+            });
+        }
+    }
+
     function copyLinkAction()
     {
         if (selector.selection.size !== 1)
@@ -222,6 +290,11 @@ Box {
 
         filesBag = items;
         filesBagSource = box.objectId;
+    }
+
+    onPathChanged: () =>
+    {
+        readFolderInfo();
     }
 
     HistoryScope { id: thisHistory }
@@ -259,7 +332,6 @@ Box {
         }
 
         filesystem: box.fs
-        path: box.path
         filter: makeFileFilter(sortSelector.showHidden, fsModel.extensionFilter)
         sorter: makeSorter(sortSelector.role, sortSelector.ascending)
 
@@ -275,51 +347,6 @@ Box {
                 }
             }
             return result;
-        }
-    }
-
-    FSModel {
-        id: fsModel2
-
-        filesystem: box.fs
-        path: box.path
-        filter: makeFilter(true, true, true)
-
-        function getFiles(predicate)
-        {
-            const result = [];
-            for (let i = 0; i < size; ++i)
-            {
-                const f = at(i);
-                if (predicate(f))
-                {
-                    result.push(f);
-                }
-            }
-            return result;
-        }
-
-        onSizeChanged: () =>
-        {
-            if (size > 0)
-            {
-                const items = getFiles(f => f.name === ".pilvini-filter.txt");
-                if (items.length > 0)
-                {
-                    box.fs.read(items[0].path)
-                    .then(async blob =>
-                    {
-                        const data = await blob.text();
-                        const entries = data.replace(/\r/g, "").split("\n").filter(s => s !== "");
-                        fsModel.extensionFilter = entries.slice();
-                    })
-                    .catch(err => { });
-                }
-                else
-                {
-                    fsModel.extensionFilter = [];
-                }
-            }
         }
     }
 
@@ -422,6 +449,40 @@ Box {
             {
                 box.takeFilesAction();
                 ev.accepted = true;
+            }
+        }
+
+        Button {
+            fillHeight: true
+            flat: true
+            icon: "fs-upload_file"
+            text: "Upload"
+
+            onClick: ev =>
+            {
+                fsel.open(files =>
+                {
+                    const items = [];
+                    for (let i = 0; i < files.length; ++i)
+                    {
+                        const file = files[i];
+                        items.push({
+                            name: file.name,
+                            size: file.size,
+                            type: file.type,
+                            lastModified: file.lastModified,
+                            isDirectory: false,
+                            isFile: true,
+                            file: (resolve, reject) => { resolve(file); }
+                        });
+                    }
+                    box.uploadAction(items);
+                });
+            }
+
+            FileSelector {
+                id: fsel
+                multiple: true
             }
         }
 
@@ -543,19 +604,6 @@ Box {
             fillWidth: true
             fillHeight: true
             fitMode: "cover"
-
-            fsModel2.onSizeChanged: () =>
-            {
-                source = "";
-                if (fsModel2.size > 0)
-                {
-                    const items = fsModel2.getFiles(f => f.name === ".pilvini-background.jpg");
-                    if (items.length > 0)
-                    {
-                        source = items[0].path;
-                    }
-                }
-            }
         }
 
         Box {
@@ -597,48 +645,16 @@ Box {
                 {
                     //console.log(JSON.stringify(ev));
 
+                    const files = [];
                     for (let i = 0; i < ev.items.length; ++i)
                     {
                         const item = ev.items[i];
-                        if (item.kind !== "file")
+                        if (item.kind === "file")
                         {
-                            continue;
+                            files.push(item.webkitGetAsEntry());
                         }
-                        const fileItem = item.webkitGetAsEntry();
-                        statusLabel.text = fileItem.name;
-
-                        const progressCb = (name, progress) =>
-                        {
-                            statusLabel.text = low.escapeMarkup(name) + " " + Math.round(progress * 100) + "%";
-                        };
-
-                        statusSpinner.counter += 1;
-                        uploadfiles.uploadRecursive(fileItem, box.fs, box.path, progressCb)
-                        .then(() =>
-                        {
-                            statusSpinner.counter -= 1;
-                            statusLabel.text = "";
-                        })
-                        .catch(err =>
-                        {
-                            statusSpinner.counter -= 1;
-                            statusLabel.text = "";
-                            showErrorDialog("Error Uploading File", "" + err);
-                        });
-
-                        /*
-                        box.fs.write(box.fs.pathJoin(box.path, box.fs.encodeName(fileItem.name)), fileItem)
-                        .then(() =>
-                        {
-                            statusLabel.text = "";
-                        })
-                        .catch(err =>
-                        {
-                            statusLabel.text = "";
-                            showErrorDialog("Error Uploading File", "" + err);
-                        });
-                        */
                     }
+                    box.uploadAction(files);
 
                     if (ev.data["text/plain"])
                     {
@@ -807,8 +823,8 @@ Box {
                             model: ListModel {
                                 data: [
                                     { title: "Name", width: -1 },
-                                    { title: "Type", width: theme.itemWidthMedium, resizable: false },
-                                    { title: "Size", width: theme.itemWidthMedium }
+                                    { title: "Type", width: theme.itemWidthMedium },
+                                    { title: "Size", width: theme.itemWidthMedium * 1.5 }
                                 ]
                             }
 
@@ -1024,6 +1040,60 @@ Box {
                         MenuSeparator { }
 
                         MenuItem {
+                            text: "Folder Properties"
+                            onClick: () =>
+                            {
+                                const dlg = box.folderInfoDialogT();
+                                dlg.show();
+                            }
+                        }
+
+                        MenuSeparator { }
+
+                        MenuItem {
+                            enabled: selector.selection.size === 1
+                            text: "Set As Background"
+                            onClick: () =>
+                            {
+                                const m = fsModel;
+                                const f = async () =>
+                                {
+                                    const infoObj = await folderInfo.load(box.fs, box.path);
+                                    const idx = [...selector.selection][0];
+                                    const file = m.at(idx);
+                                    const blob = await box.fs.read(file.path);
+                                    infoObj.background = blob;
+                                    await folderInfo.save(box.fs, box.path, infoObj);
+                                    box.readFolderInfo();
+                                };
+                                f();
+                            }
+                        }
+
+                        MenuItem {
+                            enabled: selector.selection.size === 1
+                            text: "Set As Description"
+                            onClick: () =>
+                            {
+                                const m = fsModel;
+                                const f = async () =>
+                                {
+                                    const infoObj = await folderInfo.load(box.fs, box.path);
+                                    const idx = [...selector.selection][0];
+                                    const file = m.at(idx);
+                                    const blob = await box.fs.read(file.path);
+                                    const text = await blob.text();
+                                    infoObj.description = text;
+                                    await folderInfo.save(box.fs, box.path, infoObj);
+                                    box.readFolderInfo();
+                                };
+                                f();
+                            }
+                        }
+
+                        MenuSeparator { }
+
+                        MenuItem {
                             enabled: selector.selection.size > 0
                             text: "Rename"
                             onClick: () =>
@@ -1115,36 +1185,6 @@ Box {
             overflowBehavior: "scroll"
 
             layout: "column"
-
-            fsModel2.onSizeChanged: () =>
-            {
-                const items = fsModel2.getFiles(f => f.name === ".pilvini-description.txt");
-                if (items.length > 0)
-                {
-                    box.fs.read(items[0].path)
-                    .then(blob => { return blob.text(); })
-                    .then(data =>
-                    {
-                        console.log(data);
-                        bannerLabel.text = data;
-                    })
-                    .catch(err => { });
-                }
-                else
-                {
-                    bannerLabel.text = "";
-                }
-
-                const items2 = fsModel2.getFiles(f => f.name === ".pilvini-cover.jpg");
-                if (items2.length > 0)
-                {
-                    bannerImage.source = items2[0].path;
-                }
-                else
-                {
-                    bannerImage.source = "";
-                }
-            }
 
             Label {
                 fillWidth: true
@@ -1550,4 +1590,9 @@ Box {
         }
     }
 
+    property folderInfoDialogT: template FolderInfoDialog {
+        filesystem: box.fs
+        path: box.path
+        filesBox: box
+    }
 }

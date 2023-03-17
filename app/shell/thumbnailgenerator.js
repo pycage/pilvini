@@ -479,7 +479,7 @@ shRequire(["shellfish/core", __dirname + "/pdfdocument.js", __dirname + "/folder
                             await priv.filesystem.write(tnPath, blob);
                             resolve(blob);
                         }
-                        else if (file.mimetype === "application/zip")
+                        else if (file.mimetype === "application/zip" && file.size < 1024 * 1024 * 50)
                         {
                             const blob = await makeArchiveThumbnail(fs, file.path, priv.size);
                             await priv.filesystem.write(tnPath, blob);
@@ -488,15 +488,9 @@ shRequire(["shellfish/core", __dirname + "/pdfdocument.js", __dirname + "/folder
                         else if (file.type === "d" && await fs.exists(file.path + "/" + folderinfo.infoFile))
                         {
                             const info = await folderinfo.load(fs, file.path);
-                            const url = URL.createObjectURL(info.cover);
+                            const url = URL.createObjectURL(info.icon);
                             const blob = await makeImageThumbnail(url, priv.size, true);
-                            URL.revokeObjectURL(url);
-                            await priv.filesystem.write(tnPath, blob);
-                            resolve(blob);
-                        }
-                        else if (file.type === "d" && await fs.exists(file.path + "/.pilvini-cover.jpg"))
-                        {
-                            const blob = await makeImageThumbnail(file.path + "/.pilvini-cover.jpg", priv.size, true);
+                            this.wait(500).then(() => { URL.revokeObjectURL(url); });
                             await priv.filesystem.write(tnPath, blob);
                             resolve(blob);
                         }

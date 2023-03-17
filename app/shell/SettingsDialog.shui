@@ -4,13 +4,17 @@ Dialog {
     id: dialog
 
     title: "Settings"
-    windowWidth: 640
-    windowHeight: 480
 
     into buttons Button {
         marginLeft: theme.paddingSmall
         text: "Close"
         onClick: () => { dialog.parent = null; }
+    }
+
+    onInitialization: () =>
+    {
+        thisContentArea.width = 640;
+        thisContentArea.height = 480;
     }
 
     Box {

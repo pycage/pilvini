@@ -1,0 +1,225 @@
+require "shellfish/ui";
+require "./folderinfo.js" as folderInfo;
+
+Dialog {
+    id: dialog
+
+    property filesystem: null
+    property path: "/"
+    property filesBox: null
+
+    title: "Folder Properties"
+    overflowBehavior: "wrap"
+
+    into buttons Button {
+        text: "Close"
+
+        onClick: () =>
+        {
+            const f = async () =>
+            {
+                if (priv.modified)
+                {
+                    await priv.folderInfo.sync();
+                    await folderInfo.save(dialog.filesystem, dialog.path, priv.folderInfo);
+                    filesBox.readFolderInfo();
+                }
+            };
+            f().finally(() =>
+            {
+                dialog.close();
+            });
+        }
+    }
+
+    Object {
+        id: priv
+        property folderInfo: null
+        property modified: false
+    }
+
+    onInitialization: () =>
+    {
+        thisContentArea.width = 500;
+        thisContentArea.height = 300;
+
+        defer(() =>
+        {
+            console.log("LOAD " + path + " " + filesystem);
+            folderInfo.load(filesystem, path)
+            .then(infoObj =>
+            {
+                priv.folderInfo = infoObj;
+                
+                descriptionEntry.text = infoObj.description || "";
+                const background = infoObj.background;
+                if (background)
+                {
+                    const url = URL.createObjectURL(background);
+                    console.log(url);
+                    backgroundImage.source = url;
+                    wait(500).then(() => { URL.revokeObjectURL(url); });
+                }
+                const icon = infoObj.icon;
+                if (icon)
+                {
+                    console.log(icon);
+                    const url = URL.createObjectURL(icon);
+                    console.log(url);
+                    iconImage.source = url;
+                    wait(500).then(() => { URL.revokeObjectURL(url); });
+                }
+            })
+            .catch(err => { console.error(err); });
+        }, "init");
+    }
+
+    Box {
+        width: 500
+        height: 300
+
+        borderColor: theme.borderColor
+        borderWidth: 1
+        color: "black"
+
+        onInitialization: () =>
+        {
+            console.log(parent.objectLocation);
+            parent.overflowBehavior = "wrap";
+        }
+
+        Image {
+            id: backgroundImage
+
+            visible: status === "success"
+
+            fillWidth: true
+            fillHeight: true
+            marginLeft: 2
+            marginRight: 2
+            marginTop: 2
+            marginBottom: 2
+        }
+
+        Button {
+            position: "free"
+            origin: "top-right"
+            x: theme.paddingSmall
+            y: theme.paddingSmall
+            text: "..."
+
+            onClick: ev =>
+            {
+                ev.accepted = true;
+                bgFsel.open(files =>
+                {
+                    const f = async () =>
+                    {
+                        console.log(files);
+                        const blob = files[0];
+                        priv.folderInfo.background = blob;
+                        const url = URL.createObjectURL(blob);
+                        backgroundImage.source = url;
+                        await wait(500);
+                        URL.revokeObjectURL(url);
+                        priv.modified = true;
+                    };
+                    f();
+                });
+            }
+
+            FileSelector {
+                id: bgFsel
+                accept: ["image/jpeg", "image/png"]
+            }
+        }
+
+        Box {
+            position: "free"
+            x: theme.paddingSmall
+            y: theme.paddingSmall
+            width: 128
+            height: 128
+
+            borderColor: theme.borderColor
+            borderWidth: 1
+            color: "black"
+
+            Image {
+                id: iconImage
+
+                visible: status === "success"
+
+                fillWidth: true
+                fillHeight: true
+                marginLeft: 2
+                marginRight: 2
+                marginTop: 2
+                marginBottom: 2
+            }
+
+            Button {
+                position: "free"
+                origin: "top-right"
+                x: theme.paddingSmall
+                y: theme.paddingSmall
+                text: "..."
+
+                onClick: ev =>
+                {
+                    ev.accepted = true;
+                    iconFsel.open(files =>
+                    {
+                        const f = async () =>
+                        {
+                            // TODO: resize
+                            const blob = files[0];
+                            priv.folderInfo.icon = blob;
+                            const url = URL.createObjectURL(blob);
+                            iconImage.source = url;
+                            await wait(500);
+                            URL.revokeObjectURL(url);
+                            priv.modified = true;
+                        };
+                        f();
+                    });
+                }
+
+                FileSelector {
+                    id: iconFsel
+                    accept: ["image/jpeg", "image/png"]
+                }
+            }
+        }
+
+    }
+
+    Label {
+        text: "Description"
+    }
+
+    TextArea {
+        id: descriptionEntry
+
+        width: 500
+        height: 300
+
+        onTextChanged: () =>
+        {
+            priv.folderInfo.description = text;
+            priv.modified = true;
+        }
+    }
+
+    Box {
+        width: 300
+
+        Label {
+            text: "View As"
+        }
+
+        SelectionBox {
+            model: ListModel { data: ["List", "Grid"] }
+        }
+    }
+}
