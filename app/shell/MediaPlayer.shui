@@ -327,6 +327,7 @@ MouseBox {
                 }
 
                 Button {
+                    visible: videoPlayer.visible
                     marginLeft: theme.paddingLarge
                     checked: controls.player.ratio === 0
                     fillHeight: true
@@ -336,6 +337,7 @@ MouseBox {
                 }
 
                 Button {
+                    visible: videoPlayer.visible
                     checked: controls.player.ratio === 1
                     fillHeight: true
                     flat: true
@@ -344,6 +346,7 @@ MouseBox {
                 }
 
                 Button {
+                    visible: videoPlayer.visible
                     checked: controls.player.ratio === 2
                     fillHeight: true
                     flat: true
@@ -352,6 +355,7 @@ MouseBox {
                 }
 
                 Button {
+                    visible: videoPlayer.visible
                     checked: controls.player.ratio === 3
                     fillHeight: true
                     flat: true
