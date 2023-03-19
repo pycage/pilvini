@@ -89,10 +89,15 @@ Box {
 
         if (file.type === "d")
         {
+            // remember current scroll position
+            priv.scrollPositionsMap.set(path, fsview.contentY);
+            // reset scroll position for new path
+            priv.scrollPositionsMap.delete(file.path);
+            // open
             setPath(file.path);
         }
         else if (file.mimetype === "application/zip" ||
-                    file.mimetype === "application/x-rar-compressed")
+                 file.mimetype === "application/x-rar-compressed")
         {
             console.log("open ZIP: " + file.path);
             setPath(file.path);
@@ -295,6 +300,12 @@ Box {
     onPathChanged: () =>
     {
         readFolderInfo();
+    }
+
+    Object {
+        id: priv
+
+        property scrollPositionsMap: new Map()
     }
 
     HistoryScope { id: thisHistory }
@@ -863,7 +874,10 @@ Box {
 
                             onCountChanged: () =>
                             {
-                                wait(0).then(() => { positionViewAt(0); });
+                                wait(100).then(() =>
+                                {
+                                    contentY = priv.scrollPositionsMap.get(box.path) || 0;
+                                });
                             }
 
                             delegate: template Draggable {
