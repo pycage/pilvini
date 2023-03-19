@@ -12,7 +12,7 @@ MouseBox {
 
     onPointerDown: ev =>
     {
-        if (pinchGesture.pinching)
+        if (pinchGesture.pinching || ! vp.zoomed)
         {
             return;
         }
@@ -23,7 +23,7 @@ MouseBox {
 
     onPointerMove: ev =>
     {
-        if (pinchGesture.pinching)
+        if (pinchGesture.pinching || ! vp.zoomed)
         {
             return;
         }
@@ -37,7 +37,7 @@ MouseBox {
 
     onPointerUp: ev =>
     {
-        if (pinchGesture.pinching)
+        if (pinchGesture.pinching || ! vp.zoomed)
         {
             return;
         }
@@ -50,7 +50,6 @@ MouseBox {
     {
         pageBrowser.showNavigation = ! pageBrowser.showNavigation;
     }
-
 
     onDoubleClick: ev =>
     {
@@ -82,6 +81,8 @@ MouseBox {
 
     ViewportBox {
         id: vp
+
+        property zoomed: scale > minScale + 0.001
 
         fillWidth: true
         fillHeight: true
