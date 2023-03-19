@@ -16,7 +16,7 @@ Box {
     color: "black"
 
     ListView {
-        id: imagesListView
+        id: pagesListView
 
         fillWidth: true
         fillHeight: true
@@ -203,12 +203,12 @@ Box {
             fillWidth: true
 
             minValue: 0
-            maxValue: imagesListView.count - 1
+            maxValue: pagesListView.count - 1
             value: 0
 
             onPosChanged: () =>
             {
-                imagesListView.contentX = pos;
+                pagesListView.contentX = pos;
             }
 
             box.onCurrentChanged: () =>
@@ -223,7 +223,7 @@ Box {
             {
                 if (Math.round(seekValue) !== box.current)
                 {
-                    targetPos = Math.round(seekValue) * imagesListView.cellWidth;
+                    targetPos = Math.round(seekValue) * pagesListView.cellWidth;
                     pos = targetPos;
                 }
             }
@@ -255,11 +255,11 @@ Box {
                 horizontalAlignment: "center"
                 bold: true
                 overflowBehavior: "ellipsis"
-                text: low.escapeMarkup(imagesListView.model.at(Math.round(pageSlider.seekValue))?.name ?? "")
+                text: low.escapeMarkup(pagesListView.model.at(Math.round(pageSlider.seekValue))?.name ?? "")
             }
 
             Label {
-                text: imagesListView.count
+                text: pagesListView.count
             }
         }
 
