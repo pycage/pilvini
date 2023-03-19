@@ -280,7 +280,6 @@ MouseBox {
             */
 
             Box {
-                visible: videoPlayer.visible
                 fillWidth: true
                 height: theme.itemHeightMedium
                 layout: "row"
