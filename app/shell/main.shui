@@ -224,7 +224,6 @@ Document {
         // status bar
         MouseBox {
             position: "free"
-            //visible: doc.showStatusBar
 
             fillWidth: true
             height: theme.itemHeightMedium

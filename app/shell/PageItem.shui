@@ -105,8 +105,8 @@ MouseBox {
             if (! page.pageBrowser.scrolling && previousDistance > 0)
             {
                 const factor = distance / previousDistance;
-                const scaleAnchorX = (x1 + (x2 - x1) / 2) / parent.bbox.width;
-                const scaleAnchorY = (y1 + (y2 - y1) / 2) / parent.bbox.height;
+                const scaleAnchorX = (x1 + (x2 - x1) / 2) / parent.bboxWidth;
+                const scaleAnchorY = (y1 + (y2 - y1) / 2) / parent.bboxHeight;
                 vp.setScale(vp.scale * factor, scaleAnchorX, scaleAnchorY);
             }
         }

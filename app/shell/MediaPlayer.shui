@@ -107,8 +107,8 @@ MouseBox {
                 property ratio: 0
 
                 visible: false
-                width: parent.bbox.width
-                height: parent.bbox.height
+                width: parent.bboxWidth
+                height: parent.bboxHeight
                 fitMode: "fill"
                 aspectRatio: (() =>
                 {
@@ -206,7 +206,7 @@ MouseBox {
             position: "free"
             origin: "bottom-left"
             fillWidth: true
-            height: controls.bbox.height * 1.3
+            height: controls.bboxHeight * 1.3
 
             LinearGradient {
                 id: grd

@@ -752,8 +752,6 @@ Box {
                     }
 
                     IndexScroller {
-                        id: indexScroller
-
                         labelSize: theme.itemHeightSmall
                         //width: orientation === "vertical" ? labelsize : -1
                         fillHeight: true
@@ -862,13 +860,13 @@ Box {
                             fillHeight: true
                             canFocus: true
 
-                            cellWidth: displayMode === "list" ? bbox.width - 1
+                            cellWidth: displayMode === "list" ? bboxWidth - 1
                                                             : (theme.itemWidthSmall / 2) * (sizeSelector.scale + 6)
                             cellHeight: displayMode === "list" ? (theme.itemHeightMedium / 2) * (sizeSelector.scale + 2)
                                                                : cellWidth + theme.fontSizeMedium * 1.2 * 5
                             //cacheMargin: cellHeight //contentHeight
 
-                            orientation: bboxHeight < cellHeight + theme.paddingLarge ? "horizontal" : "vertical"
+                            orientation: visible && ancestorsVisible && bboxHeight < cellHeight + theme.paddingLarge ? "horizontal" : "vertical"
 
                             model: fsModel
 

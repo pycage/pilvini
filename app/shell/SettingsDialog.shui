@@ -78,7 +78,7 @@ Dialog {
                         marginLeft: theme.paddingSmall
                         color: parent.selected ? theme.highlightColor
                                                : theme.primaryColor
-                        fontSize: parent.bbox.height * 0.8
+                        fontSize: parent.bboxHeight * 0.8
                         text: "[icon:" + parent.modelData.value.icon + "]"
                     }
 
