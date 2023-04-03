@@ -64,6 +64,10 @@ Box {
                 onVpYChanged: () => { update(); }
                 onVpScaleChanged: () =>
                 {
+                    if (page.viewport.minScale < 0.1)
+                    {
+                        return;
+                    }
                     browser.scrollable = page.viewport.scale < page.viewport.minScale + 0.0001;
                     update();
                 }
