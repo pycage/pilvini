@@ -27,7 +27,7 @@ function openFile(fileItem)
 {
     return new Promise((resolve, reject) =>
     {
-        fileItem.file(resolve, reject);
+        return fileItem.file(resolve, reject);
     });
 }
 
@@ -44,15 +44,13 @@ async function uploadRecursive(file, fs, targetPath, progressCallback)
 
         await forEachFile(file, async entry =>
         {
-            await uploadRecursive(entry, fs, path, progressCallback);
+            await uploadRecursive(entry, fs, path, (name, p) => { progressCallback(name, p); });
         });
     }
     else
     {
         //console.log("uploading " + file.name + " -> " + path);
-        progressCallback(file.name, 0.0);
-        await fs.write(path, await openFile(file));
-        progressCallback(file.name, 1.0);
+        await fs.write(path, await openFile(file), p => { progressCallback(file.name, p); });
         //console.log("ok");
     }
 }
