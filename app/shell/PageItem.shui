@@ -10,6 +10,18 @@ MouseBox {
 
     container default: contentArea
 
+    function zoom(factor)
+    {
+        if (factor === 0)
+        {
+            vp.scaleToFit();
+        }
+        else
+        {
+            vp.setScale(vp.scale * factor, 0.5, 0.5);
+        }
+    }
+
     onPointerDown: ev =>
     {
         if (pinchGesture.pinching || ! vp.zoomed)
@@ -46,9 +58,27 @@ MouseBox {
         ev.accepted = true;
     }
 
-    onClick: () =>
+    onClick: ev =>
     {
-        pageBrowser.showNavigation = ! pageBrowser.showNavigation;
+        if (! vp.zoomed)
+        {
+            if (ev.x < theme.itemWidthLarge)
+            {
+                pageBrowser.previousPage();
+            }
+            else if (ev.x > bboxWidth - theme.itemWidthLarge)
+            {
+                pageBrowser.nextPage();
+            }
+            else
+            {
+                pageBrowser.showNavigation = ! pageBrowser.showNavigation;
+            }
+        }
+        else
+        {
+            pageBrowser.showNavigation = ! pageBrowser.showNavigation;
+        }
     }
 
     onDoubleClick: ev =>
@@ -122,4 +152,5 @@ MouseBox {
 
     ScrollIndicator { id: sh; target: vp.adapter; other: sv; orientation: "horizontal" }
     ScrollIndicator { id: sv; target: vp.adapter; other: sh; orientation: "vertical" }
+    OverflowScroller { target: vp.adapter; stepSize: theme.paddingLarge }
 }

@@ -15,6 +15,22 @@ Box {
 
     color: "black"
 
+    function previousPage()
+    {
+        if (pageSlider.value > 0)
+        {
+            pageSlider.value -= 1;
+        }
+    }
+
+    function nextPage()
+    {
+        if (pageSlider.value < pageSlider.maxValue)
+        {
+            pageSlider.value += 1;
+        }
+    }
+
     ListView {
         id: pagesListView
 
@@ -117,6 +133,62 @@ Box {
                 }
             }
             */
+
+            Box { fillWidth: true }
+
+            Button {
+                width: bboxHeight
+                fillHeight: true
+                flat: true
+                icon: "ui-zoom"
+                onClick: ev =>
+                {
+                    const page = pagesListView.getItem(
+                        pagesListView.indexAt(pagesListView.contentX + pagesListView.bboxWidth / 2,
+                                              pagesListView.bboxHeight / 2));
+                    if (page)
+                    {
+                        page.zoom(0);
+                    }
+                    ev.accepted = true;
+                }
+            }
+
+            Button {
+                width: bboxHeight
+                fillHeight: true
+                flat: true
+                icon: "ui-zoom_out"
+                onClick: ev =>
+                {
+                    const page = pagesListView.getItem(
+                        pagesListView.indexAt(pagesListView.contentX + pagesListView.bboxWidth / 2,
+                                              pagesListView.bboxHeight / 2));
+                    if (page)
+                    {
+                        page.zoom(0.75);
+                    }
+                    ev.accepted = true;
+                }
+            }
+
+            Button {
+                width: bboxHeight
+                fillHeight: true
+                flat: true
+                icon: "ui-zoom_in"
+                onClick: ev =>
+                {
+                    const page = pagesListView.getItem(
+                        pagesListView.indexAt(pagesListView.contentX + pagesListView.bboxWidth / 2,
+                                              pagesListView.bboxHeight / 2));
+                    if (page)
+                    {
+                        page.zoom(1.5);
+                    }
+                    ev.accepted = true;
+                }
+            }
         }
 
         Box {
@@ -156,10 +228,34 @@ Box {
                 fillHeight: true
                 width: bboxHeight
                 flat: true
-                icon: "media-play"
+                icon: slideshowTimer.active ? "media-pause" : "media-play"
+
                 onClick: () =>
                 {
-                    // slideshow
+                    if (slideshowTimer.active)
+                    {
+                        slideshowTimer.active = false;
+                    }
+                    else
+                    {
+                        const menu = menuT();
+                        menu.popup(self);
+                    }
+                }
+
+                property menuT: template Menu {
+                    Repeater {
+                        model: ListModel { data: [1, 3, 5, 10, 30, 60] }
+
+                        delegate: template MenuItem {
+                            text: modelData.value + " s"
+                            onClick: () =>
+                            {
+                                slideshowTimer.interval = modelData.value * 1000;
+                                slideshowTimer.active = true;
+                            }
+                        }
+                    }
                 }
             }
 
@@ -188,6 +284,29 @@ Box {
             }
         }
 
+        Timer {
+            id: slideshowTimer
+
+            property active: false
+
+            interval: 5000
+            running: active
+            repeat: true
+
+            onTimeout: () =>
+            {
+                if (pageSlider.value < pageSlider.maxValue)
+                {
+                    pageSlider.value += 1;
+                }
+                else
+                {
+                    active = false;
+                }
+            }
+
+        }
+
         Slider {
             id: pageSlider
 
@@ -208,7 +327,10 @@ Box {
 
             onPosChanged: () =>
             {
-                pagesListView.contentX = pos;
+                if (pagesListView.contentX !== pos)
+                {
+                    pagesListView.contentX = pos;
+                }
             }
 
             box.onCurrentChanged: () =>
@@ -221,9 +343,11 @@ Box {
 
             onValueChanged: () =>
             {
-                if (Math.round(seekValue) !== box.current)
+                if (Math.round(value) !== box.current)
                 {
-                    targetPos = Math.round(seekValue) * pagesListView.cellWidth;
+                    targetPos = Math.round(value) * pagesListView.cellWidth;
+                    // quite a hack to circumvent transitioning...
+                    self.get().pos = pagesListView.contentX;
                     pos = targetPos;
                 }
             }
