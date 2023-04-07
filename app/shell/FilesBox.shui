@@ -854,6 +854,7 @@ Box {
                             id: fsview
 
                             property displayMode: "list"
+                            property placeView: false
 
                             visible: ! fsModel.loading
                             fillWidth: true
@@ -864,7 +865,7 @@ Box {
                                                             : (theme.itemWidthSmall / 2) * (sizeSelector.scale + 6)
                             cellHeight: displayMode === "list" ? (theme.itemHeightMedium / 2) * (sizeSelector.scale + 2)
                                                                : cellWidth + theme.fontSizeMedium * 1.2 * 5
-                            //cacheMargin: cellHeight //contentHeight
+                            cacheMargin: cellHeight * 2 //contentHeight
 
                             orientation: visible && ancestorsVisible && bboxHeight < cellHeight + theme.paddingLarge ? "horizontal" : "vertical"
 
@@ -872,10 +873,16 @@ Box {
 
                             onCountChanged: () =>
                             {
-                                wait(100).then(() =>
+                                placeView = true;
+                            }
+
+                            onContentHeightChanged: () =>
+                            {
+                                if (placeView)
                                 {
+                                    placeView = false;
                                     contentY = priv.scrollPositionsMap.get(box.path) || 0;
-                                });
+                                }
                             }
 
                             delegate: template Draggable {
@@ -914,11 +921,11 @@ Box {
                                     id: fsitem
 
                                     property inView: file &&
-                                                    parent.x >= 0 &&
-                                                    parent.y >= fsview.contentY - fsview.cellHeight &&
-                                                    parent.y <= fsview.contentY + fsview.bboxHeight
+                                                     parent.x >= 0 &&
+                                                     parent.y >= fsview.contentY - fsview.cellHeight &&
+                                                     parent.y <= fsview.contentY + fsview.bboxHeight
 
-                                    property readyForThumbnail: inView && ! fsview.scrolling //&& ! fsview.rendering
+                                    property readyForThumbnail: inView // && ! fsview.scrolling //&& ! fsview.rendering
 
                                     fillWidth: true
                                     fillHeight: true
@@ -1064,7 +1071,7 @@ Box {
 
                         MenuItem {
                             enabled: selector.selection.size === 1
-                            text: "Set As Background"
+                            text: "Set as Icon"
                             onClick: () =>
                             {
                                 const m = fsModel;
@@ -1073,7 +1080,27 @@ Box {
                                     const infoObj = await folderInfo.load(box.fs, box.path);
                                     const idx = [...selector.selection][0];
                                     const file = m.at(idx);
-                                    const blob = await box.fs.read(file.path);
+                                    const blob = await box.fs.read(file.mimetype === "audio/mp3" ? file.path + "?view=cover" : file.path);
+                                    infoObj.icon = blob;
+                                    await folderInfo.save(box.fs, box.path, infoObj);
+                                    box.readFolderInfo();
+                                };
+                                f();
+                            }
+                        }
+
+                        MenuItem {
+                            enabled: selector.selection.size === 1
+                            text: "Set as Background"
+                            onClick: () =>
+                            {
+                                const m = fsModel;
+                                const f = async () =>
+                                {
+                                    const infoObj = await folderInfo.load(box.fs, box.path);
+                                    const idx = [...selector.selection][0];
+                                    const file = m.at(idx);
+                                    const blob = await box.fs.read(file.mimetype === "audio/mp3" ? file.path + "?view=cover" : file.path);
                                     infoObj.background = blob;
                                     await folderInfo.save(box.fs, box.path, infoObj);
                                     box.readFolderInfo();
@@ -1084,7 +1111,7 @@ Box {
 
                         MenuItem {
                             enabled: selector.selection.size === 1
-                            text: "Set As Description"
+                            text: "Set as Description"
                             onClick: () =>
                             {
                                 const m = fsModel;
@@ -1377,9 +1404,9 @@ Box {
             checked: fsview.displayMode === "grid"
             onClick: (ev) =>
             {
-                fsview.visible = false;
+                fsview.opacity = 0;
                 fsview.displayMode = "grid";
-                nextFrame(() => { fsview.visible = true; });
+                wait(100).then(() => { fsview.opacity = 1; });
                 ev.accepted = true;
             }
         }
@@ -1391,9 +1418,9 @@ Box {
             checked: fsview.displayMode === "list"
             onClick: (ev) =>
             {
-                fsview.visible = false;
+                fsview.opacity = 0;
                 fsview.displayMode = "list";
-                nextFrame(() => { fsview.visible = true; });
+                wait(100).then(() => { fsview.opacity = 1; });
                 ev.accepted = true;
             }
         }
