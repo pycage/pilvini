@@ -13,7 +13,7 @@ shRequire(["shellfish/server"], (server) =>
             console.log("status code: " + response.statusCode);
             console.log(JSON.stringify(response.headers));
 
-            if (response.statusCode !== 302)
+            if (response.statusCode !== 301 && response.statusCode !== 302)
             {
                 break;
             }
