@@ -59,45 +59,48 @@ Box {
 
             property fileItem: box.current !== -1 && box.model.size > box.current ? box.model.at(box.current)
                                                                                   : null
+            property currentMimeType: ""
             property maximized: item?.maximized || false
+
 
             fillWidth: true
             fillHeight: true
 
-            sourceTemplate: (() =>
+            onFileItemChanged: () =>
             {
                 if (! fileItem)
                 {
-                    return null;
+                    sourceTemplate = null;
+                    currentMimeType = "";
                 }
+                else if (fileItem.mimetype !== currentMimeType)
+                {
+                    const item = fileItem;
+                    currentMimeType = item.mimetype;
+                    if (item.mimetype === "application/pdf")
+                    {
+                        sourceTemplate = pdfViewerT;
+                    }
+                    else if (item.mimetype.startsWith("image/"))
+                    {
+                        sourceTemplate = imageViewerT;
+                    }
+                    else if (item.mimetype.startsWith("audio/") ||
+                            item.mimetype.startsWith("video/"))
+                    {
+                        sourceTemplate = mediaPlayerT;
+                    }
+                    else if (item.mimetype.startsWith("text/"))
+                    {
+                        sourceTemplate = textViewerT;
+                    }
+                    else if (item.mimetype === "application/x-youtube-link")
+                    {
+                        sourceTemplate = youTubeViewerT;
+                    }
+                }
+            }
 
-                const item = fileItem;
-                if (item.mimetype === "application/pdf")
-                {
-                    return pdfViewerT;
-                }
-                else if (item.mimetype.startsWith("image/"))
-                {
-                    return imageViewerT;
-                }
-                else if (item.mimetype.startsWith("audio/") ||
-                         item.mimetype.startsWith("video/"))
-                {
-                    return mediaPlayerT;
-                }
-                else if (item.mimetype.startsWith("text/"))
-                {
-                    return textViewerT;
-                }
-                else if (item.mimetype === "application/x-youtube-link")
-                {
-                    return youTubeViewerT;
-                }
-                else
-                {
-                    return null;
-                }
-            })()
         }
 
     }

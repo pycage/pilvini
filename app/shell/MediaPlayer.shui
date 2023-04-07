@@ -109,7 +109,9 @@ MouseBox {
                 visible: false
                 width: parent.bboxWidth
                 height: parent.bboxHeight
-                fitMode: "fill"
+                fitMode: ratio !== 3 ? "fill" : "cover"
+                volume: volumeSlider.volume
+
                 aspectRatio: (() =>
                 {
                     switch (ratio)
@@ -119,6 +121,7 @@ MouseBox {
                     case 1:
                         return 4 / 3;
                     case 2:
+                    case 3:
                         return 16 / 9;
                     default:
                         return 0;
@@ -282,7 +285,7 @@ MouseBox {
             Box {
                 fillWidth: true
                 height: theme.itemHeightMedium
-                layout: "row"
+                layout: "center-row"
 
                 Button {
                     fillHeight: true
@@ -358,8 +361,51 @@ MouseBox {
                     checked: controls.player.ratio === 3
                     fillHeight: true
                     flat: true
-                    text: "Fit"
+                    text: "Zoom"
                     onClick: (ev) => { controls.player.ratio = 3; ev.accepted = true; }
+                }
+
+                Button {
+                    visible: videoPlayer.visible
+                    checked: controls.player.ratio === 4
+                    fillHeight: true
+                    flat: true
+                    text: "Fit"
+                    onClick: (ev) => { controls.player.ratio = 4; ev.accepted = true; }
+                }
+
+                Button {
+                    id: muteButton
+
+                    property muted: false
+
+                    marginLeft: theme.paddingLarge
+                    width: bboxHeight
+                    fillHeight: true
+                    flat: true
+                    icon: muted ? "media-volume_off" : "media-volume_up"
+
+                    onClick: ev => { muted = ! muted; ev.accepted = true; }
+                }
+
+                Slider {
+                    id: volumeSlider
+
+                    property volume: muteButton.muted ? 0.0 : seekValue / 100.0
+
+                    marginRight: theme.paddingLarge
+                    width: theme.itemWidthMedium
+                    minValue: 0
+                    maxValue: 100
+                    value: 75
+
+                    styleOfHandle: template Box {
+                        width: height
+                        height: theme.itemHeightSmall / 2
+                        marginTop: (parent.bboxHeight - bboxHeight) / 2
+                        borderRadius: width / 2
+                        color: theme.primaryColor
+                    }
                 }
 
             }
@@ -371,7 +417,7 @@ MouseBox {
 
                 Button {
                     fillHeight: true
-                    width: bbox.height
+                    width: bboxHeight
                     flat: true
                     icon: "media-previous"
 
@@ -391,7 +437,7 @@ MouseBox {
 
                 Button {
                     fillHeight: true
-                    width: bbox.height
+                    width: bboxHeight
                     flat: true
                     icon: "media-replay_10"
 
@@ -406,7 +452,7 @@ MouseBox {
 
                 Button {
                     fillHeight: true
-                    width: bbox.height
+                    width: bboxHeight
                     flat: true
                     icon: controls.player.playing ? "media-pause" : "media-play"
 
@@ -428,7 +474,7 @@ MouseBox {
 
                 Button {
                     fillHeight: true
-                    width: bbox.height
+                    width: bboxHeight
                     flat: true
                     icon: "media-forward_10"
 
@@ -442,7 +488,7 @@ MouseBox {
                 Button {
                     enabled: !! playerBox.model && (playerBox.current < playerBox.model.size - 1)
                     fillHeight: true
-                    width: bbox.height
+                    width: bboxHeight
                     flat: true
                     icon: "media-next"
 
