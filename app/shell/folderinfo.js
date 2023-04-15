@@ -141,7 +141,7 @@ async function load(fs, dirPath)
     try
     {
         const infoPath = dirPath + "/" + infoFile;
-        if (await fs.exists(dirPath))
+        if (await fs.exists(infoPath))
         {
             const blob = await fs.read(infoPath);
             const data = await blob.text();

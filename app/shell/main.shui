@@ -31,6 +31,17 @@ Document {
 
     color: theme.primaryBackgroundColor
 
+    function openNewTab(fs, path)
+    {
+        windowsModel.insert(windowsModel.size, {
+            component: filesBoxT,
+            properties: {
+                fs: fs,
+                path: path
+            }
+        });
+    }
+
     onContextMenu: ev => { ev.accepted = true; }
 
     onInitialization: () =>

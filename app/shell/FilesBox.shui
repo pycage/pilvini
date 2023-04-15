@@ -5,6 +5,7 @@ require "./FileViewer.shui";
 require "./folderinfo.js" as folderInfo;
 require "./FolderInfoDialog.shui";
 require "./HistoryScope.shui";
+require "./filefs.js";
 require "./uploadfiles.js" as uploadfiles;
 require "./thumbnailgenerator.js";
 
@@ -15,7 +16,7 @@ Box {
     property windowTitle: path
 
     property fs: null
-    property path: "/"
+    property path: ""
     property searchBox: false
     property maximized: false
 
@@ -299,6 +300,7 @@ Box {
 
     onPathChanged: () =>
     {
+        thumbnailer.filesystem.sync();
         readFolderInfo();
     }
 
@@ -316,7 +318,8 @@ Box {
         id: thumbnailer
 
         enabled: thumbnailCheckbox.checked
-        filesystem: OfflineFS { volume: "Thumbnails" }
+        //filesystem: OfflineFS { volume: "Thumbnails" }
+        filesystem: FileFS { filesystem: box.fs; path: box.path + "/.pilvini-thumbnails.cache" }
     }
 
     FSModel {
@@ -951,18 +954,36 @@ Box {
                                             }
 
                                             thumbnail = "";
-                                            thumbnailer.generate(box.fs, file, condition)
-                                            .then(safeCallback(blob =>
-                                            {
-                                                if (blob)
-                                                {
-                                                    thumbnail = blobUrl(blob);
-                                                }
-                                            }, condition))
-                                            .catch(err =>
-                                            {
 
-                                            });
+                                            const f = async () =>
+                                            {
+                                                const cached = await thumbnailer.cached(box.fs, file);
+                                                if (! condition())
+                                                {
+                                                    return;
+                                                }
+
+                                                if (cached)
+                                                {
+                                                    thumbnail = blobUrl(cached);
+                                                    return;
+                                                }
+
+                                                const newThumbnail = await thumbnailer.generate(box.fs, file, condition);
+                                                if (! condition())
+                                                {
+                                                    return;
+                                                }
+
+                                                if (newThumbnail)
+                                                {
+                                                    thumbnail = blobUrl(newThumbnail);
+                                                }
+                                            };
+
+                                            f()
+                                            .then(() => { })
+                                            .catch(err => { console.error(err); });
                                         }
 
                                     }
@@ -1041,22 +1062,103 @@ Box {
 
                     property fileMenuT: template Menu {
                         MenuItem {
-                            text: "New Directory"
+                            enabled: selector.selection.size === 1
+                            text: "Open New Tab"
                             onClick: () =>
                             {
-                                box.newDirectoryAction();
-                            }
-                        }
-
-                        MenuItem {
-                            text: "New File"
-                            onClick: () =>
-                            {
-                                box.newFileAction();
+                                const idx = [...selector.selection][0];
+                                const file = fsModel.at(idx);
+                                if (file.type === "d")
+                                {
+                                    openNewTab(box.fs, file.path);
+                                }
                             }
                         }
 
                         MenuSeparator { }
+
+                        MenuExpander {
+                            text: "New"
+
+                            MenuItem {
+                                text: "Directory"
+                                onClick: () =>
+                                {
+                                    box.newDirectoryAction();
+                                }
+                            }
+
+                            MenuItem {
+                                text: "File"
+                                onClick: () =>
+                                {
+                                    box.newFileAction();
+                                }
+                            }
+                        }
+
+                        MenuExpander {
+                            enabled: selector.selection.size === 1
+                            text: "Set as"
+
+                            MenuItem {
+                                text: "Folder Icon"
+                                onClick: () =>
+                                {
+                                    const m = fsModel;
+                                    const f = async () =>
+                                    {
+                                        const infoObj = await folderInfo.load(box.fs, box.path);
+                                        const idx = [...selector.selection][0];
+                                        const file = m.at(idx);
+                                        const blob = await box.fs.read(file.mimetype === "audio/mp3" ? file.path + "?view=cover" : file.path);
+                                        infoObj.icon = blob;
+                                        await folderInfo.save(box.fs, box.path, infoObj);
+                                        box.readFolderInfo();
+                                    };
+                                    f();
+                                }
+                            }
+
+                            MenuItem {
+                                text: "Folder Background"
+                                onClick: () =>
+                                {
+                                    const m = fsModel;
+                                    const f = async () =>
+                                    {
+                                        const infoObj = await folderInfo.load(box.fs, box.path);
+                                        const idx = [...selector.selection][0];
+                                        const file = m.at(idx);
+                                        const blob = await box.fs.read(file.mimetype === "audio/mp3" ? file.path + "?view=cover" : file.path);
+                                        infoObj.background = blob;
+                                        await folderInfo.save(box.fs, box.path, infoObj);
+                                        box.readFolderInfo();
+                                    };
+                                    f();
+                                }
+                            }
+
+                            MenuItem {
+                                text: "Folder Description"
+                                onClick: () =>
+                                {
+                                    const m = fsModel;
+                                    const f = async () =>
+                                    {
+                                        const infoObj = await folderInfo.load(box.fs, box.path);
+                                        const idx = [...selector.selection][0];
+                                        const file = m.at(idx);
+                                        const blob = await box.fs.read(file.path);
+                                        const text = await blob.text();
+                                        infoObj.description = text;
+                                        await folderInfo.save(box.fs, box.path, infoObj);
+                                        box.readFolderInfo();
+                                    };
+                                    f();
+                                }
+                            }
+                        }
 
                         MenuItem {
                             text: "Folder Properties"
@@ -1064,69 +1166,6 @@ Box {
                             {
                                 const dlg = box.folderInfoDialogT();
                                 dlg.show();
-                            }
-                        }
-
-                        MenuSeparator { }
-
-                        MenuItem {
-                            enabled: selector.selection.size === 1
-                            text: "Set as Icon"
-                            onClick: () =>
-                            {
-                                const m = fsModel;
-                                const f = async () =>
-                                {
-                                    const infoObj = await folderInfo.load(box.fs, box.path);
-                                    const idx = [...selector.selection][0];
-                                    const file = m.at(idx);
-                                    const blob = await box.fs.read(file.mimetype === "audio/mp3" ? file.path + "?view=cover" : file.path);
-                                    infoObj.icon = blob;
-                                    await folderInfo.save(box.fs, box.path, infoObj);
-                                    box.readFolderInfo();
-                                };
-                                f();
-                            }
-                        }
-
-                        MenuItem {
-                            enabled: selector.selection.size === 1
-                            text: "Set as Background"
-                            onClick: () =>
-                            {
-                                const m = fsModel;
-                                const f = async () =>
-                                {
-                                    const infoObj = await folderInfo.load(box.fs, box.path);
-                                    const idx = [...selector.selection][0];
-                                    const file = m.at(idx);
-                                    const blob = await box.fs.read(file.mimetype === "audio/mp3" ? file.path + "?view=cover" : file.path);
-                                    infoObj.background = blob;
-                                    await folderInfo.save(box.fs, box.path, infoObj);
-                                    box.readFolderInfo();
-                                };
-                                f();
-                            }
-                        }
-
-                        MenuItem {
-                            enabled: selector.selection.size === 1
-                            text: "Set as Description"
-                            onClick: () =>
-                            {
-                                const m = fsModel;
-                                const f = async () =>
-                                {
-                                    const infoObj = await folderInfo.load(box.fs, box.path);
-                                    const idx = [...selector.selection][0];
-                                    const file = m.at(idx);
-                                    const blob = await box.fs.read(file.path);
-                                    const text = await blob.text();
-                                    infoObj.description = text;
-                                    await folderInfo.save(box.fs, box.path, infoObj);
-                                    box.readFolderInfo();
-                                };
-                                f();
                             }
                         }
 

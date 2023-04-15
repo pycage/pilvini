@@ -129,7 +129,10 @@ shRequire(["shellfish/core", __dirname + "/pdfdocument.js", __dirname + "/folder
             {
                 img.onload = () =>
                 {
-                    resolve();
+                    img.decode().then(() =>
+                    {
+                        resolve();
+                    });
                 };
                 img.onerror = () =>
                 {
@@ -412,20 +415,31 @@ shRequire(["shellfish/core", __dirname + "/pdfdocument.js", __dirname + "/folder
             .catch(err => { });
         }
 
+        cached(fs, file)
+        {
+            return new Promise(async (resolve, reject) =>
+            {
+                const priv = d.get(this);
+
+                const tnName = fs.encodeName(file.path.replace(/\//g, "_") + " " + priv.size + " " + file.mtime);
+                if (await priv.filesystem.exists(tnName))
+                {
+                    const blob = await priv.filesystem.read(tnName);
+                    resolve(blob);
+                }
+                else
+                {
+                    resolve(null);
+                }
+            });
+        }
+
         generate(fs, file, condition)
         {
             const priv = d.get(this);
 
             return new Promise(async (resolve, reject) =>
             {
-                const tnPath = fs.encodeName(file.path + " " + priv.size + " " + file.mtime);
-                if (await priv.filesystem.exists(tnPath))
-                {
-                    const blob = await priv.filesystem.read(tnPath);
-                    resolve(blob);
-                    return;
-                }
-
                 if (! d.get(this).enabled)
                 {
                     resolve(null);
@@ -438,7 +452,7 @@ shRequire(["shellfish/core", __dirname + "/pdfdocument.js", __dirname + "/folder
                     next();
                     return;
                 }
-                console.log("check file: " + file.path + " " + file.mimetype + " " + file.name);
+                //console.log("check file: " + file.path + " " + file.mimetype + " " + file.name);
                 if (file.mimetype.startsWith("image/") ||
                     file.mimetype === "video/mp4" ||
                     file.mimetype === "audio/mp3" ||
@@ -449,50 +463,59 @@ shRequire(["shellfish/core", __dirname + "/pdfdocument.js", __dirname + "/folder
                 {
                     try
                     {
+                        const tnName = fs.encodeName(file.path.replace(/\//g, "_") + " " + priv.size + " " + file.mtime);
+
                         if (file.mimetype.startsWith("image/"))
                         {
                             const blob = await makeImageThumbnail(file.path, priv.size, true);
-                            await priv.filesystem.write(tnPath, blob);
+                            await priv.filesystem.write(tnName, blob);
                             resolve(blob);
                         }
                         else if (file.mimetype === "video/mp4")
                         {
                             const blob = await makeVideoThumbnail(file.path, priv.size, true);
-                            await priv.filesystem.write(tnPath, blob);
+                            await priv.filesystem.write(tnName, blob);
                             resolve(blob);
                         }
                         else if (file.mimetype === "audio/mp3")
                         {
                             const blob = await makeImageThumbnail(file.path + "?view=cover", priv.size, true);
-                            await priv.filesystem.write(tnPath, blob);
+                            await priv.filesystem.write(tnName, blob);
                             resolve(blob);
                         }
                         else if (file.mimetype === "application/pdf")
                         {
                             const blob = await makePdfThumbnail(file.path, priv.size);
-                            await priv.filesystem.write(tnPath, blob);
+                            await priv.filesystem.write(tnName, blob);
                             resolve(blob);
                         }
                         else if (file.mimetype === "application/x-youtube-link")
                         {
                             const blob = await makeYouTubeThumbnail(fs, file.path, 320);
-                            await priv.filesystem.write(tnPath, blob);
+                            await priv.filesystem.write(tnName, blob);
                             resolve(blob);
                         }
                         else if (file.mimetype === "application/zip" && file.size < 1024 * 1024 * 50)
                         {
                             const blob = await makeArchiveThumbnail(fs, file.path, priv.size);
-                            await priv.filesystem.write(tnPath, blob);
+                            await priv.filesystem.write(tnName, blob);
                             resolve(blob);                            
                         }
                         else if (file.type === "d" && await fs.exists(file.path + "/" + folderinfo.infoFile))
                         {
                             const info = await folderinfo.load(fs, file.path);
-                            const url = URL.createObjectURL(info.icon);
-                            const blob = await makeImageThumbnail(url, priv.size, true);
-                            this.wait(500).then(() => { URL.revokeObjectURL(url); });
-                            await priv.filesystem.write(tnPath, blob);
-                            resolve(blob);
+                            if (info.icon)
+                            {
+                                const url = URL.createObjectURL(info.icon);
+                                const blob = await makeImageThumbnail(url, priv.size, true);
+                                this.wait(500).then(() => { URL.revokeObjectURL(url); });
+                                await priv.filesystem.write(tnName, blob);
+                                resolve(blob);
+                            }
+                            else
+                            {
+                                resolve(null);
+                            }
                         }
                     }
                     catch (err)

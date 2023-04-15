@@ -174,7 +174,7 @@ HTTPServer {
                 {
                     console.log("Sending Auth Code " + token);
                     response(200, "OK")
-                    .header("Set-Cookie", "AuthToken=" + token + "; Max-Age=86400")
+                    .header("Set-Cookie", "AuthToken=" + token + "; Max-Age=43200")
                     .send();
                 })
                 .catch(err =>
@@ -197,8 +197,7 @@ HTTPServer {
                 console.log("Login As: " + req.user);
                 const authToken = auth.issueTokenFor(req.user, req.sourceAddress);
                 response(200, "OK")
-                //.cookie("AuthToken", authToken + "; Max-Age=86400")
-                .header("Set-Cookie", "AuthToken=" + authToken + "; Max-Age=86400")
+                .header("Set-Cookie", "AuthToken=" + authToken + "; Max-Age=43200")
                 .send();
             }
         }
