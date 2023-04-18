@@ -158,6 +158,9 @@ shRequire(["shellfish/core", "shellfish/core/mime"], (core, mime) =>
     {
         const priv = d.get(self);
 
+        priv.status = "loading";
+        self.statusChanged();
+
         return new Promise(async (resolve, reject) =>
         {
             if (! priv.filesystem || priv.path === "")
@@ -167,6 +170,8 @@ shRequire(["shellfish/core", "shellfish/core/mime"], (core, mime) =>
                 priv.freeBlocks = [];
                 priv.maxFree = 0;
                 resolve();
+                priv.status = "success";
+                self.statusChanged();
                 return;
             }
 
@@ -177,6 +182,8 @@ shRequire(["shellfish/core", "shellfish/core/mime"], (core, mime) =>
                 priv.freeBlocks = [];
                 priv.maxFree = 0;
                 resolve();
+                priv.status = "success";
+                self.statusChanged();
                 return;
             }
 
@@ -191,6 +198,8 @@ shRequire(["shellfish/core", "shellfish/core/mime"], (core, mime) =>
             {
                 console.error("Cannot handle File FS version " + version);
                 reject();
+                priv.status = "error";
+                self.statusChanged();
                 return;
             }
 
@@ -215,6 +224,9 @@ shRequire(["shellfish/core", "shellfish/core/mime"], (core, mime) =>
             priv.maxFree = buffer32.at(3);
 
             resolve();
+
+            priv.status = "success";
+            self.statusChanged();
         });
     }
 
@@ -236,6 +248,7 @@ shRequire(["shellfish/core", "shellfish/core/mime"], (core, mime) =>
             d.set(this, {
                 filesystem: null,
                 path: "",
+                status: "empty",
                 dirty: false,
                 index: { name: "/", type: "d", children: { } },
                 data: new ArrayBuffer(BLOCK_SIZE),
@@ -245,6 +258,7 @@ shRequire(["shellfish/core", "shellfish/core/mime"], (core, mime) =>
 
             this.notifyable("filesystem");
             this.notifyable("path");
+            this.notifyable("status");
         }
 
         get filesystem() { return d.get(this).filesystem; }
@@ -264,6 +278,8 @@ shRequire(["shellfish/core", "shellfish/core/mime"], (core, mime) =>
             load(this);
             this.pathChanged();
         }
+
+        get status() { return d.get(this).status; }
 
         /**
          * Synchronizes the filesystem with its data file by writing unsaved
