@@ -415,16 +415,42 @@ shRequire(["shellfish/core", __dirname + "/pdfdocument.js", __dirname + "/folder
             .catch(err => { });
         }
 
+        removeUnused(usedFiles)
+        {
+            const priv = d.get(this);
+            if (! priv.filesystem)
+            {
+                return;
+            }
+
+            priv.filesystem.list(priv.path)
+            .then(files =>
+            {
+                files.forEach(file =>
+                {
+                    const inUse = usedFiles.findIndex(f => f.name + " " + priv.size + " " + f.mtime === file.name) !== -1;
+
+                    if (! inUse)
+                    {
+                        console.log("remove unused thumbnail: " + file.name);
+                        priv.filesystem.remove(file.path);
+                    }
+                });
+            })
+            .catch(err => { });
+        }
+
         cached(fs, file)
         {
             return new Promise(async (resolve, reject) =>
             {
                 const priv = d.get(this);
 
-                const tnName = fs.encodeName(file.path.replace(/\//g, "_") + " " + priv.size + " " + file.mtime);
-                if (await priv.filesystem.exists(tnName))
+                const tnName = file.name + " " + priv.size + " " + file.mtime;
+                const tnPath = priv.filesystem.pathJoin(priv.path, tnName);
+                if (await priv.filesystem.exists(tnPath))
                 {
-                    const blob = await priv.filesystem.read(tnName);
+                    const blob = await priv.filesystem.read(tnPath);
                     resolve(blob);
                 }
                 else
@@ -463,42 +489,43 @@ shRequire(["shellfish/core", __dirname + "/pdfdocument.js", __dirname + "/folder
                 {
                     try
                     {
-                        const tnName = fs.encodeName(file.path.replace(/\//g, "_") + " " + priv.size + " " + file.mtime);
-
+                        const tnName = file.name + " " + priv.size + " " + file.mtime;
+                        const tnPath = priv.filesystem.pathJoin(priv.path, tnName);
+        
                         if (file.mimetype.startsWith("image/"))
                         {
                             const blob = await makeImageThumbnail(file.path, priv.size, true);
-                            await priv.filesystem.write(tnName, blob);
+                            await priv.filesystem.write(tnPath, blob);
                             resolve(blob);
                         }
                         else if (file.mimetype === "video/mp4")
                         {
                             const blob = await makeVideoThumbnail(file.path, priv.size, true);
-                            await priv.filesystem.write(tnName, blob);
+                            await priv.filesystem.write(tnPath, blob);
                             resolve(blob);
                         }
                         else if (file.mimetype === "audio/mp3")
                         {
                             const blob = await makeImageThumbnail(file.path + "?view=cover", priv.size, true);
-                            await priv.filesystem.write(tnName, blob);
+                            await priv.filesystem.write(tnPath, blob);
                             resolve(blob);
                         }
                         else if (file.mimetype === "application/pdf")
                         {
                             const blob = await makePdfThumbnail(file.path, priv.size);
-                            await priv.filesystem.write(tnName, blob);
+                            await priv.filesystem.write(tnPath, blob);
                             resolve(blob);
                         }
                         else if (file.mimetype === "application/x-youtube-link")
                         {
                             const blob = await makeYouTubeThumbnail(fs, file.path, 320);
-                            await priv.filesystem.write(tnName, blob);
+                            await priv.filesystem.write(tnPath, blob);
                             resolve(blob);
                         }
                         else if (file.mimetype === "application/zip" && file.size < 1024 * 1024 * 50)
                         {
                             const blob = await makeArchiveThumbnail(fs, file.path, priv.size);
-                            await priv.filesystem.write(tnName, blob);
+                            await priv.filesystem.write(tnPath, blob);
                             resolve(blob);                            
                         }
                         else if (file.type === "d" && await fs.exists(file.path + "/" + folderinfo.infoFile))
@@ -509,7 +536,7 @@ shRequire(["shellfish/core", __dirname + "/pdfdocument.js", __dirname + "/folder
                                 const url = URL.createObjectURL(info.icon);
                                 const blob = await makeImageThumbnail(url, priv.size, true);
                                 this.wait(500).then(() => { URL.revokeObjectURL(url); });
-                                await priv.filesystem.write(tnName, blob);
+                                await priv.filesystem.write(tnPath, blob);
                                 resolve(blob);
                             }
                             else

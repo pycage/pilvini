@@ -319,7 +319,23 @@ Box {
 
         enabled: thumbnailCheckbox.checked
         //filesystem: OfflineFS { volume: "Thumbnails" }
-        filesystem: FileFS { filesystem: box.fs; path: box.path + "/.pilvini-thumbnails.cache" }
+        filesystem: FileFS {
+            filesystem: box.fs
+            path: box.path + "/.pilvini-thumbnails.cache"
+
+            onStatusChanged: () =>
+            {
+                if (status === "success" && box.fs)
+                {
+                    box.fs.list(box.path)
+                    .then(files =>
+                    {
+                        thumbnailer.removeUnused(files);
+                    })
+                    .catch(err => { });
+                }
+            }
+        }
     }
 
     FSModel {
