@@ -291,6 +291,18 @@ shRequire(["shellfish/core", "shellfish/core/mime"], (core, mime) =>
         {
             const priv = d.get(this);
 
+            // make a deep copy, so we may fire and forget
+            const obj = { };
+            d.set(obj, {
+                filesystem: priv.filesystem,
+                path: priv.path,
+                dirty: priv.dirty,
+                index: JSON.parse(JSON.stringify(priv.index)),
+                data: priv.data.slice(),
+                freeBlocks: priv.freeBlocks.slice(),
+                maxFree: priv.maxFree
+            });
+
             return new Promise(async (resolve, reject) =>
             {
                 if (! priv.filesystem || priv.path === "" || ! priv.dirty)
@@ -298,18 +310,6 @@ shRequire(["shellfish/core", "shellfish/core/mime"], (core, mime) =>
                     resolve();
                     return;
                 }
-
-                // make a deep copy, so we may fire and forget
-                const obj = { };
-                d.set(obj, {
-                    filesystem: priv.filesystem,
-                    path: priv.path,
-                    dirty: priv.dirty,
-                    index: JSON.parse(JSON.stringify(priv.index)),
-                    data: priv.data.slice(),
-                    freeBlocks: priv.freeBlocks.slice(),
-                    maxFree: priv.maxFree
-                });
     
                 priv.dirty = false;
 
@@ -479,6 +479,7 @@ shRequire(["shellfish/core", "shellfish/core/mime"], (core, mime) =>
                 if (! node)
                 {
                     resolve();
+                    return;
                 }
 
                 const parentPath = this.dirname(path);
@@ -487,6 +488,7 @@ shRequire(["shellfish/core", "shellfish/core/mime"], (core, mime) =>
                 if (! parentNode || parentNode.type !== "d")
                 {
                     reject();
+                    return;
                 }
 
                 delete parentNode.children[node.name];
@@ -512,6 +514,7 @@ shRequire(["shellfish/core", "shellfish/core/mime"], (core, mime) =>
                 if (! node || node.type !== "f")
                 {
                     reject();
+                    return;
                 }
 
                 const buffer = readFile(this, node.block);
@@ -540,6 +543,14 @@ shRequire(["shellfish/core", "shellfish/core/mime"], (core, mime) =>
                 if (! node || node.type !== "d")
                 {
                     reject();
+                    return;
+                }
+
+                if (! blob)
+                {
+                    console.error("Blob is null " + path);
+                    reject();
+                    return;
                 }
 
                 const buffer = await blob.arrayBuffer();
