@@ -481,6 +481,7 @@ shRequire(["shellfish/core", __dirname + "/pdfdocument.js", __dirname + "/folder
                 //console.log("check file: " + file.path + " " + file.mimetype + " " + file.name);
                 if (file.mimetype.startsWith("image/") ||
                     file.mimetype === "video/mp4" ||
+                    file.mimetype === "video/webm" ||
                     file.mimetype === "audio/mp3" ||
                     file.mimetype === "application/pdf" ||
                     file.mimetype === "application/x-youtube-link" ||
@@ -498,13 +499,13 @@ shRequire(["shellfish/core", __dirname + "/pdfdocument.js", __dirname + "/folder
                             await priv.filesystem.write(tnPath, blob);
                             resolve(blob);
                         }
-                        else if (file.mimetype === "video/mp4")
+                        else if (file.mimetype.startsWith("video/"))
                         {
                             const blob = await makeVideoThumbnail(file.path, priv.size, true);
                             await priv.filesystem.write(tnPath, blob);
                             resolve(blob);
                         }
-                        else if (file.mimetype === "audio/mp3")
+                        else if (file.mimetype.startsWith("audio/"))
                         {
                             const blob = await makeImageThumbnail(file.path + "?view=cover", priv.size, true);
                             await priv.filesystem.write(tnPath, blob);
@@ -525,7 +526,10 @@ shRequire(["shellfish/core", __dirname + "/pdfdocument.js", __dirname + "/folder
                         else if (file.mimetype === "application/zip" && file.size < 1024 * 1024 * 50)
                         {
                             const blob = await makeArchiveThumbnail(fs, file.path, priv.size);
-                            await priv.filesystem.write(tnPath, blob);
+                            if (blob)
+                            {
+                                await priv.filesystem.write(tnPath, blob);
+                            }
                             resolve(blob);                            
                         }
                         else if (file.type === "d" && await fs.exists(file.path + "/" + folderinfo.infoFile))
