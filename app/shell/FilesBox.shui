@@ -944,7 +944,7 @@ Box {
                                                      parent.y >= fsview.contentY - fsview.cellHeight &&
                                                      parent.y <= fsview.contentY + fsview.bboxHeight
 
-                                    property readyForThumbnail: inView // && ! fsview.scrolling //&& ! fsview.rendering
+                                    property readyForThumbnail: inView && thumbnailer.filesystem.status === "success" // && ! fsview.scrolling //&& ! fsview.rendering
 
                                     fillWidth: true
                                     fillHeight: true
