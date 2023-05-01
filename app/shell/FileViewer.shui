@@ -10,7 +10,7 @@ require "./youtubevideo.js";
 Box {
     id: box
 
-    function open(files, idx)
+    function open(files, idx, mediaPosition)
     {
         thisHistory.push(() =>
         {
@@ -20,6 +20,7 @@ Box {
             fileViewer.maximized = false;
         });
 
+        loader.startPosition = mediaPosition;
         box.files = files;
         box.current = idx;
     }
@@ -41,6 +42,9 @@ Box {
 
     property thisFileViewer: self
 
+    event mediaBookmarkUpdated
+
+
     HistoryScope { id: thisHistory }
 
     Box {
@@ -60,6 +64,7 @@ Box {
             property fileItem: box.current !== -1 && box.model.size > box.current ? box.model.at(box.current)
                                                                                   : null
             property currentMimeType: ""
+            property startPosition: 0
             property maximized: item?.maximized || false
 
 
@@ -116,7 +121,7 @@ Box {
         fillHeight: true
 
         model: box.model
-        current: box.current
+        current: loader.startPosition > 0 ? loader.startPosition : box.current
     }
 
     property pdfViewerT: template PdfViewer {
@@ -132,6 +137,7 @@ Box {
 
         model: box.model
         current: box.current
+        startPosition: loader.startPosition
 
         onCurrentChanged: () =>
         {

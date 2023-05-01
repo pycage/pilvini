@@ -88,6 +88,31 @@ Box {
         const idx = [...selector.selection][0];
         const file = fsModel.at(idx);
 
+        openFile(file, 0);
+    }
+
+    function openMediaBookmarkAction()
+    {
+        let targetFiles = [];
+        if (mediaBookmark.path !== "")
+        {
+            targetFiles = fsModel.getFiles(f => f.path === mediaBookmark.path);
+        }
+        else
+        {
+            targetFiles = fsModel.getFiles(f => f.mimetype.startsWith("audio/") ||
+                                                f.mimetype.startsWith("image/") ||
+                                                f.mimetype.startsWith("video/"));
+        }
+
+        if (targetFiles.length > 0)
+        {
+            openFile(targetFiles[0], mediaBookmark.mediaPosition);
+        }
+    }
+
+    function openFile(file, mediaPosition)
+    {
         if (file.type === "d")
         {
             // remember current scroll position
@@ -107,13 +132,13 @@ Box {
         {
             const files = fsModel.getFiles(f => f.mimetype.startsWith("audio/"));
             const idx = files.findIndex(f => f.path === file.path);
-            fileViewer.open(files, idx);
+            fileViewer.open(files, idx, mediaPosition);
         }
         else if (file.mimetype.startsWith("image/"))
         {
             const files = fsModel.getFiles(f => f.mimetype.startsWith("image/"));
             const idx = files.findIndex(f => f.path === file.path);
-            fileViewer.open(files, idx);
+            fileViewer.open(files, idx, mediaPosition);
         }
         else if (file.mimetype.startsWith("video/"))
         {
@@ -133,7 +158,7 @@ Box {
                 }
             });
             const idx = files.findIndex(f => f.path === file.path);
-            fileViewer.open(files, idx);
+            fileViewer.open(files, idx, mediaPosition);
         }
         else if (file.mimetype === "application/pdf" ||
                  file.mimetype === "application/x-shellscript" ||
@@ -141,7 +166,7 @@ Box {
                  file.mimetype.startsWith("image/") ||
                  file.mimetype.startsWith("text/"))
         {
-            fileViewer.open([file], 0);
+            fileViewer.open([file], 0, mediaPosition);
         }
     }
 
@@ -313,6 +338,53 @@ Box {
     HistoryScope { id: thisHistory }
 
     Downloader { id: downloader }
+
+    Object {
+        id: mediaBookmark
+
+        property path: ""
+        property mediaPosition: 0
+        property name: ""
+
+        function load()
+        {
+            const bookmarkFile = box.path + "/pilvini-media.bookmark";
+            
+            path = "";
+            mediaPosition = 0;
+            name = "";
+            
+            console.log("check file " + bookmarkFile);
+            box.fs.exists(bookmarkFile)
+            .then(safeCallback(async ok =>
+            {
+                console.log(ok);
+                if (ok)
+                {
+                    const blob = await box.fs.read(bookmarkFile);
+                    const data = await blob.text();
+                    console.log(data);
+                    const obj = JSON.parse(data);
+                    path = obj.path;
+                    mediaPosition = obj.mediaPosition;
+                    name = obj.name;
+                }
+            }))
+            .catch(err => { console.error(err); });
+        }
+
+        function save()
+        {
+            const obj = { path: path, mediaPosition: mediaPosition, name: name };
+            const data = JSON.stringify(obj);
+
+            const bookmarkFile = box.path + "/pilvini-media.bookmark";
+            box.fs.write(bookmarkFile, new Blob([data]))
+            .catch(err => { });
+        }
+
+        box.onPathChanged: () => { load(); }
+    }
 
     ThumbnailGenerator {
         id: thumbnailer
@@ -650,7 +722,6 @@ Box {
 
             fillWidth: true
             fillHeight: true
-            layout: bboxWidth > bboxHeight ? "row" : "column"
 
             DropArea {
                 visible: ! fileViewer.maximized
@@ -1063,6 +1134,41 @@ Box {
                             ScrollIndicator { orientation: "vertical" }
                         }
 
+                        // media bookmark bar
+                        Box {
+                            visible: mediaBookmark.path !== ""
+                            fillWidth: true
+                            height: theme.itemHeightMedium
+                            layout: "center-row"
+
+                            Button {
+                                //visible: mediaBookmark.path !== ""
+                                fillHeight: true
+                                flat: true
+                                icon: "media-play"
+                                text: mediaBookmark.path !== "" ? "Continue" : "Start"
+
+                                onClick: () =>
+                                {
+                                    openMediaBookmarkAction();
+                                }
+                            }
+
+                            Label {
+                                fillWidth: true
+                                marginLeft: theme.paddingLarge
+                                marginRight: theme.paddingSmall
+                                overflowBehavior: "ellipsis"
+                                text: low.escapeMarkup(mediaBookmark.name)
+                            }
+
+                            Box {
+                                position: "free"
+                                fillWidth: true
+                                height: 1
+                                color: theme.primaryColor
+                            }
+                        }
                     }
 
 
@@ -1249,6 +1355,13 @@ Box {
                     }
                 }
 
+                onMediaBookmarkUpdated: (path, mediaPosition, name) =>
+                {
+                    mediaBookmark.path = path;
+                    mediaBookmark.mediaPosition = mediaPosition;
+                    mediaBookmark.name = name;
+                }
+
                 onVisibleChanged: () =>
                 {
                     if (visible)
@@ -1260,9 +1373,12 @@ Box {
                     {
                         console.log("show status bar");
                         doc.showStatusBar = true;
+                        console.log(mediaBookmark.objectLocation);
+                        mediaBookmark.save();
                     }
                 }
             }
+
         }
 
         // banner
@@ -1276,7 +1392,6 @@ Box {
             fillWidth: parent.layout === "column"
             fillHeight: parent.layout === "row"
             color: theme.contentBackgroundColor.alpha(0.3)
-            overflowBehavior: "scroll"
 
             layout: "column"
 
@@ -1299,29 +1414,50 @@ Box {
 
                 marginLeft: theme.paddingLarge
                 width: theme.itemWidthLarge
-                height: width
-                fitMode: "contain"
             }
 
-            Label {
-                id: bannerLabel
-
+            Box {
                 fillWidth: true
+                fillHeight: true
                 marginTop: theme.paddingLarge
-                marginLeft: theme.paddingLarge
-                marginRight: theme.paddingLarge
-                marginBottom: theme.paddingLarge
-                literal: true
-                overflowBehavior: "wrap"
+                overflowBehavior: "scroll"
+
+                Label {
+                    id: bannerLabel
+
+                    fillWidth: true
+                    marginTop: theme.paddingLarge
+                    marginLeft: theme.paddingLarge
+                    marginRight: theme.paddingLarge
+                    marginBottom: theme.paddingLarge
+                    literal: true
+                    overflowBehavior: "wrap"
+                }
+
+                OverflowScroller { }
+
+                Timer {
+                    running: ancestorsVisible && parent.contentHeight > parent.bboxHeight
+                    interval: 100
+                    repeat: true
+
+                    onTimeout: () =>
+                    {
+                        if (parent.contentY < parent.contentHeight - parent.bboxHeight)
+                        {
+                            ++parent.contentY;
+                        }
+                        else
+                        {
+                            parent.contentY = 0;
+                        }
+                    }
+                }
             }
 
-            OverflowScroller { }
         }
 
     }
-
-
-
 
     // status bar
     Box {

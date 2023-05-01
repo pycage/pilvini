@@ -9,6 +9,7 @@ Box {
 
     property model: ListModel { }
     property current: 0
+    property startPosition: 0
 
     property title: model.at(current) ? model.at(current).name : ""
 
@@ -20,6 +21,15 @@ Box {
 
         model: box.model
         current: box.current
+
+        onCurrentChanged: () =>
+        {
+            const item = model.at(current);
+            if (item)
+            {
+                thisFileViewer.mediaBookmarkUpdated(item.path, current, item.name);
+            }
+        }
 
         delegate: template PageItem {
             id: page

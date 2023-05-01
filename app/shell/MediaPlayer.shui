@@ -1,6 +1,7 @@
 require "shellfish/low" as low;
 require "shellfish/ui";
 require "./SeekBar.shui";
+require "./TimeLabel.shui";
 
 MouseBox {
     id: playerBox
@@ -40,6 +41,7 @@ MouseBox {
 
     property model: ListModel { }
     property current: -1
+    property startPosition: 0
     property title: model.at(current) ? model.at(current).name : ""
 
     color: "black"
@@ -76,7 +78,7 @@ MouseBox {
             {
                 videoPlayer.visible = false;
                 coverArt.visible = true;
-                controls.visible = true;
+                controls.active = true;
                 videoPlayer.source = mediaItem.path;
                 const newSource = mediaItem.path + "?view=cover"; //"/::thumbnail" + mediaItem.path + "?maxWidth=1080&maxHeight=1080";
                 if (coverArt.source !== newSource)
@@ -93,7 +95,7 @@ MouseBox {
 
         onClick: () =>
         {
-            controls.visible = ! controls.visible;
+            controls.active = ! controls.active;
         }
 
         Box {
@@ -111,6 +113,27 @@ MouseBox {
                 height: parent.bboxHeight
                 fitMode: ratio !== 3 ? "fill" : "cover"
                 volume: volumeSlider.volume
+
+                onStatusChanged: () =>
+                {
+                    if (status === "success")
+                    {
+                        if (playerBox.startPosition > 0)
+                        {
+                            videoPlayer.currentTime = playerBox.startPosition;
+                            playerBox.startPosition = 0;
+                        }
+                    }
+                }
+
+                onCurrentTimeChanged: () =>
+                {
+                    if (status === "success")
+                    {
+                        const name = playerBox.title + " (" + formatTime(currentTime) + ")";
+                        thisFileViewer.mediaBookmarkUpdated(source, currentTime, name);
+                    }
+                }
 
                 aspectRatio: (() =>
                 {
@@ -142,7 +165,7 @@ MouseBox {
                 position: "free"
                 origin: "bottom-left"
                 marginLeft: 2
-                marginBottom: theme.paddingLarge
+                marginBottom: (controls.active ? controls.bboxHeight : 0) + theme.paddingLarge
                 color: "black"
                 fillWidth: true
                 horizontalAlignment: "center"
@@ -157,7 +180,7 @@ MouseBox {
                 position: "free"
                 origin: "bottom-left"
                 marginRight: 2
-                marginBottom: theme.paddingLarge + 2
+                marginBottom: (controls.active ? controls.bboxHeight : 0) + theme.paddingLarge + 2
                 color: "yellow"
                 fillWidth: true
                 horizontalAlignment: "center"
@@ -204,10 +227,12 @@ MouseBox {
         }
 
         Box {
-            visible: controls.visible
+            //visible: controls.active
 
             position: "free"
             origin: "bottom-left"
+            y: controls.active ? 0 : -height
+            yTransition: NumberAnimation { }
             fillWidth: true
             height: controls.bboxHeight * 1.3
 
@@ -222,14 +247,46 @@ MouseBox {
             gradient: grd.expression
         }
 
+        Label {
+            //visible: controls.active
+            
+            position: "free"
+            origin: "top-right"
+            marginTop: theme.paddingLarge
+            marginRight: theme.paddingLarge
+            y: timeLabel.y + 2
+            fontSize: theme.fontSizeLarge
+            color: "#444"
+            text: timeLabel.text
+        }
+
+        TimeLabel {
+            id: timeLabel
+
+            //visible: controls.active
+            
+            position: "free"
+            origin: "top-right"
+            marginTop: theme.paddingLarge
+            marginRight: theme.paddingLarge
+            x: 2
+            y: controls.active ? 0 : -bboxHeight * 1.3
+            yTransition: NumberAnimation { }
+            fontSize: theme.fontSizeLarge
+            color: "white"
+        }
+
         Box {
             id: controls
 
             property player: videoPlayer
+            property active: false
 
-            visible: false
+            //visible: false
             position: "free"
             origin: "bottom-left"
+            y: active ? 0 : -bboxHeight * 1.3
+            yTransition: NumberAnimation { }
             fillWidth: true
             marginLeft: theme.paddingSmall
             marginRight: marginLeft
@@ -529,9 +586,6 @@ MouseBox {
                     marginLeft: theme.paddingMedium
                     marginRight: theme.paddingMedium
                     flat: true
-                    //bold: true
-                    //horizontalAlignment: "center"
-                    //overflowBehavior: "ellipsis"
 
                     playerBox.onCurrentChanged: () =>
                     {
@@ -569,7 +623,7 @@ MouseBox {
                         }
                         else
                         {
-                            text = low.escapeMarkup(stripExtension(file.name));
+                            text = (playerBox.current + 1) + "/" + playerBox.model.size + " - " + low.escapeMarkup(stripExtension(file.name));
                         }
                     }
 

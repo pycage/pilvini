@@ -144,94 +144,6 @@ Document {
         height: documentRoot.windowHeight
         color: theme.contentBackgroundColor
 
-        // content area
-        Box {
-            fillWidth: true
-            fillHeight: true
-
-            GridLayout {
-                id: grid
-
-                property maximizedItem: null
-                property fileViewers: []
-
-                fillWidth: true
-                fillHeight: true
-
-                layout: bbox.width > bbox.height ? "row" : "column"
-
-                Repeater {
-                    id: windowsRepeater
-
-                    model: windowsModel
-
-                    function closePane(idx)
-                    {
-                        windowsModel.remove(idx);
-                        dumpRecycleBin();
-
-                        grid.update();
-                    }
-
-                    delegate: template Loader {
-                        visible: ! grid.maximizedItem || grid.maximizedItem === objectId
-
-                        property sortIndex: objectId
-
-                        fillWidth: true
-                        fillHeight: true
-
-                        onInitialization: () =>
-                        {
-                            sourceTemplate = modelData.value.component;
-                        }
-
-                        onDestruction: () =>
-                        {
-                            if (grid.maximizedItem === objectId)
-                            {
-                                grid.maximizedItem = null;
-                            }
-                        }
-
-                        onItemChanged: () =>
-                        {
-                            if (item)
-                            {
-                                for (let key in modelData.value.properties)
-                                {
-                                    item[key] = modelData.value.properties[key];
-                                }
-
-                                item.onToggleMaximized = () =>
-                                {
-                                    if (grid.maximizedItem)
-                                    {
-                                        grid.maximizedItem = null;
-                                    }
-                                    else
-                                    {
-                                        grid.maximizedItem = objectId;
-                                    }
-                                    grid.update();
-                                };
-
-                                grid.get().onMaximizedItemChanged = safeCallback(() =>
-                                {
-                                    item.maximized = grid.maximizedItem === objectId;
-                                });
-
-                                grid.maximizedItem = objectId;
-                                grid.update();
-                            }
-                        }
-                    }
-                }
-
-            }//GridLayout
-
-        }
-
         // status bar
         MouseBox {
             position: "free"
@@ -241,7 +153,7 @@ Document {
             color: theme.contentBackgroundColor
             layout: "center-row"
 
-            opacity: doc.showStatusBar || containsMouse ? 1.0 : 0.0
+            //visible: doc.showStatusBar ? 1.0 : 0.0
 
             // menu button
             Button {
@@ -426,6 +338,95 @@ Document {
                 }
             }
         }
+
+        // content area
+        Box {
+            fillWidth: true
+            fillHeight: true
+
+            GridLayout {
+                id: grid
+
+                property maximizedItem: null
+                property fileViewers: []
+
+                fillWidth: true
+                fillHeight: true
+
+                layout: bbox.width > bbox.height ? "row" : "column"
+
+                Repeater {
+                    id: windowsRepeater
+
+                    model: windowsModel
+
+                    function closePane(idx)
+                    {
+                        windowsModel.remove(idx);
+                        dumpRecycleBin();
+
+                        grid.update();
+                    }
+
+                    delegate: template Loader {
+                        visible: ! grid.maximizedItem || grid.maximizedItem === objectId
+
+                        property sortIndex: objectId
+
+                        fillWidth: true
+                        fillHeight: true
+
+                        onInitialization: () =>
+                        {
+                            sourceTemplate = modelData.value.component;
+                        }
+
+                        onDestruction: () =>
+                        {
+                            if (grid.maximizedItem === objectId)
+                            {
+                                grid.maximizedItem = null;
+                            }
+                        }
+
+                        onItemChanged: () =>
+                        {
+                            if (item)
+                            {
+                                for (let key in modelData.value.properties)
+                                {
+                                    item[key] = modelData.value.properties[key];
+                                }
+
+                                item.onToggleMaximized = () =>
+                                {
+                                    if (grid.maximizedItem)
+                                    {
+                                        grid.maximizedItem = null;
+                                    }
+                                    else
+                                    {
+                                        grid.maximizedItem = objectId;
+                                    }
+                                    grid.update();
+                                };
+
+                                grid.get().onMaximizedItemChanged = safeCallback(() =>
+                                {
+                                    item.maximized = grid.maximizedItem === objectId;
+                                });
+
+                                grid.maximizedItem = objectId;
+                                grid.update();
+                            }
+                        }
+                    }
+                }
+
+            }//GridLayout
+
+        }
+
 
     }
 
