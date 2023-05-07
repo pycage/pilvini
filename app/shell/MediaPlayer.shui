@@ -602,7 +602,7 @@ MouseBox {
 
                             /*
                             text = "Loading...";
-                            fetchManager.fetch("/::tags" + file.path)
+                            httpRequest("/::tags" + file.path).send()
                             .then(response =>
                             {
                                 if (response.ok)

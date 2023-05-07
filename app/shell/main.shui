@@ -83,7 +83,7 @@ Document {
             // initialize
             windowsModel.initModel();
 
-            window.fetch("/whoami")
+            const req = httpRequest("/whoami").send()
             .then(req => req.text())
             .then(data =>
             {
@@ -146,14 +146,12 @@ Document {
 
         // status bar
         MouseBox {
-            position: "free"
-
             fillWidth: true
             height: theme.itemHeightMedium
             color: theme.contentBackgroundColor
             layout: "center-row"
 
-            //visible: doc.showStatusBar ? 1.0 : 0.0
+            visible: doc.showStatusBar || grid.items.length > 1
 
             // menu button
             Button {
@@ -242,7 +240,7 @@ Document {
                         text: "Log Out"
                         onClick: () =>
                         {
-                            window.fetch("/logout")
+                            httpRequest("/logout").send()
                             .then(() => { window.location.reload(); })
                             .catch(err => { });
                         }
@@ -460,7 +458,7 @@ Document {
 
             onClick: () =>
             {
-                window.fetch("/login")
+                httpRequest("/login").send()
                 .then(req =>
                 {
                     if (req.ok)
@@ -486,7 +484,7 @@ Document {
             {
                 const code = Math.round(Math.random() * (9999 - 1000) + 1000);
                 codeLabel.text = code;
-                window.fetch("/login?code=" + code)
+                httpRequest("/login?code=" + code).send()
                 .then(req =>
                 {
                     codeLabel.text = "";
@@ -531,7 +529,7 @@ Document {
 
             onCodeEntered: code =>
             {
-                window.fetch("/acceptLogin?code=" + code);
+                httpRequest("/acceptLogin?code=" + code).send();
                 dialog.parent = null;
             }
         }

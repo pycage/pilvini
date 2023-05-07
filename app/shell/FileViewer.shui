@@ -193,7 +193,7 @@ Box {
                 else
                 {
                     console.log("load " + source);
-                    window.fetch(source)
+                    httpRequest(source).send()
                     .then(r => r.text())
                     .then(safeCallback(d => text = d))
                     .catch(err => { console.error(err); });

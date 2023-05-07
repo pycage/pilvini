@@ -455,7 +455,7 @@ Box {
     // title bar
     MouseBox {
         visible: ! fileViewer.maximized
-        marginTop: box.bboxY < theme.itemHeightMedium ? theme.itemHeightMedium : 0
+        //marginTop: box.bboxY < theme.itemHeightMedium ? theme.itemHeightMedium : 0
         fillWidth: true
         height: theme.itemHeightMedium
         color: theme.secondaryBackgroundColor
