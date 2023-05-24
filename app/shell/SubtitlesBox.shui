@@ -1,0 +1,33 @@
+require "shellfish/ui";
+
+Box {
+    id: box
+
+    property cues: []
+
+    layout: "center"
+
+    Box {
+        visible: titleLabel.text !== ""
+        color: colorName("black").alpha(0.6)
+
+        Label {
+            id: titleLabel
+
+            color: "yellow"
+            maxWidth: box.bboxWidth - 2 * theme.paddingSmall
+            marginTop: theme.paddingSmall
+            marginLeft: theme.paddingSmall
+            marginRight: theme.paddingSmall
+            marginBottom: theme.paddingSmall
+            horizontalAlignment: "center"
+            overflowBehavior: "wrap"
+            fontSize: theme.fontSizeLarge
+            text: box.cues[0] || "";
+            filter: t => " " + t + " "
+        }
+
+    }
+
+
+}

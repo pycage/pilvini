@@ -280,8 +280,8 @@ HTTPServer {
 
         when: req =>
         {
-	        //console.log(__dirname + ", " + "/shellfish" + ", " + req.url);
-            return WHITELIST.indexOf(req.url) !== -1;
+	        //console.log(__dirname + ", " + "/shellfish" + ", " + req.url.path);
+            return WHITELIST.indexOf(req.url.path) !== -1;
         }
 
         delegate: template WebSession {

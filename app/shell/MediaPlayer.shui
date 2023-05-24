@@ -1,6 +1,7 @@
 require "shellfish/low" as low;
 require "shellfish/ui";
 require "./SeekBar.shui";
+require "./SubtitlesBox.shui";
 require "./TimeLabel.shui";
 
 MouseBox {
@@ -160,34 +161,15 @@ MouseBox {
                 }
             }
 
-            Label {
+            SubtitlesBox {
                 visible: subtitlesToggle.checked
                 position: "free"
                 origin: "bottom-left"
-                marginLeft: 2
+                fillWidth: true
+                marginLeft: theme.paddingSmall
+                marginRight: theme.paddingSmall
                 marginBottom: (controls.active ? controls.bboxHeight : 0) + theme.paddingLarge
-                color: "black"
-                fillWidth: true
-                horizontalAlignment: "center"
-                overflowBehavior: "wrap"
-                fontSize: theme.fontSizeLarge
-                text: videoPlayer.cues[0] || "";
-                filter: t => " " + t + " "
-            }
-
-            Label {
-                visible: subtitlesToggle.checked
-                position: "free"
-                origin: "bottom-left"
-                marginRight: 2
-                marginBottom: (controls.active ? controls.bboxHeight : 0) + theme.paddingLarge + 2
-                color: "yellow"
-                fillWidth: true
-                horizontalAlignment: "center"
-                overflowBehavior: "wrap"
-                fontSize: theme.fontSizeLarge
-                text: videoPlayer.cues[0] || "";
-                filter: t => " " + t + " "
+                cues: videoPlayer.cues
             }
 
             Box {
