@@ -1,4 +1,5 @@
 require "shellfish/server";
+require "./diskinfo.js" as diskinfo;
 require "./proxysession.js";
 require "./virtualfs.js";
 require "./rarfs.js";
@@ -22,6 +23,7 @@ HTTPServer {
             domain === "HTTPServer" ||
             domain === "Config" ||
             domain === "WWW" ||
+            domain === "RPC" ||
             level !== "info")
         {
             const now = new Date();
@@ -232,6 +234,28 @@ HTTPServer {
                 response(200, "OK")
                 .send();
             }
+        }
+    }
+
+    HTTPRoute {
+        //authentication: auth
+
+        when: req => req.url.path === "/::rpc"
+        generateSessionId: req => "rpc-" + req.user //req.sourceAddress + "-" + req.headers.get("x-shellfish-rpc-socket")
+
+        delegate: template RpcSession {
+
+            onInitialization: () =>
+            {
+                registerMethod("diskInfo", () =>
+                {
+                    const path = registryFile.read("/users/" + user + "/root", "/");
+                    const di = new diskinfo.DiskInfo();
+                    di.path = path;
+                    return proxyObject(di);
+                });
+            }
+
         }
     }
 
