@@ -21,12 +21,13 @@ class DiskInfo
                     {
                         const parts = entry.split(" ").filter(p => p !== "");
                         return {
-                            volume: parts[0],
-                            free: Number.parseInt(parts[3]),
-                            total: Number.parseInt(parts[1])
+                            volume: parts[5],
+                            free: Number.parseInt(parts[3]) * 1024,
+                            total: Number.parseInt(parts[1]) * 1024
                         };
                     })
-                    .filter(item => this.path.startsWith(item.volume));
+                    .filter(item => this.path.startsWith(item.volume))
+                    .sort((a, b) => b.volume.length - a.volume.length);
                     console.log(this.path);
                     console.log(JSON.stringify(info));
                     resolve(info);
