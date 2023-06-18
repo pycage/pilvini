@@ -365,7 +365,7 @@ Box {
 
         function update()
         {
-            postCall("diskInfo")
+            invoke("diskInfo")
             .then(async diskInfo =>
             {
                 console.log(diskInfo);
