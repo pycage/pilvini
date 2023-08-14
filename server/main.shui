@@ -1,10 +1,12 @@
 require "shellfish/server";
 require "./diskinfo.js" as diskinfo;
 require "./proxysession.js";
+//require "./pty.js" as pty;
 require "./virtualfs.js";
 require "./rarfs.js";
 require "./registryfile.js";
 require "./registrymonitor.js";
+require "./videoeditor.js";
 require "./viewsdavsession.js";
 require "./zipfs.js";
 require "./ConfigSession.shui";
@@ -93,6 +95,10 @@ HTTPServer {
         property serverAddress: ""
         property serverPort: 8000
         property serverUseSsl: false
+    }
+
+    VideoEditor {
+        id: videoEditor
     }
 
     TokenAuth {
@@ -238,10 +244,10 @@ HTTPServer {
     }
 
     HTTPRoute {
-        //authentication: auth
+        authentication: auth
 
         when: req => req.url.path === "/::rpc"
-        generateSessionId: req => "rpc-" + req.user //req.sourceAddress + "-" + req.headers.get("x-shellfish-rpc-socket")
+        generateSessionId: req => req.headers.get("x-shellfish-rpc-session") || core.generateUid()
 
         delegate: template RpcSession {
 
@@ -253,6 +259,27 @@ HTTPServer {
                     const di = new diskinfo.DiskInfo();
                     di.path = path;
                     return proxyObject(di);
+                });
+
+                /*
+                registerMethod("exec", (cmd, opts) =>
+                {
+                    const handle = new pty.Pty(cmd, opts);
+                    return proxyObject(handle);
+                });
+                */
+
+                registerMethod("videoEditor", () =>
+                {
+                    const root = registryFile.read("/users/" + user + "/root", "/");
+                    console.log("USER: " + user + " -> " + root);
+                    const obj = {
+                        cutVideo: (path, directions, cb1, cb2) =>
+                        {
+                            videoEditor.cutVideo(root + path, directions, cb1, cb2);
+                        }
+                    };
+                    return proxyObject(obj);
                 });
             }
 
@@ -299,7 +326,7 @@ HTTPServer {
             "/icons/fs-icons.css",
             "/icons/media-icons.css",
             "/icons/ui-icons.css",
-            "/require.js"
+            "/require2.js"
         ]
 
         when: req =>

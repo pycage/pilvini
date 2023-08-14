@@ -141,8 +141,8 @@ shRequire(["shellfish/core", "shellfish/core/mime"], (core, mime) =>
             {
                 const data = await this.readData(pathInfo.path1);
                 pathInfo.fs.data = data;
-                const blob = await pathInfo.fs.read(pathInfo.path2);
-                data = await blob.arrayBuffer();
+                const fileData = await pathInfo.fs.read(pathInfo.path2);
+                data = fileData; //await fileData.arrayBuffer();
             }
             priv.dataCache.set(dataPath, data);
             priv.cachedPaths.push(dataPath);
@@ -334,7 +334,7 @@ shRequire(["shellfish/core", "shellfish/core/mime"], (core, mime) =>
             }
         }
 
-        async write(path, stream)
+        async write(path, fileData)
         {
             const priv = d.get(this);
 
@@ -346,7 +346,7 @@ shRequire(["shellfish/core", "shellfish/core/mime"], (core, mime) =>
             const pathInfo = this.analyzePath(path);
             if (! pathInfo.fs)
             {
-                return await priv.filesystem.write(path, stream);
+                return await priv.filesystem.write(path, fileData);
             }
             else
             {

@@ -6,6 +6,7 @@ MouseBox {
     property player: null
     property seekTime: 0
     property seeking: false
+    property sectionsModel: ListModel { }
 
     onPointerDown: (ev) =>
     {
@@ -57,4 +58,27 @@ MouseBox {
         borderRadius: theme.borderRadius
     }
 
+    Box {
+        position: "free"
+        fillWidth: true
+        fillHeight: true
+
+        marginTop: (parent.bboxHeight - theme.paddingSmall / 2) / 2
+        marginBottom: (parent.bboxHeight - theme.paddingSmall / 2) / 2
+
+        borderRadius: theme.borderRadius
+
+        Repeater {
+            model: seekBar.sectionsModel
+
+            delegate: template Box {
+                position: "free"
+                x: modelData.value.begin / seekBar.player.duration * seekBar.bboxWidth
+                width: modelData.value.end / seekBar.player.duration * seekBar.bboxWidth - x
+                fillHeight: true
+                color: modelData.value.color
+                opacity: 0.6
+            }
+        }
+    }
 }

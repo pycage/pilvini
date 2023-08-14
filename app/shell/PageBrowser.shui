@@ -1,5 +1,4 @@
 require "shellfish/ui";
-require "./inertialengine.js";
 require "./ViewportBox.shui";
 
 Box {

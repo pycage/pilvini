@@ -1,3 +1,5 @@
+const [ core ] = await shRequire(["shellfish/core"]);
+
 const infoFile = ".pilvini-folder.info";
 exports.infoFile = infoFile;
 
@@ -166,7 +168,7 @@ async function save(fs, dirPath, infoObj)
     {
         await infoObj.sync();
         const infoPath = dirPath + "/" + infoFile;
-        await fs.write(infoPath, infoObj.blob());
+        await fs.write(infoPath, new core.FileData(infoObj.blob()));
     }
     catch (err)
     {
@@ -174,3 +176,5 @@ async function save(fs, dirPath, infoObj)
     }
 }
 exports.save = save;
+
+

@@ -1,5 +1,4 @@
 require "shellfish/ui";
-require "./inertialengine.js";
 require "./PageBrowser.shui";
 require "./PageItem.shui";
 require "./pdfdocument.js";

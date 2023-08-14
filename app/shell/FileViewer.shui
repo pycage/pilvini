@@ -40,8 +40,6 @@ Box {
     property current: -1
     property maximized: false
 
-    property thisFileViewer: self
-
     event mediaBookmarkUpdated
 
 

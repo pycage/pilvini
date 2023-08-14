@@ -5,7 +5,6 @@ require "./FileViewer.shui";
 require "./folderinfo.js" as folderInfo;
 require "./FolderInfoDialog.shui";
 require "./HistoryScope.shui";
-require "./filefs.js";
 require "./uploadfiles.js" as uploadfiles;
 require "./thumbnailgenerator.js";
 
@@ -192,7 +191,7 @@ Box {
         const dlg = newFileDialogT();
         dlg.callback = newName =>
         {
-            box.fs.write(box.path + "/" + box.fs.encodeName(newName), new Blob([""]));
+            box.fs.write(box.path + "/" + box.fs.encodeName(newName), new core.FileData(""));
         };
         dlg.show();
     }
@@ -361,6 +360,8 @@ Box {
     Downloader { id: downloader }
 
     RpcProxy {
+        id: rpcProxy
+
         endpoint: "/::rpc"
 
         function update()
@@ -377,7 +378,16 @@ Box {
         }
 
         box.onPathChanged: () => { update(); }
+
+        onStatusChanged: () =>
+        {
+            if (status === "disconnected")
+            {
+                thisDocument.showErrorDialog("Connection Lost", "The connection to the server was lost.");
+            }
+        }
     }
+    Label { text: rpcProxy.status }
 
     Object {
         id: mediaBookmark
@@ -394,20 +404,20 @@ Box {
             mediaPosition = 0;
             name = "";
             
-            console.log("check file " + bookmarkFile);
             box.fs.exists(bookmarkFile)
             .then(safeCallback(async ok =>
             {
-                console.log(ok);
                 if (ok)
                 {
-                    const blob = await box.fs.read(bookmarkFile);
-                    const data = await blob.text();
-                    console.log(data);
-                    const obj = JSON.parse(data);
-                    path = obj.path;
-                    mediaPosition = obj.mediaPosition;
-                    name = obj.name;
+                    const fileData = await box.fs.read(bookmarkFile);
+                    const data = await fileData.text();
+                    if (data !== "")
+                    {
+                        const obj = JSON.parse(data);
+                        path = obj.path;
+                        mediaPosition = obj.mediaPosition;
+                        name = obj.name;
+                    }
                 }
             }))
             .catch(err => { console.error(err); });
@@ -419,7 +429,12 @@ Box {
             const data = JSON.stringify(obj);
 
             const bookmarkFile = box.path + "/pilvini-media.bookmark";
-            box.fs.write(bookmarkFile, new Blob([data]))
+            let fd = null;
+            const c = core;
+            unresolved {
+                fd = new c.FileData(data);
+            }
+            box.fs.write(bookmarkFile, fd)
             .catch(err => { });
         }
 
@@ -512,8 +527,7 @@ Box {
             id: breadcrumbs
 
             visible: ! box.searchBox
-            fillWidth: true
-            fillHeight: true
+            fill: true
             path: box.path
 
             onChangePath: path =>
@@ -1061,9 +1075,9 @@ Box {
                                     fillHeight: true
 
                                     displayMode: fsview.displayMode
-                                    highlighted: selector.selection.has(parent.modelData.index)
+                                    highlighted: selector.selection.has(modelData.index)
 
-                                    file: parent.modelData.value
+                                    file: modelData.value
                                     columnWidths: listHeader.columnWidths
 
                                     onReadyForThumbnailChanged: () =>
@@ -1117,7 +1131,7 @@ Box {
 
                                     onPointerDown: (ev) =>
                                     {
-                                        const idx = parent.modelData.index;
+                                        const idx = modelData.index;
 
                                         if (ev.original.ctrlKey)
                                         {

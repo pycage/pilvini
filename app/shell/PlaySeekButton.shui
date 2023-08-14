@@ -1,0 +1,102 @@
+require "shellfish/ui";
+
+Slider {
+
+    property player: null
+    property wasPlaying: false
+
+    minValue: -1.0
+    maxValue: 1.0
+    value: 0.0
+    stepSize: 0.01
+
+    onSeekingChanged: () =>
+    {
+        if (Math.abs(seekValue) < 0.0001)
+        {
+            if (! seeking)
+            {
+                // handle click
+
+                if (player.playing)
+                {
+                    player.pause();
+                }
+                else
+                {
+                    player.play();
+                }
+            }
+            else
+            {
+                wasPlaying = false;
+            }
+        }
+        else
+        {
+            if (! seeking)
+            {
+                // end seeking
+                value = 0.0;
+                if (wasPlaying)
+                {
+                    player.play();
+                }
+            }
+        }
+    }
+
+    onSeekValueChanged: () =>
+    {
+        if (Math.abs(seekValue) > 0.0001)
+        {
+            // begin seeking
+            if (player.playing)
+            {
+                wasPlaying = true;
+                player.pause();
+            }
+        }
+    }
+
+    FrameTimer {
+        running: parent.seeking
+        repeat: true
+        fps: 6
+
+        onTimeout: () =>
+        {
+            const diff = Math.pow(parent.seekValue * 3, 3);
+            thisSlider.player.currentTime = Math.max(0.0, Math.min(thisSlider.player.duration, thisSlider.player.currentTime + diff));
+        }
+    }
+
+    styleOfBackground: template Box {
+        visible: thisSlider.seeking && Math.abs(thisSlider.seekValue) > 0.0001
+        fillWidth: true
+        fillHeight: true
+        color: thisSlider.seekValue < 0.0 ? theme.secondaryColor : theme.primaryColor
+        borderWidth: 1
+        borderColor: theme.borderColor
+        borderRadius: bboxHeight * 0.5
+
+        layout: "center"
+    }
+
+    styleOfHandle: template Box {
+        fillHeight: true
+        width: bboxHeight
+        color: thisSlider.seeking ? theme.highlightBackgroundColor
+                                  : thisSlider.containsMouse ? theme.hoverBackgroundColor
+                                                             : "transparent"
+
+        borderRadius: thisSlider.seeking && Math.abs(thisSlider.seekValue) > 0.0001 ? bboxWidth / 2 : 0
+        layout: "center"
+
+        Label {
+            color: thisSlider.seeking || thisSlider.containsMouse ? theme.highlightColor : theme.primaryColor
+            fontSize: Math.min(parent.bboxWidth, parent.bboxHeight) * 0.6
+            text: thisSlider.player.playing ? "[icon:media-pause]" : "[icon:media-play]"
+        }
+    }
+}

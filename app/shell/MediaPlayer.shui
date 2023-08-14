@@ -1,14 +1,17 @@
 require "shellfish/low" as low;
 require "shellfish/ui";
+require "./PlaySeekButton.shui";
 require "./SeekBar.shui";
 require "./SubtitlesBox.shui";
 require "./TimeLabel.shui";
+require "./VideoCutButton.shui";
 
 MouseBox {
     id: playerBox
 
-    function formatTime(seconds)
+    function formatTime(seconds, detailed)
     {
+        let hs = "" + Math.floor((seconds - Math.floor(seconds)) * 100);
         let t = seconds;
         const secs = Math.floor(t) % 60;
         t /= 60;
@@ -23,8 +26,16 @@ MouseBox {
         if (h.length === 1) h = "0" + h;
         if (m.length === 1) m = "0" + m;
         if (s.length === 1) s = "0" + s;
+        if (hs.length === 1) hs = "0" + hs;
 
-        return (hours > 0 ? h + ":" : "") + m + ":" + s;
+        if (detailed)
+        {
+            return (hours > 0 ? h + ":" : "") + m + ":" + s + "." + hs;
+        }
+        else
+        {
+            return (hours > 0 ? h + ":" : "") + m + ":" + s;
+        }
     }
 
     function stripExtension(filename)
@@ -40,15 +51,27 @@ MouseBox {
         }
     }
 
+    function addMarker(timePos)
+    {
+        markersModel.insertOrdered(timePos, (a, b) => a - b);
+    }
+
+    function removeMarker(idx)
+    {
+        markersModel.remove(idx);
+    }
+
     property model: ListModel { }
     property current: -1
     property startPosition: 0
     property title: model.at(current) ? model.at(current).name : ""
 
     color: "black"
+    canFocus: true
 
     onCurrentChanged: () =>
     {
+        markersModel.reset([]);
         if (current === -1)
         {
             videoPlayer.source = "";
@@ -90,6 +113,74 @@ MouseBox {
         }
     }
 
+    onKeyDown: ev =>
+    {
+        ev.accepted = true;
+
+        if (ev.key === "Enter")
+        {
+            addMarker(controls.player.currentTime);
+        }
+        else if (ev.key === " ")
+        {
+            if (controls.player.playing)
+            {
+                controls.player.pause();
+            }
+            else
+            {
+                controls.player.play();
+            }
+        }
+        else if (ev.key === "ArrowLeft")
+        {
+            const diff = ev.shiftKey ? 1.0 : 1.0 / 24;
+            controls.player.currentTime = Math.max(0, controls.player.currentTime - diff);
+        }
+        else if (ev.key === "ArrowRight")
+        {
+            const diff = ev.shiftKey ? 1.0 : 1.0 / 24;
+            controls.player.currentTime = Math.min(controls.player.duration, controls.player.currentTime + diff);
+        }
+    }
+
+    ListModel {
+        id: markersModel
+    }
+
+    ListModel {
+        id: cutSectionsModel
+
+        function makeModel()
+        {
+            const m = [];
+            if (! controls.player)
+            {
+                return m;
+            }
+
+            const points = [];
+            for (let i = 0; i < markersModel.size; ++i)
+            {
+                points.push(markersModel.at(i));
+            }
+            points.push(controls.player.duration);
+            
+            let prevPos = 0.0;
+            points.forEach((pos, idx) =>
+            {
+                if (idx % 2 === 1)
+                {
+                    m.push({ begin: prevPos, end: pos, color: "green" });
+                }
+                prevPos = pos;
+            });
+            return m;
+        }
+
+        data: makeModel(markersModel.size)
+    }
+
     MouseBox {
         fillWidth: true
         fillHeight: true
@@ -97,6 +188,19 @@ MouseBox {
         onClick: () =>
         {
             controls.active = ! controls.active;
+        }
+
+        onWheel: ev =>
+        {
+            ev.accepted = true;
+            if (ev.deltaY < 0)
+            {
+                volumeSlider.value = Math.min(100, volumeSlider.value + 5);
+            }
+            else if (ev.deltaY > 0)
+            {
+                volumeSlider.value = Math.max(0, volumeSlider.value - 5);
+            }
         }
 
         Box {
@@ -131,7 +235,7 @@ MouseBox {
                 {
                     if (status === "success")
                     {
-                        const name = playerBox.title + " (" + formatTime(currentTime) + ")";
+                        const name = playerBox.title + " (" + formatTime(currentTime, false) + ")";
                         thisFileViewer.mediaBookmarkUpdated(source, currentTime, name);
                     }
                 }
@@ -321,6 +425,7 @@ MouseBox {
             }
             */
 
+            // controls bar 1
             Box {
                 fillWidth: true
                 height: theme.itemHeightMedium
@@ -339,21 +444,16 @@ MouseBox {
                     }
                 }
 
-                /*
-                Button {
+                VideoCutButton {
+                    visible: cutSectionsModel.size > 0
+
                     fillHeight: true
                     width: bboxHeight
                     flat: true
-                    checked: ! thisFileViewer.maximized
-                    icon: "fs-folder"
 
-                    onClick: ev =>
-                    {
-                        ev.accepted = true;
-                        thisFileViewer.maximized = ! thisFileViewer.maximized;
-                    }
+                    file: playerBox.model.at(playerBox.current)
+                    sectionsModel: cutSectionsModel
                 }
-                */
 
                 Box { fillWidth: true }
 
@@ -434,13 +534,20 @@ MouseBox {
 
                     marginRight: theme.paddingLarge
                     width: theme.itemWidthMedium
+                    height: theme.itemHeightSmall / 2
                     minValue: 0
                     maxValue: 100
                     value: 75
 
+                    styleOfBackground: template Box {
+                        fill: true
+                        color: theme.secondaryBackgroundColor
+                        borderRadius: bboxHeight / 2
+                    }
+
                     styleOfHandle: template Box {
                         width: height
-                        height: theme.itemHeightSmall / 2
+                        height: thisSlider.bboxHeight
                         marginTop: (parent.bboxHeight - bboxHeight) / 2
                         borderRadius: width / 2
                         color: theme.primaryColor
@@ -449,6 +556,7 @@ MouseBox {
 
             }
 
+            // controls bar 2
             Box {
                 fillWidth: true
                 height: theme.itemHeightLarge
@@ -479,6 +587,7 @@ MouseBox {
                     width: bboxHeight
                     flat: true
                     icon: "media-replay_10"
+                    repeatAcceleration: 1.0
 
                     onClick: (ev) =>
                     {
@@ -489,24 +598,11 @@ MouseBox {
 
                 Box { fillWidth: true }
 
-                Button {
-                    fillHeight: true
-                    width: bboxHeight
-                    flat: true
-                    icon: controls.player.playing ? "media-pause" : "media-play"
+                PlaySeekButton {
+                    id: playSeekButton
 
-                    onClick: (ev) =>
-                    {
-                        if (controls.player.playing)
-                        {
-                            controls.player.pause();
-                        }
-                        else
-                        {
-                            controls.player.play();
-                        }
-                        ev.accepted = true;
-                    }
+                    fillHeight: true
+                    player: controls.player
                 }
 
                 Box { fillWidth: true }
@@ -516,6 +612,7 @@ MouseBox {
                     width: bboxHeight
                     flat: true
                     icon: "media-forward_10"
+                    repeatAcceleration: 1.0
 
                     onClick: (ev) =>
                     {
@@ -540,16 +637,66 @@ MouseBox {
 
             }
 
+            // markers bar
+            Box {
+                visible: markersModel.size > 0
+
+                marginLeft: theme.paddingMedium
+                marginRight: theme.paddingMedium
+                fillWidth: true
+                height: theme.itemHeightSmall
+
+                Repeater {
+                    model: markersModel
+                    delegate: template MouseBox {
+                        position: "free"
+                        x: modelData.value / controls.player.duration * parent.bboxWidth - bboxWidth / 2
+                        fillHeight: true
+                        color: containsMouse ? theme.highlightBackgroundColor : "transparent"
+                        layout: "center-column"
+
+                        onClick: ev =>
+                        {
+                            ev.accepted = true;
+                            console.log(ev.buttons);
+                            if (ev.buttons === 1)
+                            {
+                                controls.player.currentTime = modelData.value;
+                            }
+                            else if (ev.buttons === 2)
+                            {
+                                playerBox.removeMarker(modelData.index);
+                            }
+                        }
+
+                        Box { fillHeight: true }
+                        Label {
+                            fontSize: theme.fontSizeLarge
+                            color: parent.containsMouse ? theme.highlightColor : theme.primaryColor
+                            text: "[icon:ui-arrow_down]"
+                        }
+
+                        Tooltip {
+                            text: playerBox.formatTime(modelData.value, true)
+                        }
+                    }
+                }
+            }
+
+            // seek bar
             SeekBar {
                 id: seekbar
 
                 marginLeft: theme.paddingMedium
                 marginRight: theme.paddingMedium
                 fillWidth: true
-                height: theme.itemHeightLarge
+                height: theme.itemHeightSmall
                 player: controls.player
+
+                sectionsModel: cutSectionsModel
             }
 
+            // position bar
             Box {
                 marginLeft: theme.paddingMedium
                 marginRight: theme.paddingMedium
@@ -558,7 +705,7 @@ MouseBox {
                 layout: "center-row"
 
                 Label {
-                    text: formatTime(seekbar.seeking ? seekbar.seekTime : controls.player.currentTime)
+                    text: formatTime(seekbar.seeking ? seekbar.seekTime : controls.player.currentTime, playSeekButton.seeking && Math.abs(playSeekButton.seekValue) > 0.0001)
                 }
 
                 Button {
@@ -639,7 +786,7 @@ MouseBox {
                 }
 
                 Label {
-                    text: formatTime(controls.player.duration)
+                    text: formatTime(controls.player.duration, false)
                 }
             }
 

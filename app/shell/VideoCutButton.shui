@@ -1,0 +1,159 @@
+require "shellfish/ui";
+
+Button {
+    id: cutButton
+
+    property file: null
+    property sectionsModel: null
+
+    function formatTime(seconds, detailed)
+    {
+        let centis = "" + Math.floor((seconds - Math.floor(seconds)) * 100);
+        let t = seconds;
+        const secs = Math.floor(t) % 60;
+        t /= 60;
+        const minutes = Math.floor(t) % 60;
+        t /= 60;
+        const hours = Math.floor(t);
+
+        let h = hours.toFixed(0);
+        let m = minutes.toFixed(0);
+        let s = secs.toFixed(0);
+
+        if (h.length === 1) h = "0" + h;
+        if (m.length === 1) m = "0" + m;
+        if (s.length === 1) s = "0" + s;
+        if (centis.length === 1) centis = "0" + centis;
+
+        if (detailed)
+        {
+            return (hours > 0 ? h + ":" : "") + m + ":" + s + "." + centis;
+        }
+        else
+        {
+            return (hours > 0 ? h + ":" : "") + m + ":" + s;
+        }
+    }
+
+    icon: "ui-content_cut"
+
+    onClick: ev =>
+    {
+        ev.accepted = true;
+        const dlg = dialogT();
+        dlg.show();
+    }
+
+    property dialogT: template Dialog {
+
+        title: "Cut Video"
+
+        into buttons Button {
+            text: "Cut"
+
+            onClick: async () =>
+            {
+                const directions = repeater.getDirections();
+                const path = cutButton.file.path;
+                thisDialog.close();
+
+                const videoEditor = await rpcProxy.invoke("videoEditor");
+                videoEditor.cutVideo(decodeURIComponent(path), directions, (name, seconds, duration) =>
+                {
+                    console.log("Cut progress: " + name + " " + seconds + " of " + duration);
+                },
+                () =>
+                {
+                    console.log("Cutting finished");
+                });
+            }
+        }
+
+        into buttons Button {
+            marginLeft: theme.paddingSmall
+            text: "Cancel"
+
+            onClick: () =>
+            {
+                thisDialog.close();
+            }
+        }
+
+        Label {
+            fillWidth: true
+            overflowBehavior: "wrap"
+            text: "Sections with the same target name will be merged into one file."
+        }
+
+        Box {
+            marginTop: theme.paddingMedium
+
+            Ruler { id: labelRuler }
+
+            Repeater {
+                id: repeater
+
+                function getDirections()
+                {
+                    const directions = { };
+
+                    items.forEach(item =>
+                    {
+                        const settings = item.getSettings();
+                        if (settings.enabled)
+                        {
+                            if (! directions[settings.name])
+                            {
+                                directions[settings.name] = [];
+                            }
+                            directions[settings.name].push([settings.begin, settings.end]);
+                        }
+                    });
+
+                    return directions;
+                }
+
+                model: thisButton.sectionsModel
+
+                delegate: template Box {
+
+                    function getSettings()
+                    {
+                        return {
+                            enabled: checkBox.checked,
+                            begin: modelData.value.begin,
+                            end: modelData.value.end,
+                            name: textEntry.text
+                        };
+                    }
+
+                    height: theme.itemHeightMedium
+                    layout: "center-row"
+
+                    CheckBox {
+                        id: checkBox
+
+                        checked: true
+                    }
+
+                    Label {
+                        enabled: checkBox.checked
+                        ruler: labelRuler
+                        marginLeft: theme.paddingSmall
+                        minWidth: labelRuler.max.width
+                        text: formatTime(modelData.value.begin, true) + " - " + formatTime(modelData.value.end, true)
+                    }
+
+                    TextEntry {
+                        id: textEntry
+
+                        enabled: checkBox.checked
+                        marginLeft: theme.paddingSmall
+                        width: theme.itemWidthLarge * 2
+                        text: thisButton.file.name
+                    }
+                }
+            }
+        }
+    }
+}
