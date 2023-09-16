@@ -387,7 +387,6 @@ Box {
             }
         }
     }
-    Label { text: rpcProxy.status }
 
     Object {
         id: mediaBookmark
