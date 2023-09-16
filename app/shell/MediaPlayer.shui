@@ -766,8 +766,18 @@ MouseBox {
 
                     property menuT: template Menu {
 
-                        Repeater {
+                        ListView {
+                            width: titleLabel.bboxWidth
+                            height: thisDocument.windowHeight * 0.5
+                            cellWidth: bboxWidth
+                            cellHeight: theme.itemHeightMedium
+
                             model: playerBox.model
+
+                            onInitialization: () =>
+                            {
+                                wait(100).then(() => { positionViewAt(playerBox.current); });
+                            }
 
                             delegate: template MenuItem {
                                 text: (modelData.index + 1) + " - " +
@@ -780,7 +790,16 @@ MouseBox {
                                     thisMenu.parent = null;
                                 }
                             }
+
+                            ScrollIndicator { }
                         }
+
+                        /*
+                        Repeater {
+                            model: playerBox.model
+
+                        }
+                        */
 
                     }
                 }
