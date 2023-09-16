@@ -22,9 +22,8 @@ shRequire(["shellfish/core", "shellfish/low"], (core, low) =>
             item.href = href;
             item.download = name;
             item.click();
-            window.location.hash = "";
         }
+
     }
     exports.Downloader = Downloader;
-
 });
