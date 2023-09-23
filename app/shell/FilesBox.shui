@@ -1286,7 +1286,22 @@ Box {
                                         const infoObj = await folderInfo.load(box.fs, box.path);
                                         const idx = [...selector.selection][0];
                                         const file = m.at(idx);
-                                        const blob = await box.fs.read(file.mimetype === "audio/mp3" ? file.path + "?view=cover" : file.path);
+
+                                        let blob = null;
+                                        if (file.mimetype === "audio/mp3")
+                                        {
+                                            blob = await box.fs.read(file.path + "?view=cover");
+                                        }
+                                        else if (file.type === "d")
+                                        {
+                                            const infoObj2 = await folderInfo.load(box.fs, file.path);
+                                            blob = infoObj2.icon;
+                                        }
+                                        else
+                                        {
+                                            blob = await box.fs.read(file.path);
+                                        }
+
                                         infoObj.icon = blob;
                                         await folderInfo.save(box.fs, box.path, infoObj);
                                         box.readFolderInfo();
