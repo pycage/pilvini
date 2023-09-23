@@ -792,14 +792,8 @@ MouseBox {
                             }
 
                             ScrollIndicator { }
+                            OverflowScroller { }
                         }
-
-                        /*
-                        Repeater {
-                            model: playerBox.model
-
-                        }
-                        */
 
                     }
                 }
