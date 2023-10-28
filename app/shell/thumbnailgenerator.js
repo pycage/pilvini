@@ -499,13 +499,15 @@ const [ core, pdfdoc, folderinfo ] = await shRequire(["shellfish/core", __dirnam
                         {
                             const blob = await makeImageThumbnail(file.path, priv.size, true);
                             await priv.filesystem.write(tnPath, new core.FileData(blob));
-                            resolve(blob);
+                            resolve((await priv.filesystem.read(tnPath)).blob());
+                            //resolve(blob);
                         }
                         else if (file.mimetype.startsWith("video/"))
                         {
                             const blob = await makeVideoThumbnail(file.path, priv.size, true);
                             await priv.filesystem.write(tnPath, new core.FileData(blob));
-                            resolve(blob);
+                            resolve((await priv.filesystem.read(tnPath)).blob());
+                            //resolve(blob);
                         }
                         else if (file.mimetype.startsWith("audio/"))
                         {

@@ -505,15 +505,6 @@ MouseBox {
                 }
 
                 Button {
-                    visible: videoPlayer.visible
-                    checked: controls.player.ratio === 4
-                    fillHeight: true
-                    flat: true
-                    text: "Fit"
-                    onClick: (ev) => { controls.player.ratio = 4; ev.accepted = true; }
-                }
-
-                Button {
                     id: muteButton
 
                     property muted: false
@@ -768,7 +759,7 @@ MouseBox {
 
                         ListView {
                             width: titleLabel.bboxWidth
-                            height: thisDocument.windowHeight * 0.5
+                            height: Math.min(cellHeight * count, thisDocument.windowHeight * 0.5)
                             cellWidth: bboxWidth
                             cellHeight: theme.itemHeightMedium
 
@@ -779,10 +770,18 @@ MouseBox {
                                 wait(100).then(() => { positionViewAt(playerBox.current); });
                             }
 
-                            delegate: template MenuItem {
-                                text: (modelData.index + 1) + " - " +
-                                      low.escapeMarkup(stripExtension(modelData.value.name))
-                                maxWidth: titleLabel.bboxWidth
+                            delegate: template MenuItemBase {
+
+                                layout: "center-row"
+
+                                Label {
+                                    fillWidth: true
+                                    marginLeft: theme.paddingSmall
+                                    marginRight: theme.paddingSmall
+                                    overflowBehavior: "ellipsis"
+                                    text: (modelData.index + 1) + " - " +
+                                          low.escapeMarkup(stripExtension(modelData.value.name))
+                                }
 
                                 onClick: () =>
                                 {
