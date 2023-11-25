@@ -92,6 +92,12 @@ Document {
         }
     }
 
+    RpcProxy {
+        id: proxy
+
+        endpoint: "/::rpc"
+    }
+
     History {
         id: history
 
