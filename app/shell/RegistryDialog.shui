@@ -1,0 +1,317 @@
+require "shellfish/ui";
+require "shellfish/low" as low;
+
+Dialog {
+    id: dialog
+
+    property registry: null
+
+    title: "Registry"
+
+    into buttons Button {
+        marginLeft: theme.paddingSmall
+        text: "Apply"
+        onClick: () =>
+        {
+            registryOverlay.apply()
+            .catch(err =>console.error(err))
+            .finally(() => dialog.parent = null);
+        }
+    }
+
+    into buttons Button {
+        marginLeft: theme.paddingSmall
+        text: "Cancel"
+        onClick: () => { dialog.parent = null; }
+    }
+
+    onInitialization: () =>
+    {
+        thisContentArea.width = 640;
+        thisContentArea.height = 480;
+    }
+
+    onRegistryChanged: async () =>
+    {
+        if (registry)
+        {
+            let items = await registry.list("/");
+            items = items.map(name =>
+            {
+                return {
+                    path: "/" + name,
+                    name: name,
+                    level: 0
+                }
+            });
+            console.log(items);
+            folderModel.reset(items);
+            configModel.path = items[0].path;
+        }
+    }
+
+    RegistryOverlay {
+        id: registryOverlay
+
+        registry: dialog.registry
+    }
+
+    ListModel {
+        id: folderModel
+    }
+
+    TreeModelAdapter {
+        id: folderTreeModel
+
+        model: folderModel
+
+        dynamicContentProvider: async (idx) =>
+        {
+            const item = at(idx);
+            const contents = await registryOverlay.list(item.path);
+            console.log("List: " + item.path);
+            console.log(JSON.stringify(contents));
+
+            const nodes = [];
+            for (let i = 0; i < contents.length; ++i)
+            {
+                const name = contents[i];
+                const info = await registryOverlay.info(item.path + "/" + name);
+                console.log(name);
+                console.log(info);
+
+                if (info.type === "folder")
+                {
+                    const child = {
+                        path: item.path + "/" + name,
+                        name: name,
+                        level: item.level + 1,
+                        nodeType: info.type === "folder" ? "node" : "leaf"
+                    };
+                    nodes.push(child);
+                }
+            }
+            return nodes;
+        }
+    }
+
+    ListModel {
+        id: configModel
+
+        property path: "/"
+
+        onPathChanged: async () =>
+        {
+            console.log("Path: " + path);
+
+            const m = [];
+            const keys = await registryOverlay.list(path);
+            console.log(JSON.stringify(keys));
+            for (let i = 0; i < keys.length; ++i)
+            {
+                const key = keys[i];
+                const info = await registryOverlay.info(path + "/" + key);
+                console.log(path + "/" + key + ": " + info.type);
+
+                if (info.type === "folder")
+                {
+                    continue;
+                }
+                else if (info.type === "boolean")
+                {
+                    const value = await registryOverlay.read(path + "/" + key);
+                    m.push({
+                        path: path + "/" + key,
+                        label: key,
+                        value: value,
+                        template: dialog.configBooleanT
+                    });
+                }
+                else if (info.type === "number")
+                {
+                    const value = await registryOverlay.read(path + "/" + key);
+                    m.push({
+                        path: path + "/" + key,
+                        label: key,
+                        value: value,
+                        template: dialog.configNumberT
+                    });
+                }
+                else if(info.type === "string")
+                {
+                    const value = await registryOverlay.read(path + "/" + key);
+                    m.push({
+                        path: path + "/" + key,
+                        label: key,
+                        value: value,
+                        template: dialog.configStringT
+                    });
+                }
+            }
+            configModel.reset(m);
+        }
+    }
+
+    SplitBox {
+        fill: true
+
+        into first Box {
+            fill: true
+
+            ListView {
+                fill: true
+                model: folderTreeModel
+
+                cellWidth: bboxWidth
+                cellHeight: theme.itemHeightSmall
+
+                delegate: template MouseBox {
+
+                    property highlighted: selector.selection.has(modelData.index)
+
+                    color: highlighted ? theme.highlightBackgroundColor
+                                       : "transparent"
+                    layout: "center-row"
+
+                    onClick: ev =>
+                    {
+                        selector.select(modelData.index, "replace");
+                        configModel.path = modelData.value.path;
+                        ev.accepted = true;
+                    }
+
+                    TreeBranch {
+                        
+                        fillHeight: true
+
+                        level: modelData.value.level
+                        nodeStatus: modelData.value.nodeStatus
+                        nodeType: modelData.value.nodeType
+
+                        iconColor: parent.highlighted ? theme.highlightColor
+                                                      : theme.primaryColor
+
+                        onClick: () =>
+                        {
+                            const item = modelData.value;
+                            console.log(JSON.stringify(item));
+
+                            if (item.nodeStatus.collapsed)
+                            {
+                                // uncollapse
+                                thisListView.model.setCollapsed(modelData.index, false);
+                            }
+                            else
+                            {
+                                // collapse
+                                console.log("COLLAPSE");
+                                thisListView.model.setCollapsed(modelData.index, true);
+                            }
+                        }
+                    }
+
+                    Label {
+                        marginLeft: theme.paddingSmall
+                        fillWidth: true
+                        overflowBehavior: "ellipsis"
+                        color: parent.highlighted ? theme.highlightColor
+                                                  : theme.primaryColor
+                        text: low.escapeMarkup(modelData.value.name)
+                    }
+
+                }
+
+                ListViewSelector { id: selector }
+                ScrollIndicator { }
+            }
+        }
+
+        into second Box {
+            fill: true
+
+            Repeater {
+                model: configModel
+
+                delegate: template Loader {
+                    property path: modelData.value.path
+                    property label: modelData.value.label
+                    property value: modelData.value.value
+
+                    fillWidth: true
+                    height: theme.itemHeightMedium
+
+                    sourceTemplate: modelData.value.template
+                }
+            }
+
+        }
+    }
+
+    property configBooleanT: template Box {
+        fillWidth: true
+        layout: "center-row"
+
+        Label {
+            fillWidth: true
+            text: low.escapeMarkup(parent.parent.label || "")
+        }
+
+        CheckBox {
+            marginLeft: theme.paddingSmall
+            checked: parent.parent.value
+
+            onCheckedChanged: () =>
+            {
+                registryOverlay
+                .write(parent.parent.path, checked)
+                .catch(err => console.error(err));
+            }
+        }
+    }
+
+    property configNumberT: template Box {
+        fillWidth: true
+        layout: "center-row"
+
+        Label {
+            fillWidth: true
+            text: low.escapeMarkup(parent.parent.label || "")
+        }
+
+        SpinBox {
+            marginLeft: theme.paddingSmall
+            minValue: 0
+            maxValue: 65535
+            value: parent.parent.value
+
+            onValueChanged: () =>
+            {
+                registryOverlay
+                .write(parent.parent.path, value)
+                .catch(err => console.error(err));
+            }
+        }
+    }
+
+    property configStringT: template Box {
+        fillWidth: true
+        layout: "center-row"
+
+        Label {
+            fillWidth: true
+            text: low.escapeMarkup(parent.parent.label || "")
+        }
+
+        TextEntry {
+            marginLeft: theme.paddingSmall
+            text: parent.parent.value
+
+            onTextChanged: () =>
+            {
+                registryOverlay
+                .write(parent.parent.path, text)
+                .catch(err => console.error(err));
+            }
+        }
+    }
+}

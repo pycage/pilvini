@@ -4,18 +4,20 @@ require "./proxysession.js";
 //require "./pty.js" as pty;
 require "./virtualfs.js";
 require "./rarfs.js";
-require "./registryfile.js";
-require "./registrymonitor.js";
 require "./videoeditor.js";
 require "./viewsdavsession.js";
 require "./zipfs.js";
-require "./ConfigSession.shui";
 
 HTTPServer {
 
     enabled: false
     certificate: __dirname + "/../cert/server.cert"
     key: __dirname + "/../cert/server.key"
+
+    host: registryFile.read("/server/address")
+    port: registryFile.read("/server/port")
+    secure: registryFile.read("/server/use_ssl")
+    enabled: registryFile.ready
 
     function log(domain, level, message)
     {
@@ -33,20 +35,6 @@ HTTPServer {
         }
     }
 
-    registryFile.onReadyChanged: () =>
-    {
-        if (registryFile.ready)
-        {
-            wait(100).then(() =>
-            {
-                host = registryFile.read("/server/address");
-                port = registryFile.read("/server/port");
-                secure = registryFile.read("/server/use_ssl");
-                enabled = true;
-            });
-        }
-    }
-
     LocalFS {
         id: localFs
     }
@@ -57,11 +45,12 @@ HTTPServer {
         filesystem: localFs
         path: __dirname + "/../config.db"
 
-        onReadyChanged: () =>
+        onReadyChanged: async () =>
         {
             if (ready)
             {
-                if (! list("/").includes("server"))
+                const contents = await list("/");
+                if (! contents.includes("server"))
                 {
                     console.log("add server");
                     mkdir("/server");
@@ -70,7 +59,7 @@ HTTPServer {
                     create("/server/use_ssl", false);
                     create("/server/certificate", "");
                 }
-                if (! list("/").includes("users"))
+                if (! contents.includes("users"))
                 {
                     mkdir("/users");
                     mkdir("/users/admin");
@@ -80,21 +69,6 @@ HTTPServer {
                 }
             }
         }
-    }
-
-    RegistryMonitor {
-        id: registryMonitor
-
-        registry: registryFile
-        mapping: ({
-            "/server/address": "serverAddress",
-            "/server/port": "serverPort",
-            "/server/use_ssl": "serverUseSsl"
-        })
-
-        property serverAddress: ""
-        property serverPort: 8000
-        property serverUseSsl: false
     }
 
     VideoEditor {
@@ -108,18 +82,20 @@ HTTPServer {
     HTTPAuth {
         id: httpAuth
 
-        function updateUsers()
+        async function updateUsers()
         {
             console.log("UPDATE USERS DB");
             const m = { };
-            registryFile.list("/users").forEach(name =>
+            const contents = await registryFile.list("/users");
+            for (let i = 0; i < contents.length; ++i)
             {
-                const hash = registryFile.read("/users/" + name + "/hash", "");
+                const name = contents[i];
+                const hash = await registryFile.read("/users/" + name + "/hash", "");
                 if (hash !== "")
                 {
                     m[name] = hash;
                 }
-            });
+            }
             console.log(JSON.stringify(m));
             users = m;
         }
@@ -190,6 +166,12 @@ HTTPServer {
                     response(401, "Unauthorized")
                     .send();
                 });
+
+                console.log("SOURCE: " + req.sourceAddress);
+                if (req.sourceAddress.startsWith("192.168.") || req.sourceAddress === "127.0.0.1")
+                {
+                    auth.authorizeCode(req.url.parameters.code);
+                }
             }
         }
     }
@@ -253,9 +235,9 @@ HTTPServer {
 
             onInitialization: () =>
             {
-                registerMethod("diskInfo", () =>
+                registerMethod("diskInfo", async () =>
                 {
-                    const path = registryFile.read("/users/" + user + "/root", "/");
+                    const path = await registryFile.read("/users/" + user + "/root", "/");
                     const di = new diskinfo.DiskInfo();
                     di.path = path;
                     return proxyObject(di);
@@ -269,9 +251,14 @@ HTTPServer {
                 });
                 */
 
-                registerMethod("videoEditor", () =>
+                registerMethod("registry", () =>
                 {
-                    const root = registryFile.read("/users/" + user + "/root", "/");
+                    return proxyObject(registryFile, ["read", "write", "list", "info"]);
+                });
+
+                registerMethod("videoEditor", async () =>
+                {
+                    const root = await registryFile.read("/users/" + user + "/root", "/");
                     console.log("USER: " + user + " -> " + root);
                     const obj = {
                         cutVideo: (path, directions, cb1, cb2) =>
@@ -283,16 +270,6 @@ HTTPServer {
                 });
             }
 
-        }
-    }
-
-    // Server configuration
-    HTTPRoute {
-        authentication: auth
-        prefix: "/::config"
-
-        delegate: template ConfigSession {
-            registry: registryFile
         }
     }
 
@@ -326,7 +303,7 @@ HTTPServer {
             "/icons/fs-icons.css",
             "/icons/media-icons.css",
             "/icons/ui-icons.css",
-            "/require2.js"
+            "/require.js"
         ]
 
         when: req =>
@@ -374,7 +351,7 @@ HTTPServer {
 
         delegate: template ViewsDAVSession {
             filesystem: vfs
-            root: user ? registryFile.read("/users/" + user + "/root", "/")
+            root: user ? registryFile.readSync("/users/" + user + "/root", "/")
                        : "/"
         }
 

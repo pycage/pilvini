@@ -3,7 +3,7 @@ require "shellfish/ui";
 require "./CodePad.shui";
 require "./FilesBox.shui";
 require "./GridLayout.shui";
-require "./SettingsDialog.shui";
+require "./RegistryDialog.shui";
 require "./TimeLabel.shui";
 require "./youtubefs.js";
 require "/icons/comm-icons.css";
@@ -213,11 +213,18 @@ Document {
                     }
 
                     MenuItem {
-                        text: "Settings..."
+                        text: "Registry Editor..."
                         onClick: () =>
                         {
-                            const dlg = doc.settingsDialogT();
-                            dlg.show();
+                            proxy.invoke("registry")
+                            .then(regObj =>
+                            {
+                                console.log("GOT REGISTRY");
+                                const dlg = doc.registryDialogT();
+                                dlg.registry = regObj;
+                                dlg.show();
+                            })
+                            .catch(err => console.error(err));
                         }
                     }
 
@@ -516,7 +523,7 @@ Document {
         }
     }
 
-    property settingsDialogT: template SettingsDialog { }
+    property registryDialogT: template RegistryDialog { }
 
     property acceptGuestDialogT: template Dialog {
         id: dialog

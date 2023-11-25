@@ -426,7 +426,7 @@ Box {
         //filesystem: OfflineFS { volume: "Thumbnails" }
         filesystem: FileFS {
             filesystem: box.fs
-            path: box.path + "/.pilvini-thumbnails.cache"
+            path: pathJoin(box.path, ".pilvini-thumbnails.cache")
 
             onStatusChanged: () =>
             {

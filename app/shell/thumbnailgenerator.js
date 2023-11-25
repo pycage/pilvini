@@ -500,32 +500,30 @@ const [ core, pdfdoc, folderinfo ] = await shRequire(["shellfish/core", __dirnam
                             const blob = await makeImageThumbnail(file.path, priv.size, true);
                             await priv.filesystem.write(tnPath, new core.FileData(blob));
                             resolve((await priv.filesystem.read(tnPath)).blob());
-                            //resolve(blob);
                         }
                         else if (file.mimetype.startsWith("video/"))
                         {
                             const blob = await makeVideoThumbnail(file.path, priv.size, true);
                             await priv.filesystem.write(tnPath, new core.FileData(blob));
                             resolve((await priv.filesystem.read(tnPath)).blob());
-                            //resolve(blob);
                         }
                         else if (file.mimetype.startsWith("audio/"))
                         {
                             const blob = await makeImageThumbnail(file.path + "?view=cover", priv.size, true);
                             await priv.filesystem.write(tnPath, new core.FileData(blob));
-                            resolve(blob);
+                            resolve((await priv.filesystem.read(tnPath)).blob());
                         }
                         else if (file.mimetype === "application/pdf")
                         {
                             const blob = await makePdfThumbnail(file.path, priv.size);
                             await priv.filesystem.write(tnPath, new core.FileData(blob));
-                            resolve(blob);
+                            resolve((await priv.filesystem.read(tnPath)).blob());
                         }
                         else if (file.mimetype === "application/x-youtube-link")
                         {
                             const blob = await makeYouTubeThumbnail(fs, file.path, 320);
                             await priv.filesystem.write(tnPath, new core.FileData(blob));
-                            resolve(blob);
+                            resolve((await priv.filesystem.read(tnPath)).blob());
                         }
                         else if (file.mimetype === "application/zip" && file.size < 1024 * 1024 * 50)
                         {
@@ -534,7 +532,7 @@ const [ core, pdfdoc, folderinfo ] = await shRequire(["shellfish/core", __dirnam
                             {
                                 await priv.filesystem.write(tnPath, new core.FileData(blob));
                             }
-                            resolve(blob);                            
+                            resolve((await priv.filesystem.read(tnPath)).blob());
                         }
                         else if (file.type === "d" && await fs.exists(file.path + "/" + folderinfo.infoFile))
                         {
@@ -545,7 +543,7 @@ const [ core, pdfdoc, folderinfo ] = await shRequire(["shellfish/core", __dirnam
                                 const blob = await makeImageThumbnail(url, priv.size, true);
                                 this.wait(500).then(() => { URL.revokeObjectURL(url); });
                                 await priv.filesystem.write(tnPath, new core.FileData(blob));
-                                resolve(blob);
+                                resolve((await priv.filesystem.read(tnPath)).blob());
                             }
                             else
                             {
