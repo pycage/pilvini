@@ -82,19 +82,6 @@ shRequire(["shellfish/server"], (server) =>
 
     const d = new WeakMap();
 
-    /**
-     * Class representing a plain web session serving a filesystem for
-     * GET and HEAD methods.
-     * 
-     * When requesting a folder, a simple HTML page with the folder's contents
-     * is generated.
-     * 
-     * @extends server.WebSession
-     * @memberof server
-     * 
-     * @property {core.Filesystem} filesystem - (default: `null`) The filesystem to serve.
-     * @property {string} root - (default: `"/"`) The local path to use as the root folder.
-     */
     class ProxySession extends server.HTTPSession
     {
         constructor()
