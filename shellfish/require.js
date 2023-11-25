@@ -23,22 +23,21 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 "use strict";
 
 /**
- * Loads the given modules asynchronously and invokes a callback afterwards.
+ * Loads the given modules asynchronously and returns a Promise.
  * 
  * This function takes a number of Shellfish module paths and loads them in the
- * background. When all modules have been loaded, a callback function is invoked
+ * background. When all modules have been loaded, the Promise will resolve
  * with all module objects.
  * 
  * #### Example:
  * 
- *     shRequire(["a.js", "b.js", "c.js"], (a, b, c) =>
- *     {
- *         // do something with the modules
- *         a.foo();
- *     });
+ *     const [ a, b, c ] = await shRequire(["a.js", "b.js", "c.js"]);
+ * 
+ *     // do something with the modules
+ *     a.foo();
  * 
  * Modules cannot pollute the global namespace and the modules are only visible
- * inside the callback function.
+ * inside the calling scope.
  * 
  * A module file looks like a normal JavaScript file, but everything that shall
  * be accessible from outside is assigned to the `exports` object.
@@ -59,26 +58,17 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * 
  * For instance, it is easier to write
  * 
- *     shRequire(["shellfish/ui"], (ui) =>
- *     {
- * 
- *     });
+ *     const ui = await shRequire(["shellfish/ui"]);
  * 
  * than it is to write something like
  * 
- *     shRequire(["../../shellfish-ui/ui.js"], (ui) =>
- *     {
- * 
- *     });
+ *     const ui = await shRequire(["../../shellfish-ui/ui.js"]);
  * 
  * The special constant `__dirname` is available inside a module and points to
  * the path of the directory where the module is located. This can,
  * for instance, be used to load modules relative to the current module.
  * 
- *     shRequire([__dirname + "/otherModule.js"], (other) =>
- *     {
- * 
- *     });
+ *     const other = await shRequire([__dirname + "/otherModule.js"]);
  * 
  * If a transformer function is specified, the module URL and the module data are
  * passed to this function and the returned code will be executed.
@@ -98,7 +88,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * @name shRequire
  * @function
  * @param {string[]} modules - The paths of the modules to load.
- * @param {function} callback - The callback to invoke after loading.
+ * @param {function} callback - [**deprecated**] The callback to invoke after loading. This parameter is only provided for backwards compatibility.
  * @param {function} [transformer = null] - An optional function for transforming module data. See {@link fengshui.compile} for the signature.
  */
 const shRequire = (function ()
@@ -128,9 +118,6 @@ const shRequire = (function ()
                            typeof process.versions === "object" &&
                            typeof process.versions.electron !== "undefined";
 
-    // stack of task queues
-    const stackOfQueues = [];
-
     // modules cache
     const cache = { };
 
@@ -149,7 +136,10 @@ const shRequire = (function ()
     // URL to loader map
     let loadersMap = { };
 
-    let nextScheduled = false;
+    // map of one-shot callbacks
+    const callbackMap = new Map();
+
+    let idCounter = 0;
 
 
     function log(domain, level, message)
@@ -169,6 +159,7 @@ const shRequire = (function ()
 
     function logError(message)
     {
+        /*
         if (isWeb)
         {
             // remember the good old days..?
@@ -191,6 +182,7 @@ const shRequire = (function ()
             node.onclick = () => { node.remove(); }
             document.body.appendChild(node);
         }
+        */
         console.error(message);
     }
 
@@ -287,160 +279,146 @@ const shRequire = (function ()
      * set in the local storage.
      * 
      * @param {string} url - The URL to fetch from.
-     * @param {function} callback - The callback function to invoke with the resource data.
      */
-    function storeFetch(url, callback)
+    async function storeFetch(url)
     {
-        if (typeof localStorage === "undefined" || localStorage.getItem("shellfish-use-cache") !== "true")
+        if (typeof localStorage === "undefined" ||
+            localStorage.getItem("shellfish-use-cache") !== "true")
         {
-            fetch(url, { cache: "no-cache" })
-            .then(response =>
+            try
             {
+                const response = await fetch(url, { cache: "no-cache" });
                 if (! response.ok)
                 {
-                    throw `${response.status} ${response.statusText}`;
+                    return null;
                 }
-                return response.text()
-            })
-            .then(data =>
+                const data = await response.text();
+                return data;
+            }
+            catch (err)
             {
-                callback(data);
-            })
-            .catch(err =>
-            {
-                callback(null);
-            });
-            return;
+                return null;
+            }
         }
 
-        let lastModified = Date.now();
-        fetch(url, { cache: "no-cache", method: "HEAD" })
-        .then(response =>
+        try
         {
-            if (response.headers.has("Last-Modified"))
+            let lastModified = Date.now();
+            const headResponse = await fetch(url, { cache: "no-cache", method: "HEAD" });
+            if (headResponse.headers.has("Last-Modified"))
             {
-                lastModified = Date.parse(response.headers.get("Last-Modified"));
+                lastModified = Date.parse(headResponse.headers.get("Last-Modified"));
             }
-
+    
             const obj = storeGet(url);
             if (! obj || obj.lastModified < lastModified)
             {
-                fetch(url, { cache: "no-cache" })
-                .then(response =>
+                const getResponse = await fetch(url, { cache: "no-cache" });
+                if (! getResponse.ok)
                 {
-                    if (! response.ok)
-                    {
-                        throw `${response.status} ${response.statusText}`;
-                    }
+                    return null;
+                }
 
-                    if (response.headers.has("Last-Modified"))
-                    {
-                        lastModified = Date.parse(response.headers.get("Last-Modified"));
-                    }
-                    return response.text()
-                })
-                .then(data =>
+                if (getResponse.headers.has("Last-Modified"))
                 {
-                    storePut(url, {
-                        lastModified: lastModified,
-                        data: data
-                    });
-                    log("", "debug", "Fetched from remote: " + url);
-                    callback(data);
-                })
-                .catch(err =>
-                {
-                    callback(null);
+                    lastModified = Date.parse(getResponse.headers.get("Last-Modified"));
+                }
+                const data = await getResponse.text();
+                storePut(url, {
+                    lastModified: lastModified,
+                    data: data
                 });
+                log("", "debug", "Fetched from remote: " + url);
+                return data;
             }
             else
             {
                 log("", "debug", "Fetched from cache: " + url);
-                callback(obj.data);
+                return obj.data;
             }
-        })
-        .catch(err =>
+        }
+        catch (err)
         {
-            callback(null);
-        });
+            return null;
+        }
     }
 
     /**
      * Imports the given code into a script tag.
      * @private
      * 
+     * @param {number} scriptId - A unique ID.
      * @param {string} url - The source URL of the script.
      * @param {string} code - The script code to import.
      * @param {bool} loadAsync - Whether to load the script asynchronously.
-     * @param {function} callback - The callback to invoke after importing.
      */
-    function importScript(url, code, loadAsync, callback)
+    function importScript(scriptId, url, code, loadAsync)
     {
-        if (hasDom)
+        return new Promise((resolve, reject) =>
         {
-            const scriptNode = document.createElement("script");
-            scriptNode.type = "application/javascript";
-            scriptNode.charset = "utf-8";
-            scriptNode.async = loadAsync;
-            const codeUrl = URL.createObjectURL(new Blob([code], { type: "application/javascript" }));
-    
-            scriptNode.addEventListener("load", function ()
-            {
-                //URL.revokeObjectURL(codeUrl);
-                callback(true);
-            }, false);
-    
-            scriptNode.addEventListener("error", function ()
-            {
-                URL.revokeObjectURL(codeUrl);
-                log("", "error", `Failed to import script.`);
-                callback(false);
-            }, false);
-    
-            scriptNode.src = codeUrl;
-            document.head.appendChild(scriptNode);
-        }
-        else if (isDeno)
-        {
-            try
-            {
-                const shRequire = __require;
-                // using eval for the time being, until some better solution comes around
-                eval(code);
-                callback(true);
-            }
-            catch (err)
-            {
-                log("", "error", `Failed to import script: ${err}`);
-                callback(false);
-            }
-            
-        }
-        else if (isNode)
-        {
-            const inlineModule = new module.constructor();
-            inlineModule.paths = module.paths;
-            inlineModule.shRequire = __require;
-            inlineModule._compile("const shRequire = module.shRequire; " + code, url);
-            callback(true);
-        }
-        else if (typeof Blob !== "undefined")
-        {
-            const codeUrl = URL.createObjectURL(new Blob([code], { type: "application/javascript" }));
-            try
-            {
-                importScripts(codeUrl);
-                //URL.revokeObjectURL(codeUrl);
-                callback(true);
-            }
-            catch (err)
-            {
-                URL.revokeObjectURL(codeUrl);
-                log("", "error", `Failed to import script: ${err}`);
-                callback(false);
-            }
-        }
+            shRequire.registerCallback(scriptId, () => { resolve(true); });
 
+            if (hasDom)
+            {
+                const scriptNode = document.createElement("script");
+                scriptNode.type = "application/javascript";
+                scriptNode.charset = "utf-8";
+                scriptNode.async = loadAsync;
+                const codeUrl = URL.createObjectURL(new Blob([code], { type: "application/javascript" }));
+              
+                scriptNode.addEventListener("error", function ()
+                {
+                    URL.revokeObjectURL(codeUrl);
+                    log("", "error", `Failed to import script.`);
+                    shRequire.registerCallback(scriptId, null);
+                    resolve(false);
+                }, false);
+        
+                scriptNode.src = codeUrl;
+                document.head.appendChild(scriptNode);
+            }
+            else if (isDeno)
+            {
+                try
+                {
+                    const shRequire = __require;
+                    // using eval for the time being, until some better solution comes around
+                    eval(code);
+                }
+                catch (err)
+                {
+                    log("", "error", `Failed to import script: ${err}`);
+                    resolve(false);
+                } 
+            }
+            else if (isNode)
+            {
+                const inlineModule = new module.constructor();
+                inlineModule.paths = module.paths;
+                inlineModule.shRequire = __require;
+                inlineModule._compile("const shRequire = module.shRequire; " + code, url);
+            }
+            else if (typeof Blob !== "undefined")
+            {
+                const codeUrl = URL.createObjectURL(new Blob([code], { type: "application/javascript" }));
+                try
+                {
+                    importScripts(codeUrl);
+                    //URL.revokeObjectURL(codeUrl);
+                    resolve(true);
+                }
+                catch (err)
+                {
+                    URL.revokeObjectURL(codeUrl);
+                    log("", "error", `Failed to import script: ${err}`);
+                    resolve(false);
+                }
+            }
+            else
+            {
+                resolve(false);
+            }
+        });
     }
 
     /**
@@ -448,89 +426,77 @@ const shRequire = (function ()
      * @private
      * 
      * @param {string} url - The URL to load from.
-     * @param {function} callback - The callback to be invoked after loading successfully.
      */
-    function loadBundle(url, callback)
+    async function loadBundle(url)
     {
         const now = Date.now();
 
         if (isDeno)
         {
-            Deno.readTextFile(url)
-            .then(data =>
+            try
             {
+                const data = await Deno.readTextFile(url);
                 try
                 {
                     log("", "debug", `Loaded JS bundle '${url}' from server in ${Date.now() - now} ms.`);
                     const bundleName = url;
-                    processBundle(bundleName, JSON.parse(data), () =>
-                    {
-                        callback();
-                    });
+                    await processBundle(bundleName, JSON.parse(data));
                 }
                 catch (err)
                 {
                     log("", "error", `Failed to process JS bundle '${url}': ${err}`);
                 }  
-            })
-            .catch (err =>
+            }
+            catch (err)
             {
                 log("", "error", `Failed to load bundle from '${url}': ${err}`);
-            });
+            }
         }
         else if (isNode)
         {
-            const modFs = require("fs");
-            modFs.readFile(url, (err, buf) =>
+            const modFs = require("node:fs/promises");
+            let buf = null;
+            try
             {
-                if (err)
-                {
-                    log("", "error", `Failed to load bundle from '${url}': ${err}`);
-                    return;
-                }
+                buf = await modFs.readFile(url);
+            }
+            catch (err)
+            {
+                log("", "error", `Failed to load bundle from '${url}': ${err}`);
+                return;
+            }
 
-                const data = buf.toString();
-
-                try
-                {
-                    log("", "debug", `Loaded JS bundle '${url}' from server in ${Date.now() - now} ms.`);
-                    const bundleName = url;
-                    processBundle(bundleName, JSON.parse(data), () =>
-                    {
-                        callback();
-                    });
-                }
-                catch (err)
-                {
-                    log("", "error", `Failed to process JS bundle '${url}': ${err}`);
-                }                
-
-            });
+            const data = buf.toString();
+            try
+            {
+                log("", "debug", `Loaded JS bundle '${url}' from server in ${Date.now() - now} ms.`);
+                const bundleName = url;
+                await processBundle(bundleName, JSON.parse(data));
+            }
+            catch (err)
+            {
+                log("", "error", `Failed to process JS bundle '${url}': ${err}`);
+            }                
         }
         else
         {
-            storeFetch(url, data =>
+            const data = await storeFetch(url);
+            if (! data)
             {
-                if (! data)
-                {
-                    log("", "error", `Failed to load bundle from '${url}'`);
-                }
+                log("", "error", `Failed to load bundle from '${url}'`);
+                return;
+            }
 
-                try
-                {
-                    log("", "debug", `Loaded JS bundle '${url}' from server in ${Date.now() - now} ms.`);
-                    const bundleName = url;
-                    processBundle(bundleName, JSON.parse(data), () =>
-                    {
-                        callback();
-                    });
-                }
-                catch (err)
-                {
-                    log("", "error", `Failed to process JS bundle '${url}': ${err}`);
-                }
-            });
-
+            try
+            {
+                log("", "debug", `Loaded JS bundle '${url}' from server in ${Date.now() - now} ms.`);
+                const bundleName = url;
+                await processBundle(bundleName, JSON.parse(data));
+            }
+            catch (err)
+            {
+                log("", "error", `Failed to process JS bundle '${url}': ${err}`);
+            }    
         }
     }
 
@@ -540,9 +506,8 @@ const shRequire = (function ()
      * 
      * @param {string} name - The name of the bundle.
      * @param {object} bundle - The bundle object.
-     * @param {function} callback - The callback to invoke after processing successfully.
      */
-    function processBundle(name, bundle, callback)
+    async function processBundle(name, bundle)
     {
         if (! bundle.version /* bundle version 1 */)
         {
@@ -550,11 +515,12 @@ const shRequire = (function ()
             {
                 bundleCache[moduleUrl] = bundle[moduleUrl];
             }
-            callback();
         }
         else if (bundle.version === 2)
         {
             let js = "";
+            const scriptId = idCounter;
+            ++idCounter;
 
             if (bundle.aliases)
             {
@@ -573,21 +539,27 @@ const shRequire = (function ()
                 {
                     if (bundleCache[resUrl])
                     {
-                        throw new Error(`Resource URL '${resUrl}' is already taken.`)
+                        throw new Error(`Resource URL '${resUrl}' is already taken.`);
                     }
                     
                     if (resUrl.toLowerCase().endsWith(".js"))
                     {
                         // collect all JavaScript files wrapped in loader functions in a single module
                         js += `
-                            shRequire.registerLoader("${resUrl}", (exports, __dirname, __filename) =>
+                            origRequire = shRequire;
+                            shRequire.registerLoader("${resUrl}", async (exports, __dirname, __filename) =>
                             {
-                                const currentDependencyCounter = shRequire.dependencyCounter;
+                                "use strict";
+                                let reqQueue = [];
+                                const shRequire = origRequire.withQueue(reqQueue);
+
                                 ${bundle.resources[resUrl]}
                                 const mod = typeof Module !== "undefined" ? Module : exports;
-                                mod.hasDependencies = currentDependencyCounter !== shRequire.dependencyCounter;
                                 shRequire.registerModule("${resUrl}", mod);
+
+                                while (reqQueue.length > 0) await reqQueue.shift();
                             });
+                            origRequire.invokeCallback(${scriptId});
                         `;
                     }
                     else
@@ -604,21 +576,12 @@ const shRequire = (function ()
             if (js !== "")
             {
                 js = "/* Bundle " + name + " */" + js;
-                importScript(name, js, false, (ok) =>
+                const ok = await importScript(scriptId, name, js, false);
+                if (! ok)
                 {
-                    if (! ok)
-                    {
-                        log("", "error", `Failed to load bundle '${name}'.`);
-                    }
-                    else
-                    {
-                        callback();
-                    }
-                });
-            }
-            else
-            {
-                callback();
+                    log("", "error", `Failed to load bundle '${name}'.`);
+                    throw new Error(`Failed to load bundle '{name}'.`);
+                }
             }
         }
         else
@@ -632,56 +595,49 @@ const shRequire = (function ()
      * @private
      * 
      * @param {string} url - The URL where to load the code from.
-     * @param {function} callback - The callback to be invoked with the code string.
      */
-    function loadCode(url, callback)
+    async function loadCode(url)
     {
         if (bundleCache[url])
         {
-            callback(bundleCache[url]);
-            return;
+            return bundleCache[url];
         }
 
         if (isDeno)
         {
-            Deno.readTextFile(url)
-            .then(data =>
+            try
             {
-                callback(data);
-            })
-            .catch(err =>
+                const data = await Deno.readTextFile(url);
+                return data;
+            }
+            catch (err)
             {
                 log("", "error", `Failed to load module: '${url}': ${err}`);
-                callback("");
-            });
+                return "";
+            }
         }
         else if (isNode)
         {
-            const modFs = require("fs");
-            modFs.readFile(url, (err, data) =>
+            try
             {
-                if (err)
-                {
-                    log("", "error", `Failed to load module: '${url}': ${err}`);
-                    callback("");
-                }
-                else
-                {
-                    callback(data.toString());
-                }
-            });
+                const modFs = require("node:fs/promises");
+                const data = await modFs.readFile(url);
+                return data.toString();
+            }
+            catch (err)
+            {
+                log("", "error", `Failed to load module: '${url}': ${err}`);
+                return "";
+            }
         }
         else
         {
-            storeFetch(url, data =>
+            const data = await storeFetch(url);
+            if (! data)
             {
-                if (! data)
-                {
-                    log("", "error", `Failed to load module '${url}'`);
-                }
-                callback(data);
-            });
-
+                log("", "error", `Failed to load module '${url}'`);
+            }
+            return data;
         }
     }
 
@@ -690,29 +646,37 @@ const shRequire = (function ()
      * @private
      * 
      * @param {string} url - The URL to load the style sheet from.
-     * @param {function} callback - The callback to be invoked after loading successfully.
      */
-    function loadStyle(url, callback)
+    function loadStyle(url)
     {
-        if (bundleCache[url])
+        return new Promise((resolve, reject) =>
         {
-            url = "data:text/css;base64," + btoa(bundleCache[url]);
-        }
+            if (bundleCache[url])
+            {
+                url = "data:text/css;base64," + btoa(bundleCache[url]);
+            }
+    
+            if (! hasDom)
+            {
+                reject(new Error("CSS style sheets require a DOM to load."));
+            }
+    
+            if (! url.startsWith("data:") && url.indexOf("?") === -1)
+            {
+                // prevent CSS caching
+                url += "?ver=" + Date.now();
+            }
 
-        if (! hasDom)
-        {
-            throw "CSS style sheets require a DOM to load.";
-        }
-
-        let link = document.createElement("link");
-        link.setAttribute("type", "text/css");
-        link.setAttribute("rel", "stylesheet");
-        link.setAttribute("href", url);
-        link.onload = function ()
-        {
-            callback();
-        }
-        document.head.appendChild(link);
+            let link = document.createElement("link");
+            link.setAttribute("type", "text/css");
+            link.setAttribute("rel", "stylesheet");
+            link.setAttribute("href", url);
+            link.onload = () =>
+            {
+                resolve(null);
+            };
+            document.head.appendChild(link);
+        });
     }
 
     /**
@@ -721,19 +685,18 @@ const shRequire = (function ()
      * 
      * @param {string} url - The URL where to load from.
      * @param {function} processor - An optional processor function for preprocessing the code.
-     * @param {function} callback - The callback to be invoked with the module object.
      */
-    function loadModule(url, processor, callback)
+    async function loadModule(url, processor)
     {
         if (cache[url])
         {
             // if the module was already loaded, look up in cache
-            callback(cache[url]);
-            return;
+            return cache[url];
         }
-
+        
         const progressNode = hasDom ? document.getElementById("sh-require-progress") : null;
         const statusNode = hasDom ? document.getElementById("sh-require-status") : null;
+
         if (progressNode)
         {
             const pos = url.lastIndexOf("/");
@@ -743,7 +706,6 @@ const shRequire = (function ()
         {
             statusNode.innerHTML = "Loading";
         }
-        stackOfQueues.push([]);
 
         const pos = url.lastIndexOf("/");
         let dirname = url.substring(0, pos);
@@ -752,11 +714,10 @@ const shRequire = (function ()
             dirname = ".";
         }
 
-        
         if (loadersMap[url])
         {
             // if the module has a loader function, use that
-
+    
             const exports = {
                 include: (mod) => {
                     for (let key in mod)
@@ -768,7 +729,7 @@ const shRequire = (function ()
                     }
                 }
             };
-            loadersMap[url](exports, dirname, url);
+            await loadersMap[url](exports, dirname, url);
 
             const jsmodule = cache[url];
             if (jsmodule.__id)
@@ -782,49 +743,50 @@ const shRequire = (function ()
                 statusNode.innerHTML = "Completed";
             }
     
-            callback(jsmodule);
-            return;
+            return jsmodule;
         }
         else
         {
-            loadCode(url, (code) =>
+            let code = await loadCode(url);
+            if (code === "")
             {
-                if (code === "")
+                if (statusNode)
                 {
-                    if (statusNode)
-                    {
-                        statusNode.innerHTML = "Failed";
-                    }
-                    stackOfQueues.pop();
-                    callback(null);
-                    return;
+                    statusNode.innerHTML = "Failed";
                 }
-    
-                if (processor)
+                return null;
+            }
+
+            if (processor)
+            {
+                if (statusNode)
                 {
-                    if (statusNode)
-                    {
-                        statusNode.innerHTML = "Processing";
-                    }
-                    try
-                    {
-                        code = processor(url, code);
-                    }
-                    catch (err)
-                    {
-                        code = "";
-                        log("", "error", "Failed to process '" + url + "': " + err);
-                    }
+                    statusNode.innerHTML = "Processing";
                 }
-    
-                const js = `/* Module ${url} */
-                    (function (Module)
+                try
+                {
+                    code = processor(url, code);
+                }
+                catch (err)
+                {
+                    code = "";
+                    log("", "error", "Failed to process '" + url + "': " + err);
+                    return null;
+                }
+            }
+
+            const scriptId = idCounter;
+            ++idCounter;
+
+            const js = `/* Module ${url} */
+                "use strict";
+                (() =>
+                {
+                    const origRequire = typeof shRequire !== "undefined" ? shRequire : undefined;
+                    (async function (Module)
                     {
                         const __dirname = "${dirname.replace(/\\/g, "\\\\")}";
                         const __filename = "${url.replace(/\\/g, "\\\\")}";
-    
-                        const haveShellfish = typeof shRequire !== "undefined";
-                        const currentDependencyCounter = haveShellfish ? shRequire.dependencyCounter : 0;
 
                         const exports = {
                             include: (mod) => {
@@ -837,54 +799,64 @@ const shRequire = (function ()
                                 }
                             }
                         };
+
+                        let reqQueue = [];
+                        const shRequire = origRequire ? origRequire.withQueue(reqQueue) : undefined;
+
                         const module = { };
                         ${code}
-                        if (haveShellfish)
+                        if (shRequire)
                         {
                             const mod = typeof Module !== "undefined" ? Module : module.exports ? module.exports : exports;
-                            mod.hasDependencies = currentDependencyCounter !== shRequire.dependencyCounter;
                             shRequire.registerModule("${url.replace(/\\/g, "\\\\")}", mod);
                         }
+
+                        if (origRequire)
+                        {
+                            (async () =>
+                            {
+                                while (reqQueue.length > 0) await reqQueue.shift();
+                                origRequire.invokeCallback(${scriptId});
+                            })();
+                        }
                     })(typeof Module !== "undefined" ? Module : undefined);
-                `;
-    
+                })();
+            `;
+
+            if (statusNode)
+            {
+                statusNode.innerHTML = "Importing";
+            }
+
+            const ok = await importScript(scriptId, url, js, true);
+            if (ok)
+            {
+                const jsmodule = cache[url];
+
+                if (jsmodule && jsmodule.__id)
+                {
+                    log("", "debug", `Registered module '${url}' as '${jsmodule.__id}'.`);
+                    idsMap[jsmodule.__id] = url;
+                }
+        
                 if (statusNode)
                 {
-                    statusNode.innerHTML = "Importing";
+                    statusNode.innerHTML = "Completed";
                 }
-    
-                importScript(url, js, true, (ok) =>
-                {
-                    if (ok)
-                    {
-                        const jsmodule = cache[url];
-    
-                        if (jsmodule && jsmodule.__id)
-                        {
-                            log("", "debug", `Registered module '${url}' as '${jsmodule.__id}'.`);
-                            idsMap[jsmodule.__id] = url;
-                        }
-                
-                        if (statusNode)
-                        {
-                            statusNode.innerHTML = "Completed";
-                        }
-                
-                        callback(jsmodule);
-                    }
-                    else
-                    {
-                        log("", "error", `Failed to initialize module '${url}': ${this}`);
-    
-                        if (statusNode)
-                        {
-                            statusNode.innerHTML = "Failed";
-                        }
         
-                        callback(null);
-                    }
-                });
-            });
+                return jsmodule;
+            }
+            else
+            {
+                log("", "error", `Failed to initialize module '${url}': ${this}`);
+
+                if (statusNode)
+                {
+                    statusNode.innerHTML = "Failed";
+                }
+
+                return null;
+            }
         }
     }
 
@@ -893,21 +865,13 @@ const shRequire = (function ()
      * @private
      * 
      * @param {string} url - The URL where to load from.
-     * @param {function} callback - The callback to be invoked with the WASM instance object.
      */
-    function loadWasm(url, callback)
+    async function loadWasm(url)
     {
-        function fail(err)
-        {
-            log("", "error", `Failed to load WASM module '${url}': ${err}`);
-            callback("");
-        }
-
         if (cache[url])
         {
             // if the module was already loaded, look up in cache
-            callback(cache[url]);
-            return;
+            return cache[url];
         }
 
         const progressNode = hasDom ? document.getElementById("sh-require-progress") : null;
@@ -921,7 +885,6 @@ const shRequire = (function ()
         {
             statusNode.innerHTML = "Loading";
         }
-        stackOfQueues.push([]);
 
         const pos = url.lastIndexOf("/");
         let dirname = url.substring(0, pos);
@@ -936,223 +899,159 @@ const shRequire = (function ()
 
         if (bundleCache[url])
         {
-            WebAssembly.instantiate(bundleCache[url], importObj)
-            .then(module =>
+            try
             {
-                callback(module.instance.exports);
-            })
-            .catch(err =>
+                const module = await WebAssembly.instantiate(bundleCache[url], importObj);
+                return module.instance.exports;
+            }
+            catch (err)
             {
-                fail(err);
-            });
+                log("", "error", `Failed to load WASM module '${url}': ${err}`);
+                return "";
+            }
         }
         else if (isNode)
         {
-            const modFs = require("fs");
-            modFs.readFile(url, (err, data) =>
+            try
             {
-                if (err)
-                {
-                    fail(err);
-                }
-                else
-                {
-                    WebAssembly.instantiate(data, importObj)
-                    .then(module =>
-                    {
-                        callback(module.instance.exports);
-                    })
-                    .catch(err =>
-                    {
-                        fail(err);
-                    });
-                }
-            });
+                const modFs = require("node:fs/promises");
+                const data = await modFs.readFile(url);
+                const module = await WebAssembly.instantiate(data, importObj);
+                return module.instance.exports;
+            }
+            catch (err)
+            {
+                log("", "error", `Failed to load WASM module '${url}': ${err}`);
+                return "";
+            }
         }
         else
         {
-            fetch(url, { cache: "no-cache" })
-            .then(response =>
+            try
             {
-                return WebAssembly.instantiateStreaming(response, importObj)
-            })
-            .then(module =>
+                const response = await fetch(url, { cache: "no-cache" });
+                const module = await WebAssembly.instantiateStreaming(response, importObj)
+                return module.instance.exports;
+            }
+            catch (err)
             {
-                callback(module.instance.exports);
-            })
-            .catch (err =>
-            {
-                fail(err);
-            });
+                log("", "error", `Failed to load WASM module '${url}': ${err}`);
+                return "";
+            }
         }
     }
 
-    function next()
+    async function load(url, processor)
     {
-        if (nextScheduled)
-        {
-            return;
-        }
-
-        if (stackOfQueues.length === 0)
-        {
-            return;
-        }
-
-        let queue = stackOfQueues[stackOfQueues.length - 1];
-        if (queue.length === 0)
-        {
-            stackOfQueues.pop();
-            next();
-            return;
-        }
-
-        let ctx = queue[0];
-        if (ctx.urls.length === 0)
-        {
-            queue.shift();
-            if (ctx.callback)
-            {
-                ctx.callback.apply(null, ctx.modules);
-            }
-            next();
-            return;
-        }
-
-        let url = normalizeUrl(ctx.urls[0]);
-        ctx.urls.shift();
-
-        function tryImmediateCallback()
-        {
-            // if the loaded modules have no further dependencies, we may
-            // invoke the callback immediately
-            if (! ctx.dependencies && ctx.urls.length === 0)
-            {
-                //console.log("Invoking immediate callback on " + JSON.stringify(ctx.allUrls));
-                ctx.callback.apply(null, ctx.modules);
-                ctx.callback = null;
-            }
-        }
-
+        url = normalizeUrl(url);
         if (idsMap[url])
         {
             url = idsMap[url];
         }
 
-        nextScheduled = true;
-
         const ext = url.toLowerCase().substring(url.lastIndexOf(".") + 1);
 
         if (ext === "css")
         {
-            loadStyle(url, () =>
-            {
-                nextScheduled = false;
-                ctx.modules.push(null);
-                tryImmediateCallback();
-                next();
-            });
+            return await loadStyle(url);
         }
         else if (ext === "js" || ext === "shui")
         {
-            loadModule(url, ctx.processor, module =>
-            {
-                nextScheduled = false;
-                ctx.modules.push(module);
-                ctx.dependencies |= module.hasDependencies;
-                tryImmediateCallback();
-                next();
-            });
+            return await loadModule(url, processor);
         }
         else if (ext === "wasm")
         {
-            loadWasm(url, module =>
-            {
-                nextScheduled = false;
-                ctx.modules.push(module);
-                tryImmediateCallback();
-                next();
-            });
+            return await loadWasm(url);
         }
         else if (url.startsWith("blob:"))
         {
-            loadModule(url, ctx.processor, module =>
-            {
-                nextScheduled = false;
-                ctx.modules.push(module);
-                ctx.dependencies |= module.hasDependencies;
-                tryImmediateCallback();
-                next();
-            });
+            return await loadModule(url, processor);
         }
         else
         {
             log("", "error", `Cannot load invalid module '${url}'.`);
-            nextScheduled = false;
-            ctx.modules.push(null);
-            tryImmediateCallback();
-            next();
+            return null;
         }
-    }
-
-    function addTask(urls, callback, processor)
-    {
-        if (stackOfQueues.length === 0)
-        {
-            stackOfQueues.push([]);
-        }
-        let queue = stackOfQueues[stackOfQueues.length - 1];
-        let ctx = {
-            urls: urls,
-            allUrls: urls.slice(),
-            modules: [],
-            dependencies: false,
-            callback: callback,
-            processor: processor
-        };
-
-        queue.push(ctx);
     }
 
     /**
-     * Imports a module.
+     * Imports a list of modules.
      * 
-     * @param {string} urls 
-     * @param {function} callback - A callback with the imported modules as parameters.
+     * @param {string[]} urls - The URLs of the modules to import. If this is a `string` instead of an `array`, the return value will be a single module.
+     * @param {function} [callback] - A callback with the imported modules as parameters.
      * @param {function} [processor = null] - An optional code processor.
+     * @returns {Promise<string[]>} - The list of modules.
      */
-    function __require(urls, callback, processor)
+    async function __require(urls, callback, processor)
     {
-        function f(urls, callback, processor)
+        if (typeof urls === "string" && urls.length > 200)
         {
-            if (typeof urls === "string" && urls.length > 200)
+            const blob = new Blob([urls], { type: "application/javascript" });
+            const objUrl = URL.createObjectURL(blob);
+            const mod = await load(objUrl, processor);
+            if (callback)
             {
-                const blob = new Blob([urls], { type: "application/javascript" });
-                const objUrl = URL.createObjectURL(blob);
-                ++__require.dependencyCounter;
-                addTask([objUrl], (...args) =>
-                {
-                    URL.revokeObjectURL(objUrl);
-                    callback(...args);
-                }, processor);
+                callback(mod);
             }
-            else if (typeof urls === "string")
-            {
-                ++__require.dependencyCounter;
-                addTask([urls], callback, processor);
-            }
-            else
-            {
-                __require.dependencyCounter += urls.length;
-                addTask(urls, callback, processor);
-            }
-            next();
+            return mod;
         }
-
-        f(urls, callback, processor);
+        else if (typeof urls === "string")
+        {
+            const mod = await load(urls, processor);
+            if (callback)
+            {
+                callback(mod);
+            }
+            return mod;
+        }
+        else if (Array.isArray(urls))
+        {
+            let modules = [];
+            for (let i = 0; i < urls.length; ++i)
+            {
+                modules.push(await load(urls[i], processor));
+            }
+            if (callback)
+            {
+                try
+                {
+                    callback(...modules);
+                }
+                catch (err)
+                {
+                    console.log(err);
+                }
+            }
+            return modules;
+        }
     }
 
-    __require.dependencyCounter = 0;
+    /**
+     * Creates a version of the require function with a promise queue that
+     * can be waited for.
+     * 
+     * @private
+     * @param {Promise[]} reqQueue - The queue to be used.
+     * @returns {function} The queueing require function.
+     */
+    __require.withQueue = function (reqQueue)
+    {
+        const f = (...args) =>
+        {
+            const p = __require(...args);
+            reqQueue.push(p);
+            return p;
+        };
+        f.withQueue = __require.withQueue;
+        f.registerModule = __require.registerModule;
+        f.registerData = __require.registerData;
+        f.registerLoader = __require.registerLoader;
+        f.resource = __require.resource;
+        f.selfUrl = __require.selfUrl;
+        f.environment = __require.environment;
+
+        return f;
+    };
 
     /**
      * Holds the name of the detected environment this code is running in.
@@ -1343,42 +1242,70 @@ const shRequire = (function ()
         });
     }
 
+    /**
+     * Registers a one-shot callback for an ID.
+     * 
+     * @private
+     * @param {number} id - The ID.
+     * @param {function} f - The callback function. Pass `null` to unregister an existing callback.
+     */
+    __require.registerCallback = function (id, f)
+    {
+        if (f)
+        {
+            callbackMap.set(id, f);
+        }
+        else
+        {
+            callbackMap.delete(id);
+        }
+    };
+
+    /**
+     * Invokes a registered callback.
+     * 
+     * @private
+     * @param {number} id - The ID of the callback to invoke.
+     */
+    __require.invokeCallback = function (id)
+    {
+        const f = callbackMap.get(id);
+        if (f)
+        {
+            callbackMap.delete(id);
+            f();
+        }
+    };
+
 
     if (hasDom)
     {
-        const scripts = document.getElementsByTagName("script");
-        for (let i = 0; i < scripts.length; ++i)
+        (async () =>
         {
-            let script = scripts[i];
-    
-            // load bundles
-            const bundlesString = script.getAttribute("data-bundle");
-            if (bundlesString && bundlesString !== "")
+            const scripts = document.getElementsByTagName("script");
+            for (let i = 0; i < scripts.length; ++i)
             {
-                const bundles = bundlesString.split(",");
-                let count = bundles.length;
-                bundles.forEach((bundle) =>
+                let script = scripts[i];
+        
+                // load bundles
+                const bundlesString = script.getAttribute("data-bundle");
+                if (bundlesString && bundlesString !== "")
                 {
-                    nextScheduled = true;
-                    loadBundle(bundle.trim(), () =>
+                    const bundles = bundlesString.split(",");
+                    for (let i = 0; i < bundles.length; ++i)
                     {
-                        --count;
-                        if (count === 0)
-                        {
-                            nextScheduled = false;
-                            next();
-                        }
-                    });
-                });
+                        await loadBundle(bundles[i].trim());
+                    }
+                }
+        
+                // load main entry point
+                const main = script.getAttribute("data-main");
+                if (main && main !== "")
+                {
+                    await __require([main], function (module) { });
+                }
             }
-    
-            // load main entry point
-            const main = script.getAttribute("data-main");
-            if (main && main !== "")
-            {
-                __require([main], function (module) { });
-            }
-        }
+        })();
     }// if (hasDom)
 
     log("", "debug", "Initialized Shellfish module manager. Detected environment: " + __require.environment);
@@ -1388,23 +1315,12 @@ const shRequire = (function ()
     // if it was defined.
     if (typeof shellfishRun !== "undefined")
     {
-        shellfishRun = (bundles, runner) =>
+        shellfishRun = async (bundles, runner) =>
         {
-            let count = bundles.length;
-            bundles.forEach((bundle) =>
+            for (let i = 0; i < bundles.length; ++i)
             {
-                nextScheduled = true;
-                loadBundle(bundle.trim(), () =>
-                {
-                    --count;
-                    if (count === 0)
-                    {
-                        nextScheduled = false;
-                        next();
-                    }
-                });
-            });
-    
+                await loadBundle(bundles[i].trim());
+            }
             runner(__require);
         };
     }
