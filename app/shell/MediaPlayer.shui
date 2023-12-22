@@ -9,35 +9,6 @@ require "./VideoCutButton.shui";
 MouseBox {
     id: playerBox
 
-    function formatTime(seconds, detailed)
-    {
-        let hs = "" + Math.floor((seconds - Math.floor(seconds)) * 100);
-        let t = seconds;
-        const secs = Math.floor(t) % 60;
-        t /= 60;
-        const minutes = Math.floor(t) % 60;
-        t /= 60;
-        const hours = Math.floor(t);
-
-        let h = hours.toFixed(0);
-        let m = minutes.toFixed(0);
-        let s = secs.toFixed(0);
-
-        if (h.length === 1) h = "0" + h;
-        if (m.length === 1) m = "0" + m;
-        if (s.length === 1) s = "0" + s;
-        if (hs.length === 1) hs = "0" + hs;
-
-        if (detailed)
-        {
-            return (hours > 0 ? h + ":" : "") + m + ":" + s + "." + hs;
-        }
-        else
-        {
-            return (hours > 0 ? h + ":" : "") + m + ":" + s;
-        }
-    }
-
     function stripExtension(filename)
     {
         const pos = filename.lastIndexOf(".");
@@ -235,7 +206,7 @@ MouseBox {
                 {
                     if (status === "success")
                     {
-                        const name = playerBox.title + " (" + formatTime(currentTime, false) + ")";
+                        const name = playerBox.title + " (" + core.formatSeconds(currentTime, false) + ")";
                         thisFileViewer.mediaBookmarkUpdated(source, currentTime, name);
                     }
                 }
@@ -668,7 +639,7 @@ MouseBox {
                         }
 
                         Tooltip {
-                            text: playerBox.formatTime(modelData.value, true)
+                            text: core.formatSeconds(modelData.value, true)
                         }
                     }
                 }
@@ -696,7 +667,7 @@ MouseBox {
                 layout: "center-row"
 
                 Label {
-                    text: formatTime(seekbar.seeking ? seekbar.seekTime : controls.player.currentTime, playSeekButton.seeking && Math.abs(playSeekButton.seekValue) > 0.0001)
+                    text: core.formatSeconds(seekbar.seeking ? seekbar.seekTime : controls.player.currentTime, playSeekButton.seeking && Math.abs(playSeekButton.seekValue) > 0.0001)
                 }
 
                 Button {
@@ -798,7 +769,7 @@ MouseBox {
                 }
 
                 Label {
-                    text: formatTime(controls.player.duration, false)
+                    text: core.formatSeconds(controls.player.duration, false)
                 }
             }
 

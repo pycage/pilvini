@@ -18,9 +18,10 @@ Box {
     property path: ""
     property searchBox: false
     property maximized: false
+    property mayClose: false
 
-    event toggleMaximized
-    event filesOpen
+    event openNew
+    event close
 
     fillWidth: true
     fillHeight: true
@@ -43,6 +44,11 @@ Box {
 
     function readFolderInfo()
     {
+        if (! fs)
+        {
+            return;
+        }
+
         const f = async () =>
         {
             const infoObj = await folderInfo.load(fs, path);
@@ -207,7 +213,7 @@ Box {
 
         showQuestionDialog("Delete File",
                            "Do you want to delete " + selected.length + " items?\n\n" +
-                           selected.map(idx => low.escapeMarkup(fsModel.at(idx).name)).join("\n"),
+                           selected.map(idx => escapeMarkup(fsModel.at(idx).name)).join("\n"),
                            () =>
         {
             selected.forEach(idx =>
@@ -222,7 +228,7 @@ Box {
 
         showQuestionDialog("Delete File",
                             "Do you want to delete this file?\n\n" +
-                            low.escapeMarkup(item.name),
+                            escapeMarkup(item.name),
                             () =>
         {
             box.fs.remove(item.path);
@@ -270,25 +276,24 @@ Box {
         for (let i = 0; i < files.length; ++i)
         {
             const fileItem = files[i];
-            console.log(fileItem);
-            statusLabel.text = fileItem.name;
+
+            const notification = notificationArea.createNotification();
+            notification.title = "Uploading File";
+            notification.message = escapeMarkup(fileItem.name);
 
             const progressCb = (name, progress) =>
             {
-                statusLabel.text = low.escapeMarkup(name) + " " + Math.round(progress * 100) + "%";
+                notification.message = escapeMarkup(name) + " " + Math.round(progress * 100) + "%";
             };
 
-            statusSpinner.counter += 1;
             uploadfiles.uploadRecursive(fileItem, box.fs, box.path, progressCb)
             .then(() =>
             {
-                statusSpinner.counter -= 1;
-                statusLabel.text = "";
+                notification.close();
             })
             .catch(err =>
             {
-                statusSpinner.counter -= 1;
-                statusLabel.text = "";
+                notification.close();
                 showErrorDialog("Error Uploading File", "" + err);
             });
         }
@@ -324,6 +329,10 @@ Box {
 
     onPathChanged: () =>
     {
+        if (! fs)
+        {
+            return;
+        }
         thumbnailer.filesystem.sync();
         readFolderInfo();
     }
@@ -356,13 +365,14 @@ Box {
             });
         }
 
-        box.onPathChanged: () => { update(); }
+        box.onPathChanged: () => { if (box.fs) update(); }
 
         onStatusChanged: () =>
         {
             if (status === "disconnected")
             {
-                thisDocument.showErrorDialog("Connection Lost", "The connection to the server was lost.");
+                notificationArea.showNotification("Connection Lost", "The connection to the server was lost.");
+                //thisDocument.showErrorDialog("Connection Lost", "The connection to the server was lost.");
             }
         }
     }
@@ -376,7 +386,7 @@ Box {
 
         function load()
         {
-            const bookmarkFile = box.path + "/pilvini-media.bookmark";
+            const bookmarkFile = box.path + "/.pilvini-media.bookmark";
             
             path = "";
             mediaPosition = 0;
@@ -406,7 +416,7 @@ Box {
             const obj = { path: path, mediaPosition: mediaPosition, name: name };
             const data = JSON.stringify(obj);
 
-            const bookmarkFile = box.path + "/pilvini-media.bookmark";
+            const bookmarkFile = box.path + "/.pilvini-media.bookmark";
             let fd = null;
             const c = core;
             unresolved {
@@ -416,7 +426,7 @@ Box {
             .catch(err => { });
         }
 
-        box.onPathChanged: () => { load(); }
+        box.onPathChanged: () => { if (box.fs) load(); }
     }
 
     ThumbnailGenerator {
@@ -495,12 +505,6 @@ Box {
 
         layout: "center-row"
         
-        onDoubleClick: ev =>
-        {
-            box.toggleMaximized();
-            ev.accepted = true;
-        }
-
         BreadCrumbs {
             id: breadcrumbs
 
@@ -643,17 +647,21 @@ Box {
                         {
                             const uri = item.path;
                             const destPath = box.fs.pathJoin(box.path, box.fs.filename(uri));
-                            statusLabel.text = "Copying: " + box.fs.filename(uri);
+
+                            const notification = notificationArea.createNotification();
+                            notification.title = "Copying File";
+                            notification.message = escapeMarkup(box.fs.filename(uri));
+
                             box.fs.copy(uri, destPath)
                             .then(() =>
                             {
                                 console.log("files moved");
-                                statusLabel.text = "";
+                                notification.close();
                             })
                             .catch(err =>
                             {
+                                notification.close();
                                 showErrorDialog("Error Copying File", "" + err);
-                                statusLabel.text = "";
                             });
                         });
                     }
@@ -700,7 +708,7 @@ Box {
 
                     delegate: template MenuItem {
                         enabled: false
-                        text: low.escapeMarkup(filesBag[modelData.index].name)
+                        text: escapeMarkup(filesBag[modelData.index].name)
                     }
                 }
 
@@ -720,6 +728,18 @@ Box {
                 box.searchBox = false;
 
                 ev.accepted = true;
+            }
+        }
+
+        Button {
+            visible: box.mayClose
+            fillHeight: true
+            flat: true
+            icon: "core-window-close"
+
+            onClick: () =>
+            {
+                box.close();
             }
         }
     }
@@ -797,18 +817,24 @@ Box {
                         {
                             const destPath = box.fs.pathJoin(box.path, box.fs.filename(uri));
                             console.log("DROP EFFECT " + ev.dropEffect);
+
+
                             if (ev.dropEffect === "copy")
                             {
-                                statusLabel.text = "Copying: " + box.fs.filename(uri);
+                                const notification = notificationArea.createNotification();
+                                notification.title = "Copying File";
+                                notification.message = "[icon:ui-spinner5] " + escapeMarkup(box.fs.filename(uri));
+                                notification.progress = 0.0;
+                                
                                 box.fs.copy(uri, destPath)
                                 .then(() =>
                                 {
-                                    statusLabel.text = "";
+                                    notification.close();
                                     console.log("files copied");
                                 })
                                 .catch(err =>
                                 {
-                                    statusLabel.text = "";
+                                    notification.close();
                                     showErrorDialog("Error Copying File", "" + err);
                                 });
                             }
@@ -1199,7 +1225,7 @@ Box {
                                 marginLeft: theme.paddingLarge
                                 marginRight: theme.paddingSmall
                                 overflowBehavior: "ellipsis"
-                                text: low.escapeMarkup(mediaBookmark.name)
+                                text: escapeMarkup(mediaBookmark.name)
                             }
 
                             Box {
@@ -1225,14 +1251,14 @@ Box {
                     property fileMenuT: template Menu {
                         MenuItem {
                             enabled: selector.selection.size === 1
-                            text: "Open New Tab"
+                            text: "Open New Pane"
                             onClick: () =>
                             {
                                 const idx = [...selector.selection][0];
                                 const file = fsModel.at(idx);
                                 if (file.type === "d")
                                 {
-                                    openNewTab(box.fs, file.path);
+                                    box.openNew(box.fs, file.path);
                                 }
                             }
                         }
@@ -1601,23 +1627,7 @@ Box {
             text: fsview.count + " items"
         }
 
-        Label {
-            id: statusSpinner
-
-            property counter: 0
-
-            visible: counter > 0
-            marginLeft: theme.paddingSmall
-            text: "[icon:ui-spinner5] Uploading"
-        }
-
-        Label {
-            id: statusLabel
-
-            fillWidth: true
-            marginLeft: theme.paddingSmall
-            overflowBehavior: "ellipsis"
-        }
+        Box { fillWidth: true }
 
         Box {
             id: diskFreeBox

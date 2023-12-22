@@ -6,35 +6,6 @@ Button {
     property file: null
     property sectionsModel: null
 
-    function formatTime(seconds, detailed)
-    {
-        let centis = "" + Math.floor((seconds - Math.floor(seconds)) * 100);
-        let t = seconds;
-        const secs = Math.floor(t) % 60;
-        t /= 60;
-        const minutes = Math.floor(t) % 60;
-        t /= 60;
-        const hours = Math.floor(t);
-
-        let h = hours.toFixed(0);
-        let m = minutes.toFixed(0);
-        let s = secs.toFixed(0);
-
-        if (h.length === 1) h = "0" + h;
-        if (m.length === 1) m = "0" + m;
-        if (s.length === 1) s = "0" + s;
-        if (centis.length === 1) centis = "0" + centis;
-
-        if (detailed)
-        {
-            return (hours > 0 ? h + ":" : "") + m + ":" + s + "." + centis;
-        }
-        else
-        {
-            return (hours > 0 ? h + ":" : "") + m + ":" + s;
-        }
-    }
-
     icon: "ui-content_cut"
 
     onClick: ev =>
@@ -57,13 +28,25 @@ Button {
                 const path = cutButton.file.path;
                 thisDialog.close();
 
+                const notifications = new Map();
+
                 const videoEditor = await rpcProxy.invoke("videoEditor");
                 videoEditor.cutVideo(decodeURIComponent(path), directions, (name, seconds, duration) =>
                 {
+                    if (! notifications.has(name))
+                    {
+                        const notification = notificationArea.createNotification();
+                        notification.title = "Cutting Video";
+                        notifications.set(name, notification);
+                    }
+
+                    notifications.get(name).message = escapeMarkup(name + ": " + seconds + "s / " + duration + "s");
+
                     console.log("Cut progress: " + name + " " + seconds + " of " + duration);
                 },
                 () =>
                 {
+                    notifications.forEach(notification => notification.close());
                     console.log("Cutting finished");
                 });
             }
@@ -141,7 +124,7 @@ Button {
                         ruler: labelRuler
                         marginLeft: theme.paddingSmall
                         minWidth: labelRuler.max.width
-                        text: formatTime(modelData.value.begin, true) + " - " + formatTime(modelData.value.end, true)
+                        text: core.formatSeconds(modelData.value.begin, true) + " - " + core.formatSeconds(modelData.value.end, true)
                     }
 
                     TextEntry {

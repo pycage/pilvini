@@ -1,0 +1,176 @@
+require "shellfish/ui";
+
+Box {
+
+    function createNotification()
+    {
+        const item = notificationT();
+        if (children().length > 0)
+        {
+            get().add(item.get(), children()[children().length - 1].get());
+        }
+        else
+        {
+            add(item);
+        }
+        item.open();
+        return item;
+    }
+
+    function showNotification(title, message, timeout)
+    {
+        if (timeout === undefined)
+        {
+            timeout = 3000;
+        }
+
+        const item = createNotification();
+        item.title = title;
+        item.message = message;
+        wait(timeout).then(() =>
+        {
+            item.close();
+        });
+    }
+
+    onInitialization: () =>
+    {
+        css("pointer-events", "none");
+    }
+
+    property notificationT: template Box {
+        id: notification
+
+        property title: ""
+        property message: ""
+        property progress: 0.0
+
+        property closed: false
+
+        function open()
+        {
+            openAnimation.start();
+        }
+
+        function close()
+        {
+            if (! closed)
+            {
+                closed = true;
+                closeAnimation.start().then(() => { parent = null; });
+            }
+        }
+
+        fillWidth: true
+        height: 0
+
+        SequentialAction {
+            id: openAnimation
+
+            NumberAnimation {
+                from: 0
+                to: contentBox.bboxHeight + 2 * theme.paddingSmall
+                duration: 500
+
+                onNext: value => { notification.height = value; }
+            }
+
+            NumberAnimation {
+                from: notification.bboxWidth
+                to: 0
+                duration: 500
+
+                onNext: value => { contentBox.marginLeft = value; }
+            }
+        }
+
+        SequentialAction {
+            id: closeAnimation
+
+            NumberAnimation {
+                from: 0
+                to: notification.bboxWidth
+                duration: 500
+
+                onNext: value => { contentBox.marginLeft = value; }
+            }
+
+            NumberAnimation {
+                from: bboxHeight
+                to: 0
+                duration: 500
+
+                onNext: value => { notification.height = value; }
+            }
+
+        }
+
+        Box {
+            id: contentBox
+
+            width: notification.bboxWidth - theme.paddingSmall
+
+            marginLeft: notification.bboxWidth
+            marginRight: theme.paddingSmall
+            marginTop: theme.paddingSmall
+            marginBottom: theme.paddingSmall
+
+            color: theme.primaryBackgroundColor
+            borderColor: theme.borderColor
+            borderWidth: 1
+            borderRadius: theme.borderRadius
+
+            style: "sh-dropshadow"
+
+            onInitialization: () =>
+            {
+                css("pointer-events", "auto");
+            }
+
+            Box {
+                fillWidth: true
+                height: theme.itemHeightSmall
+                color: theme.primaryColor
+                layout: "center-row"
+
+                Label {
+                    marginTop: 2
+                    marginBottom: 2
+                    marginLeft: theme.paddingSmall
+                    marginRight: theme.paddingSmall
+                    fillWidth: true
+                    overflowBehavior: "ellipsis"
+                    bold: true
+                    color: theme.primaryBackgroundColor
+                    text: notification.title
+                }
+
+                MouseBox {
+                    width: bboxHeight
+                    fillHeight: true
+                    color: containsMouse ? theme.highlightBackgroundColor : "transparent"
+                    layout: "center"
+
+                    onClick: ev =>
+                    {
+                        ev.accepted = true;
+                        notification.close();
+                    }
+
+                    Label {
+                        color: parent.containsMouse ? theme.highlightColor : theme.primaryBackgroundColor
+                        text: "[icon:core-window-close]"
+                    }
+                }
+            }
+
+            Label {
+                margins: theme.paddingSmall
+                fillWidth: true
+                overflowBehavior: "wrap"
+                text: notification.message
+            }
+        }
+
+    }
+}

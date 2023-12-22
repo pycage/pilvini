@@ -11,7 +11,7 @@ Box {
     event search
 
     overflowBehavior: "scroll"
-    layout: "center-row"
+    layout: "row"
 
     onPathChanged: () =>
     {
@@ -105,33 +105,4 @@ Box {
             }
         }
     }
-
-    /*
-    Box {
-        fillHeight: true
-        layout: "row"
-
-        Repeater {
-            model: breadCrumbsModel
-            delegate: template Button {
-                labelProfile: Object {
-                    property bold: true
-                    //property literal: true
-                }
-                flat: true
-                fillHeight: true
-                icon: modelData.index === 0 ? "fs-drive"
-                                            : "ui-arrow_right"
-                text: modelData.value.name
-
-                onClick: () =>
-                {
-                    box.changePath(modelData.value.path);
-                }
-            }
-        }
-    }
-    */
-
-    Box { fillWidth: true }
 }

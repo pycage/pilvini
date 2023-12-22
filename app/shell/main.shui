@@ -1,8 +1,8 @@
-require "shellfish/low" as low;
 require "shellfish/ui";
 require "./CodePad.shui";
 require "./FilesBox.shui";
 require "./GridLayout.shui";
+require "./NotificationArea.shui";
 require "./RegistryDialog.shui";
 require "./TimeLabel.shui";
 require "./youtubefs.js";
@@ -30,17 +30,6 @@ Document {
     property showStatusBar: true
 
     color: theme.primaryBackgroundColor
-
-    function openNewTab(fs, path)
-    {
-        windowsModel.insert(windowsModel.size, {
-            component: filesBoxT,
-            properties: {
-                fs: fs,
-                path: path
-            }
-        });
-    }
 
     onContextMenu: ev => { ev.accepted = true; }
 
@@ -81,8 +70,6 @@ Document {
         if (loggedIn)
         {
             // initialize
-            windowsModel.initModel();
-
             const req = httpRequest("/whoami").send()
             .then(req => req.text())
             .then(data =>
@@ -125,26 +112,9 @@ Document {
         volume: "offline"
     }
 
-    ListModel {
-        id: windowsModel
-
-        function initModel()
-        {
-            reset([
-                {
-                    component: filesBoxT,
-                    properties: {
-                        fs: remoteFs,
-                        path: "/"
-                    }
-                }
-            ]);
-        }
-    }
-
     // main screen
     Box {
-        visible: doc.loggedIn
+        //visible: doc.loggedIn
 
         fillWidth: true
         height: documentRoot.windowHeight
@@ -157,7 +127,7 @@ Document {
             color: theme.contentBackgroundColor
             layout: "center-row"
 
-            visible: doc.showStatusBar || grid.items.length > 1
+            visible: doc.showStatusBar
 
             // menu button
             Button {
@@ -174,6 +144,7 @@ Document {
 
                 property menuT: template Menu {
 
+                    /*
                     MenuItem {
                         icon: "fs-folder"
                         text: "File Browser"
@@ -208,6 +179,7 @@ Document {
                     }
 
                     MenuSeparator { }
+                    */
 
                     MenuItem {
                         text: doc.darkMode ? "Bright Mode"
@@ -262,67 +234,11 @@ Document {
                 }
             }
 
-            // window list
-            Box {
-                fillWidth: true
-                fillHeight: true
-                layout: "row"
-
-                Repeater {
-                    model: grid.items.length > 1 ? grid.items.length : 0
-
-                    delegate: template Box {
-                        property highlighted: modelData.index < grid.items.length && grid.items[modelData.index].objectId === grid.maximizedItem
-
-                        fillWidth: true
-                        fillHeight: true
-                        color: highlighted ? theme.secondaryBackgroundColor
-                                           : "transparent"
-                        layout: "row"
-                        
-                        Button {
-
-                            fillWidth: true
-                            fillHeight: true
-                            flat: true
-                            //checked: modelData.index < grid.items.length && grid.items[modelData.index].objectId === grid.maximizedItem
-                            //icon: modelData.index < grid.items.length && grid.items[modelData.index].item.windowIcon
-                            //text: low.escapeMarkup(grid.items[parent.modelData.index]?.item?.windowTitle ?? "")
-                            text: "" + (parent.modelData.index + 1)
-
-                            onClick: () =>
-                            {
-                                if (parent.highlighted)
-                                {
-                                    grid.maximizedItem = null;
-                                }
-                                else
-                                {
-                                    grid.maximizedItem = grid.items[parent.modelData.index].objectId;
-                                }
-                                grid.update();
-                            }
-                        }
-
-                        Button {
-                            visible: parent.highlighted
-                            width: bboxHeight
-                            fillHeight: true
-                            flat: true
-                            icon: "core-window-close"
-
-                            onClick: () =>
-                            {
-                                windowsRepeater.closePane(parent.modelData.index);
-                            }
-                        }
-                    }
-                }
-            }
+            Box { fill: true }
 
             Label {
                 marginLeft: theme.paddingMedium
-                text: "[icon:comm-person] " + low.escapeMarkup(doc.user)
+                text: "[icon:comm-person] " + escapeMarkup(doc.user)
             }
 
             TimeLabel {
@@ -351,102 +267,28 @@ Document {
         }
 
         // content area
-        Box {
-            fillWidth: true
-            fillHeight: true
+        Loader {
+            fill: true
 
-            GridLayout {
-                id: grid
-
-                property maximizedItem: null
-                property fileViewers: []
-
-                fillWidth: true
-                fillHeight: true
-
-                layout: bbox.width > bbox.height ? "row" : "column"
-
-                Repeater {
-                    id: windowsRepeater
-
-                    model: windowsModel
-
-                    function closePane(idx)
-                    {
-                        windowsModel.remove(idx);
-                        dumpRecycleBin();
-
-                        grid.update();
-                    }
-
-                    delegate: template Loader {
-                        visible: ! grid.maximizedItem || grid.maximizedItem === objectId
-
-                        property sortIndex: objectId
-
-                        fillWidth: true
-                        fillHeight: true
-
-                        onInitialization: () =>
-                        {
-                            sourceTemplate = modelData.value.component;
-                        }
-
-                        onDestruction: () =>
-                        {
-                            if (grid.maximizedItem === objectId)
-                            {
-                                grid.maximizedItem = null;
-                            }
-                        }
-
-                        onItemChanged: () =>
-                        {
-                            if (item)
-                            {
-                                for (let key in modelData.value.properties)
-                                {
-                                    item[key] = modelData.value.properties[key];
-                                }
-
-                                item.onToggleMaximized = () =>
-                                {
-                                    if (grid.maximizedItem)
-                                    {
-                                        grid.maximizedItem = null;
-                                    }
-                                    else
-                                    {
-                                        grid.maximizedItem = objectId;
-                                    }
-                                    grid.update();
-                                };
-
-                                grid.get().onMaximizedItemChanged = safeCallback(() =>
-                                {
-                                    item.maximized = grid.maximizedItem === objectId;
-                                });
-
-                                grid.maximizedItem = objectId;
-                                grid.update();
-                            }
-                        }
-                    }
-                }
-
-            }//GridLayout
-
+            sourceTemplate: ! doc.loggedIn && ! doc.logInPending ? loginScreenT
+                                                                 : ! doc.logInPending ? filesBoxT
+                                                                                      :  null
         }
-
-
     }
 
-    // welcome screen with login options
-    Box {
-        visible: ! doc.loggedIn && ! doc.logInPending
+    NotificationArea {
+        id: notificationArea
+        
+        position: "global"
+        origin: "top-right"
+        width: theme.itemWidthLarge * 2
+        fillHeight: true
+    }
 
-        fillWidth: true
-        height: documentRoot.windowHeight
+
+    // welcome screen with login options
+    property loginScreenT: template Box {
+        fill: true
         layout: "center-column"
 
         Label {
@@ -476,8 +318,7 @@ Document {
                 {
                     if (req.ok)
                     {
-                        loggedIn = true;
-                        windowsModel.dataChanged();
+                        doc.loggedIn = true;
                     }
                 })
                 .catch(err =>
@@ -503,8 +344,7 @@ Document {
                     codeLabel.text = "";
                     if (req.ok)
                     {
-                        loggedIn = true;
-                        windowsModel.dataChanged();
+                        doc.loggedIn = true;
                     }
                 })
                 .catch(err =>
@@ -548,6 +388,45 @@ Document {
         }
     }
 
-    property filesBoxT: template FilesBox { }
+    property filesBoxT: template Box {
+
+        fill: true
+        
+        layout: bboxWidth > bboxHeight ? "row" : "column"
+
+        onInitialization: () =>
+        {
+            console.log("Create File Manager");
+        }
+        
+        ListModel {
+            id: tabsModel
+
+            data: [
+                { path: "/" }
+            ]
+        }
+
+        Repeater {
+            model: tabsModel
+
+            delegate: template FilesBox {
+                fill: true
+                fs: remoteFs
+                path: modelData.value.path
+                mayClose: tabsModel.size > 1
+
+                onOpenNew: (fs, path) =>
+                {
+                    tabsModel.insert(tabsModel.size, { path: path });
+                }
+
+                onClose: () =>
+                {
+                    tabsModel.remove(modelData.index);
+                }
+            }
+        }
+    }
 
 }
