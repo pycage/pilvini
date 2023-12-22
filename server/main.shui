@@ -1,7 +1,6 @@
 require "shellfish/server";
 require "./diskinfo.js" as diskinfo;
 require "./proxysession.js";
-//require "./pty.js" as pty;
 require "./virtualfs.js";
 require "./rarfs.js";
 require "./videoeditor.js";
@@ -134,7 +133,7 @@ HTTPServer {
     // Who am I?
     HTTPRoute {
         authentication: auth
-        prefix: "/whoami"
+        when: pathPrefix("/whoami")
 
         delegate: template HTTPSession {
             onRequest: req =>
@@ -148,7 +147,7 @@ HTTPServer {
 
     // Guest login with code
     HTTPRoute {
-        prefix: "/login?"
+        when: req => req.url.path === "/login" && req.url.parameters.code
 
         delegate: template HTTPSession {
             onRequest: req =>
@@ -179,7 +178,7 @@ HTTPServer {
     // Login
     HTTPRoute {
         authentication: httpAuth
-        prefix: "/login"
+        when: pathPrefix("/login")
 
         delegate: template HTTPSession {
             onRequest: req =>
@@ -196,7 +195,7 @@ HTTPServer {
     // Logout
     HTTPRoute {
         authentication: auth
-        prefix: "/logout"
+        when: pathPrefix("/logout")
 
         delegate: template HTTPSession {
             onRequest: req =>
@@ -213,7 +212,7 @@ HTTPServer {
     // Accept login request
     HTTPRoute {
         authentication: auth
-        prefix: "/acceptLogin?"
+        when: pathPrefix("/acceptLogin?")
 
         delegate: template HTTPSession {
             onRequest: req =>
@@ -276,7 +275,7 @@ HTTPServer {
     // Password hash
     HTTPRoute {
         authentication: auth
-        prefix: "/::setPassword"
+        when: pathPrefix("/::setPassword")
 
         delegate: template HTTPSession {
             onRequest: req =>
@@ -308,7 +307,6 @@ HTTPServer {
 
         when: req =>
         {
-	        //console.log(__dirname + ", " + "/shellfish" + ", " + req.url.path);
             return WHITELIST.indexOf(req.url.path) !== -1;
         }
 
@@ -323,7 +321,7 @@ HTTPServer {
     // Proxy Access
     HTTPRoute {
         authentication: auth
-        prefix: "/::proxy"
+        when: pathPrefix("/::proxy")
 
         delegate: template ProxySession {
 
@@ -332,7 +330,7 @@ HTTPServer {
 
     // Applications
     HTTPRoute {
-        prefix: "/::"
+        when: pathPrefix("/::")
 
         delegate: template WebSession {
             urlMapper: url => { return "/" + url.substr(3); }
