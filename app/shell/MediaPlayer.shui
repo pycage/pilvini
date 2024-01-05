@@ -1,5 +1,6 @@
 require "shellfish/low" as low;
 require "shellfish/ui";
+require "./MiniPlayer.shui";
 require "./PlaySeekButton.shui";
 require "./SeekBar.shui";
 require "./SubtitlesBox.shui";
@@ -30,6 +31,23 @@ MouseBox {
     function removeMarker(idx)
     {
         markersModel.remove(idx);
+    }
+
+    function openMiniPlayer()
+    {
+        const data = model.data;
+        const cr = current;
+
+        const notification = notificationArea.createCustomNotification(miniPlayerT);
+        notification.title = "Mini Player";
+        notification.wait(100).then(() =>
+        {
+            if (notification.item)
+            {
+                notification.item.model.reset(data);
+                notification.item.current = cr;
+            }
+        });
     }
 
     property model: ListModel { }
@@ -284,8 +302,6 @@ MouseBox {
         }
 
         Box {
-            //visible: controls.active
-
             position: "free"
             origin: "bottom-left"
             y: controls.active ? 0 : -height
@@ -305,8 +321,6 @@ MouseBox {
         }
 
         Label {
-            //visible: controls.active
-            
             position: "free"
             origin: "top-right"
             marginTop: theme.paddingLarge
@@ -349,53 +363,6 @@ MouseBox {
             marginRight: marginLeft
             marginBottom: marginLeft
 
-            /*
-            Box {
-                visible: coverArt.visible && !! playerBox.model && playerBox.model.size > 1
-                fillWidth: true
-                layout: "center-row"
-                overflowBehavior: "wrap"
-
-                onAncestorsVisibleChanged: () =>
-                {
-                    if (! ancestorsVisible)
-                    {
-                        trackButtonRuler.reset();
-                    }
-                }
-
-                Ruler {
-                    id: trackButtonRuler
-                }
-
-                Repeater {
-                    model: playerBox.model
-                    delegate: template Button {
-                        ruler: trackButtonRuler
-                        minWidth: trackButtonRuler.max.width
-                        flat: true
-                        checked: modelData.index === playerBox.current
-
-                        onInitialization: () =>
-                        {
-                            if (! modelData.value.mimetype.startsWith("audio/"))
-                            {
-                                return;
-                            }
-
-                            text = low.escapeMarkup(stripExtension(modelData.value.name));
-                        }
-
-                        onClick: (ev) =>
-                        {
-                            playerBox.current = modelData.index;
-                            ev.accepted = true;
-                        }
-                    }
-                }
-            }
-            */
-
             // controls bar 1
             Box {
                 fillWidth: true
@@ -411,6 +378,20 @@ MouseBox {
                     onClick: ev =>
                     {
                         ev.accepted = true;
+                        thisFileViewer.close();
+                    }
+                }
+
+                Button {
+                    fillHeight: true
+                    width: bboxHeight
+                    flat: true
+                    icon: "ui-unfold_less"
+
+                    onClick: ev =>
+                    {
+                        ev.accepted = true;
+                        playerBox.openMiniPlayer();
                         thisFileViewer.close();
                     }
                 }
@@ -670,101 +651,21 @@ MouseBox {
                     text: core.formatSeconds(seekbar.seeking ? seekbar.seekTime : controls.player.currentTime, playSeekButton.seeking && Math.abs(playSeekButton.seekValue) > 0.0001)
                 }
 
-                Button {
-                    id: titleLabel
-
+                SelectionBox {
                     fillWidth: true
-                    marginLeft: theme.paddingMedium
-                    marginRight: theme.paddingMedium
                     flat: true
+
+                    model: playerBox.model
+                    formatText: item => escapeMarkup(stripExtension(item.name))
 
                     playerBox.onCurrentChanged: () =>
                     {
-                        if (playerBox.current === -1)
-                        {
-                            text = "";
-                            return;
-                        }
-
-                        const file = playerBox.model.at(playerBox.current);
-                        if (file.mimetype.startsWith("audio/"))
-                        {
-                            text = low.escapeMarkup(stripExtension(file.name));
-
-                            /*
-                            text = "Loading...";
-                            httpRequest("/::tags" + file.path).send()
-                            .then(response =>
-                            {
-                                if (response.ok)
-                                {
-                                    return response.text();
-                                }
-                            })
-                            .then(data =>
-                            {
-                                const tags = JSON.parse(data);
-                                text = tags.TITLE || stripExtension(file.name);
-                            })
-                            .catch(err =>
-                            {
-
-                            });
-                            */
-                        }
-                        else
-                        {
-                            text = (playerBox.current + 1) + "/" + playerBox.model.size + " - " + low.escapeMarkup(stripExtension(file.name));
-                        }
+                        selection = Math.max(0, playerBox.current);
                     }
 
-                    onClick: ev =>
+                    onSelectionChanged: () =>
                     {
-                        ev.accepted = true;
-
-                        const menu = menuT();
-                        menu.popup(self);
-                    }
-
-                    property menuT: template Menu {
-
-                        ListView {
-                            width: titleLabel.bboxWidth
-                            height: Math.min(cellHeight * count, thisDocument.windowHeight * 0.5)
-                            cellWidth: bboxWidth
-                            cellHeight: theme.itemHeightMedium
-
-                            model: playerBox.model
-
-                            onInitialization: () =>
-                            {
-                                wait(100).then(() => { positionViewAt(playerBox.current); });
-                            }
-
-                            delegate: template MenuItemBase {
-
-                                layout: "center-row"
-
-                                Label {
-                                    fillWidth: true
-                                    marginLeft: theme.paddingSmall
-                                    marginRight: theme.paddingSmall
-                                    overflowBehavior: "ellipsis"
-                                    text: (modelData.index + 1) + " - " +
-                                          low.escapeMarkup(stripExtension(modelData.value.name))
-                                }
-
-                                onClick: () =>
-                                {
-                                    playerBox.current = modelData.index;
-                                    thisMenu.parent = null;
-                                }
-                            }
-
-                            ScrollIndicator { }
-                            OverflowScroller { }
-                        }
-
+                        playerBox.current = selection;
                     }
                 }
 
@@ -777,4 +678,5 @@ MouseBox {
 
     }
 
+    property miniPlayerT: template MiniPlayer { }
 }

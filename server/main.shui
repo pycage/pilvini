@@ -1,5 +1,6 @@
 require "shellfish/server";
 require "./diskinfo.js" as diskinfo;
+require "./epgservice.js";
 require "./proxysession.js";
 require "./virtualfs.js";
 require "./rarfs.js";
@@ -70,6 +71,10 @@ HTTPServer {
         }
     }
 
+    EpgService {
+        id: epgService
+    }
+
     VideoEditor {
         id: videoEditor
     }
@@ -138,8 +143,15 @@ HTTPServer {
         delegate: template HTTPSession {
             onRequest: req =>
             {
+                const data = {
+                    name: req.user,
+                    apps: [
+                        { name: "Files", icon: "fs-folder", source: "FilesApp.shui" },
+                        { name: "EPG", icon: "fs-file-video", source: "EpgApp.shui" }
+                    ]
+                };
                 response(200, "OK")
-                .body(req.user)
+                .body(JSON.stringify(data))
                 .send();
             }
         }
@@ -253,6 +265,11 @@ HTTPServer {
                 registerMethod("registry", () =>
                 {
                     return proxyObject(registryFile, ["read", "write", "list", "info"]);
+                });
+
+                registerMethod("epgService", async () =>
+                {
+                    return proxyObject(epgService);
                 });
 
                 registerMethod("videoEditor", async () =>

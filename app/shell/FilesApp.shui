@@ -1,0 +1,46 @@
+require "shellfish/ui";
+require "./FilesBox.shui";
+
+Box {
+    // a bag of files for copy/move operations
+    property filesBag: []
+    property filesBagSource: null
+
+    fill: true
+    
+    layout: bboxWidth > bboxHeight ? "row" : "column"
+
+    onInitialization: () =>
+    {
+        console.log("Create File Manager");
+    }
+    
+    ListModel {
+        id: tabsModel
+
+        data: [
+            { path: "/" }
+        ]
+    }
+
+    Repeater {
+        model: tabsModel
+
+        delegate: template FilesBox {
+            fill: true
+            fs: remoteFs
+            path: modelData.value.path
+            mayClose: tabsModel.size > 1
+
+            onOpenNew: (fs, path) =>
+            {
+                tabsModel.insert(tabsModel.size, { path: path });
+            }
+
+            onClose: () =>
+            {
+                tabsModel.remove(modelData.index);
+            }
+        }
+    }
+}

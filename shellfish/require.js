@@ -1,6 +1,6 @@
 /*******************************************************************************
 This file is part of the Shellfish UI toolkit.
-Copyright (c) 2017 - 2023 Martin Grimme <martin.grimme@gmail.com>
+Copyright (c) 2017 - 2024 Martin Grimme <martin.grimme@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
@@ -366,14 +366,23 @@ const shRequire = (function ()
                 scriptNode.async = loadAsync;
                 const codeUrl = URL.createObjectURL(new Blob([code], { type: "application/javascript" }));
               
-                scriptNode.addEventListener("error", function ()
+                const errorCb = () =>
                 {
                     URL.revokeObjectURL(codeUrl);
                     log("", "error", `Failed to import script.`);
                     shRequire.registerCallback(scriptId, null);
                     resolve(false);
-                }, false);
-        
+                };
+
+                const loadCb = () =>
+                {
+                    scriptNode.removeEventListener("load", loadCb);
+                    scriptNode.removeEventListener("error", errorCb);
+                };
+
+                scriptNode.addEventListener("error", errorCb, false);
+                scriptNode.addEventListener("load", loadCb);
+
                 scriptNode.src = codeUrl;
                 document.head.appendChild(scriptNode);
             }
@@ -518,7 +527,7 @@ const shRequire = (function ()
         }
         else if (bundle.version === 2)
         {
-            let js = "";
+            let js = "\"use strict\";";
             const scriptId = idCounter;
             ++idCounter;
 
@@ -546,20 +555,22 @@ const shRequire = (function ()
                     {
                         // collect all JavaScript files wrapped in loader functions in a single module
                         js += `
-                            origRequire = shRequire;
-                            shRequire.registerLoader("${resUrl}", async (exports, __dirname, __filename) =>
+                            (() =>
                             {
-                                "use strict";
-                                let reqQueue = [];
-                                const shRequire = origRequire.withQueue(reqQueue);
+                                const origRequire = shRequire;
+                                shRequire.registerLoader("${resUrl}", async (exports, __dirname, __filename) =>
+                                {
+                                    let reqQueue = [];
+                                    const shRequire = origRequire.withQueue(reqQueue);
 
-                                ${bundle.resources[resUrl]}
-                                const mod = typeof Module !== "undefined" ? Module : exports;
-                                shRequire.registerModule("${resUrl}", mod);
+                                    ${bundle.resources[resUrl]}
+                                    const mod = typeof Module !== "undefined" ? Module : exports;
+                                    shRequire.registerModule("${resUrl}", mod);
 
-                                while (reqQueue.length > 0) await reqQueue.shift();
-                            });
-                            origRequire.invokeCallback(${scriptId});
+                                    while (reqQueue.length > 0) await reqQueue.shift();
+                                });
+                                origRequire.invokeCallback(${scriptId});
+                            })();
                         `;
                     }
                     else
@@ -671,10 +682,11 @@ const shRequire = (function ()
             link.setAttribute("type", "text/css");
             link.setAttribute("rel", "stylesheet");
             link.setAttribute("href", url);
-            link.onload = () =>
+
+            link.addEventListener("load", () =>
             {
                 resolve(null);
-            };
+            }, { once: true });
             document.head.appendChild(link);
         });
     }

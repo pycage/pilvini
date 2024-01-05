@@ -1,0 +1,214 @@
+require "shellfish/ui";
+require "./SeekBar.shui";
+
+Box {
+    id: playerBox
+
+    function stripExtension(filename)
+    {
+        const pos = filename.lastIndexOf(".");
+        if (pos !== -1)
+        {
+            return filename.substr(0, pos);
+        }
+        else
+        {
+            return pos;
+        }
+    }
+
+    property model: ListModel { }
+    property current: -1
+    property startPosition: 0
+    property title: model.at(current) ? model.at(current).name : ""
+
+    fillWidth: true
+    height: theme.itemHeightLarge * 2
+
+    onCurrentChanged: () =>
+    {
+        notificationArea.drawAttention();
+
+        if (current === -1)
+        {
+            videoPlayer.source = "";
+            coverArt.source = "";
+        }
+        else
+        {
+            const mediaItem = model.at(current);
+            if (mediaItem.mimetype.startsWith("video/"))
+            {
+                coverArt.visible = false;
+                coverArt.source = "";
+                videoPlayer.visible = true;
+                videoPlayer.source = mediaItem.path;
+            }
+            else if (mediaItem.mimetype.startsWith("audio/"))
+            {
+                videoPlayer.visible = false;
+                coverArt.visible = true;
+                videoPlayer.source = mediaItem.path;
+                const newSource = mediaItem.path + "?view=cover";
+                if (coverArt.source !== newSource)
+                {
+                    coverArt.source = newSource;
+                }
+            }
+        }
+    }
+
+    Box {
+        fill: true
+        layout: "row"
+
+        Box {
+            id: coverArt
+
+            property source: ""
+
+            visible: false
+            width: bboxHeight
+            fillHeight: true
+            color: theme.secondaryBackgroundColor
+            borderColor: theme.primaryColor
+            borderWidth: theme.paddingSmall / 2
+
+            Image {
+                visible: status === "success"
+                fill: true
+                fitMode: "contain"
+                source: coverArt.source
+            }
+        }
+
+        Box {
+            visible: videoPlayer.visible
+            width: bboxHeight
+            fillHeight: true
+            color: "black"    
+
+            Video {
+                id: videoPlayer
+
+                visible: false
+                fill: true
+
+                onFinish: () =>
+                {
+                    if (playerBox.current < playerBox.model.size - 1)
+                    {
+                        playerBox.current = playerBox.current + 1;
+                    }
+                }
+            }
+        }
+
+        Box {
+            fill: true
+
+            Box {
+                fill: true
+                layout: "center-row"
+
+                Button {
+                    fillHeight: true
+                    width: bboxHeight
+                    flat: true
+                    icon: "media-previous"
+
+                    onClick: () =>
+                    {
+                        if (videoPlayer.currentTime < 3 && playerBox.current > 0)
+                        {
+                            playerBox.current = playerBox.current - 1;
+                        }
+                        else
+                        {
+                            videoPlayer.currentTime = 0;
+                        }
+                    }
+                }
+
+                Button {
+                    fillHeight: true
+                    width: bboxHeight
+                    flat: true
+                    icon: videoPlayer.playing ? "media-pause" : "media-play"
+
+                    onClick: () =>
+                    {
+                        if (videoPlayer.playing)
+                        {
+                            videoPlayer.pause();
+                        }
+                        else
+                        {
+                            videoPlayer.play();
+                        }
+                    }
+                }
+
+                Button {
+                    enabled: !! playerBox.model && (playerBox.current < playerBox.model.size - 1)
+                    fillHeight: true
+                    width: bboxHeight
+                    flat: true
+                    icon: "media-next"
+
+                    onClick: () =>
+                    {
+                        playerBox.current = playerBox.current + 1;
+                    }
+                }
+
+            }
+
+            Box {
+                marginLeft: theme.paddingSmall
+                marginRight: theme.paddingSmall
+                fillWidth: true
+                layout: "row"
+
+                Label {
+                    fillWidth: true
+                    fontSize: theme.fontSizeSmall
+                    text: core.formatSeconds(videoPlayer.currentTime, false)
+                }
+
+                Label {
+                    fontSize: theme.fontSizeSmall
+                    text: core.formatSeconds(videoPlayer.duration, false)
+                }
+
+            }
+
+            SeekBar {
+                marginLeft: theme.paddingSmall
+                marginRight: theme.paddingSmall
+                fillWidth: true
+                height: theme.paddingMedium
+                player: videoPlayer
+            }
+        }
+    }
+
+    SelectionBox {
+        fillWidth: true
+        flat: true
+        color: theme.secondaryBackgroundColor
+
+        model: playerBox.model
+        formatText: item => escapeMarkup(stripExtension(item.name))
+
+        playerBox.onCurrentChanged: () =>
+        {
+            selection = Math.max(0, playerBox.current);
+        }
+
+        onSelectionChanged: () =>
+        {
+            playerBox.current = selection;
+        }
+    }
+}

@@ -1,0 +1,346 @@
+require "shellfish/ui";
+
+Box {
+    id: app
+
+    function formatTime(d)
+    {
+        const hours = d.getHours();
+        const minutes = d.getMinutes();
+        return (hours < 10 ? "0" + hours : hours) + ":" +
+               (minutes < 10 ? "0" + minutes : minutes);
+    }
+
+    property epgService: null
+
+    fill: true
+
+    onInitialization: async () =>
+    {
+        epgService = await rpcProxy.invoke("epgService");
+        console.log("got EPG service");
+    }
+
+    Repeater {
+        model: app.epgService ? 1 : 0
+
+        delegate: template Box {
+            fill: true
+
+            ListModel {
+                id: eventsModel
+
+                property serviceId: "0"
+            }
+
+            ListModel {
+                id: recordingsModel
+
+                onInitialization: async () =>
+                {
+                    const recs = await app.epgService.recordings();
+                    console.log("recordings");
+                    console.log(recs);
+                    reset(recs);
+                }
+            }
+
+            Box {
+                fillWidth: true
+                height: theme.itemHeightMedium
+                color: theme.secondaryBackgroundColor
+                layout: "center-row"
+
+                SelectionBox {
+                    id: serviceSelector
+
+                    property services: []
+
+                    width: theme.itemWidthLarge * 2
+
+                    model: ListModel { }
+
+                    onInitialization: async () =>
+                    {
+                        services = await app.epgService.services();
+                        //console.log("Services: " + JSON.stringify(services));
+                        model.reset(services.map(item => escapeMarkup(item.name)));
+                    }
+
+                    onSelectionChanged: async () =>
+                    {
+                        if (selection >= 0 && selection < services.length)
+                        {
+                            const serviceId = services[selection].serviceId;
+                            const events = await app.epgService.events(serviceId);
+                            //console.log("Events: " + JSON.stringify(events));
+                            eventsModel.serviceId = serviceId;
+                            eventsModel.reset(events);
+                        }
+                    }
+                }
+            }
+
+            ListView {
+                fill: true
+                cellWidth: bboxWidth
+                cellHeight: theme.itemHeightLarge
+
+                model: eventsModel
+                delegate: template MouseBox {
+                    id: listItem
+
+                    property beginDate: new Date(modelData.value.begin * 1000)
+
+                    color: beginDate.getDate() % 2 == 0 ? theme.contentBackgroundColor : theme.contentAltBackgroundColor
+                    layout: "center-row"
+
+                    onClick: ev =>
+                    {
+                        ev.accepted = true;
+
+                        app.epgService.eventInfo(eventsModel.serviceId, modelData.value.eventId)
+                        .then(info =>
+                        {
+                            showInfoDialog(info.name, info.description, () => { });
+                        });
+                    }
+
+                    Box {
+                        marginLeft: theme.itemWidthMedium + theme.paddingSmall
+                        width: theme.itemWidthMedium
+
+                        color: theme.primaryColor
+                        borderRadius: 3
+                        layout: "center"
+
+                        Label {
+                            bold: true
+                            color: theme.primaryBackgroundColor
+                            text: "" + listItem.beginDate.getDate()
+                        }
+
+                        Label {
+                            marginLeft: 2
+                            marginRight: 2
+                            fontSize: theme.fontSizeSmall
+                            color: theme.primaryBackgroundColor
+                            text: formatTime(listItem.beginDate)
+                        }
+                    }
+
+                    Box {
+                        fill: true
+                        layout: "center-column"
+
+                        Label {
+                            marginLeft: theme.paddingSmall
+                            marginRight: theme.paddingSmall
+                            overflowBehavior: "ellipsis"
+                            fillWidth: true
+                            text: modelData.value.name
+                        }
+
+                        Label {
+                            marginLeft: theme.paddingSmall
+                            marginRight: theme.paddingSmall
+                            overflowBehavior: "ellipsis"
+                            fillWidth: true
+                            color: theme.secondaryColor
+                            text: modelData.value.serviceName
+                        }
+                    }
+
+                    Button {
+                        checked: modelData.value.scheduled
+                        marginRight: theme.paddingSmall
+                        text: "Rec"
+
+                        onClick: async ev =>
+                        {
+                            ev.accepted = true;
+
+                            if (! modelData.value.scheduled)
+                            {
+                                //await app.epgService.record(modelData.value.serviceId, modelData.value.eventId, true);
+                                recordingsModel.insertOrdered(modelData.value, (a, b) => a.begin - b.begin);
+                                const event = modelData.value;
+                                event.scheduled = true;
+                                eventsModel.replace(modelData.index, event);
+                            }
+                            else
+                            {
+                                for (let i = 0; i < recordingsModel.size; ++i)
+                                {
+                                    const event = recordingsModel.at(i);
+                                    if (event.serviceId === modelData.value.serviceId && event.eventId === modelData.value.eventId)
+                                    {
+                                        recordingsModel.remove(i);
+                                        break;
+                                    }
+                                }
+                                const event = modelData.value;
+                                event.scheduled = false;
+                                eventsModel.replace(modelData.index, event);
+                            }
+                        }
+                    }
+                }
+
+                IndexScroller {
+                    position: "global"
+                    y: parent.bboxY
+                    height: parent.bboxHeight
+                    width: theme.itemWidthMedium
+
+                    getLabel: idx =>
+                    {
+                        const item = eventsModel.at(idx);
+                        const d = new Date(item.begin * 1000);
+                        return d.getDate() + " / " + formatTime(d);
+                    }
+                }
+
+                ScrollIndicator { }
+            }
+
+            MouseBox {
+                fillWidth: true
+                height: theme.itemHeightMedium
+                color: containsMouse ? theme.highlightBackgroundColor : theme.secondaryBackgroundColor
+                layout: "center-row"
+
+                Label {
+                    color: parent.containsMouse ? theme.highlightColor : theme.primaryColor
+                    text: "Recordings (" + recordingsListView.count + ")"
+                }
+
+                onClick: () =>
+                {
+                    recordingsListView.visible = ! recordingsListView.visible;
+                }
+            }
+
+            ListView {
+                id: recordingsListView
+
+                visible: false
+                fill: true
+                cellWidth: bboxWidth
+                cellHeight: theme.itemHeightLarge
+
+                model: recordingsModel
+
+                delegate: template MouseBox {
+                    id: listItem
+
+                    property beginDate: new Date(modelData.value.begin * 1000)
+
+                    color: beginDate.getDay() % 2 == 0 ? theme.contentBackgroundColor : theme.contentAltBackgroundColor
+                    layout: "center-row"
+
+                    onClick: ev =>
+                    {
+                        ev.accepted = true;
+
+                        app.epgService.eventInfo(eventsModel.serviceId, modelData.value.eventId)
+                        .then(info =>
+                        {
+                            showInfoDialog(info.name, info.description, () => { });
+
+                        });
+                    }
+
+                    Box {
+                        marginLeft: theme.itemWidthMedium + theme.paddingSmall
+                        width: theme.itemWidthMedium
+
+                        color: theme.primaryColor
+                        borderRadius: 3
+                        layout: "center"
+
+                        Label {
+                            bold: true
+                            color: theme.primaryBackgroundColor
+                            text: "" + listItem.beginDate.getDate()
+                        }
+
+                        Label {
+                            marginLeft: 2
+                            marginRight: 2
+                            fontSize: theme.fontSizeSmall
+                            color: theme.primaryBackgroundColor
+                            text: formatTime(listItem.beginDate)
+                        }
+                    }
+
+                    Box {
+                        fill: true
+                        layout: "center-column"
+
+                        Label {
+                            marginLeft: theme.paddingSmall
+                            marginRight: theme.paddingSmall
+                            overflowBehavior: "ellipsis"
+                            fillWidth: true
+                            text: modelData.value.name
+                        }
+
+                        Label {
+                            marginLeft: theme.paddingSmall
+                            marginRight: theme.paddingSmall
+                            overflowBehavior: "ellipsis"
+                            fillWidth: true
+                            color: theme.secondaryColor
+                            text: modelData.value.serviceName
+                        }
+                    }
+
+                    Button {
+                        marginRight: theme.paddingSmall
+                        checked: true
+                        text: "Rec"
+
+                        onClick: async ev =>
+                        {
+                            ev.accepted = true;
+
+                            //await app.epgService.record(modelData.value.serviceId, modelData.value.eventId, false);
+
+                            if (eventsModel.serviceId === modelData.value.serviceId)
+                            {
+                                for (let i = 0; i < eventsModel.size; ++i)
+                                {
+                                    const event = eventsModel.at(i);
+                                    if (event.eventId === modelData.value.eventId)
+                                    {
+                                        event.scheduled = false;
+                                        eventsModel.replace(i, event);
+                                    }
+                                }
+                            }
+                            recordingsModel.remove(modelData.index);
+                        }
+                    }
+                }
+
+                IndexScroller {
+                    position: "global"
+                    y: parent.bboxY
+                    height: parent.bboxHeight
+                    width: theme.itemWidthMedium
+
+                    getLabel: idx =>
+                    {
+                        const item = recordingsModel.at(idx);
+                        const d = new Date(item.begin * 1000);
+                        return d.getDate() + " / " + formatTime(d);
+                    }
+                }
+
+                ScrollIndicator { }
+            }
+        }
+    }
+
+}

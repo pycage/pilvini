@@ -277,13 +277,14 @@ Box {
         {
             const fileItem = files[i];
 
-            const notification = notificationArea.createNotification();
+            const notification = notificationArea.createCustomNotification();
             notification.title = "Uploading File";
             notification.message = escapeMarkup(fileItem.name);
+            notification.progress = 0.0;
 
             const progressCb = (name, progress) =>
             {
-                notification.message = escapeMarkup(name) + " " + Math.round(progress * 100) + "%";
+                notification.progress = progress;
             };
 
             uploadfiles.uploadRecursive(fileItem, box.fs, box.path, progressCb)
@@ -371,7 +372,7 @@ Box {
         {
             if (status === "disconnected")
             {
-                notificationArea.showNotification("Connection Lost", "The connection to the server was lost.");
+                notificationArea.createNotification("Connection Lost", "ui-warning", "The connection to the server was lost.");
                 //thisDocument.showErrorDialog("Connection Lost", "The connection to the server was lost.");
             }
         }
@@ -648,14 +649,13 @@ Box {
                             const uri = item.path;
                             const destPath = box.fs.pathJoin(box.path, box.fs.filename(uri));
 
-                            const notification = notificationArea.createNotification();
+                            const notification = notificationArea.createCustomNotification();
                             notification.title = "Copying File";
                             notification.message = escapeMarkup(box.fs.filename(uri));
 
                             box.fs.copy(uri, destPath)
                             .then(() =>
                             {
-                                console.log("files moved");
                                 notification.close();
                             })
                             .catch(err =>
@@ -821,16 +821,14 @@ Box {
 
                             if (ev.dropEffect === "copy")
                             {
-                                const notification = notificationArea.createNotification();
+                                const notification = notificationArea.createCustomNotification();
                                 notification.title = "Copying File";
                                 notification.message = "[icon:ui-spinner5] " + escapeMarkup(box.fs.filename(uri));
-                                notification.progress = 0.0;
                                 
                                 box.fs.copy(uri, destPath)
                                 .then(() =>
                                 {
                                     notification.close();
-                                    console.log("files copied");
                                 })
                                 .catch(err =>
                                 {
@@ -1021,7 +1019,7 @@ Box {
                                       : displayMode === "grid" ? cellWidth + theme.fontSizeMedium * 1.2 * 5
                                                                : theme.fontSizeMedium * 5
 
-                            cacheMargin: cellHeight * 2 //contentHeight
+                            //cacheMargin: cellHeight * 2 //contentHeight
 
                             orientation: visible && ancestorsVisible && bboxHeight < cellHeight + theme.paddingLarge ? "horizontal" : "vertical"
 
@@ -1251,7 +1249,7 @@ Box {
                     property fileMenuT: template Menu {
                         MenuItem {
                             enabled: selector.selection.size === 1
-                            text: "Open New Pane"
+                            text: "Open in New Pane"
                             onClick: () =>
                             {
                                 const idx = [...selector.selection][0];

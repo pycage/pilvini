@@ -28,26 +28,34 @@ Button {
                 const path = cutButton.file.path;
                 thisDialog.close();
 
-                const notifications = new Map();
+                let notification = null;
 
                 const videoEditor = await rpcProxy.invoke("videoEditor");
                 videoEditor.cutVideo(decodeURIComponent(path), directions, (name, seconds, duration) =>
                 {
-                    if (! notifications.has(name))
+                    if (! notification)
                     {
-                        const notification = notificationArea.createNotification();
+                        notification = notificationArea.createCustomNotification();
                         notification.title = "Cutting Video";
-                        notifications.set(name, notification);
+                        notification.progress = 0.0;
+                        notification.progressText = "...";
                     }
 
-                    notifications.get(name).message = escapeMarkup(name + ": " + seconds + "s / " + duration + "s");
-
-                    console.log("Cut progress: " + name + " " + seconds + " of " + duration);
+                    const filename = name.substring(name.lastIndexOf("/"));
+                    notification.message = escapeMarkup(filename);
+                    notification.progress = seconds / duration;
+                    notification.progressText = Math.round(seconds) + "s / " + Math.round(duration) + "s";
                 },
                 () =>
                 {
-                    notifications.forEach(notification => notification.close());
-                    console.log("Cutting finished");
+                    if (notification)
+                    {
+                        notification.close();
+                    }
+                })
+                .catch(err =>
+                {
+                    notificationArea.createNotification("Error", "ui-warning", "Failed to cut video: " + cutButton.file.name);
                 });
             }
         }

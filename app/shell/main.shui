@@ -1,8 +1,5 @@
 require "shellfish/ui";
 require "./CodePad.shui";
-require "./FilesBox.shui";
-require "./GridLayout.shui";
-require "./NotificationArea.shui";
 require "./RegistryDialog.shui";
 require "./TimeLabel.shui";
 require "./youtubefs.js";
@@ -17,10 +14,6 @@ Document {
     property logInPending: true
     property loggedIn: false
     property user: ""
-
-    // a bag of files for copy/move operations
-    property filesBag: []
-    property filesBagSource: null
 
     property darkMode: true //systemDarkMode
     property darkTheme: DarkTheme { contentBackgroundColor: colorName("black") }
@@ -74,13 +67,16 @@ Document {
             .then(req => req.text())
             .then(data =>
             {
-                doc.user = data;
+                const obj = JSON.parse(data);
+                doc.user = obj.name;
+                appSwitcher.apps = obj.apps;
+                appSwitcher.currentApp = obj.apps[0].source;
             });
         }
     }
 
     RpcProxy {
-        id: proxy
+        id: rpcProxy
 
         endpoint: "/::rpc"
     }
@@ -127,7 +123,7 @@ Document {
             color: theme.contentBackgroundColor
             layout: "center-row"
 
-            visible: doc.showStatusBar
+            visible: doc.loggedIn && doc.showStatusBar
 
             // menu button
             Button {
@@ -194,7 +190,7 @@ Document {
                         text: "Registry Editor..."
                         onClick: () =>
                         {
-                            proxy.invoke("registry")
+                            rpcProxy.invoke("registry")
                             .then(regObj =>
                             {
                                 console.log("GOT REGISTRY");
@@ -234,6 +230,33 @@ Document {
                 }
             }
 
+            Box {
+                id: appSwitcher
+
+                property apps: []
+                property currentApp: ""
+
+                fillHeight: true
+                layout: "row"
+
+                Repeater {
+                    model: ListModel { data: appSwitcher.apps }
+
+                    delegate: template Button {
+                        fillHeight: true
+                        flat: true
+                        icon: modelData.value.icon
+                        text: modelData.value.name
+                        checked: modelData.value.source === appSwitcher.currentApp
+
+                        onClick: () =>
+                        {
+                            appSwitcher.currentApp = modelData.value.source;
+                        }
+                    }
+                }
+            }
+
             Box { fill: true }
 
             Label {
@@ -243,6 +266,42 @@ Document {
 
             TimeLabel {
                 marginLeft: theme.paddingMedium
+            }
+
+    	    Button {
+                visible: notificationArea.count > 0
+
+                flat: true
+                fillHeight: true
+                icon: "ui-notification"
+                text: "" + notificationArea.count
+
+                checked: notificationArea.onScreen
+
+                notificationArea.onDrawAttention: () =>
+                {
+                    abortWait("notifications");
+
+                    if (count === 0)
+                    {
+                        notificationArea.temporarilyOnScreen = false;
+                        return;
+                    }
+
+                    notificationArea.temporarilyOnScreen = true;
+                    wait(3000, "notifications").then((ok) =>
+                    {
+                        if (ok)
+                        {
+                            notificationArea.temporarilyOnScreen = false;
+                        }
+                    });
+                }
+
+                onClick: () =>
+                {
+                    notificationArea.onScreen = ! notificationArea.onScreen;
+                }
             }
 
             Button {
@@ -269,20 +328,26 @@ Document {
         // content area
         Loader {
             fill: true
-
-            sourceTemplate: ! doc.loggedIn && ! doc.logInPending ? loginScreenT
-                                                                 : ! doc.logInPending ? filesBoxT
-                                                                                      :  null
+            sourceTemplate: ! doc.loggedIn && ! doc.logInPending ? loginScreenT : null
+            source: doc.loggedIn ? appSwitcher.currentApp : ""
         }
     }
 
     NotificationArea {
         id: notificationArea
         
+        property onScreen: false
+        property temporarilyOnScreen: false
+
         position: "global"
         origin: "top-right"
+        x: onScreen || temporarilyOnScreen ? 0 : -width + theme.paddingMedium
         width: theme.itemWidthLarge * 2
+        marginTop: theme.itemHeightMedium
         fillHeight: true
+        opacity: x > -width + theme.paddingMedium ? 1.0 : 0.1
+
+        xTransition: NumberAnimation { }
     }
 
 
@@ -384,47 +449,6 @@ Document {
             {
                 httpRequest("/acceptLogin?code=" + code).send();
                 dialog.parent = null;
-            }
-        }
-    }
-
-    property filesBoxT: template Box {
-
-        fill: true
-        
-        layout: bboxWidth > bboxHeight ? "row" : "column"
-
-        onInitialization: () =>
-        {
-            console.log("Create File Manager");
-        }
-        
-        ListModel {
-            id: tabsModel
-
-            data: [
-                { path: "/" }
-            ]
-        }
-
-        Repeater {
-            model: tabsModel
-
-            delegate: template FilesBox {
-                fill: true
-                fs: remoteFs
-                path: modelData.value.path
-                mayClose: tabsModel.size > 1
-
-                onOpenNew: (fs, path) =>
-                {
-                    tabsModel.insert(tabsModel.size, { path: path });
-                }
-
-                onClose: () =>
-                {
-                    tabsModel.remove(modelData.index);
-                }
             }
         }
     }
