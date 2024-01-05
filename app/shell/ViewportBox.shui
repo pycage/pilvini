@@ -47,7 +47,7 @@ Box {
 
         onContentXChanged: () =>
         {
-            const v = Math.max(0, Math.min(contentWidth - bbox.width, contentX));
+            const v = Math.max(0, Math.min(contentWidth - bboxWidth, contentX));
             box.confineViewport(v / scale, box.viewY);
             if (contentX !== v)
             {
@@ -57,7 +57,7 @@ Box {
 
         onContentYChanged: () =>
         {
-            const v = Math.max(0, Math.min(contentHeight - bbox.height, contentY));
+            const v = Math.max(0, Math.min(contentHeight - bboxHeight, contentY));
             box.confineViewport(box.viewX, v / scale);
             if (contentY !== v)
             {
@@ -102,13 +102,13 @@ Box {
 
     function confineViewport(vx, vy)
     {
-        if (bbox.width * bbox.height === 0)
+        if (bboxWidth * bboxHeight === 0)
         {
             return;
         }
 
-        const viewWidth = bbox.width / scale;
-        const viewHeight = bbox.height / scale;
+        const viewWidth = bboxWidth / scale;
+        const viewHeight = bboxHeight / scale;
 
         if (viewWidth < originalWidth)
         {
@@ -148,10 +148,10 @@ Box {
 
     function scaleToFit()
     {
-        if (originalWidth * originalHeight > 0 && bbox.width * bbox.height > 0)
+        if (originalWidth * originalHeight > 0 && bboxWidth * bboxHeight > 0)
         {
-            const factor1 = bbox.width / originalWidth;
-            const factor2 = bbox.height / originalHeight;
+            const factor1 = bboxWidth / originalWidth;
+            const factor2 = bboxHeight / originalHeight;
             scale = Math.max(minScale, Math.min(maxScale, Math.min(factor1, factor2)));
             confineViewport(0, 0);
         }
@@ -172,11 +172,11 @@ Box {
         }
 
         // convert anchors to viewport coordinates
-        const anchorXBefore = viewX + priv.scaleAnchorX * bbox.width / priv.prevScale;
-        const anchorYBefore = viewY + priv.scaleAnchorY * bbox.height / priv.prevScale;
+        const anchorXBefore = viewX + priv.scaleAnchorX * bboxWidth / priv.prevScale;
+        const anchorYBefore = viewY + priv.scaleAnchorY * bboxHeight / priv.prevScale;
 
-        const anchorXAfter = viewX + priv.scaleAnchorX * bbox.width / scale;
-        const anchorYAfter = viewY + priv.scaleAnchorY * bbox.height / scale;
+        const anchorXAfter = viewX + priv.scaleAnchorX * bboxWidth / scale;
+        const anchorYAfter = viewY + priv.scaleAnchorY * bboxHeight / scale;
       
         const dx = anchorXAfter - anchorXBefore;
         const dy = anchorYAfter - anchorYBefore;
@@ -188,8 +188,8 @@ Box {
 
     onBboxChanged: () =>
     {
-        const minScale = Math.min(Math.max(1, bbox.width) / Math.max(1, originalWidth),
-                         Math.max(1, bbox.height) / Math.max(1, originalHeight));
+        const minScale = Math.min(Math.max(1, bboxWidth) / Math.max(1, originalWidth),
+                         Math.max(1, bboxHeight) / Math.max(1, originalHeight));
         const maxScale = minScale * 32.0;
         scale = Math.max(minScale, Math.min(maxScale, scale));
         confineViewport(viewX, viewY);
