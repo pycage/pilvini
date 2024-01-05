@@ -65,7 +65,6 @@ class EpgService extends core.Object
                 const rawName = parts[0] || "";
                 const channelId = parts[8] || "";
 
-                console.log(channelId + " -> " + rawName);
                 priv.channelsMap.set(channelId, rawName);
                 priv.reverseChannelsMap.set(rawName, channelId);
             });
@@ -94,15 +93,12 @@ class EpgService extends core.Object
         .sort((a, b) => a.name < b.name ? -1 : 1);
     }
 
-    /**
-     * Returns a list of events of { eventId, name, begin, end }.
-     */
-    async events(serviceId)
+    async rawEvents(serviceId)
     {
         const priv = d.get(this);
+        await this.loadEpg();
 
         const items = priv.epg.services[serviceId] || { };
-        const recordings = await this.recordings();
 
         return Object.values(items)
         .map(item =>
@@ -113,11 +109,24 @@ class EpgService extends core.Object
                 name: item.short.name,
                 serviceName: priv.channelsMap.get(serviceId),
                 begin: item.start,
-                end: item.start + item.duration,
-                scheduled: !! recordings.find(event => event.eventId === item.eventId && event.serviceId === serviceId)
+                end: item.start + item.duration
             };
         })
         .sort((a, b) => a.begin - b.begin);
+    }
+
+    /**
+     * Returns a list of events of { eventId, name, begin, end }.
+     */
+    async events(serviceId)
+    {
+        const recordings = await this.recordings();
+        return (await this.rawEvents(serviceId))
+        .map(event =>
+        {
+            event.scheduled = !! recordings.find(rec => rec.eventId === event.eventId && rec.serviceId === serviceId);
+            return event;
+        });
     }
 
     /**
@@ -143,12 +152,11 @@ class EpgService extends core.Object
      */
     async eventAt(serviceId, timestamp)
     {
-        const priv = d.get(this);
-        await this.events(serviceId)
-        .filter(event =>
+        const evs = await this.rawEvents(serviceId);
+        return evs.filter(event =>
         {
-            return event.start <= timestamp &&
-                   event.start + event.duration >= timestamp;
+            return event.begin <= timestamp &&
+                   event.end >= timestamp;
         })[0] || { };
     }
 
@@ -158,10 +166,11 @@ class EpgService extends core.Object
     async recordings()
     {
         const priv = d.get(this);
+        await this.loadEpg();
 
         const recs = await this.pdvr("get-recordings");
 
-        const recordings = [];
+        const recordingsList = [];
         const lines = recs.split("\n");
         for (let i = 0; i < lines.length; ++i)
         {
@@ -173,19 +182,27 @@ class EpgService extends core.Object
 
             const begin = Number.parseInt(parts[0]);
             const duration = Number.parseInt(parts[1]);
-            const serviceId = priv.reverseChannelsMap.get(parts[2]) || "0";
-            const eventId = await this.eventAt(serviceId, begin + duration / 2).eventId;
+            const serviceName = parts[2];
+            const serviceId = priv.reverseChannelsMap.get(serviceName) || "0";
             const name = parts[3];
 
-            recordings.push({
+            const event = await this.eventAt(serviceId, begin + duration / 2);
+            if (! event)
+            {
+                continue;
+            }
+
+            recordingsList.push({
                 begin,
                 end: begin + duration,
                 serviceId,
-                eventId,
-                name
+                serviceName,
+                eventId: event.eventId,
+                name,
+                scheduled: true
             });
         }
-        return recordings;
+        return recordingsList;
     }
 
     /**
@@ -205,19 +222,21 @@ class EpgService extends core.Object
         const priv = d.get(this);
         const event = priv.epg.services[serviceId][eventId];
 
-        const date = new Date(event.begin * 1000);
+        const date = new Date(event.start * 1000);
         const time = date.getFullYear() + "/" +
                      (date.getMonth() + 1) + "/" +
                      date.getDate() + " " +
                      date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds();
 
-        const duration = event.end - event.begin;
+        const duration = event.duration;
         if (value)
         {
-            await this.pdvr("record", time, duration, priv.channelsMap.get(serviceId), event.name);
+            console.log(["record", time, duration, priv.channelsMap.get(serviceId), event.short.name]);
+            await this.pdvr("record", time, duration, priv.channelsMap.get(serviceId), event.short.name);
         }
         else
         {
+            console.log(["cancel", time]);
             await this.pdvr("cancel", time);
         }
     }

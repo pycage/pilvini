@@ -138,7 +138,7 @@ Box {
                             marginRight: theme.paddingSmall
                             overflowBehavior: "ellipsis"
                             fillWidth: true
-                            text: modelData.value.name
+                            text: escapeMarkup(modelData.value.name)
                         }
 
                         Label {
@@ -147,7 +147,7 @@ Box {
                             overflowBehavior: "ellipsis"
                             fillWidth: true
                             color: theme.secondaryColor
-                            text: modelData.value.serviceName
+                            text: escapeMarkup(modelData.value.serviceName)
                         }
                     }
 
@@ -162,7 +162,7 @@ Box {
 
                             if (! modelData.value.scheduled)
                             {
-                                //await app.epgService.record(modelData.value.serviceId, modelData.value.eventId, true);
+                                await app.epgService.record(modelData.value.serviceId, modelData.value.eventId, true);
                                 recordingsModel.insertOrdered(modelData.value, (a, b) => a.begin - b.begin);
                                 const event = modelData.value;
                                 event.scheduled = true;
@@ -170,6 +170,7 @@ Box {
                             }
                             else
                             {
+                                await app.epgService.record(modelData.value.serviceId, modelData.value.eventId, false);
                                 for (let i = 0; i < recordingsModel.size; ++i)
                                 {
                                     const event = recordingsModel.at(i);
@@ -283,7 +284,7 @@ Box {
                             marginRight: theme.paddingSmall
                             overflowBehavior: "ellipsis"
                             fillWidth: true
-                            text: modelData.value.name
+                            text: escapeMarkup(modelData.value.name)
                         }
 
                         Label {
@@ -292,7 +293,7 @@ Box {
                             overflowBehavior: "ellipsis"
                             fillWidth: true
                             color: theme.secondaryColor
-                            text: modelData.value.serviceName
+                            text: escapeMarkup(modelData.value.serviceName)
                         }
                     }
 
@@ -305,7 +306,7 @@ Box {
                         {
                             ev.accepted = true;
 
-                            //await app.epgService.record(modelData.value.serviceId, modelData.value.eventId, false);
+                            await app.epgService.record(modelData.value.serviceId, modelData.value.eventId, false);
 
                             if (eventsModel.serviceId === modelData.value.serviceId)
                             {
