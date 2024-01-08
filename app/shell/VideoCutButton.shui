@@ -41,7 +41,7 @@ Button {
                         notification.progressText = "...";
                     }
 
-                    const filename = name.substring(name.lastIndexOf("/"));
+                    const filename = name.substring(name.lastIndexOf("/") + 1);
                     notification.message = escapeMarkup(filename);
                     notification.progress = seconds / duration;
                     notification.progressText = Math.round(seconds) + "s / " + Math.round(duration) + "s";

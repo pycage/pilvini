@@ -224,7 +224,7 @@ HTTPServer {
     // Accept login request
     HTTPRoute {
         authentication: auth
-        when: pathPrefix("/acceptLogin?")
+        when: pathPrefix("/acceptLogin")
 
         delegate: template HTTPSession {
             onRequest: req =>

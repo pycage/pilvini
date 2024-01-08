@@ -654,6 +654,7 @@ MouseBox {
                 SelectionBox {
                     fillWidth: true
                     flat: true
+                    secondaryIcon: ""
 
                     model: playerBox.model
                     formatText: item => escapeMarkup(stripExtension(item.name))

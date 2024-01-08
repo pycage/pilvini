@@ -348,14 +348,10 @@ Box {
 
     Downloader { id: downloader }
 
-    RpcProxy {
-        id: rpcProxy
-
-        endpoint: "/::rpc"
-
+    Object {
         function update()
         {
-            invoke("diskInfo")
+            rpcProxy.invoke("diskInfo")
             .then(async diskInfo =>
             {
                 console.log(diskInfo);
@@ -367,15 +363,6 @@ Box {
         }
 
         box.onPathChanged: () => { if (box.fs) update(); }
-
-        onStatusChanged: () =>
-        {
-            if (status === "disconnected")
-            {
-                notificationArea.createNotification("Connection Lost", "ui-warning", "The connection to the server was lost.");
-                //thisDocument.showErrorDialog("Connection Lost", "The connection to the server was lost.");
-            }
-        }
     }
 
     Object {
@@ -1181,16 +1168,6 @@ Box {
                             ListViewSelector {
                                 id: selector
                                 multiple: true
-
-                                /*
-                                onSelectionChanged: () =>
-                                {
-                                    const items = [];
-                                    selection.forEach(idx => items.push(fsModel.at(idx)));
-                                    filesBag = items;
-                                    filesBagSource = box.objectId;
-                                }
-                                */
                             }
 
                             OverflowScroller { stepSize: theme.paddingLarge }

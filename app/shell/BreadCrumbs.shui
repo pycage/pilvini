@@ -76,6 +76,8 @@ Box {
 
         property menuT: template Menu {
             Box {
+                fillWidth: true
+                
                 Repeater {
                     model: breadCrumbsModel
                     delegate: template MenuItem {
