@@ -1,5 +1,6 @@
 require "shellfish/server";
 require "./diskinfo.js" as diskinfo;
+require "./bookmarkservice.js";
 require "./epgservice.js";
 require "./proxysession.js";
 require "./virtualfs.js";
@@ -147,7 +148,7 @@ HTTPServer {
                     name: req.user,
                     apps: [
                         { name: "Files", icon: "fs-folder", source: "FilesApp.shui" },
-                        { name: "EPG", icon: "fs-file-video", source: "EpgApp.shui" }
+                        { name: "TV", icon: "comm-tv", source: "EpgApp.shui" }
                     ]
                 };
                 response(200, "OK")
@@ -244,6 +245,14 @@ HTTPServer {
 
         delegate: template RpcSession {
 
+            BookmarkService {
+                id: bookmarkService
+
+                filesystem: localFs
+                path: registryFile.readSync("/users/" + parent.user + "/root", "/") + 
+                      "/.pilvini-bookmarks.json"
+            }
+
             onInitialization: () =>
             {
                 registerMethod("diskInfo", async () =>
@@ -265,6 +274,11 @@ HTTPServer {
                 registerMethod("registry", () =>
                 {
                     return proxyObject(registryFile, ["read", "write", "list", "info"]);
+                });
+
+                registerMethod("bookmarkService", async () =>
+                {
+                    return proxyObject(bookmarkService);
                 });
 
                 registerMethod("epgService", async () =>
