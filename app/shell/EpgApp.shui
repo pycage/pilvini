@@ -36,6 +36,20 @@ Box {
             ListModel {
                 id: recordingsModel
 
+                function recordingsAt(begin, end)
+                {
+                    const result = [];
+                    for (let i = 0; i < size; ++i)
+                    {
+                        const rec = at(i);
+                        if (rec.begin < end && rec.end > begin)
+                        {
+                            result.push(rec);
+                        }
+                    }
+                    return result;
+                }
+
                 onInitialization: async () =>
                 {
                     const recs = await app.epgService.recordings();
@@ -92,7 +106,8 @@ Box {
 
                     property beginDate: new Date(modelData.value.begin * 1000)
 
-                    color: beginDate.getDate() % 2 == 0 ? theme.contentBackgroundColor : theme.contentAltBackgroundColor
+                    color: containsMouse ? theme.highlightBackgroundColor
+                                         : modelData.index % 2 == 0 ? theme.contentBackgroundColor : theme.contentAltBackgroundColor
                     layout: "center-row"
 
                     onClick: ev =>
@@ -107,10 +122,22 @@ Box {
                     }
 
                     Box {
-                        marginLeft: theme.itemWidthMedium + theme.paddingSmall
+                        property recordings: recordingsModel.recordingsAt(modelData.value.begin, modelData.value.end)
+                        property isThisChannel: recordings.filter(rec => rec.serviceId === modelData.value.serviceId && rec.eventId === modelData.value.eventId).length > 0
+
+                        marginLeft: theme.itemWidthMedium
+                        width: theme.paddingSmall / 2
+                        fillHeight: true
+                        color: isThisChannel ? "darkred"
+                                             : recordings.length > 0 ? "orange"
+                                                                     : "transparent"
+                    }
+
+                    Box {
+                        marginLeft: theme.paddingSmall / 2
                         width: theme.itemWidthMedium
 
-                        color: theme.primaryColor
+                        color: beginDate.getDate() % 2 == 0 ? theme.primaryColor : theme.secondaryColor
                         borderRadius: 3
                         layout: "center"
 
@@ -138,6 +165,7 @@ Box {
                             marginRight: theme.paddingSmall
                             overflowBehavior: "ellipsis"
                             fillWidth: true
+                            color: thisMouseBox.containsMouse ? theme.highlightColor : theme.primaryColor
                             text: escapeMarkup(modelData.value.name)
                         }
 
@@ -146,7 +174,7 @@ Box {
                             marginRight: theme.paddingSmall
                             overflowBehavior: "ellipsis"
                             fillWidth: true
-                            color: theme.secondaryColor
+                            color: thisMouseBox.containsMouse ? theme.highlightColor : theme.secondaryColor
                             text: escapeMarkup(modelData.value.serviceName)
                         }
                     }
@@ -155,6 +183,14 @@ Box {
                         checked: modelData.value.scheduled
                         marginRight: theme.paddingSmall
                         text: "Rec"
+
+                        styleOfBackground: template Box {
+                            fill: true
+                            color: checked ? "darkred" : theme.secondaryBackgroundColor
+                            borderColor: theme.borderColor
+                            borderWidth: 1
+                            borderRadius: theme.borderRadius
+                        }
 
                         onClick: async ev =>
                         {
@@ -237,7 +273,9 @@ Box {
 
                     property beginDate: new Date(modelData.value.begin * 1000)
 
-                    color: beginDate.getDay() % 2 == 0 ? theme.contentBackgroundColor : theme.contentAltBackgroundColor
+                    color: containsMouse ? theme.highlightBackgroundColor
+                                         : modelData.index % 2 == 0 ? theme.contentBackgroundColor : theme.contentAltBackgroundColor
+
                     layout: "center-row"
 
                     onClick: ev =>
@@ -247,8 +285,7 @@ Box {
                         app.epgService.eventInfo(eventsModel.serviceId, modelData.value.eventId)
                         .then(info =>
                         {
-                            showInfoDialog(info.name, info.description, () => { });
-
+                            const dlg = showInfoDialog(info.name, info.description, () => { });
                         });
                     }
 
@@ -256,7 +293,7 @@ Box {
                         marginLeft: theme.itemWidthMedium + theme.paddingSmall
                         width: theme.itemWidthMedium
 
-                        color: theme.primaryColor
+                        color: beginDate.getDate() % 2 == 0 ? theme.primaryColor : theme.secondaryColor
                         borderRadius: 3
                         layout: "center"
 
@@ -284,6 +321,7 @@ Box {
                             marginRight: theme.paddingSmall
                             overflowBehavior: "ellipsis"
                             fillWidth: true
+                            color: thisMouseBox.containsMouse ? theme.highlightColor : theme.primaryColor
                             text: escapeMarkup(modelData.value.name)
                         }
 
@@ -292,7 +330,7 @@ Box {
                             marginRight: theme.paddingSmall
                             overflowBehavior: "ellipsis"
                             fillWidth: true
-                            color: theme.secondaryColor
+                            color: thisMouseBox.containsMouse ? theme.highlightColor : theme.secondaryColor
                             text: escapeMarkup(modelData.value.serviceName)
                         }
                     }
@@ -301,6 +339,14 @@ Box {
                         marginRight: theme.paddingSmall
                         checked: true
                         text: "Rec"
+
+                        styleOfBackground: template Box {
+                            fill: true
+                            color: checked ? "darkred" : theme.secondaryBackgroundColor
+                            borderColor: theme.borderColor
+                            borderWidth: 1
+                            borderRadius: theme.borderRadius
+                        }
 
                         onClick: async ev =>
                         {
