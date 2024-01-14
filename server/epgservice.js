@@ -11,6 +11,7 @@ class EpgService extends core.Object
         super();
         d.set(this, {
             epg: null,
+            expires: 0,
             channelsMap: new Map(/* ID -> Name */),
             reverseChannelsMap: new Map(/* Name -> ID */)
         });
@@ -55,7 +56,10 @@ class EpgService extends core.Object
     async loadEpg()
     {
         const priv = d.get(this);
-        if (! priv.epg)
+
+        const now = Date.now();
+
+        if (! priv.epg || priv.expires < now)
         {
             const channelData = await this.pdvr("get-channels");
             //const channelData = await modFs.readFile(priv.channels, { encoding: "utf8" });
@@ -72,6 +76,7 @@ class EpgService extends core.Object
             const data = await this.pdvr("get-epg");
             //const data = await modFs.readFile(priv.source, { encoding: "utf8" });
             priv.epg = JSON.parse(data);
+            priv.expires = now + 24 * 3600 * 1000;
         }
     }
 
@@ -90,7 +95,7 @@ class EpgService extends core.Object
             const name = priv.channelsMap.get(channelId);
             return { serviceId: channelId, name };
         })
-        .sort((a, b) => a.name < b.name ? -1 : 1);
+        .sort((a, b) => a.name.toLowerCase() < b.name.toLowerCase() ? -1 : 1);
     }
 
     async rawEvents(serviceId)
@@ -106,7 +111,7 @@ class EpgService extends core.Object
             return {
                 serviceId: serviceId,
                 eventId: item.eventId,
-                name: item.short.name,
+                name: item.short.name + (item.short.text !== "" ? " (" + item.short.text + ")" : ""),
                 serviceName: priv.channelsMap.get(serviceId),
                 begin: item.start,
                 end: item.start + item.duration
@@ -231,13 +236,14 @@ class EpgService extends core.Object
         const duration = event.duration;
         if (value)
         {
-            console.log(["record", time, duration, priv.channelsMap.get(serviceId), event.short.name]);
-            await this.pdvr("record", time, duration, priv.channelsMap.get(serviceId), event.short.name);
+            const name = event.short.name + (event.short.text !== "" ? " (" + event.short.text + ")" : "");
+            console.log(["record", time, duration, priv.channelsMap.get(serviceId), name]);
+            await this.pdvr("record", time, duration, priv.channelsMap.get(serviceId), name);
         }
         else
         {
-            console.log(["cancel", time]);
-            await this.pdvr("cancel", time);
+            console.log(["cancel", event.start]);
+            await this.pdvr("cancel", event.start);
         }
     }
 }
