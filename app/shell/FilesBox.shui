@@ -101,7 +101,8 @@ Box {
         let targetFiles = [];
         if (mediaBookmark.path !== "")
         {
-            targetFiles = fsModel.getFiles(f => f.path === mediaBookmark.path);
+            const filename = box.fs.filename(mediaBookmark.path);
+            targetFiles = fsModel.getFiles(f => box.fs.filename(f.path) === filename);
         }
         else
         {
@@ -290,7 +291,7 @@ Box {
             uploadfiles.uploadRecursive(fileItem, box.fs, box.path, progressCb)
             .then(() =>
             {
-                notification.close();
+                wait(3000).then(() => { notification.close(); });
             })
             .catch(err =>
             {
@@ -565,6 +566,42 @@ Box {
         }
 
         Button {
+            property isBookmarked: (() =>
+            {
+                for (let i = 0; i < bookmarksModel.size; ++i)
+                {
+                    if (bookmarksModel.at(i).path === box.path)
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            })()
+
+            visible: ! box.searchBox
+
+            fillHeight: true
+            flat: true
+            icon: isBookmarked ? "ui-star" : "ui-star_outline"
+            text: "Bookmark"
+
+            onClick: async () =>
+            {
+                const svc = await rpcProxy.invoke("bookmarkService");
+                if (isBookmarked)
+                {
+                    await svc.removeBookmark(box.path);
+                }
+                else
+                {
+                    const name = box.path === "/" ? box.path : box.fs.filename(box.path);
+                    await svc.addBookmark(decodeURIComponent(name), box.path);
+                }
+                await bookmarksModel.update();
+            }
+        }
+
+        Button {
             visible: ! box.searchBox && selector.selection.size > 0 && filesBag.length === 0
             fillHeight: true
             flat: true
@@ -728,6 +765,70 @@ Box {
             {
                 box.close();
             }
+        }
+    }
+
+    // bookmarks bar
+    Box {
+        visible: ! fileViewer.maximized && bookmarksModel.size > 0
+        fillWidth: true
+        height: theme.itemHeightMedium
+        color: theme.secondaryBackgroundColor
+
+        layout: "row"
+
+        ListModel {
+            id: bookmarksModel
+
+            async function update()
+            {
+                const svc = await rpcProxy.invoke("bookmarkService");
+                const bookmarks = await svc.bookmarks();
+                console.log(svc);
+                console.log("bookmarks:");
+                console.log(bookmarks);
+                reset(bookmarks);
+            }
+
+            onInitialization: () =>
+            {
+                update();
+            }
+        }
+
+        Box {
+            id: bookmarksBox
+
+            fill: true
+            overflowBehavior: "scroll"
+            layout: "row"
+
+            Box {
+                fillHeight: true
+                layout: "row"
+
+                Repeater {
+                    model: bookmarksModel
+
+                    delegate: template Button {
+                        fillHeight: true
+                        flat: true
+                        icon: "fs-folder"
+                        text: modelData.value.name
+
+                        onClick: () =>
+                        {
+                            box.path = modelData.value.path;
+                        }
+
+                        Tooltip {
+                            text: decodeURIComponent(modelData.value.path)
+                        }
+                    }
+                }
+            }
+
+            OverflowScroller { }
         }
     }
 
@@ -1156,7 +1257,7 @@ Box {
                                     }
                                 }
 
-                                //Label { text: parent.y; color: "red"; fontSize: theme.fontSizeSmall }
+                                //Label { text: bboxY; color: "red"; fontSize: theme.fontSizeSmall }
                             }
 
                             model.onPathChanged: () =>
@@ -1413,7 +1514,7 @@ Box {
 
                 onMediaBookmarkUpdated: (path, mediaPosition, name) =>
                 {
-                    mediaBookmark.path = path;
+                    mediaBookmark.path = box.fs.filename(path);
                     mediaBookmark.mediaPosition = mediaPosition;
                     mediaBookmark.name = name;
                 }
