@@ -20,6 +20,7 @@ Box {
     property model: ListModel { }
     property current: -1
     property startPosition: 0
+    property openMediaPlayer: (files, idx, mediaPosition) => { }
     property title: model.at(current) ? model.at(current).name : ""
 
     fillWidth: true
@@ -82,17 +83,35 @@ Box {
             }
         }
 
-        Box {
+        MouseBox {
             visible: videoPlayer.visible
             width: bboxHeight
             fillHeight: true
             color: "black"    
+
+            onClick: () =>
+            {
+                playerBox.openMediaPlayer(playerBox.model.data, playerBox.current, videoPlayer.currentTime);
+                playerBox.parent.notification.close();
+            }
 
             Video {
                 id: videoPlayer
 
                 visible: false
                 fill: true
+
+                onStatusChanged: () =>
+                {
+                    if (status === "success")
+                    {
+                        if (playerBox.startPosition > 0)
+                        {
+                            videoPlayer.currentTime = playerBox.startPosition;
+                            playerBox.startPosition = 0;
+                        }
+                    }
+                }
 
                 onFinish: () =>
                 {

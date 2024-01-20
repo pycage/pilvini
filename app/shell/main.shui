@@ -78,16 +78,7 @@ Document {
     RpcProxy {
         id: rpcProxy
 
-        endpoint: "/::rpc"
-
-        onStatusChanged: () =>
-        {
-            //notificationArea.createNotification("RPC Connection", "ui-warning", "Status: " + status);
-            if (status === "disconnected")
-            {
-                notificationArea.createNotification("Connection Lost", "ui-warning", "The connection to the server was lost.");
-            }
-        }
+        endpoint: doc.loggedIn ? "/::rpc" : ""
     }
 
     History {
@@ -277,40 +268,9 @@ Document {
                 marginLeft: theme.paddingMedium
             }
 
-    	    Button {
-                visible: notificationArea.count > 0
-
-                flat: true
-                fillHeight: true
-                icon: "ui-notification"
-                text: "" + notificationArea.count
-
-                checked: notificationArea.onScreen
-
-                notificationArea.onDrawAttention: () =>
-                {
-                    abortWait("notifications");
-
-                    if (count === 0)
-                    {
-                        notificationArea.temporarilyOnScreen = false;
-                        return;
-                    }
-
-                    notificationArea.temporarilyOnScreen = true;
-                    wait(3000, "notifications").then((ok) =>
-                    {
-                        if (ok)
-                        {
-                            notificationArea.temporarilyOnScreen = false;
-                        }
-                    });
-                }
-
-                onClick: () =>
-                {
-                    notificationArea.onScreen = ! notificationArea.onScreen;
-                }
+            Label {
+                marginLeft: theme.paddingMedium
+                text: rpcProxy.status === "connected" ? "[icon:comm-connected]" : "[icon:comm-disconnected]"
             }
 
             Button {
@@ -345,18 +305,34 @@ Document {
     NotificationArea {
         id: notificationArea
         
-        property onScreen: false
-        property temporarilyOnScreen: false
-
         position: "global"
         origin: "top-right"
-        x: onScreen || temporarilyOnScreen ? 0 : -width + theme.paddingMedium
         width: theme.itemWidthLarge * 2
         marginTop: theme.itemHeightMedium
+        marginBottom: theme.itemHeightMedium
         fillHeight: true
-        opacity: x > -width + theme.paddingMedium ? 1.0 : 0.1
 
         xTransition: NumberAnimation { }
+
+        Button {
+            visible: parent.count > 0
+
+            marginLeft: parent.bboxWidth * 0.75
+            marginRight: theme.paddingSmall
+            fillWidth: true
+            icon: "ui-drag_handle"
+
+            onInitialization: () =>
+            {
+                css("pointer-events", "auto");
+            }
+
+            onPointerEnter: ev =>
+            {
+                ev.accepted = true;
+                parent.verticalAlignment = parent.verticalAlignment === "top" ? "bottom" : "top"
+            }
+        }
     }
 
 

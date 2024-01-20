@@ -37,6 +37,8 @@ MouseBox {
     {
         const data = model.data;
         const cr = current;
+        const currentTime = videoPlayer.currentTime;
+        const openMediaPlayer = thisFilesBox.safeCallback(thisFilesBox.openMediaPlayer);
 
         const notification = notificationArea.createCustomNotification(miniPlayerT);
         notification.title = "Mini Player";
@@ -44,8 +46,10 @@ MouseBox {
         {
             if (notification.item)
             {
+                notification.item.startPosition = currentTime;
                 notification.item.model.reset(data);
                 notification.item.current = cr;
+                notification.item.openMediaPlayer = openMediaPlayer;
             }
         });
     }

@@ -117,6 +117,11 @@ Box {
         }
     }
 
+    function openMediaPlayer(files, idx, mediaPosition)
+    {
+        fileViewer.open(files, idx, mediaPosition);
+    }
+
     function openFile(file, mediaPosition)
     {
         if (file.type === "d")
@@ -583,7 +588,6 @@ Box {
             fillHeight: true
             flat: true
             icon: isBookmarked ? "ui-star" : "ui-star_outline"
-            text: "Bookmark"
 
             onClick: async () =>
             {
@@ -884,34 +888,35 @@ Box {
 
                 onDrop: (ev) =>
                 {
-                    //console.log(JSON.stringify(ev));
-
                     const files = [];
                     for (let i = 0; i < ev.items.length; ++i)
                     {
+                        console.log("ITEM " + i);
                         const item = ev.items[i];
+                        console.log(item);
                         if (item.kind === "file")
                         {
                             files.push(item.webkitGetAsEntry());
                         }
                     }
-                    box.uploadAction(files);
+                    if (files.length > 0)
+                    {
+                        box.uploadAction(files);
+                    }
 
                     if (ev.data["text/plain"])
                     {
                         const uris = ev.data["text/plain"].split("\r\n");
-                        console.log(JSON.stringify(uris));
                         uris.forEach(uri =>
                         {
                             const destPath = box.fs.pathJoin(box.path, box.fs.filename(uri));
-                            console.log("DROP EFFECT " + ev.dropEffect);
-
 
                             if (ev.dropEffect === "copy")
                             {
                                 const notification = notificationArea.createCustomNotification();
                                 notification.title = "Copying File";
-                                notification.message = "[icon:ui-spinner5] " + escapeMarkup(box.fs.filename(uri));
+                                notification.icon = "ui-spinner5";
+                                notification.message = escapeMarkup(box.fs.filename(uri));
                                 
                                 box.fs.copy(uri, destPath)
                                 .then(() =>
