@@ -111,7 +111,7 @@ class EpgService extends core.Object
             return {
                 serviceId: serviceId,
                 eventId: item.eventId,
-                name: item.short.name + (item.short.text !== "" ? " (" + item.short.text + ")" : ""),
+                name: item.short.name + (item.short.text !== "" ? " (" + item.short.text.replace("\0", " ") + ")" : ""),
                 serviceName: priv.channelsMap.get(serviceId),
                 begin: item.start,
                 end: item.start + item.duration
@@ -144,11 +144,12 @@ class EpgService extends core.Object
         const service = priv.epg.services[serviceId] || { };
         const event = service[eventId] || { };
 
+        const info = event?.short?.text || "";
         const description = event?.extended?.text || "";
 
         return {
             name: event?.short?.name || "",
-            description: description.replace("\0", "\n\n")
+            description: info.replace("\0", " ") + "\n\n" + description.replace("\0", "\n\n")
         };
     }
 

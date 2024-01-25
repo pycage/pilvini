@@ -66,12 +66,9 @@ Box {
 
         onClick: ev =>
         {
-            if (true) //breadCrumbsModel.size > 1)
-            {
-                const menu = menuT();
-                menu.popup(self);
-                ev.accepted = true;
-            }
+            ev.accepted = true;
+            const menu = menuT();
+            menu.popup(self);
         }
 
         property menuT: template Menu {
