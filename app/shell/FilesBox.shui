@@ -287,15 +287,42 @@ Box {
             notification.title = "Uploading File";
             notification.message = escapeMarkup(fileItem.name);
             notification.progress = 0.0;
+            notification.progressText = "" + fileItem.size + " Bytes"
 
-            const progressCb = (name, progress) =>
+            const begin = Date.now();
+            let measureBegin = begin;
+            let bytesMeasured = 0;
+
+            const progressCb = (name, progress, details) =>
             {
+                const now = Date.now();
+                const elapsedMs = now - begin;
+                const estimatedTotalMs = elapsedMs * (1.0 / progress);
+                const leftMs = estimatedTotalMs - elapsedMs;
+
+                let timeText = core.formatSeconds(Math.round(leftMs / 1000)) + " left";
+                let sizeText = "";
+
+                if (details)
+                {
+                    const bytes = details.amount - bytesMeasured;
+                    const bytesPerSecond = bytes / ((now - measureBegin) / 1000);
+                    sizeText = ", " +
+                               core.formatBytes(details.amount) + " / " +
+                               core.formatBytes(details.total) +
+                               " (" + core.formatBytes(bytesPerSecond) + "/s)";
+                    bytesMeasured = details.amount;
+                    measureBegin = now;
+                }
+
                 notification.progress = progress;
+                notification.progressText = timeText + sizeText;
             };
 
             uploadfiles.uploadRecursive(fileItem, box.fs, box.path, progressCb)
             .then(() =>
             {
+                notification.progressText = "Completed";
                 wait(3000).then(() => { notification.close(); });
             })
             .catch(err =>

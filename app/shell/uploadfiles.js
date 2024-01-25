@@ -46,13 +46,13 @@ async function uploadRecursive(file, fs, targetPath, progressCallback)
 
         await forEachFile(file, async entry =>
         {
-            await uploadRecursive(entry, fs, path, (name, p) => { progressCallback(name, p); });
+            await uploadRecursive(entry, fs, path, (name, p, details) => { progressCallback(name, p, details); });
         });
     }
     else
     {
         //console.log("uploading " + file.name + " -> " + path);
-        await fs.write(path, new core.FileData(await openFile(file)), p => { progressCallback(file.name, p); });
+        await fs.write(path, new core.FileData(await openFile(file)), (p, details) => { progressCallback(file.name, p, details); });
         //console.log("ok");
     }
 }

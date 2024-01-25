@@ -269,8 +269,9 @@ Document {
             }
 
             Label {
+                visible: rpcProxy.status !== "connected"
                 marginLeft: theme.paddingMedium
-                text: rpcProxy.status === "connected" ? "[icon:comm-connected]" : "[icon:comm-disconnected]"
+                text: "[icon:comm-disconnected]"
             }
 
             Button {
