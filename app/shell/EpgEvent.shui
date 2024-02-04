@@ -1,0 +1,91 @@
+require "shellfish/ui";
+
+MouseBox {
+    id: item
+
+    property index: 0
+    property epgEvent: null
+    property sideColor: "transparent"
+
+    property beginDate: new Date(epgEvent.begin * 1000)
+
+    color: containsMouse ? theme.highlightBackgroundColor
+                         : index % 2 == 0 ? theme.contentBackgroundColor : theme.contentAltBackgroundColor
+    layout: "center-row"
+
+    event clickRec
+
+    Box {
+        marginLeft: theme.itemWidthMedium
+        width: theme.paddingSmall / 2
+        fillHeight: true
+        color: item.sideColor
+    }
+
+    Box {
+        marginLeft: theme.paddingSmall / 2
+        width: theme.itemWidthMedium
+
+        color: beginDate.getDate() % 2 == 0 ? theme.primaryColor : theme.secondaryColor
+        borderRadius: 3
+
+        layout: "center"
+        
+        Label {
+            bold: true
+            color: theme.primaryBackgroundColor
+            text: formatTime(item.beginDate)
+        }
+
+        Label {
+            marginLeft: 2
+            marginRight: 2
+            fontSize: theme.fontSizeSmall
+            color: theme.primaryBackgroundColor
+            text: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][item.beginDate.getDay()] +
+                    " " + item.beginDate.getDate()
+        }
+    }
+
+    Box {
+        fill: true
+        layout: "center-column"
+
+        Label {
+            marginLeft: theme.paddingSmall
+            marginRight: theme.paddingSmall
+            overflowBehavior: "ellipsis"
+            fillWidth: true
+            color: thisMouseBox.containsMouse ? theme.highlightColor : theme.primaryColor
+            text: escapeMarkup(item.epgEvent?.name || "")
+        }
+
+        Label {
+            marginLeft: theme.paddingSmall
+            marginRight: theme.paddingSmall
+            overflowBehavior: "ellipsis"
+            fillWidth: true
+            color: thisMouseBox.containsMouse ? theme.highlightColor : theme.secondaryColor
+            text: escapeMarkup(item.epgEvent?.serviceName || "")
+        }
+    }
+
+    Button {
+        checked: item.epgEvent.scheduled
+        marginRight: theme.paddingSmall
+        text: "Rec"
+
+        styleOfBackground: template Box {
+            fill: true
+            color: checked ? "darkred" : theme.secondaryBackgroundColor
+            borderColor: theme.borderColor
+            borderWidth: 1
+            borderRadius: theme.borderRadius
+        }
+
+        onClick: ev =>
+        {
+            item.clickRec(ev);
+        }
+    }
+}

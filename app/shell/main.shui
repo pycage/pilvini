@@ -331,7 +331,7 @@ Document {
             onPointerEnter: ev =>
             {
                 ev.accepted = true;
-                parent.verticalAlignment = parent.verticalAlignment === "top" ? "bottom" : "top"
+                parent.verticalAlignment = parent.verticalAlignment === "top" ? "bottom" : "top";
             }
         }
     }

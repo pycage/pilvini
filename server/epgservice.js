@@ -105,7 +105,9 @@ class EpgService extends core.Object
 
         const items = priv.epg.services[serviceId] || { };
 
+        const now = Date.now() / 1000;
         return Object.values(items)
+        .filter(item => item.start + item.duration > now && item.start < now + 24 * 3600 * 14)
         .map(item =>
         {
             return {

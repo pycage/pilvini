@@ -183,9 +183,9 @@ Box {
 
     function goBackAction()
     {
-        console.log("GO BACK")
-        thisHistory.back();
-        //setPath(fs.dirname(box.path));
+        console.log("GO BACK");
+        //thisHistory.back();
+        box.setPath(fs.dirname(box.path));
     }
 
     function newDirectoryAction()
@@ -287,7 +287,7 @@ Box {
             notification.title = "Uploading File";
             notification.message = escapeMarkup(fileItem.name);
             notification.progress = 0.0;
-            notification.progressText = "" + fileItem.size + " Bytes"
+            notification.progressText = "" + fileItem.size + " Bytes";
 
             const begin = Date.now();
             let measureBegin = begin;
@@ -1367,6 +1367,10 @@ Box {
                                 if (file.type === "d")
                                 {
                                     box.openNew(box.fs, file.path);
+                                }
+                                else
+                                {
+                                    box.openNew(box.fs, box.path);
                                 }
                             }
                         }

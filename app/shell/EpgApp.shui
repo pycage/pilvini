@@ -1,4 +1,5 @@
 require "shellfish/ui";
+require "./EpgEvent.shui";
 
 Box {
     id: app
@@ -101,125 +102,62 @@ Box {
                 cellHeight: theme.itemHeightLarge
 
                 model: eventsModel
-                delegate: template MouseBox {
+
+                delegate: template EpgEvent {
                     id: listItem
 
-                    property beginDate: new Date(modelData.value.begin * 1000)
+                    property recordings: recordingsModel.recordingsAt(epgEvent.begin, epgEvent.end)
+                    property isThisChannel: recordings.filter(rec => rec.serviceId === epgEvent.serviceId && rec.eventId === epgEvent.eventId).length > 0
 
-                    color: containsMouse ? theme.highlightBackgroundColor
-                                         : modelData.index % 2 == 0 ? theme.contentBackgroundColor : theme.contentAltBackgroundColor
-                    layout: "center-row"
+                    index: modelData.index
+                    epgEvent: modelData.value
+                    sideColor: isThisChannel ? "darkred"
+                                             : recordings.length > 0 ? "orange"
+                                                                     : "transparent"
+
+                    onModelDataChanged: () =>
+                    {
+                        epgEventChanged();
+                    }
 
                     onClick: ev =>
                     {
                         ev.accepted = true;
 
-                        app.epgService.eventInfo(eventsModel.serviceId, modelData.value.eventId)
+                        app.epgService.eventInfo(eventsModel.serviceId, epgEvent.eventId)
                         .then(info =>
                         {
                             showInfoDialog(info.name, info.description, () => { });
                         });
                     }
 
-                    Box {
-                        property recordings: recordingsModel.recordingsAt(modelData.value.begin, modelData.value.end)
-                        property isThisChannel: recordings.filter(rec => rec.serviceId === modelData.value.serviceId && rec.eventId === modelData.value.eventId).length > 0
+                    onClickRec: async ev =>
+                    {
+                        ev.accepted = true;
 
-                        marginLeft: theme.itemWidthMedium
-                        width: theme.paddingSmall / 2
-                        fillHeight: true
-                        color: isThisChannel ? "darkred"
-                                             : recordings.length > 0 ? "orange"
-                                                                     : "transparent"
-                    }
-
-                    Box {
-                        marginLeft: theme.paddingSmall / 2
-                        width: theme.itemWidthMedium
-
-                        color: beginDate.getDate() % 2 == 0 ? theme.primaryColor : theme.secondaryColor
-                        borderRadius: 3
-                        layout: "center"
-
-                        Label {
-                            bold: true
-                            color: theme.primaryBackgroundColor
-                            text: "" + listItem.beginDate.getDate()
-                        }
-
-                        Label {
-                            marginLeft: 2
-                            marginRight: 2
-                            fontSize: theme.fontSizeSmall
-                            color: theme.primaryBackgroundColor
-                            text: formatTime(listItem.beginDate)
-                        }
-                    }
-
-                    Box {
-                        fill: true
-                        layout: "center-column"
-
-                        Label {
-                            marginLeft: theme.paddingSmall
-                            marginRight: theme.paddingSmall
-                            overflowBehavior: "ellipsis"
-                            fillWidth: true
-                            color: thisMouseBox.containsMouse ? theme.highlightColor : theme.primaryColor
-                            text: escapeMarkup(modelData.value.name)
-                        }
-
-                        Label {
-                            marginLeft: theme.paddingSmall
-                            marginRight: theme.paddingSmall
-                            overflowBehavior: "ellipsis"
-                            fillWidth: true
-                            color: thisMouseBox.containsMouse ? theme.highlightColor : theme.secondaryColor
-                            text: escapeMarkup(modelData.value.serviceName)
-                        }
-                    }
-
-                    Button {
-                        checked: modelData.value.scheduled
-                        marginRight: theme.paddingSmall
-                        text: "Rec"
-
-                        styleOfBackground: template Box {
-                            fill: true
-                            color: checked ? "darkred" : theme.secondaryBackgroundColor
-                            borderColor: theme.borderColor
-                            borderWidth: 1
-                            borderRadius: theme.borderRadius
-                        }
-
-                        onClick: async ev =>
+                        if (! epgEvent.scheduled)
                         {
-                            ev.accepted = true;
-
-                            if (! modelData.value.scheduled)
+                            await app.epgService.record(epgEvent.serviceId, epgEvent.eventId, true);
+                            recordingsModel.insertOrdered(epgEvent, (a, b) => a.begin - b.begin);
+                            const evObj = epgEvent;
+                            evObj.scheduled = true;
+                            eventsModel.replace(modelData.index, evObj);
+                        }
+                        else
+                        {
+                            await app.epgService.record(epgEvent.serviceId, epgEvent.eventId, false);
+                            for (let i = 0; i < recordingsModel.size; ++i)
                             {
-                                await app.epgService.record(modelData.value.serviceId, modelData.value.eventId, true);
-                                recordingsModel.insertOrdered(modelData.value, (a, b) => a.begin - b.begin);
-                                const event = modelData.value;
-                                event.scheduled = true;
-                                eventsModel.replace(modelData.index, event);
-                            }
-                            else
-                            {
-                                await app.epgService.record(modelData.value.serviceId, modelData.value.eventId, false);
-                                for (let i = 0; i < recordingsModel.size; ++i)
+                                const event = recordingsModel.at(i);
+                                if (event.serviceId === event.serviceId && event.eventId === event.eventId)
                                 {
-                                    const event = recordingsModel.at(i);
-                                    if (event.serviceId === modelData.value.serviceId && event.eventId === modelData.value.eventId)
-                                    {
-                                        recordingsModel.remove(i);
-                                        break;
-                                    }
+                                    recordingsModel.remove(i);
+                                    break;
                                 }
-                                const event = modelData.value;
-                                event.scheduled = false;
-                                eventsModel.replace(modelData.index, event);
                             }
+                            const evObj = epgEvent;
+                            evObj.scheduled = false;
+                            eventsModel.replace(modelData.index, evObj);
                         }
                     }
                 }
@@ -268,106 +206,53 @@ Box {
 
                 model: recordingsModel
 
-                delegate: template MouseBox {
+                delegate: template EpgEvent {
                     id: listItem
 
-                    property beginDate: new Date(modelData.value.begin * 1000)
+                    property recordings: recordingsModel.recordingsAt(epgEvent.begin, epgEvent.end)
+                    property isThisChannel: recordings.filter(rec => rec.serviceId === epgEvent.serviceId && rec.eventId === epgEvent.eventId).length > 0
 
-                    color: containsMouse ? theme.highlightBackgroundColor
-                                         : modelData.index % 2 == 0 ? theme.contentBackgroundColor : theme.contentAltBackgroundColor
+                    index: modelData.index
+                    epgEvent: modelData.value
+                    sideColor: isThisChannel ? "darkred"
+                                             : recordings.length > 0 ? "orange"
+                                                                     : "transparent"
 
-                    layout: "center-row"
+                    onModelDataChanged: () =>
+                    {
+                        epgEventChanged();
+                    }
 
                     onClick: ev =>
                     {
                         ev.accepted = true;
 
-                        app.epgService.eventInfo(eventsModel.serviceId, modelData.value.eventId)
+                        app.epgService.eventInfo(eventsModel.serviceId, epgEvent.eventId)
                         .then(info =>
                         {
-                            const dlg = showInfoDialog(info.name, info.description, () => { });
+                            showInfoDialog(info.name, info.description, () => { });
                         });
                     }
 
-                    Box {
-                        marginLeft: theme.itemWidthMedium + theme.paddingSmall
-                        width: theme.itemWidthMedium
+                    onClickRec: async ev =>
+                    {
+                        ev.accepted = true;
 
-                        color: beginDate.getDate() % 2 == 0 ? theme.primaryColor : theme.secondaryColor
-                        borderRadius: 3
-                        layout: "center"
+                        await app.epgService.record(epgEvent.serviceId, epgEvent.eventId, false);
 
-                        Label {
-                            bold: true
-                            color: theme.primaryBackgroundColor
-                            text: "" + listItem.beginDate.getDate()
-                        }
-
-                        Label {
-                            marginLeft: 2
-                            marginRight: 2
-                            fontSize: theme.fontSizeSmall
-                            color: theme.primaryBackgroundColor
-                            text: formatTime(listItem.beginDate)
-                        }
-                    }
-
-                    Box {
-                        fill: true
-                        layout: "center-column"
-
-                        Label {
-                            marginLeft: theme.paddingSmall
-                            marginRight: theme.paddingSmall
-                            overflowBehavior: "ellipsis"
-                            fillWidth: true
-                            color: thisMouseBox.containsMouse ? theme.highlightColor : theme.primaryColor
-                            text: escapeMarkup(modelData.value.name)
-                        }
-
-                        Label {
-                            marginLeft: theme.paddingSmall
-                            marginRight: theme.paddingSmall
-                            overflowBehavior: "ellipsis"
-                            fillWidth: true
-                            color: thisMouseBox.containsMouse ? theme.highlightColor : theme.secondaryColor
-                            text: escapeMarkup(modelData.value.serviceName)
-                        }
-                    }
-
-                    Button {
-                        marginRight: theme.paddingSmall
-                        checked: true
-                        text: "Rec"
-
-                        styleOfBackground: template Box {
-                            fill: true
-                            color: checked ? "darkred" : theme.secondaryBackgroundColor
-                            borderColor: theme.borderColor
-                            borderWidth: 1
-                            borderRadius: theme.borderRadius
-                        }
-
-                        onClick: async ev =>
+                        if (eventsModel.serviceId === epgEvent.serviceId)
                         {
-                            ev.accepted = true;
-
-                            await app.epgService.record(modelData.value.serviceId, modelData.value.eventId, false);
-
-                            if (eventsModel.serviceId === modelData.value.serviceId)
+                            for (let i = 0; i < eventsModel.size; ++i)
                             {
-                                for (let i = 0; i < eventsModel.size; ++i)
+                                const event = eventsModel.at(i);
+                                if (event.eventId === epgEvent.eventId)
                                 {
-                                    const event = eventsModel.at(i);
-                                    if (event.eventId === modelData.value.eventId)
-                                    {
-                                        event.scheduled = false;
-                                        eventsModel.replace(i, event);
-                                    }
+                                    event.scheduled = false;
+                                    eventsModel.replace(i, event);
                                 }
                             }
-                            recordingsModel.remove(modelData.index);
                         }
+                        recordingsModel.remove(modelData.index);
                     }
                 }
 
