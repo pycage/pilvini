@@ -117,6 +117,11 @@ Box {
         }
     }
 
+    function deleteMediaBookmarkAction()
+    {
+        mediaBookmark.remove();
+    }
+
     function openMediaPlayer(files, idx, mediaPosition)
     {
         fileViewer.open(files, idx, mediaPosition);
@@ -445,6 +450,25 @@ Box {
             }
             box.fs.write(bookmarkFile, fd)
             .catch(err => { });
+        }
+
+        function remove()
+        {
+            const bookmarkFile = box.path + "/.pilvini-media.bookmark";
+            
+            path = "";
+            mediaPosition = 0;
+            name = "";
+            
+            box.fs.exists(bookmarkFile)
+            .then(safeCallback(async ok =>
+            {
+                if (ok)
+                {
+                    const fileData = await box.fs.remove(bookmarkFile);
+                }
+            }))
+            .catch(err => { console.error(err); });
         }
 
         box.onPathChanged: () => { if (box.fs) load(); }
@@ -1342,6 +1366,17 @@ Box {
                                 height: 1
                                 color: theme.primaryColor
                             }
+
+                            Button {
+                                fillHeight: true
+                                flat: true
+                                icon: "core-window-close"
+
+                                onClick: () =>
+                                {
+                                    deleteMediaBookmarkAction();
+                                }
+                            }
                         }
                     }
 
@@ -1358,15 +1393,22 @@ Box {
 
                     property fileMenuT: template Menu {
                         MenuItem {
-                            enabled: selector.selection.size === 1
-                            text: "Open in New Pane"
+                            text: "Open New Pane"
                             onClick: () =>
                             {
-                                const idx = [...selector.selection][0];
-                                const file = fsModel.at(idx);
-                                if (file.type === "d")
+                                if (selector.selection.size > 0)
                                 {
-                                    box.openNew(box.fs, file.path);
+                                    const idx = [...selector.selection][0];
+                                    const file = fsModel.at(idx);
+
+                                    if (file.type === "d")
+                                    {
+                                        box.openNew(box.fs, file.path);
+                                    }
+                                    else
+                                    {
+                                        box.openNew(box.fs, box.path);
+                                    }
                                 }
                                 else
                                 {

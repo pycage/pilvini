@@ -275,6 +275,37 @@ Document {
             }
 
             Button {
+                visible: notificationArea.count > 0
+                fillHeight: true
+                flat: true
+                icon: checked || containsMouse ? "ui-notifications" : "ui-notifications_off"
+                text: "(" + notificationArea.count + ")"
+                checked: true
+
+                onClick: () =>
+                {
+                    checked = ! checked;
+                    
+                    if (checked)
+                    {
+                        notificationArea.x = 0;
+                    }
+                    else
+                    {
+                        notificationArea.x = -notificationArea.width;
+                    }
+                }
+
+                onContainsMouseChanged: () =>
+                {
+                    if (! checked)
+                    {
+                        notificationArea.x = containsMouse ? 0 : -notificationArea.width;
+                    }
+                }
+            }
+
+            Button {
                 width: bboxHeight
                 fillHeight: true
                 flat: true

@@ -27,6 +27,8 @@ Box {
         model: tabsModel
 
         delegate: template FilesBox {
+            margins: tabsModel.size > 1 ? theme.paddingSmall / 2 : 0
+            borderRadius: tabsModel.size > 1 ? theme.borderRadius : 0
             fill: true
             fs: remoteFs
             path: modelData.value.path
