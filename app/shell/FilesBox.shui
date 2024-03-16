@@ -288,11 +288,7 @@ Box {
         {
             const fileItem = files[i];
 
-            const notification = notificationArea.createCustomNotification();
-            notification.title = "Uploading File";
-            notification.message = escapeMarkup(fileItem.name);
-            notification.progress = 0.0;
-            notification.progressText = "" + fileItem.size + " Bytes";
+            let notification = null;
 
             const begin = Date.now();
             let measureBegin = begin;
@@ -300,6 +296,11 @@ Box {
 
             const progressCb = (name, progress, details) =>
             {
+                if (progress < 0.0001)
+                {
+                    return;
+                }
+
                 const now = Date.now();
                 const elapsedMs = now - begin;
                 const estimatedTotalMs = elapsedMs * (1.0 / progress);
@@ -308,7 +309,7 @@ Box {
                 let timeText = core.formatSeconds(Math.round(leftMs / 1000)) + " left";
                 let sizeText = "";
 
-                if (details)
+                if (details && details.amount && details.total)
                 {
                     const bytes = details.amount - bytesMeasured;
                     const bytesPerSecond = bytes / ((now - measureBegin) / 1000);
@@ -318,6 +319,13 @@ Box {
                                " (" + core.formatBytes(bytesPerSecond) + "/s)";
                     bytesMeasured = details.amount;
                     measureBegin = now;
+                }
+
+                if (! notification)
+                {
+                    notification = notificationArea.createCustomNotification();
+                    notification.title = "Uploading File";
+                    notification.message = escapeMarkup(name);
                 }
 
                 notification.progress = progress;
