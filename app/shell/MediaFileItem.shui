@@ -1,0 +1,142 @@
+require "shellfish/ui";
+
+MouseBox {
+    id: item
+
+    property highlighted: false
+    property file: null
+    property thumbnail: ""
+    property background: ""
+
+    layout: "column"
+
+    function makeRoleLabel(file, role)
+    {
+        if (! file)
+        {
+            return "-";
+        }
+
+        if (role === "name")
+        {
+            if (file.type === "d")
+            {
+                return escapeMarkup(file.name);
+            }
+            else
+            {
+                const parts = file.name.split(".");
+                let ext = "";
+                if (parts.length > 1)
+                {
+                    ext = parts.pop();
+                }
+                return escapeMarkup(parts.join("."));
+            }
+        }
+        else if (role === "mtime")
+        {
+            return new Date(file.mtime * 1000).toISOString().split("T")[0];
+        }
+        else if (role === "size")
+        {
+            if (file.type === "d")
+            {
+                return "";
+            }
+            else
+            {
+                return core.formatBytes(file.size);
+            }
+        }
+        else if (role === "type")
+        {
+            if (file.type === "d")
+            {
+                return "Folder";
+            }
+            else
+            {
+                const parts = file.name.split(".");
+                let ext = "";
+                if (parts.length > 1)
+                {
+                    ext = parts.pop();
+                }
+                return ext !== "" ? ext : file.mimetype;
+            }
+        }
+
+        return "-";
+    }
+
+    Box {
+        fill: true
+        margins: theme.paddingLarge
+
+        color: item.containsMouse && ! item.highlighted ? theme.hoverBackgroundColor
+             : item.highlighted ? theme.highlightBackgroundColor
+                                : theme.contentBackgroundColor
+
+        borderRadius: 12
+        borderWidth: 2
+        borderColor: item.containsMouse ? theme.primaryColor : "transparent"
+
+        Image {
+            id: backdrop
+
+            position: "free"
+            visible: status === "success"
+            fill: true
+            source: item.background !== "" ? item.background
+                                           : item.thumbnail !== "" ? item.thumbnail
+                                                                   : ""
+            fitMode: "cover"
+        }
+
+        Box {
+            visible: backdrop.visible
+            position: "free"
+            fill: true
+            color: parent.color.alpha(0.3)
+        }
+
+        Box {
+            fillWidth: true
+            color: item.containsMouse && ! item.highlighted ? theme.primaryColor
+                 : item.highlighted ? theme.primaryColor
+                                    : theme.secondaryColor
+
+
+            Label {
+                fillWidth: true
+                margins: theme.paddingLarge
+                horizontalAlignment: "center"
+                overflowBehavior: "ellipsis"
+                color: item.containsMouse && ! item.highlighted ? theme.primaryBackgroundColor
+                     : item.highlighted ? theme.primaryBackgroundColor
+                                        : theme.secondaryBackgroundColor
+
+                text: makeRoleLabel(item.file, "name")
+            }
+        }
+
+        FSIcon {
+            id: icon
+
+            position: "free"
+            origin: "bottom-right"
+            width: theme.itemWidthMedium
+            height: width
+            margins: 2
+
+            fontSize: theme.fontSizeLarge
+            horizontalAlignment: "center"
+            color: item.highlighted ? theme.highlightColor : theme.primaryColor
+            mimeType: item.file.mimetype
+        }
+
+    }
+
+
+}

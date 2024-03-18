@@ -5,6 +5,7 @@ require "./FileViewer.shui";
 require "./folderinfo.js" as folderInfo;
 require "./FolderInfoDialog.shui";
 require "./HistoryScope.shui";
+require "./MediaFileItem.shui";
 require "./uploadfiles.js" as uploadfiles;
 require "./thumbnailgenerator.js";
 
@@ -904,7 +905,7 @@ Box {
         Image {
             id: backdrop
 
-            visible: status === "success"
+            visible: status === "success" && fsview.displayMode !== "columns"
             position: "free"
             fillWidth: true
             fillHeight: true
@@ -1007,7 +1008,7 @@ Box {
                 MouseBox {
                     fillWidth: true
                     fillHeight: true
-                    layout: "row"
+                    layout: fsview.displayMode === "columns" ? "column" : "row"
 
                     onClick: ev =>
                     {
@@ -1051,9 +1052,10 @@ Box {
 
                     IndexScroller {
                         labelSize: theme.itemHeightSmall
-                        //width: orientation === "vertical" ? labelsize : -1
-                        fillHeight: true
+                        fillWidth: orientation === "horizontal"
+                        fillHeight: orientation === "vertical"
                         width: theme.itemWidthMedium
+                        height: theme.itemHeightSmall
 
                         orientation: parent.layout === "row" ? "vertical" : "horizontal"
 
@@ -1164,16 +1166,19 @@ Box {
                             fillHeight: true
                             canFocus: true
 
+                            snapMode: displayMode === "columns" ? "center" : "none"
                             cellWidth: displayMode === "list" ? bboxWidth - 1
                                      : displayMode === "grid" ? theme.itemWidthLarge
-                                                              : bboxWidth / Math.max(1, Math.floor(bboxWidth / (cellHeight * 3)))
+                                     : displayMode === "columns" ? cellHeight * 0.66
+                                                                 : bboxWidth / Math.max(1, Math.floor(bboxWidth / (cellHeight * 3)))
                             cellHeight: displayMode === "list" ? theme.fontSizeMedium * 2
                                       : displayMode === "grid" ? cellWidth + theme.fontSizeMedium * 1.2 * 5
+                                      : displayMode === "columns" ? bboxHeight
                                                                : theme.fontSizeMedium * 5
 
                             //cacheMargin: cellHeight * 2 //contentHeight
 
-                            orientation: visible && ancestorsVisible && bboxHeight < cellHeight + theme.paddingLarge ? "horizontal" : "vertical"
+                            orientation: displayMode === "columns" ? "horizontal" : "vertical"
 
                             model: fsModel
 
@@ -1191,7 +1196,10 @@ Box {
                                 }
                             }
 
-                            delegate: template Draggable {
+                            delegate: displayMode === "columns" ? mediaItemT
+                                                                : fileItemT
+
+                            property fileItemT: template Draggable {
 
                                 onXChanged: () =>
                                 {
@@ -1324,6 +1332,108 @@ Box {
                                 //Label { text: bboxY; color: "red"; fontSize: theme.fontSizeSmall }
                             }
 
+                            property mediaItemT: template MediaFileItem {
+                                property inView: file &&
+                                                 x >= 0 &&
+                                                 y >= fsview.contentY - fsview.cellHeight &&
+                                                 y <= fsview.contentY + fsview.bboxHeight
+
+                                property readyForThumbnail: inView && thumbnailer.filesystem.status === "success" // && ! fsview.scrolling //&& ! fsview.rendering
+
+                                highlighted: selector.selection.has(modelData.index)
+
+                                file: modelData.value
+
+                                onXChanged: () =>
+                                {
+                                    if (x < 0)
+                                    {
+                                        thumbnail = "";
+                                        background = "";
+                                    }
+                                }
+
+                                onReadyForThumbnailChanged: () =>
+                                {
+                                    if (readyForThumbnail && thumbnail === "")
+                                    {
+                                        const forPath = file.path;
+
+                                        const condition = () =>
+                                        {
+                                            return lifeCycleStatus !== "destroyed" &&
+                                                file.path === forPath &&
+                                                thumbnail === "" &&
+                                                readyForThumbnail;
+                                        }
+
+                                        thumbnail = "";
+
+                                        const f = async () =>
+                                        {
+                                            const cached = await thumbnailer.cached(box.fs, file);
+                                            if (! condition())
+                                            {
+                                                return;
+                                            }
+
+                                            if (cached)
+                                            {
+                                                thumbnail = blobUrl(cached);
+                                                return;
+                                            }
+
+                                            const newThumbnail = await thumbnailer.generate(box.fs, file, condition);
+                                            if (! condition())
+                                            {
+                                                return;
+                                            }
+
+                                            if (newThumbnail)
+                                            {
+                                                thumbnail = blobUrl(newThumbnail);
+                                            }
+                                        };
+
+                                        f()
+                                        .then(() => { })
+                                        .catch(err => { console.error(err); });
+                                    }
+
+                                    if (readyForThumbnail && background === "" && file.type === "d")
+                                    {
+                                        folderInfo.load(box.fs, file.path)
+                                        .then(info =>
+                                        {
+                                            if (info.icon)
+                                            {
+                                                const url = URL.createObjectURL(info.background);
+                                                background = url;
+                                                this.wait(500).then(() => { URL.revokeObjectURL(url); });
+                                            }
+                                        });
+
+                                    }
+
+                                }
+
+                                onPointerDown: (ev) =>
+                                {
+                                    const idx = modelData.index;
+
+                                    if (! selector.selection.has(idx))
+                                    {
+                                        selector.select(idx, "replace");
+                                    }
+                                }
+
+                                onClick: (ev) =>
+                                {
+                                    ev.accepted = true;
+                                    box.openAction();
+                                }
+                            }
+
                             model.onPathChanged: () =>
                             {
                                 selector.clear();
@@ -1335,9 +1445,59 @@ Box {
                                 multiple: true
                             }
 
-                            OverflowScroller { stepSize: theme.paddingLarge }
+                            contentXTransition: NumberAnimation { }
+
                             ScrollIndicator { orientation: "horizontal" }
                             ScrollIndicator { orientation: "vertical" }
+
+                            OverflowScroller {
+                                visible: fsview.displayMode !== "columns"
+                                stepSize: theme.paddingLarge
+                            }
+                            OverflowScroller {
+                                visible: fsview.displayMode === "columns"
+                                stepSize: parent.cellWidth
+                                styleOfHandle: template MouseBox {
+                                    property edge: ""
+
+                                    width: theme.itemWidthMedium
+                                    height: width
+                                    margins: theme.paddingMedium
+                                    borderRadius: width / 2
+                                    borderColor: theme.borderColor
+                                    borderWidth: 2
+                                    color: containsMouse ? theme.highlightBackgroundColor
+                                                         : theme.secondaryBackgroundColor
+
+                                    layout: "center"
+                                    
+                                    onClick: ev =>
+                                    {
+                                        ev.accepted = true;
+                                        thisOverflowScroller.scrollEdge(edge);
+                                    }
+
+                                    Label {
+                                        fontSize: theme.fontSizeLarge
+                                        color: parent.containsMouse ? theme.highlightColor
+                                                                    : theme.secondaryColor
+                                        text: (() =>
+                                        {
+                                            switch (parent.edge)
+                                            {
+                                            case "top":
+                                                return "[icon:core-arrow_up]";
+                                            case "bottom":
+                                                return "[icon:core-arrow_down]";
+                                            case "left":
+                                                return "[icon:core-arrow_left]";
+                                            case "right":
+                                                return "[icon:core-arrow_right]";
+                                            }
+                                        })()
+                                    }
+                                }
+                            }
                         }
 
                         // media bookmark bar
@@ -1842,6 +2002,20 @@ Box {
             {
                 fsview.opacity = 0;
                 fsview.displayMode = "compact";
+                wait(100).then(() => { fsview.opacity = 1; });
+                ev.accepted = true;
+            }
+        }
+
+        Button {
+            fillHeight: true
+            flat: true
+            icon: "ui-view_columns"
+            checked: fsview.displayMode === "columns"
+            onClick: (ev) =>
+            {
+                fsview.opacity = 0;
+                fsview.displayMode = "columns";
                 wait(100).then(() => { fsview.opacity = 1; });
                 ev.accepted = true;
             }
