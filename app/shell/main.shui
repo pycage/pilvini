@@ -21,6 +21,24 @@ Document {
     theme: darkMode ? darkTheme : lightTheme
 
     property showStatusBar: true
+    property miniPlayer: false
+
+    function openInMiniPlayer(files, current, startPosition)
+    {
+        if (miniPlayerLoader.item)
+        {
+            miniPlayerLoader.item.open(files, current, startPosition);
+        }
+        else
+        {
+            miniPlayer = true;
+            wait(50).then(() =>
+            {
+                openInMiniPlayer(files, current, startPosition);
+            });
+        }
+    }
+
 
     color: theme.primaryBackgroundColor
 
@@ -73,6 +91,13 @@ Document {
                 appSwitcher.currentApp = obj.apps[0].source;
             });
         }
+    }
+
+    LocalStorage {
+        id: localStorage
+
+        property filesBoxDisplayMode: "compact"
+        property filesBoxMaximized: false
     }
 
     RpcProxy {
@@ -331,6 +356,13 @@ Document {
             fill: true
             sourceTemplate: ! doc.loggedIn && ! doc.logInPending ? loginScreenT : null
             source: doc.loggedIn ? appSwitcher.currentApp : ""
+        }
+
+        // mini player
+        Loader {
+            id: miniPlayerLoader
+
+            source: doc.miniPlayer ? __dirname + "/MiniPlayer.shui" : ""
         }
     }
 

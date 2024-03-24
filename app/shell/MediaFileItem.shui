@@ -1,14 +1,31 @@
 require "shellfish/ui";
+require "./mediabookmark.js" as mediabookmark;
 
 MouseBox {
     id: item
 
     property highlighted: false
     property file: null
+    property fs: null
     property thumbnail: ""
     property background: ""
 
     layout: "column"
+
+    event openFile
+
+    function stripExtension(filename)
+    {
+        const pos = filename.lastIndexOf(".");
+        if (pos !== -1)
+        {
+            return filename.substr(0, pos);
+        }
+        else
+        {
+            return pos;
+        }
+    }
 
     function makeRoleLabel(file, role)
     {
@@ -70,7 +87,63 @@ MouseBox {
         return "-";
     }
 
-    Box {
+    onFileChanged: () =>
+    {
+        contentsModel.reset([]);
+        priv.mediaBookmark = null;
+    }
+
+    onContainsMouseChanged: () =>
+    {
+        if (containsMouse)
+        {
+            priv.mediaBookmark = null;
+            contentsModel.reset([]);
+
+            if (fs && file && file.type === "d")
+            {
+                const forPath = file.path;
+
+                const f = async () =>
+                {
+                    const files = await fs.list(file.path);
+                    if (file.path !== forPath)
+                    {
+                        return;
+                    }
+
+                    const bookmark = await mediabookmark.read(fs, file.path);
+                    if (file.path !== forPath)
+                    {
+                        return;
+                    }
+
+                    const medias = files.filter(f => f.mimetype.startsWith("video/") ||
+                                                     f.mimetype.startsWith("audio/"));
+                    priv.mediaBookmark = bookmark;
+                    contentsModel.reset(medias);
+                };
+                f();
+            }
+        }
+        else
+        {
+            priv.mediaBookmark = null;
+            contentsModel.reset([]);
+        }
+    }
+
+    Object {
+        id: priv
+
+        property mediaBookmark: null
+    }
+
+    ListModel {
+        id: contentsModel
+    }
+
+    MouseBox {
         fill: true
         margins: theme.paddingLarge
 
@@ -82,10 +155,48 @@ MouseBox {
         borderWidth: 2
         borderColor: item.containsMouse ? theme.primaryColor : "transparent"
 
+        onClick: ev =>
+        {
+            const f = async () =>
+            {
+                const bookmark = await mediabookmark.read(item.fs, item.file.path);
+                const files = await item.fs.list(item.file.path);
+
+                if (bookmark)
+                {
+                    const mediaFile = files.find(f => f.path === bookmark.path);
+                    if (mediaFile)
+                    {
+                        item.openFile(mediaFile, bookmark.mediaPosition);
+                    }
+                }
+                else
+                {
+                    const mediaFiles = files.filter(f => f.mimetype.startsWith("audio/") ||
+                                                            f.mimetype.startsWith("video/"));
+                    if (mediaFiles.length > 0)
+                    {
+                        item.openFile(mediaFiles[0], 0);
+                    }
+                }
+            };
+
+            if (contentsModel.size > 0)
+            {
+                ev.accepted = true;
+                f();
+            }
+            else
+            {
+                item.click(ev);
+            }
+        }
+
         Image {
             id: backdrop
 
             position: "free"
+            marginTop: titleBar.bboxHeight
             visible: status === "success"
             fill: true
             source: item.background !== "" ? item.background
@@ -102,6 +213,8 @@ MouseBox {
         }
 
         Box {
+            id: titleBar
+
             fillWidth: true
             color: item.containsMouse && ! item.highlighted ? theme.primaryColor
                  : item.highlighted ? theme.primaryColor
@@ -113,6 +226,7 @@ MouseBox {
                 margins: theme.paddingLarge
                 horizontalAlignment: "center"
                 overflowBehavior: "ellipsis"
+                bold: true
                 color: item.containsMouse && ! item.highlighted ? theme.primaryBackgroundColor
                      : item.highlighted ? theme.primaryBackgroundColor
                                         : theme.secondaryBackgroundColor
@@ -121,19 +235,106 @@ MouseBox {
             }
         }
 
-        FSIcon {
-            id: icon
+        Box {
+            fillWidth: true
+            height: parent.bboxHeight / 2
+            layout: "center"
 
+            Label {
+                visible: item.containsMouse
+                fontSize: parent.bboxHeight * 0.5
+                text: (() =>
+                {
+                    if (contentsModel.size > 0)
+                    {
+                        return "[icon:media-slideshow]";
+                    }
+                    else if (item.file.type === "d")
+                    {
+                        return "[icon:fs-folder]";
+                    }
+                    else
+                    {
+                        return "";
+                    }
+                })()
+            }
+        }
+
+        Box {
+            visible: item.containsMouse && contentsModel.size > 0
+            fill: true
+            color: theme.primaryBackgroundColor.alpha(0.6)
+
+            ListView {
+                fill: true
+                model: contentsModel
+                cellWidth: bboxWidth
+                cellHeight: theme.itemHeightMedium
+
+                delegate: template MouseBox {
+                    color: containsMouse ? theme.highlightBackgroundColor : "transparent"
+                    layout: "center-row"
+                    
+                    onClick: ev =>
+                    {
+                        ev.accepted = true;
+                        item.openFile(modelData.value, 0);
+                    }
+
+                    FSIcon {
+                        marginLeft: theme.paddingLarge
+                        color: parent.containsMouse ? theme.highlightColor : theme.primaryColor
+                        mimeType: modelData.value.mimetype
+                    }
+
+                    Label {
+                        fillWidth: true
+                        marginLeft: theme.paddingSmall
+                        marginRight: theme.paddingLarge
+                        color: parent.containsMouse ? theme.highlightColor : theme.primaryColor
+                        overflowBehavior: "ellipsis"
+                        bold: priv.mediaBookmark && modelData.value.path === priv.mediaBookmark.path
+                        text: (() =>
+                        {
+                            const bookmark = priv.mediaBookmark;
+                            if (bookmark && modelData.value.path === bookmark.path)
+                            {
+                                return escapeMarkup(bookmark.name);
+                            }
+                            else
+                            {
+                                return escapeMarkup(stripExtension(modelData.value.name));
+                            }
+                        })();
+                    }
+                }
+
+                ScrollIndicator { }
+                OverflowScroller { }
+            }
+        }
+
+        MouseBox {
             position: "free"
             origin: "bottom-right"
-            width: theme.itemWidthMedium
-            height: width
-            margins: 2
+            color: containsMouse ? theme.highlightBackgroundColor : "transparent"
 
-            fontSize: theme.fontSizeLarge
-            horizontalAlignment: "center"
-            color: item.highlighted ? theme.highlightColor : theme.primaryColor
-            mimeType: item.file.mimetype
+            onClick: ev =>
+            {
+                item.click(ev);
+            }
+
+            FSIcon {
+                id: icon
+
+                margins: theme.paddingMedium
+
+                fontSize: theme.fontSizeLarge
+                horizontalAlignment: "center"
+                color: parent.containsMouse ? theme.highlightColor : theme.primaryColor
+                mimeType: item.file.mimetype
+            }
         }
 
     }

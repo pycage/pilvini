@@ -6,6 +6,7 @@ require "./folderinfo.js" as folderInfo;
 require "./FolderInfoDialog.shui";
 require "./HistoryScope.shui";
 require "./MediaFileItem.shui";
+require "./mediabookmark.js" as mediabookmark;
 require "./uploadfiles.js" as uploadfiles;
 require "./thumbnailgenerator.js";
 
@@ -99,57 +100,61 @@ Box {
 
     function openMediaBookmarkAction()
     {
-        let targetFiles = [];
-        if (mediaBookmark.path !== "")
+        const f = async () =>
         {
-            const filename = box.fs.filename(mediaBookmark.path);
-            targetFiles = fsModel.getFiles(f => box.fs.filename(f.path) === filename);
-        }
-        else
-        {
-            targetFiles = fsModel.getFiles(f => f.mimetype.startsWith("audio/") ||
-                                                f.mimetype.startsWith("image/") ||
-                                                f.mimetype.startsWith("video/"));
-        }
-
-        if (targetFiles.length > 0)
-        {
-            openFile(targetFiles[0], mediaBookmark.mediaPosition);
-        }
+            const bookmark = await mediabookmark.read(box.fs, box.path);
+            if (bookmark)
+            {
+                const files = await box.fs.list(box.path);
+                const targetFile = files.find(f => f.path === bookmark.path);
+                if (targetFile)
+                {
+                    openFile(targetFile, bookmark.mediaPosition);
+                }
+            }
+        };
+        f();
     }
 
     function deleteMediaBookmarkAction()
     {
-        mediaBookmark.remove();
-    }
-
-    function openMediaPlayer(files, idx, mediaPosition)
-    {
-        fileViewer.open(files, idx, mediaPosition);
+        mediabookmark.remove(box.fs, box.path)
+        .then(safeCallback(() =>
+        {
+            mediaBookmark.load();
+        }));
     }
 
     function openFile(file, mediaPosition)
     {
-        if (file.type === "d")
+        if (file.type === "d" ||
+            file.mimetype === "application/zip" ||
+            file.mimetype === "application/x-rar-compressed")
         {
             // remember current scroll position
-            priv.scrollPositionsMap.set(path, fsview.contentY);
+            priv.scrollPositionsMap.set(path, fsview.orientation === "vertical" ? fsview.contentY : fsview.contentX);
             // reset scroll position for new path
             priv.scrollPositionsMap.delete(file.path);
             // open
             setPath(file.path);
         }
-        else if (file.mimetype === "application/zip" ||
-                 file.mimetype === "application/x-rar-compressed")
-        {
-            console.log("open ZIP: " + file.path);
-            setPath(file.path);
-        }
         else if (file.mimetype.startsWith("audio/"))
         {
-            const files = fsModel.getFiles(f => f.mimetype.startsWith("audio/"));
-            const idx = files.findIndex(f => f.path === file.path);
-            fileViewer.open(files, idx, mediaPosition);
+            const f = async () =>
+            {
+                const allFiles = await box.fs.list(file.dir);
+                const files = allFiles.filter(f => f.mimetype.startsWith("audio/"));
+                const idx = files.findIndex(f => f.path === file.path);
+                if (doc.miniPlayer)
+                {
+                    doc.openInMiniPlayer(files, idx, mediaPosition);
+                }
+                else
+                {
+                    fileViewer.open(files, idx, mediaPosition);
+                }
+            };
+            f();
         }
         else if (file.mimetype.startsWith("image/"))
         {
@@ -159,28 +164,39 @@ Box {
         }
         else if (file.mimetype.startsWith("video/"))
         {
-            const subtitles = new Set();
-            fsModel.getFiles(f => f.mimetype === "text/vtt").forEach(f =>
+            const f = async () =>
             {
-                subtitles.add(f.path);
-            });
-
-            const files = fsModel.getFiles(f => f.mimetype.startsWith("video/"));
-            files.forEach(f =>
-            {
-                const vttPath = f.path.substring(0, f.path.length - 3) + "vtt";
-                if (subtitles.has(vttPath))
+                const subtitles = new Set();
+                const allFiles = await box.fs.list(file.dir);
+                allFiles.filter(f => f.mimetype === "text/vtt").forEach(f =>
                 {
-                    f.subtitles = vttPath;
+                    subtitles.add(f.path);
+                });
+
+                const files = allFiles.filter(f => f.mimetype.startsWith("video/"));
+                files.forEach(f =>
+                {
+                    const vttPath = f.path.substring(0, f.path.length - 3) + "vtt";
+                    if (subtitles.has(vttPath))
+                    {
+                        f.subtitles = vttPath;
+                    }
+                });
+                const idx = files.findIndex(f => f.path === file.path);
+                if (doc.miniPlayer)
+                {
+                    doc.openInMiniPlayer(files, idx, mediaPosition);
                 }
-            });
-            const idx = files.findIndex(f => f.path === file.path);
-            fileViewer.open(files, idx, mediaPosition);
+                else
+                {
+                    fileViewer.open(files, idx, mediaPosition);
+                }
+            };
+            f();
         }
         else if (file.mimetype === "application/pdf" ||
                  file.mimetype === "application/x-shellscript" ||
                  file.mimetype === "application/x-youtube-link" ||
-                 file.mimetype.startsWith("image/") ||
                  file.mimetype.startsWith("text/"))
         {
             fileViewer.open([file], 0, mediaPosition);
@@ -389,12 +405,22 @@ Box {
         id: priv
 
         property scrollPositionsMap: new Map()
+
+        property hideMainBar: box.maximized ||
+                              fileViewer.visible ||
+                              localStorage.filesBoxMaximized
+
+        onHideMainBarChanged: () =>
+        {
+            doc.showStatusBar = ! hideMainBar;
+        }
     }
 
     HistoryScope { id: thisHistory }
 
     Downloader { id: downloader }
 
+    // disk usage monitor
     Object {
         function update()
         {
@@ -412,6 +438,7 @@ Box {
         box.onPathChanged: () => { if (box.fs) update(); }
     }
 
+    // media bookmark
     Object {
         id: mediaBookmark
 
@@ -421,26 +448,20 @@ Box {
 
         function load()
         {
-            const bookmarkFile = box.path + "/.pilvini-media.bookmark";
-            
-            path = "";
-            mediaPosition = 0;
-            name = "";
-            
-            box.fs.exists(bookmarkFile)
-            .then(safeCallback(async ok =>
+            mediabookmark.read(box.fs, box.path)
+            .then(safeCallback(obj =>
             {
-                if (ok)
+                if (obj)
                 {
-                    const fileData = await box.fs.read(bookmarkFile);
-                    const data = await fileData.text();
-                    if (data !== "")
-                    {
-                        const obj = JSON.parse(data);
-                        path = obj.path;
-                        mediaPosition = obj.mediaPosition;
-                        name = obj.name;
-                    }
+                    path = obj.path;
+                    mediaPosition = obj.mediaPosition;
+                    name = obj.name;
+                }
+                else
+                {
+                    path = "";
+                    mediaPosition = 0;
+                    name = "";
                 }
             }))
             .catch(err => { console.error(err); });
@@ -448,35 +469,7 @@ Box {
 
         function save()
         {
-            const obj = { path: path, mediaPosition: mediaPosition, name: name };
-            const data = JSON.stringify(obj);
-
-            const bookmarkFile = box.path + "/.pilvini-media.bookmark";
-            let fd = null;
-            const c = core;
-            unresolved {
-                fd = new c.FileData(data);
-            }
-            box.fs.write(bookmarkFile, fd)
-            .catch(err => { });
-        }
-
-        function remove()
-        {
-            const bookmarkFile = box.path + "/.pilvini-media.bookmark";
-            
-            path = "";
-            mediaPosition = 0;
-            name = "";
-            
-            box.fs.exists(bookmarkFile)
-            .then(safeCallback(async ok =>
-            {
-                if (ok)
-                {
-                    const fileData = await box.fs.remove(bookmarkFile);
-                }
-            }))
+            mediabookmark.write(fs, path, mediaPosition, name)
             .catch(err => { console.error(err); });
         }
 
@@ -494,7 +487,7 @@ Box {
 
             onStatusChanged: () =>
             {
-                if (status === "success" && box.fs)
+                if (status === "success" && box.fs && enabled)
                 {
                     box.fs.list(box.path)
                     .then(files =>
@@ -552,13 +545,18 @@ Box {
     // title bar
     MouseBox {
         visible: ! fileViewer.maximized
-        //marginTop: box.bboxY < theme.itemHeightMedium ? theme.itemHeightMedium : 0
         fillWidth: true
         height: theme.itemHeightMedium
         color: theme.secondaryBackgroundColor
 
         layout: "center-row"
         
+        onDoubleClick: ev =>
+        {
+            ev.accepted = true;
+            localStorage.filesBoxMaximized = ! localStorage.filesBoxMaximized;
+        }
+
         BreadCrumbs {
             id: breadcrumbs
 
@@ -834,7 +832,9 @@ Box {
 
     // bookmarks bar
     Box {
-        visible: ! fileViewer.maximized && bookmarksModel.size > 0
+        visible: ! fileViewer.maximized &&
+                 bookmarksModel.size > 0 &&
+                 fsview.displayMode !== "columns"
         fillWidth: true
         height: theme.itemHeightMedium
         color: theme.secondaryBackgroundColor
@@ -1158,7 +1158,7 @@ Box {
                         ListView {
                             id: fsview
 
-                            property displayMode: "compact"
+                            property displayMode: localStorage.filesBoxDisplayMode
                             property placeView: false
 
                             visible: ! fsModel.loading
@@ -1187,12 +1187,35 @@ Box {
                                 placeView = true;
                             }
 
+                            onContentWidthChanged: () =>
+                            {
+                                if (placeView)
+                                {
+                                    placeView = false;
+                                    if (orientation === "vertical")
+                                    {
+                                        contentY = priv.scrollPositionsMap.get(box.path) || 0;
+                                    }
+                                    else
+                                    {
+                                        contentX = priv.scrollPositionsMap.get(box.path) || 0;
+                                    }
+                                }
+                            }
+
                             onContentHeightChanged: () =>
                             {
                                 if (placeView)
                                 {
                                     placeView = false;
-                                    contentY = priv.scrollPositionsMap.get(box.path) || 0;
+                                    if (orientation === "vertical")
+                                    {
+                                        contentY = priv.scrollPositionsMap.get(box.path) || 0;
+                                    }
+                                    else
+                                    {
+                                        contentX = priv.scrollPositionsMap.get(box.path) || 0;
+                                    }
                                 }
                             }
 
@@ -1343,13 +1366,13 @@ Box {
                                 highlighted: selector.selection.has(modelData.index)
 
                                 file: modelData.value
+                                fs: box.fs
 
                                 onXChanged: () =>
                                 {
                                     if (x < 0)
                                     {
                                         thumbnail = "";
-                                        background = "";
                                     }
                                 }
 
@@ -1399,22 +1422,6 @@ Box {
                                         .then(() => { })
                                         .catch(err => { console.error(err); });
                                     }
-
-                                    if (readyForThumbnail && background === "" && file.type === "d")
-                                    {
-                                        folderInfo.load(box.fs, file.path)
-                                        .then(info =>
-                                        {
-                                            if (info.icon)
-                                            {
-                                                const url = URL.createObjectURL(info.background);
-                                                background = url;
-                                                this.wait(500).then(() => { URL.revokeObjectURL(url); });
-                                            }
-                                        });
-
-                                    }
-
                                 }
 
                                 onPointerDown: (ev) =>
@@ -1432,6 +1439,11 @@ Box {
                                     ev.accepted = true;
                                     box.openAction();
                                 }
+
+                                onOpenFile: file =>
+                                {
+                                    box.openFile(file, 0);
+                                }
                             }
 
                             model.onPathChanged: () =>
@@ -1447,7 +1459,7 @@ Box {
 
                             contentXTransition: NumberAnimation { }
 
-                            ScrollIndicator { orientation: "horizontal" }
+                            //ScrollIndicator { orientation: "horizontal" }
                             ScrollIndicator { orientation: "vertical" }
 
                             OverflowScroller {
@@ -1502,17 +1514,16 @@ Box {
 
                         // media bookmark bar
                         Box {
-                            visible: mediaBookmark.path !== ""
+                            visible: mediaBookmark.path !== "" && fsview.displayMode !== "columns"
                             fillWidth: true
                             height: theme.itemHeightMedium
                             layout: "center-row"
 
                             Button {
-                                //visible: mediaBookmark.path !== ""
                                 fillHeight: true
                                 flat: true
                                 icon: "media-play"
-                                text: mediaBookmark.path !== "" ? "Continue" : "Start"
+                                text: "Continue"
 
                                 onClick: () =>
                                 {
@@ -1760,22 +1771,15 @@ Box {
 
                 onMediaBookmarkUpdated: (path, mediaPosition, name) =>
                 {
-                    mediaBookmark.path = box.fs.filename(path);
+                    mediaBookmark.path = path;
                     mediaBookmark.mediaPosition = mediaPosition;
                     mediaBookmark.name = name;
                 }
 
                 onVisibleChanged: () =>
                 {
-                    if (visible)
+                    if (! visible)
                     {
-                        console.log("hide status bar");
-                        doc.showStatusBar = false;
-                    }
-                    else
-                    {
-                        console.log("show status bar");
-                        doc.showStatusBar = true;
                         console.log(mediaBookmark.objectLocation);
                         mediaBookmark.save();
                     }
@@ -1987,7 +1991,7 @@ Box {
             onClick: (ev) =>
             {
                 fsview.opacity = 0;
-                fsview.displayMode = "grid";
+                localStorage.filesBoxDisplayMode = "grid";
                 wait(100).then(() => { fsview.opacity = 1; });
                 ev.accepted = true;
             }
@@ -2001,7 +2005,7 @@ Box {
             onClick: (ev) =>
             {
                 fsview.opacity = 0;
-                fsview.displayMode = "compact";
+                localStorage.filesBoxDisplayMode = "compact";
                 wait(100).then(() => { fsview.opacity = 1; });
                 ev.accepted = true;
             }
@@ -2015,7 +2019,7 @@ Box {
             onClick: (ev) =>
             {
                 fsview.opacity = 0;
-                fsview.displayMode = "columns";
+                localStorage.filesBoxDisplayMode = "columns";
                 wait(100).then(() => { fsview.opacity = 1; });
                 ev.accepted = true;
             }

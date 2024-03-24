@@ -4,6 +4,13 @@ require "./SeekBar.shui";
 Box {
     id: playerBox
 
+    function open(files, current, startPosition)
+    {
+        playerBox.model.reset(files);
+        playerBox.current = current;
+        playerBox.startPosition = startPosition;
+    }
+
     function stripExtension(filename)
     {
         const pos = filename.lastIndexOf(".");
@@ -20,16 +27,14 @@ Box {
     property model: ListModel { }
     property current: -1
     property startPosition: 0
-    property openMediaPlayer: (files, idx, mediaPosition) => { }
     property title: model.at(current) ? model.at(current).name : ""
 
-    fillWidth: true
-    height: theme.itemHeightLarge * 2
+    position: "global"
+    origin: "bottom-left"
+    x: (doc.windowWidth - bboxWidth) / 2
 
     onCurrentChanged: () =>
     {
-        notificationArea.drawAttention();
-
         if (current === -1)
         {
             videoPlayer.source = "";
@@ -59,9 +64,36 @@ Box {
         }
     }
 
+    // display box
     Box {
-        fill: true
-        layout: "row"
+        position: "global"
+        origin: "bottom-left"
+        x: (thisDocument.windowWidth - bboxWidth) / 2
+        y: controlsBox.containsMouse ? controlsBox.bboxHeight - 1 /* border line */ : -bboxHeight
+        yTransition: NumberAnimation { }
+        width: controlsBox.bboxWidth
+        height: width
+        color: "black"
+        borderColor: theme.borderColor
+        borderWidth: 1
+
+        Box {
+            visible: playerBox.title !== ""
+
+            fillWidth: true
+            color: theme.primaryColor
+            layout: "center"
+
+            Label {
+                margins: theme.paddingSmall
+                fillWidth: true
+                overflowBehavior: "ellipsis"
+                horizontalAlignment: "center"
+                color: theme.primaryBackgroundColor
+                bold: true
+                text: escapeMarkup(stripExtension(playerBox.title))
+            }
+        }
 
         Box {
             id: coverArt
@@ -69,11 +101,9 @@ Box {
             property source: ""
 
             visible: false
-            width: bboxHeight
-            fillHeight: true
+            fill: true
+            margins: theme.paddingSmall
             color: theme.secondaryBackgroundColor
-            borderColor: theme.primaryColor
-            borderWidth: theme.paddingSmall / 2
 
             Image {
                 visible: status === "success"
@@ -83,17 +113,11 @@ Box {
             }
         }
 
-        MouseBox {
+        Box {
             visible: videoPlayer.visible
-            width: bboxHeight
-            fillHeight: true
+            fill: true
+            margins: theme.paddingSmall
             color: "black"    
-
-            onClick: () =>
-            {
-                playerBox.openMediaPlayer(playerBox.model.data, playerBox.current, videoPlayer.currentTime);
-                playerBox.parent.notification.close();
-            }
 
             Video {
                 id: videoPlayer
@@ -123,71 +147,17 @@ Box {
             }
         }
 
+        // seek bar
         Box {
-            fill: true
-
-            Box {
-                fill: true
-                layout: "center-row"
-
-                Button {
-                    fillHeight: true
-                    width: bboxHeight
-                    flat: true
-                    icon: "media-previous"
-
-                    onClick: () =>
-                    {
-                        if (videoPlayer.currentTime < 3 && playerBox.current > 0)
-                        {
-                            playerBox.current = playerBox.current - 1;
-                        }
-                        else
-                        {
-                            videoPlayer.currentTime = 0;
-                        }
-                    }
-                }
-
-                Button {
-                    fillHeight: true
-                    width: bboxHeight
-                    flat: true
-                    icon: videoPlayer.playing ? "media-pause" : "media-play"
-
-                    onClick: () =>
-                    {
-                        if (videoPlayer.playing)
-                        {
-                            videoPlayer.pause();
-                        }
-                        else
-                        {
-                            videoPlayer.play();
-                        }
-                    }
-                }
-
-                Button {
-                    enabled: !! playerBox.model && (playerBox.current < playerBox.model.size - 1)
-                    fillHeight: true
-                    width: bboxHeight
-                    flat: true
-                    icon: "media-next"
-
-                    onClick: () =>
-                    {
-                        playerBox.current = playerBox.current + 1;
-                    }
-                }
-
-            }
+            fillWidth: true
+            height: theme.itemHeightMedium
+            layout: "center-column"
 
             Box {
                 marginLeft: theme.paddingSmall
                 marginRight: theme.paddingSmall
                 fillWidth: true
-                layout: "row"
+                layout: "center-row"
 
                 Label {
                     fillWidth: true
@@ -199,35 +169,110 @@ Box {
                     fontSize: theme.fontSizeSmall
                     text: core.formatSeconds(videoPlayer.duration, false)
                 }
-
             }
 
             SeekBar {
                 marginLeft: theme.paddingSmall
                 marginRight: theme.paddingSmall
                 fillWidth: true
-                height: theme.paddingMedium
+                height: theme.paddingSmall
                 player: videoPlayer
             }
         }
+
     }
 
-    SelectionBox {
-        fillWidth: true
-        flat: true
+    MouseBox {
+        id: controlsBox
+
+        height: theme.itemHeightMedium
         color: theme.secondaryBackgroundColor
+        borderColor: theme.borderColor
+        borderWidth: 1
 
-        model: playerBox.model
-        formatText: item => escapeMarkup(stripExtension(item.name))
+        layout: "row"
 
-        playerBox.onCurrentChanged: () =>
-        {
-            selection = Math.max(0, playerBox.current);
+        Button {
+            fillHeight: true
+            width: bboxHeight
+            flat: true
+            icon: "media-previous"
+
+            onClick: () =>
+            {
+                if (videoPlayer.currentTime < 3 && playerBox.current > 0)
+                {
+                    playerBox.current = playerBox.current - 1;
+                }
+                else
+                {
+                    videoPlayer.currentTime = 0;
+                }
+            }
         }
 
-        onSelectionChanged: () =>
-        {
-            playerBox.current = selection;
+        Button {
+            fillHeight: true
+            width: bboxHeight
+            flat: true
+            icon: videoPlayer.playing ? "media-pause" : "media-play"
+
+            onClick: () =>
+            {
+                if (videoPlayer.playing)
+                {
+                    videoPlayer.pause();
+                }
+                else
+                {
+                    videoPlayer.play();
+                }
+            }
+        }
+
+        Button {
+            enabled: !! playerBox.model && (playerBox.current < playerBox.model.size - 1)
+            fillHeight: true
+            width: bboxHeight
+            flat: true
+            icon: "media-next"
+
+            onClick: () =>
+            {
+                playerBox.current = playerBox.current + 1;
+            }
+        }
+
+        SelectionBox {
+            width: theme.itemWidthLarge * 2
+            fillHeight: true
+            flat: true
+            color: theme.secondaryBackgroundColor
+
+            model: playerBox.model
+            formatText: item => escapeMarkup(stripExtension(item.name))
+
+            playerBox.onCurrentChanged: () =>
+            {
+                selection = Math.max(0, playerBox.current);
+            }
+
+            onSelectionChanged: () =>
+            {
+                playerBox.current = selection;
+            }
+        }
+
+        Button {
+            fillHeight: true
+            width: bboxHeight
+            flat: true
+            icon: "ui-clear"
+
+            onClick: () =>
+            {
+                thisDocument.miniPlayer = false;
+            }
         }
     }
 }
