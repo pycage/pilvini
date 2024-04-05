@@ -1,9 +1,11 @@
 require "shellfish/low" as low;
 require "shellfish/ui";
+require "./FSMenu.shui";
 
 Box {
     id: box
 
+    property filesystem: null
     property path: ""
     property text: ""
 
@@ -98,6 +100,28 @@ Box {
                 onClick: () =>
                 {
                     box.search();
+                }
+            }
+
+            MenuItem {
+                icon: "fs-drive"
+                text: "Go To..."
+
+                onClick: ev =>
+                {
+                    ev.accepted = true;
+                    const menu = menuT();
+                    menu.popup(self, { horizontal: true });
+                }
+
+                property menuT: template FSMenu {
+                    filesystem: box.filesystem
+                    path: "/"
+
+                    onOpenPath: path =>
+                    {
+                        box.changePath(path);
+                    }
                 }
             }
         }

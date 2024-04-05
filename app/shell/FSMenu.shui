@@ -1,0 +1,153 @@
+require "shellfish/ui";
+require "./FSMenu.shui";
+
+Menu {
+    id: fsmenu
+
+    property filesystem: null
+    property path: "/"
+    property text: "Open"
+
+    property selection: 0
+
+    event openPath
+
+    Box {
+        width: theme.itemWidthLarge * 1.5
+        height: repeater.count * theme.itemHeightMedium
+    }
+
+    Repeater {
+        id: repeater
+
+        property amount: count + 1
+
+        model: FSModel {
+            filesystem: fsmenu.filesystem
+            path: fsmenu.path
+
+            filter: makeFilter(true, false, false)
+        }
+
+        dynamicItems: model.data.map((v, idx) => idx).filter(
+            idx => (idx + 1) * theme.itemHeightMedium > thisMenu.menu.contentY &&
+                    idx * theme.itemHeightMedium < thisMenu.menu.contentY + thisMenu.menu.bboxHeight ||
+                    idx === thisMenu.selection
+        )
+
+        delegate: template MenuItem {
+            position: "free"
+            y: modelData.index * bboxHeight
+
+            icon: "fs-folder"
+            text: escapeMarkup(modelData.value.name)
+
+            onInitialization: () =>
+            {
+                wait(10).then(() =>
+                {
+                    if (modelData.index === fsmenu.selection)
+                    {
+                        selectItem(false);
+                    }
+                });
+            }
+
+            fsmenu.onSelectionChanged: () =>
+            {
+                if (modelData.index === fsmenu.selection)
+                {
+                    selectItem(false);
+                }
+            }
+
+            // custom navigation on dynamically created items
+            onKeyDown: ev =>
+            {
+                if (ev.key === "ArrowUp")
+                {
+                    fsmenu.selection = (repeater.amount + fsmenu.selection - 1) % repeater.amount;
+                    ev.accepted = true;
+                }
+                else if (ev.key === "ArrowDown")
+                {
+                    fsmenu.selection = (fsmenu.selection + 1) % repeater.amount;
+                    ev.accepted = true;
+                }
+            }
+
+            onClick: ev =>
+            {
+                ev.accepted = true;
+                const menu = menuT();
+                menu.popup(self, { horizontal: true });
+            }
+
+            property menuT: template FSMenu {
+                filesystem: fsmenu.filesystem
+                path: modelData.value.path
+
+                onOpenPath: path =>
+                {
+                    console.log("open path: " + path);
+                    fsmenu.openPath(path);
+                    thisMenu.close();
+                }
+            }
+        }
+    }//Repeater
+
+    MenuSeparator { visible: repeater.count > 0 }
+
+    MenuItem {
+        text: repeater.model.loading ? "[icon:ui-spinner5]" : fsmenu.text
+
+        onInitialization: () =>
+        {
+            wait(10).then(() =>
+            {
+                if (repeater.amount - 1 === fsmenu.selection)
+                {
+                    selectItem(false);
+                }
+            });
+        }
+
+        fsmenu.onSelectionChanged: () =>
+        {
+            if (repeater.amount - 1 === fsmenu.selection)
+            {
+                selectItem(false);
+            }
+        }
+
+        // custom navigation on dynamically created items
+        onKeyDown: ev =>
+        {
+            if (ev.key === "ArrowUp")
+            {
+                fsmenu.selection = (repeater.amount + fsmenu.selection - 1) % repeater.amount;
+                ev.accepted = true;
+            }
+            else if (ev.key === "ArrowDown")
+            {
+                fsmenu.selection = (fsmenu.selection + 1) % repeater.amount;
+                ev.accepted = true;
+            }
+        }
+
+        onClick: () =>
+        {
+            fsmenu.openPath(fsmenu.path);
+        }
+    }
+
+    Label {
+        position: "global"
+        x: fsmenu.menu.bboxX
+        color: "red"
+        fontSize: 32
+        text: "#" + fsmenu.selection
+    }
+
+}

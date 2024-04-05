@@ -562,6 +562,7 @@ Box {
 
             visible: ! box.searchBox
             fill: true
+            filesystem: box.fs
             path: box.path
 
             onChangePath: path =>
