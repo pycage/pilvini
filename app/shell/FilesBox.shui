@@ -1098,7 +1098,7 @@ Box {
                         styleOfItem: template Box {
 
                             property text: parent.text || ""
-                            property highlighted: parent.inView || parent.containsMouse
+                            property highlighted: parent.isInView || parent.containsMouse
                             property isDirectory: text[0] === "/"
 
                             fillWidth: true
@@ -1258,12 +1258,12 @@ Box {
                                 FSItem {
                                     id: fsitem
 
-                                    property inView: file &&
+                                    property isInView: file &&
                                                      parent.x >= 0 &&
                                                      parent.y >= fsview.contentY - fsview.cellHeight &&
                                                      parent.y <= fsview.contentY + fsview.bboxHeight
 
-                                    property readyForThumbnail: inView && thumbnailer.filesystem.status === "success" // && ! fsview.scrolling //&& ! fsview.rendering
+                                    property readyForThumbnail: isInView && thumbnailer.filesystem.status === "success" // && ! fsview.scrolling //&& ! fsview.rendering
 
                                     fillWidth: true
                                     fillHeight: true
@@ -1357,12 +1357,12 @@ Box {
                             }
 
                             property mediaItemT: template MediaFileItem {
-                                property inView: file &&
+                                property isInView: file &&
                                                  x >= 0 &&
                                                  y >= fsview.contentY - fsview.cellHeight &&
                                                  y <= fsview.contentY + fsview.bboxHeight
 
-                                property readyForThumbnail: inView && thumbnailer.filesystem.status === "success" // && ! fsview.scrolling //&& ! fsview.rendering
+                                property readyForThumbnail: isInView && thumbnailer.filesystem.status === "success" // && ! fsview.scrolling //&& ! fsview.rendering
 
                                 highlighted: selector.selection.has(modelData.index)
 
