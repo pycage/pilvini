@@ -72,6 +72,8 @@ Box {
         }
 
         property menuT: template Menu {
+            id: bcMenu
+
             Box {
                 fillWidth: true
                 
@@ -121,6 +123,8 @@ Box {
                     onOpenPath: path =>
                     {
                         box.changePath(path);
+                        close();
+                        bcMenu.close();
                     }
                 }
             }

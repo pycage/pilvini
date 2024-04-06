@@ -12,8 +12,10 @@ Menu {
 
     event openPath
 
+    Ruler { id: menuRuler }
+
     Box {
-        width: theme.itemWidthLarge * 1.5
+        minWidth: menuRuler.max.width
         height: repeater.count * theme.itemHeightMedium
     }
 
@@ -38,9 +40,13 @@ Menu {
         delegate: template MenuItem {
             position: "free"
             y: modelData.index * bboxHeight
+            fillWidth: false
+            minWidth: menuRuler.max.width
 
             icon: "fs-folder"
             text: escapeMarkup(modelData.value.name)
+
+            ruler: menuRuler
 
             onInitialization: () =>
             {
@@ -74,6 +80,15 @@ Menu {
                     fsmenu.selection = (fsmenu.selection + 1) % repeater.amount;
                     ev.accepted = true;
                 }
+                else if (ev.key === "ArrowLeft")
+                {
+                    ev.accepted = true;
+                    thisMenu.close();
+                }
+                else if (ev.key === "ArrowRight")
+                {
+                    click(ev);
+                }
             }
 
             onClick: ev =>
@@ -89,7 +104,6 @@ Menu {
 
                 onOpenPath: path =>
                 {
-                    console.log("open path: " + path);
                     fsmenu.openPath(path);
                     thisMenu.close();
                 }
@@ -134,6 +148,11 @@ Menu {
                 fsmenu.selection = (fsmenu.selection + 1) % repeater.amount;
                 ev.accepted = true;
             }
+            else if (ev.key === "ArrowLeft")
+            {
+                ev.accepted = true;
+                thisMenu.close();
+            }
         }
 
         onClick: () =>
@@ -141,13 +160,4 @@ Menu {
             fsmenu.openPath(fsmenu.path);
         }
     }
-
-    Label {
-        position: "global"
-        x: fsmenu.menu.bboxX
-        color: "red"
-        fontSize: 32
-        text: "#" + fsmenu.selection
-    }
-
 }
