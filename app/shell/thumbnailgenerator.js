@@ -417,7 +417,7 @@ const [ core, pdfdoc, folderinfo ] = await shRequire(["shellfish/core", __dirnam
             .catch(err => { });
         }
 
-        removeUnused(usedFiles)
+        removeUnused(path, usedFiles)
         {
             const priv = d.get(this);
             if (! priv.filesystem)
@@ -425,7 +425,7 @@ const [ core, pdfdoc, folderinfo ] = await shRequire(["shellfish/core", __dirnam
                 return;
             }
 
-            priv.filesystem.list(priv.path)
+            priv.filesystem.list(path)
             .then(files =>
             {
                 files.forEach(file =>
