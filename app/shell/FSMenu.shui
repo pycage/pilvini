@@ -14,6 +14,58 @@ Menu {
 
     Ruler { id: menuRuler }
 
+    MenuItem {
+        id: openItem
+
+        text: repeater.model.loading ? "[icon:ui-spinner5]" : fsmenu.text
+
+        onInitialization: () =>
+        {
+            wait(10).then(() =>
+            {
+                if (repeater.amount - 1 === fsmenu.selection)
+                {
+                    selectItem(false);
+                }
+            });
+        }
+
+        fsmenu.onSelectionChanged: () =>
+        {
+            if (repeater.amount - 1 === fsmenu.selection)
+            {
+                selectItem(false);
+            }
+        }
+
+        // custom navigation on dynamically created items
+        onKeyDown: ev =>
+        {
+            if (ev.key === "ArrowUp")
+            {
+                fsmenu.selection = (repeater.amount + fsmenu.selection - 1) % repeater.amount;
+                ev.accepted = true;
+            }
+            else if (ev.key === "ArrowDown")
+            {
+                fsmenu.selection = (fsmenu.selection + 1) % repeater.amount;
+                ev.accepted = true;
+            }
+            else if (ev.key === "ArrowLeft")
+            {
+                ev.accepted = true;
+                thisMenu.close();
+            }
+        }
+
+        onClick: () =>
+        {
+            fsmenu.openPath(fsmenu.path);
+        }
+    }
+
+    MenuSeparator { id: openSeparator; visible: repeater.count > 0 }
+
     Box {
         minWidth: menuRuler.max.width
         height: repeater.count * theme.itemHeightMedium
@@ -39,7 +91,7 @@ Menu {
 
         delegate: template MenuItem {
             position: "free"
-            y: modelData.index * bboxHeight
+            y: openItem.bboxHeight + openSeparator.bboxHeight + modelData.index * bboxHeight
             fillWidth: false
             minWidth: menuRuler.max.width
 
@@ -111,53 +163,4 @@ Menu {
         }
     }//Repeater
 
-    MenuSeparator { visible: repeater.count > 0 }
-
-    MenuItem {
-        text: repeater.model.loading ? "[icon:ui-spinner5]" : fsmenu.text
-
-        onInitialization: () =>
-        {
-            wait(10).then(() =>
-            {
-                if (repeater.amount - 1 === fsmenu.selection)
-                {
-                    selectItem(false);
-                }
-            });
-        }
-
-        fsmenu.onSelectionChanged: () =>
-        {
-            if (repeater.amount - 1 === fsmenu.selection)
-            {
-                selectItem(false);
-            }
-        }
-
-        // custom navigation on dynamically created items
-        onKeyDown: ev =>
-        {
-            if (ev.key === "ArrowUp")
-            {
-                fsmenu.selection = (repeater.amount + fsmenu.selection - 1) % repeater.amount;
-                ev.accepted = true;
-            }
-            else if (ev.key === "ArrowDown")
-            {
-                fsmenu.selection = (fsmenu.selection + 1) % repeater.amount;
-                ev.accepted = true;
-            }
-            else if (ev.key === "ArrowLeft")
-            {
-                ev.accepted = true;
-                thisMenu.close();
-            }
-        }
-
-        onClick: () =>
-        {
-            fsmenu.openPath(fsmenu.path);
-        }
-    }
 }
