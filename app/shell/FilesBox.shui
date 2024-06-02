@@ -487,12 +487,13 @@ Box {
 
             onStatusChanged: () =>
             {
-                if (status === "success" && box.fs && enabled)
+                if (status === "success" && box.fs && thumbnailer.enabled)
                 {
+                    const tnPath = path;
                     box.fs.list(box.path)
                     .then(files =>
                     {
-                        thumbnailer.removeUnused(files);
+                        thumbnailer.removeUnused(tnPath, files);
                     })
                     .catch(err => { });
                 }
@@ -505,12 +506,16 @@ Box {
 
         property extensionFilter: []
 
-        function makeFileFilter(showHidden, extensions)
+        function makeFileFilter(showFiles, showHidden, extensions)
         {
             console.log("EXT: " + JSON.stringify(extensions));
             return item =>
             {
-                if (item.name.startsWith(".") && ! showHidden)
+                if (item.type !== "d" && ! showFiles)
+                {
+                    return false;
+                }
+                else if (item.name.startsWith(".") && ! showHidden)
                 {
                     return false;
                 }
@@ -524,7 +529,7 @@ Box {
         }
 
         filesystem: box.fs
-        filter: makeFileFilter(sortSelector.showHidden, fsModel.extensionFilter)
+        filter: makeFileFilter(true, sortSelector.showHidden, fsModel.extensionFilter)
         sorter: makeSorter(sortSelector.role, sortSelector.ascending)
 
         function getFiles(predicate)
@@ -1009,7 +1014,7 @@ Box {
                 MouseBox {
                     fillWidth: true
                     fillHeight: true
-                    layout: fsview.displayMode === "columns" ? "column" : "row"
+                    layout: "row"
 
                     onClick: ev =>
                     {
@@ -1098,7 +1103,7 @@ Box {
                         styleOfItem: template Box {
 
                             property text: parent.text || ""
-                            property highlighted: parent.isInView || parent.containsMouse
+                            property highlighted: parent.hasInView || parent.containsMouse
                             property isDirectory: text[0] === "/"
 
                             fillWidth: true
@@ -1115,7 +1120,7 @@ Box {
                                 color: parent.highlighted ? theme.highlightColor
                                                           : theme.primaryColor
                                 bold: true
-                                text: parent.text.substring(1)
+                                text: escapeMarkup(parent.text.substring(1))
                             }
                         }
                     }
@@ -1167,19 +1172,16 @@ Box {
                             fillHeight: true
                             canFocus: true
 
-                            snapMode: displayMode === "columns" ? "center" : "none"
                             cellWidth: displayMode === "list" ? bboxWidth - 1
                                      : displayMode === "grid" ? theme.itemWidthLarge
-                                     : displayMode === "columns" ? cellHeight * 0.66
+                                     : displayMode === "columns" ? bboxWidth - 1
                                                                  : bboxWidth / Math.max(1, Math.floor(bboxWidth / (cellHeight * 3)))
                             cellHeight: displayMode === "list" ? theme.fontSizeMedium * 2
                                       : displayMode === "grid" ? cellWidth + theme.fontSizeMedium * 1.2 * 5
-                                      : displayMode === "columns" ? bboxHeight
-                                                               : theme.fontSizeMedium * 5
+                                      : displayMode === "columns" ? bboxHeight / 5
+                                                                  : theme.fontSizeMedium * 5
 
                             //cacheMargin: cellHeight * 2 //contentHeight
-
-                            orientation: displayMode === "columns" ? "horizontal" : "vertical"
 
                             model: fsModel
 
@@ -1258,12 +1260,9 @@ Box {
                                 FSItem {
                                     id: fsitem
 
-                                    property isInView: file &&
-                                                     parent.x >= 0 &&
-                                                     parent.y >= fsview.contentY - fsview.cellHeight &&
-                                                     parent.y <= fsview.contentY + fsview.bboxHeight
-
-                                    property readyForThumbnail: isInView && thumbnailer.filesystem.status === "success" // && ! fsview.scrolling //&& ! fsview.rendering
+                                    property readyForThumbnail: file &&
+                                                                fsview.inView(parent.x, parent.y + 0 * fsview.contentY, bboxWidth, bboxHeight, false) &&
+                                                                thumbnailer.filesystem.status === "success" // && ! fsview.scrolling //&& ! fsview.rendering
 
                                     fillWidth: true
                                     fillHeight: true
@@ -1357,12 +1356,9 @@ Box {
                             }
 
                             property mediaItemT: template MediaFileItem {
-                                property isInView: file &&
-                                                 x >= 0 &&
-                                                 y >= fsview.contentY - fsview.cellHeight &&
-                                                 y <= fsview.contentY + fsview.bboxHeight
-
-                                property readyForThumbnail: isInView && thumbnailer.filesystem.status === "success" // && ! fsview.scrolling //&& ! fsview.rendering
+                                property readyForThumbnail: file &&
+                                                            fsview.inView(x, y + 0 * fsview.contentY, bboxWidth, bboxHeight, false) &&
+                                                            thumbnailer.filesystem.status === "success" // && ! fsview.scrolling //&& ! fsview.rendering
 
                                 highlighted: selector.selection.has(modelData.index)
 
@@ -1435,12 +1431,6 @@ Box {
                                     }
                                 }
 
-                                onClick: (ev) =>
-                                {
-                                    ev.accepted = true;
-                                    box.openAction();
-                                }
-
                                 onOpenFile: file =>
                                 {
                                     box.openFile(file, 0);
@@ -1464,58 +1454,13 @@ Box {
                             ScrollIndicator { orientation: "vertical" }
 
                             OverflowScroller {
-                                visible: fsview.displayMode !== "columns"
                                 stepSize: theme.paddingLarge
-                            }
-                            OverflowScroller {
-                                visible: fsview.displayMode === "columns"
-                                stepSize: parent.cellWidth
-                                styleOfHandle: template MouseBox {
-                                    property edge: ""
-
-                                    width: theme.itemWidthMedium
-                                    height: width
-                                    margins: theme.paddingMedium
-                                    borderRadius: width / 2
-                                    borderColor: theme.borderColor
-                                    borderWidth: 2
-                                    color: containsMouse ? theme.highlightBackgroundColor
-                                                         : theme.secondaryBackgroundColor
-
-                                    layout: "center"
-                                    
-                                    onClick: ev =>
-                                    {
-                                        ev.accepted = true;
-                                        thisOverflowScroller.scrollEdge(edge);
-                                    }
-
-                                    Label {
-                                        fontSize: theme.fontSizeLarge
-                                        color: parent.containsMouse ? theme.highlightColor
-                                                                    : theme.secondaryColor
-                                        text: (() =>
-                                        {
-                                            switch (parent.edge)
-                                            {
-                                            case "top":
-                                                return "[icon:core-arrow_up]";
-                                            case "bottom":
-                                                return "[icon:core-arrow_down]";
-                                            case "left":
-                                                return "[icon:core-arrow_left]";
-                                            case "right":
-                                                return "[icon:core-arrow_right]";
-                                            }
-                                        })()
-                                    }
-                                }
                             }
                         }
 
                         // media bookmark bar
                         Box {
-                            visible: mediaBookmark.path !== "" && fsview.displayMode !== "columns"
+                            visible: mediaBookmark.path !== ""
                             fillWidth: true
                             height: theme.itemHeightMedium
                             layout: "center-row"

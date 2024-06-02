@@ -10,7 +10,8 @@ MouseBox {
     property thumbnail: ""
     property background: ""
 
-    layout: "column"
+    color: containsMouse ? theme.secondaryColor : "transparent"
+    layout: "row"
 
     event openFile
 
@@ -89,50 +90,51 @@ MouseBox {
 
     onFileChanged: () =>
     {
-        contentsModel.reset([]);
         priv.mediaBookmark = null;
-    }
+        contentsModel.reset([]);
 
-    onContainsMouseChanged: () =>
-    {
-        if (containsMouse)
+        if (fs && file && file.type === "d")
         {
-            priv.mediaBookmark = null;
-            contentsModel.reset([]);
+            const forPath = file.path;
 
-            if (fs && file && file.type === "d")
+            const f = async () =>
             {
-                const forPath = file.path;
-
-                const f = async () =>
+                const files = await fs.list(file.path);
+                if (file.path !== forPath)
                 {
-                    const files = await fs.list(file.path);
-                    if (file.path !== forPath)
-                    {
-                        return;
-                    }
+                    return;
+                }
 
-                    const bookmark = await mediabookmark.read(fs, file.path);
-                    if (file.path !== forPath)
-                    {
-                        return;
-                    }
+                const bookmark = await mediabookmark.read(fs, file.path);
+                if (file.path !== forPath)
+                {
+                    return;
+                }
 
-                    const medias = files.filter(f => f.mimetype.startsWith("video/") ||
-                                                     f.mimetype.startsWith("audio/"));
-                    priv.mediaBookmark = bookmark;
-                    contentsModel.reset(medias);
-                };
-                f();
-            }
-        }
-        else
-        {
-            priv.mediaBookmark = null;
-            contentsModel.reset([]);
+                const medias = files.filter(f => f.mimetype.startsWith("video/") ||
+                                                 f.mimetype.startsWith("audio/"));
+                priv.mediaBookmark = bookmark;
+                contentsModel.reset(medias);
+
+                if (bookmark)
+                {
+                    const idx = medias.findIndex(a => a.path === bookmark.path);
+                    if (idx !== -1)
+                    {
+                        await wait(500);
+                        if (file.path !== forPath)
+                        {
+                            return;
+                        }
+
+                        listView.positionViewAt(idx);
+                    }
+                }
+            };
+            f();
         }
     }
-
+ 
     Object {
         id: priv
 
@@ -143,60 +145,35 @@ MouseBox {
         id: contentsModel
     }
 
-    MouseBox {
-        fill: true
-        margins: theme.paddingLarge
+    onClick: ev =>
+    {
+        ev.accepted = true;
 
-        color: item.containsMouse && ! item.highlighted ? theme.hoverBackgroundColor
-             : item.highlighted ? theme.highlightBackgroundColor
-                                : theme.contentBackgroundColor
-
-        borderRadius: 12
-        borderWidth: 2
-        borderColor: item.containsMouse ? theme.primaryColor : "transparent"
-
-        onClick: ev =>
+        if (contentsModel.size === 0)
         {
-            const f = async () =>
-            {
-                const bookmark = await mediabookmark.read(item.fs, item.file.path);
-                const files = await item.fs.list(item.file.path);
-
-                if (bookmark)
-                {
-                    const mediaFile = files.find(f => f.path === bookmark.path);
-                    if (mediaFile)
-                    {
-                        item.openFile(mediaFile, bookmark.mediaPosition);
-                    }
-                }
-                else
-                {
-                    const mediaFiles = files.filter(f => f.mimetype.startsWith("audio/") ||
-                                                            f.mimetype.startsWith("video/"));
-                    if (mediaFiles.length > 0)
-                    {
-                        item.openFile(mediaFiles[0], 0);
-                    }
-                }
-            };
-
-            if (contentsModel.size > 0)
-            {
-                ev.accepted = true;
-                f();
-            }
-            else
-            {
-                item.click(ev);
-            }
+            openFile(file, 0);
         }
+        else if (contentsModel.size === 1)
+        {
+            openFile(contentsModel.at(0), 0);
+        }
+        else
+        {
+            const idx = Math.round(listView.contentX / listView.cellWidth);
+            openFile(contentsModel.at(idx), 0);
+        }
+    }
+
+    // image box
+    Box {
+        margins: 2
+        width: bboxHeight //* 16/9
+        fillHeight: true
+        color: theme.primaryBackgroundColor
 
         Image {
             id: backdrop
 
-            position: "free"
-            marginTop: titleBar.bboxHeight
             visible: status === "success"
             fill: true
             source: item.background !== "" ? item.background
@@ -206,138 +183,146 @@ MouseBox {
         }
 
         Box {
-            visible: backdrop.visible
+            visible: ! item.containsMouse
             position: "free"
             fill: true
-            color: parent.color.alpha(0.3)
+            color: parent.color.alpha(0.6)
         }
-
-        Box {
-            id: titleBar
-
-            fillWidth: true
-            color: item.containsMouse && ! item.highlighted ? theme.primaryColor
-                 : item.highlighted ? theme.primaryColor
-                                    : theme.secondaryColor
-
-
-            Label {
-                fillWidth: true
-                margins: theme.paddingLarge
-                horizontalAlignment: "center"
-                overflowBehavior: "ellipsis"
-                bold: true
-                color: item.containsMouse && ! item.highlighted ? theme.primaryBackgroundColor
-                     : item.highlighted ? theme.primaryBackgroundColor
-                                        : theme.secondaryBackgroundColor
-
-                text: makeRoleLabel(item.file, "name")
-            }
-        }
-
-        Box {
-            fillWidth: true
-            height: parent.bboxHeight / 2
-            layout: "center"
-
-            Label {
-                visible: item.containsMouse
-                fontSize: parent.bboxHeight * 0.5
-                text: (() =>
-                {
-                    if (contentsModel.size > 0)
-                    {
-                        return "[icon:media-slideshow]";
-                    }
-                    else if (item.file.type === "d")
-                    {
-                        return "[icon:fs-folder]";
-                    }
-                    else
-                    {
-                        return "";
-                    }
-                })()
-            }
-        }
-
-        Box {
-            visible: item.containsMouse && contentsModel.size > 0
-            fill: true
-            color: theme.primaryBackgroundColor.alpha(0.6)
-
-            ListView {
-                fill: true
-                model: contentsModel
-                cellWidth: bboxWidth
-                cellHeight: theme.itemHeightMedium
-
-                delegate: template MouseBox {
-                    color: containsMouse ? theme.highlightBackgroundColor : "transparent"
-                    layout: "center-row"
-                    
-                    onClick: ev =>
-                    {
-                        ev.accepted = true;
-                        item.openFile(modelData.value, 0);
-                    }
-
-                    FSIcon {
-                        marginLeft: theme.paddingLarge
-                        color: parent.containsMouse ? theme.highlightColor : theme.primaryColor
-                        mimeType: modelData.value.mimetype
-                    }
-
-                    Label {
-                        fillWidth: true
-                        marginLeft: theme.paddingSmall
-                        marginRight: theme.paddingLarge
-                        color: parent.containsMouse ? theme.highlightColor : theme.primaryColor
-                        overflowBehavior: "ellipsis"
-                        bold: priv.mediaBookmark && modelData.value.path === priv.mediaBookmark.path
-                        text: (() =>
-                        {
-                            const bookmark = priv.mediaBookmark;
-                            if (bookmark && modelData.value.path === bookmark.path)
-                            {
-                                return escapeMarkup(bookmark.name);
-                            }
-                            else
-                            {
-                                return escapeMarkup(stripExtension(modelData.value.name));
-                            }
-                        })();
-                    }
-                }
-
-                ScrollIndicator { }
-                OverflowScroller { }
-            }
-        }
-
-        MouseBox {
-            position: "free"
-            origin: "bottom-right"
-            color: containsMouse ? theme.highlightBackgroundColor : "transparent"
-
-            onClick: ev =>
-            {
-                item.click(ev);
-            }
-
-            FSIcon {
-                id: icon
-
-                margins: theme.paddingMedium
-
-                fontSize: theme.fontSizeLarge
-                horizontalAlignment: "center"
-                color: parent.containsMouse ? theme.highlightColor : theme.primaryColor
-                mimeType: item.file.mimetype
-            }
-        }
-
     }
 
+    Button {
+        visible: contentsModel.size > 1
+        width: theme.itemWidthMedium
+        fillHeight: true
+        flat: true
+        repeatAcceleration: 1.0
+        icon: "ui-arrow_left"
+
+        onClick: ev =>
+        {
+            ev.accepted = true;
+            listView.contentX -= listView.cellWidth;
+        }
+    }
+
+    Box {
+        fill: true
+        layout: "center"
+
+        // label box
+        Label {
+            id: label
+
+            margins: theme.paddingSmall
+            fillWidth: true
+            horizontalAlignment: "center"
+            overflowBehavior: "wrap"
+            bold: true
+            fontSize: theme.fontSizeMedium * 1.5
+            color: item.containsMouse ? theme.primaryBackgroundColor
+                                        : theme.primaryColor
+
+            text: makeRoleLabel(item.file, "name")
+        }
+
+        // contents box
+        Box {
+            visible: contentsModel.size > 1
+            position: "free"
+            origin: "bottom-left"
+            fillWidth: true
+            height: theme.itemHeightMedium
+
+            layout: "center-column"
+
+            Box {
+                layout: "row"
+                margin-bottom: theme.paddingSmall
+
+                Repeater {
+                    model: contentsModel.size < 42 ? contentsModel.size : 0
+                    delegate: template Box {
+                        margins: 2
+                        width: height
+                        height: theme.fontSizeSmall
+                        borderRadius: width / 2
+                        borderWidth: 1
+                        borderColor: item.containsMouse ? theme.primaryBackgroundColor
+                                                        : theme.primaryColor
+                        color: modelData.index === Math.round(listView.contentX / listView.cellWidth) ? borderColor : "transparent"
+                    }
+                }
+            }
+
+            ListView {
+                id: listView
+
+                fill: true
+                model: contentsModel
+                orientation: "horizontal"
+                snapMode: "begin"
+                cellWidth: bboxWidth
+                cellHeight: bboxHeight
+
+                contentXTransition: NumberAnimation { }
+
+                delegate: template Box {
+                    layout: "center-row"
+
+                    Label {
+                        property hasBookmark: priv.mediaBookmark?.path === modelData.value.path
+                        property formattedTime: hasBookmark ? core.formatSeconds(priv.mediaBookmark.mediaPosition, false) : ""
+
+                        marginLeft: theme.paddingSmall
+                        marginRight: theme.paddingLarge
+                        fillWidth: true
+                        color: item.containsMouse ? theme.primaryBackgroundColor
+                                                  : theme.primaryColor
+                        horizontalAlignment: "center"
+                        overflowBehavior: "ellipsis"
+
+                        text: (modelData.index + 1) + " / " + contentsModel.size + ": " +
+                              escapeMarkup(stripExtension(modelData.value.name)) +
+                              (hasBookmark ? " ([icon:media-play] " + formattedTime + ")" : "")
+                    }
+                }
+            }
+        }
+    }
+
+    Button {
+        visible: contentsModel.size > 1
+        width: theme.itemWidthMedium
+        fillHeight: true
+        flat: true
+        repeatAcceleration: 1.0
+        icon: "ui-arrow_right"
+
+        onClick: ev =>
+        {
+            ev.accepted = true;
+            listView.contentX += listView.cellWidth;
+        }
+    }
+
+    Button {
+        width: theme.itemWidthMedium
+        fillHeight: true
+        flat: true
+
+        FSIcon {
+            id: fileIcon
+            visible: false
+            mimeType: item.file?.mimetype
+        }
+
+        text: fileIcon.text
+
+        onClick: ev =>
+        {
+            ev.accepted = true;
+            item.openFile(item.file, 0);
+        }
+    }
 
 }
