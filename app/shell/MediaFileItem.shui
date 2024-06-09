@@ -237,7 +237,7 @@ MouseBox {
 
             Box {
                 layout: "row"
-                margin-bottom: theme.paddingSmall
+                marginBottom: theme.paddingSmall
 
                 Repeater {
                     model: contentsModel.size < 42 ? contentsModel.size : 0
