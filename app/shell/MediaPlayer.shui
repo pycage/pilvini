@@ -354,6 +354,22 @@ MouseBox {
             marginRight: marginLeft
             marginBottom: marginLeft
 
+            // info bar
+            Box {
+                visible: videoPlayer.originalWidth > 0
+                fillWidth: true
+                layout: "center-row"
+
+                Box { fillWidth: true}
+
+                Label {
+                    marginRight: theme.paddingLarge
+                    fontSize: theme.fontSizeSmall
+                    bold: true
+                    text: videoPlayer.originalWidth + " x " + videoPlayer.originalHeight
+                }
+            }
+
             // controls bar 1
             Box {
                 fillWidth: true
