@@ -2,7 +2,6 @@ require "shellfish/ui";
 require "./CodePad.shui";
 require "./RegistryDialog.shui";
 require "./TimeLabel.shui";
-require "./youtubefs.js";
 require "/icons/comm-icons.css";
 require "/icons/fs-icons.css";
 require "/icons/media-icons.css";
@@ -51,17 +50,20 @@ Document {
             window.localStorage.setItem("shellfish-use-cache", "true");
         }
 
-        remoteFs.list("/")
-        .then(f =>
+        httpRequest("/whoami").send()
+        .then(req =>
         {
-            // already logged in
-            logInPending = false;
-            loggedIn = true;
-        })
-        .catch(err =>
-        {
-            // not logged in yet
-            logInPending = false;
+            if (req.status === 200)
+            {
+                // already logged in
+                logInPending = false;
+                loggedIn = true;
+            }
+            else
+            {
+                // not logged in yet
+                logInPending = false;
+            }
         });
     }
 
@@ -97,6 +99,7 @@ Document {
         id: localStorage
 
         property filesBoxDisplayMode: "compact"
+        property filesBoxDisplayFullWidth: true
         property filesBoxMaximized: false
     }
 
@@ -124,19 +127,8 @@ Document {
         id: remoteFs
     }
 
-    YouTubeFS {
-        id: youTubeFs
-    }
-
-    OfflineFS {
-        id: offlineFs
-        volume: "offline"
-    }
-
     // main screen
     Box {
-        //visible: doc.loggedIn
-
         fillWidth: true
         height: documentRoot.windowHeight
         color: theme.contentBackgroundColor
@@ -164,43 +156,6 @@ Document {
                 }
 
                 property menuT: template Menu {
-
-                    /*
-                    MenuItem {
-                        icon: "fs-folder"
-                        text: "File Browser"
-
-                        onClick: () =>
-                        {
-                            windowsModel.insert(windowsModel.size, {
-                                component: filesBoxT,
-                                properties: {
-                                    fs: remoteFs,
-                                    path: "/"
-                                }
-                            });
-                        }
-                    }
-
-                    MenuItem {
-                        icon: "media-movie"
-                        text: "YouTube Browser"
-
-                        onClick: () =>
-                        {
-                            windowsModel.insert(windowsModel.size, {
-                                component: filesBoxT,
-                                properties: {
-                                    fs: youTubeFs,
-                                    path: "/",
-                                    searchBox: true
-                                }
-                            });
-                        }
-                    }
-
-                    MenuSeparator { }
-                    */
 
                     MenuItem {
                         text: doc.darkMode ? "Bright Mode"
@@ -416,7 +371,7 @@ Document {
             marginBottom: theme.paddingLarge
             fontSize: theme.fontSizeSmall
             color: theme.secondaryColor
-            text: "Copyright (c) 2017 - 2024 by Martin Grimme"
+            text: "Copyright (c) 2017 - 2025 by Martin Grimme"
         }
 
         Button {

@@ -13,22 +13,15 @@ require "./thumbnailgenerator.js";
 Box {
     id: box
 
-    property windowIcon: "fs-folder"
-    property windowTitle: path
-
     property fs: null
     property path: ""
+
     property searchBox: false
     property maximized: false
     property mayClose: false
 
     event openNew
     event close
-
-    fillWidth: true
-    fillHeight: true
-
-    //borderRadius: 6
 
     function setPath(newPath)
     {
@@ -480,7 +473,6 @@ Box {
         id: thumbnailer
 
         enabled: false
-        //filesystem: OfflineFS { volume: "Thumbnails" }
         filesystem: FileFS {
             filesystem: box.fs
             path: pathJoin(box.path, ".pilvini-thumbnails.cache")
@@ -528,10 +520,6 @@ Box {
             };
         }
 
-        filesystem: box.fs
-        filter: makeFileFilter(true, sortSelector.showHidden, fsModel.extensionFilter)
-        sorter: makeSorter(sortSelector.role, sortSelector.ascending)
-
         function getFiles(predicate)
         {
             const result = [];
@@ -545,6 +533,10 @@ Box {
             }
             return result;
         }
+
+        filesystem: box.fs
+        filter: makeFileFilter(true, sortSelector.showHidden, fsModel.extensionFilter)
+        sorter: makeSorter(sortSelector.role, sortSelector.ascending)
     }
 
     // title bar
@@ -843,6 +835,7 @@ Box {
                  fsview.displayMode !== "columns"
         fillWidth: true
         height: theme.itemHeightMedium
+        overflowBehavior: "scroll"
         color: theme.secondaryBackgroundColor
 
         layout: "row"
@@ -866,40 +859,27 @@ Box {
             }
         }
 
-        Box {
-            id: bookmarksBox
+        Repeater {
+            model: bookmarksModel
 
-            fill: true
-            overflowBehavior: "scroll"
-            layout: "row"
-
-            Box {
+            delegate: template Button {
                 fillHeight: true
-                layout: "row"
+                flat: true
+                icon: "fs-folder"
+                text: modelData.value.name
 
-                Repeater {
-                    model: bookmarksModel
+                onClick: () =>
+                {
+                    box.path = modelData.value.path;
+                }
 
-                    delegate: template Button {
-                        fillHeight: true
-                        flat: true
-                        icon: "fs-folder"
-                        text: modelData.value.name
-
-                        onClick: () =>
-                        {
-                            box.path = modelData.value.path;
-                        }
-
-                        Tooltip {
-                            text: decodeURIComponent(modelData.value.path)
-                        }
-                    }
+                Tooltip {
+                    text: decodeURIComponent(modelData.value.path)
                 }
             }
-
-            OverflowScroller { }
         }
+
+        OverflowScroller { }
     }
 
     Box {
@@ -1126,7 +1106,6 @@ Box {
                     }
 
                     Box {
-                        visible: ! fsModel.loading
                         fillWidth: true
                         fillHeight: true
 
@@ -1137,10 +1116,10 @@ Box {
 
                             model: ListModel {
                                 data: [
-                                    { title: "Name", width: -1 },
-                                    { title: "Type", width: theme.itemWidthMedium },
-                                    { title: "Date", width: theme.itemWidthMedium * 2 },
-                                    { title: "Size", width: theme.itemWidthMedium * 1.5 }
+                                    { title: "Name", width: Math.max(listHeader.bboxWidth - 3 * theme.itemWidthLarge, theme.itemWidthMedium) },
+                                    { title: "Type", width: theme.itemWidthLarge },
+                                    { title: "Date", width: theme.itemWidthLarge },
+                                    { title: "Size", width: theme.itemWidthLarge }
                                 ]
                             }
 
@@ -1165,6 +1144,7 @@ Box {
                             id: fsview
 
                             property displayMode: localStorage.filesBoxDisplayMode
+                            property displayFullWidth: localStorage.filesBoxDisplayFullWidth
                             property placeView: false
 
                             visible: ! fsModel.loading
@@ -1175,11 +1155,14 @@ Box {
                             cellWidth: displayMode === "list" ? bboxWidth - 1
                                      : displayMode === "grid" ? theme.itemWidthLarge
                                      : displayMode === "columns" ? bboxWidth - 1
-                                                                 : bboxWidth / Math.max(1, Math.floor(bboxWidth / (cellHeight * 3)))
+                                     : (displayMode === "compact" && ! displayFullWidth) ? bboxWidth / Math.max(1, Math.floor(bboxWidth / (cellHeight * 3)))
+                                     : (displayMode === "compact" && displayFullWidth) ? bboxWidth - 1
+                                                                 : bboxWidth - 1
                             cellHeight: displayMode === "list" ? theme.fontSizeMedium * 2
                                       : displayMode === "grid" ? cellWidth + theme.fontSizeMedium * 1.2 * 5
                                       : displayMode === "columns" ? bboxHeight / 5
-                                                                  : theme.fontSizeMedium * 5
+                                      : displayMode === "compact" ? theme.fontSizeMedium * 5
+                                                                  : theme.fontSizeMedium * 2
 
                             //cacheMargin: cellHeight * 2 //contentHeight
 
@@ -1458,6 +1441,17 @@ Box {
                             }
                         }
 
+                        // busy indicator
+                        Label {
+                            visible: ! fsview.visible
+
+                            position: "free"
+                            x: (parent.bboxWidth - bboxWidth) / 2
+                            y: (parent.bboxHeight - bboxHeight) / 2
+                            fontSize: theme.fontSizeLarge
+                            text: "[icon:ui-spinner5]"
+                        }
+
                         // media bookmark bar
                         Box {
                             visible: mediaBookmark.path !== ""
@@ -1504,18 +1498,6 @@ Box {
                             }
                         }
                     }
-
-
-                    Label {
-                        visible: ! fsview.visible
-
-                        position: "free"
-                        x: (parent.bboxWidth - bboxWidth) / 2
-                        y: (parent.bboxHeight - bboxHeight) / 2
-                        fontSize: theme.fontSizeLarge
-                        text: "[icon:ui-spinner5]"
-                    }
-
                     property fileMenuT: template Menu {
                         MenuItem {
                             text: "Open New Pane"
@@ -1952,6 +1934,7 @@ Box {
             {
                 fsview.opacity = 0;
                 localStorage.filesBoxDisplayMode = "compact";
+                localStorage.filesBoxDisplayFullWidth = ! localStorage.filesBoxDisplayFullWidth;
                 wait(100).then(() => { fsview.opacity = 1; });
                 ev.accepted = true;
             }
@@ -1961,11 +1944,11 @@ Box {
             fillHeight: true
             flat: true
             icon: "ui-view_columns"
-            checked: fsview.displayMode === "columns"
+            checked: fsview.displayMode === "list"
             onClick: (ev) =>
             {
                 fsview.opacity = 0;
-                localStorage.filesBoxDisplayMode = "columns";
+                localStorage.filesBoxDisplayMode = "list";
                 wait(100).then(() => { fsview.opacity = 1; });
                 ev.accepted = true;
             }
