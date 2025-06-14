@@ -25,6 +25,13 @@ Box {
 
     function setPath(newPath)
     {
+        /*
+        if (newPath.endsWith(".zip"))
+        {
+            newPath += "/";
+        }
+        */
+
         const currentPath = box.path;
         thisHistory.push(() =>
         {
@@ -120,16 +127,27 @@ Box {
 
     function openFile(file, mediaPosition)
     {
-        if (file.type === "d" ||
-            file.mimetype === "application/zip" ||
-            file.mimetype === "application/x-rar-compressed")
+        if (file.type === "d")
         {
             // remember current scroll position
             priv.scrollPositionsMap.set(path, fsview.orientation === "vertical" ? fsview.contentY : fsview.contentX);
             // reset scroll position for new path
             priv.scrollPositionsMap.delete(file.path);
             // open
+            console.log("OPEN AS DIR: " + file.path);
             setPath(file.path);
+        }
+        else if (file.mimetype === "application/pdf" ||
+                 file.mimetype === "application/zip" ||
+                 file.mimetype === "application/x-rar-compressed")
+        {
+            // remember current scroll position
+            priv.scrollPositionsMap.set(path, fsview.orientation === "vertical" ? fsview.contentY : fsview.contentX);
+            // reset scroll position for new path
+            priv.scrollPositionsMap.delete(file.path);
+            // open
+            console.log("OPEN AS DIR: " + file.path);
+            setPath(file.path + "/");
         }
         else if (file.mimetype.startsWith("audio/"))
         {
@@ -883,6 +901,8 @@ Box {
     }
 
     Box {
+        visible: ! fileViewer.maximized
+
         fillWidth: true
         fillHeight: true
         color: theme.secondaryBackgroundColor
@@ -914,7 +934,6 @@ Box {
             fillHeight: true
 
             DropArea {
-                visible: ! fileViewer.maximized
                 fillWidth: true
                 fillHeight: true
 
@@ -1677,50 +1696,13 @@ Box {
 
             }
 
-            FileViewer {
-                id: fileViewer
-
-                visible: false
-                fillWidth: true
-                fillHeight: true
-
-                order: parent.layout === "column" ? -1 : 0
-
-                fs: box.fs
-
-                onCurrentChanged: () =>
-                {
-                    if (current !== -1 && ! visible)
-                    {
-                        maximized = true;
-                        visible = true;
-                    }
-                }
-
-                onMediaBookmarkUpdated: (path, mediaPosition, name) =>
-                {
-                    mediaBookmark.path = path;
-                    mediaBookmark.mediaPosition = mediaPosition;
-                    mediaBookmark.name = name;
-                }
-
-                onVisibleChanged: () =>
-                {
-                    if (! visible)
-                    {
-                        console.log(mediaBookmark.objectLocation);
-                        mediaBookmark.save();
-                    }
-                }
-            }
-
         }
 
         // banner
         Box {
             id: banner
 
-            visible: ! fileViewer.visible && bannerLabel.text !== ""
+            visible: bannerLabel.text !== ""
 
             width: parent.bboxWidth / 3
             height: parent.bboxHeight / 3
@@ -1954,6 +1936,41 @@ Box {
             }
         }
 
+    }
+
+    FileViewer {
+        id: fileViewer
+
+        visible: false
+        fillWidth: true
+        fillHeight: true
+
+        fs: box.fs
+
+        onCurrentChanged: () =>
+        {
+            if (current !== -1 && ! visible)
+            {
+                maximized = true;
+                visible = true;
+            }
+        }
+
+        onMediaBookmarkUpdated: (path, mediaPosition, name) =>
+        {
+            mediaBookmark.path = path;
+            mediaBookmark.mediaPosition = mediaPosition;
+            mediaBookmark.name = name;
+        }
+
+        onVisibleChanged: () =>
+        {
+            if (! visible)
+            {
+                console.log(mediaBookmark.objectLocation);
+                mediaBookmark.save();
+            }
+        }
     }
 
     property newDirectoryDialogT: template Dialog {

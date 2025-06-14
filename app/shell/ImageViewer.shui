@@ -28,6 +28,7 @@ Box {
             {
                 thisFileViewer.mediaBookmarkUpdated(item.path, current, item.name);
             }
+            box.current = current;
         }
 
         delegate: template PageItem {
@@ -66,6 +67,7 @@ Box {
 
                     const ctx = context2d;
                     ctx.imageSmoothingEnabled = page.viewport.scale < 1.0;
+                    ctx.imageSmoothingQuality = "high";
                     ctx.clearRect(0, 0, originalWidth, originalHeight);
                     ctx.drawImage(cnvImg.get().get(), sx, sy, sw, sh, 0, 0, originalWidth, originalHeight);
                 }

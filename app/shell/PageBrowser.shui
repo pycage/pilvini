@@ -191,6 +191,8 @@ Box {
         }
 
         Box {
+            visible: pagesListView.count > 1
+            
             fillWidth: true
             marginTop: theme.paddingSmall
             marginLeft: theme.paddingSmall
@@ -309,6 +311,8 @@ Box {
         Slider {
             id: pageSlider
 
+            visible: pagesListView.count > 1
+
             property targetPos: 0
             property pos: 0
             posTransition: NumberAnimation { }
@@ -361,6 +365,8 @@ Box {
         }
 
         Box {
+            visible: pagesListView.count > 1
+            
             fillWidth: true
             marginLeft: theme.paddingMedium
             marginRight: theme.paddingMedium

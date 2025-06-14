@@ -30,9 +30,6 @@ Box {
         thisHistory.back();
     }
 
-    property windowIcon: "media-image"
-    property windowTitle: loader.fileItem?.name ?? ""
-
     property files: []
 
     property fs: null
@@ -44,6 +41,33 @@ Box {
 
 
     HistoryScope { id: thisHistory }
+
+    Box {
+        fillWidth: true
+        height: theme.itemHeightMedium
+        color: theme.primaryBackgroundColor
+
+        layout: "center-row"
+
+        Button {
+            fillHeight: true
+            flat: true
+            icon: "ui-arrow_back"
+
+            onClick: ev =>
+            {
+                ev.accepted = true;
+                box.close();
+            }
+        }
+
+        Label {
+            fillWidth: true
+            marginLeft: theme.paddingMedium
+            bold: true
+            text: escapeMarkup(loader.fileItem?.name ?? "")
+        }
+    }
 
     Box {
         fillWidth: true
@@ -113,6 +137,14 @@ Box {
 
         model: box.model
         current: loader.startPosition > 0 ? loader.startPosition : box.current
+
+        onCurrentChanged: () =>
+        {
+            if (box.current !== current)
+            {
+                box.current = current;
+            }
+        }
     }
 
     property pdfViewerT: template PdfViewer {
@@ -170,6 +202,7 @@ Box {
         Label {
             property source: loader.fileItem ? loader.fileItem.path : ""
 
+            margins: 8
             fillWidth: true
             overflowBehavior: "wrap"
             literal: true
@@ -191,5 +224,7 @@ Box {
                 }
             }
         }
+
+        ScrollIndicator { }
     }
 }
