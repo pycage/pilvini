@@ -147,7 +147,7 @@ Box {
             priv.scrollPositionsMap.delete(file.path);
             // open
             console.log("OPEN AS DIR: " + file.path);
-            setPath(file.path + "/");
+            setPath(file.path + "/.");
         }
         else if (file.mimetype.startsWith("audio/"))
         {
