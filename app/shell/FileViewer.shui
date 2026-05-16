@@ -43,6 +43,7 @@ Box {
     HistoryScope { id: thisHistory }
 
     Box {
+        visible: loader.currentMimeType.startsWith("text/")
         fillWidth: true
         height: theme.itemHeightMedium
         color: theme.primaryBackgroundColor
