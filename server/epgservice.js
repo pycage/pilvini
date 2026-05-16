@@ -241,7 +241,7 @@ class EpgService extends core.Object
         {
             const name = event.short.name + (event.short.text !== "" ? " (" + event.short.text + ")" : "");
             console.log(["record", time, duration, priv.channelsMap.get(serviceId), name]);
-            await this.pdvr("record", time, duration, priv.channelsMap.get(serviceId), name);
+            await this.pdvr("record", time, duration, priv.channelsMap.get(serviceId), name.replace(/\0/g, " "));
         }
         else
         {
