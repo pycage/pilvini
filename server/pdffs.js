@@ -163,7 +163,7 @@ class PdfFS extends core.Filesystem
             const pdfPath = await vfsData.materialized();
             const tmpFile = core.temporaryFilePath();
     
-            await spawn("pdftoppm", ["-singlefile", "-scale-to", "2000", "-jpeg", "-jpegopt", "quality=90,progressive=n", "-f", page, pdfPath, tmpFile], pdfPath);
+            await spawn("pdftoppm", ["-singlefile", "-scale-to", "3960", "-jpeg", "-jpegopt", "quality=90,progressive=n", "-f", page, pdfPath, tmpFile], pdfPath);
 
             const data = await readFile(tmpFile + ".jpg");
             modFs.unlink(tmpFile + ".jpg", () => { });
