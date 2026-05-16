@@ -1,36 +1,5 @@
 shRequire(["shellfish/core", "shellfish/core/mime", __dirname + "/jszip.min.js"], (core, mime, jszip) =>
 {
-    class File
-    {
-        constructor(fileInZip)
-        {
-            this.fileInZip = fileInZip;
-        }
-
-        async arrayBuffer()
-        {
-            return await this.fileInZip.async("nodebuffer");
-        }
-
-        stream(from, to)
-        {
-            if (to !== undefined)
-            {
-                return this.fileInZip.nodeStream();
-            }
-            else
-            {
-                return this.fileInZip.nodeStream();
-            }
-        }
-
-        text()
-        {
-            return this.arrayBuffer();
-        }
-    }
-
-
     const d = new WeakMap();
 
     class ZipFS extends core.Filesystem
@@ -38,49 +7,29 @@ shRequire(["shellfish/core", "shellfish/core/mime", __dirname + "/jszip.min.js"]
         constructor()
         {
             super();
+
             d.set(this, {
-                data: null
+                cachedItem: null,
+                cachedPath: ""
             });
-
-            this.notifyable("data");
-
-            this.onDestruction = () =>
-            {
-                this.freeSharedResource("archive-" + this.objectId);
-            };
         }
 
-        get data() { return d.get(this).data; }
-        set data(dt)
+        async openZip(vfsData)
         {
-            if (dt !== d.get(this).data)
+            if (d.get(this).cachedPath === vfsData.path)
             {
-                d.get(this).data = dt;
-                this.freeSharedResource("archive-" + this.objectId);
-                this.dataChanged();
+                // nothing to do
             }
-        }
-
-        async openArchive()
-        {
-            const wait = () =>
+            else
             {
-                return new Promise(async (resolve, reject) =>
-                {
-                    if (this.awaitSharedResource("archive-" + this.objectId, () => resolve()))
-                    {
-                        const archive = await jszip.loadAsync(d.get(this).data);
-                        this.sharedResource("archive-" + this.objectId, () => archive);
-                    }
-                });
-            };
-
-            await wait();
-
-            return this.sharedResource("archive-" + this.objectId);
+                const zip = await jszip.loadAsync(await vfsData.arrayBuffer());
+                d.get(this).cachedPath = vfsData.path;
+                d.get(this).cachedItem = zip;
+            }
+            return d.get(this).cachedItem;
         }
 
-        async fileInfo(path)
+        async vfsFileInfo(vfsData, path)
         {
             if (path === "" || path === "/")
             {
@@ -95,15 +44,15 @@ shRequire(["shellfish/core", "shellfish/core/mime", __dirname + "/jszip.min.js"]
                     mtime: new Date()
                 };
             }
-            const files = await this.list(this.dirname(path));
+
+            const files = await this.vfsList(vfsData, this.dirname(path));
             const item = files.find(item => item.path === path || "/" + item.path === path);
             return item;
         }
 
-        async list(path)
+        async vfsList(vfsData, path)
         {
-            const zip = await this.openArchive();
-            //console.log(zip.files);
+            const zip = await this.openZip(vfsData);
 
             const seen = new Set();
             const implicitDirectories = Object.values(zip.files)
@@ -151,20 +100,20 @@ shRequire(["shellfish/core", "shellfish/core/mime", __dirname + "/jszip.min.js"]
             return items;
         }
 
-        async read(path)
+        async vfsRead(vfsData, path)
         {
-            const zip = await this.openArchive();
+            const zip = await this.openZip(vfsData);
 
             if (zip.files[path])
             {
-                return new File(zip.file(path));
+                const zf = zip.file(path);
+                return new core.FileData(zf.nodeStream());
             }
             else
             {
-                // strip the leading "/"
-                return new File(zip.file(path.substr(1)));
+               const zf = zip.file(path.substr(1));
+               return new core.FileData(zf.nodeStream());
             }
-
         }
     }
     exports.ZipFS = ZipFS;

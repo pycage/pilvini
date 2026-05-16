@@ -3,44 +3,6 @@ shRequire(["shellfish/core", "shellfish/core/mime"], (core, mime) =>
     const modStream = require("stream");
     const unrar = require("./server/node-unrar-js/index.js");
 
-    class FileStream extends modStream.Readable
-    {
-        constructor(data)
-        {
-            super();
-            this.data = data;
-        }
-        
-        _read(size)
-        {
-            this.push(this.data);
-            this.push(null);
-        }
-    }
-
-    class File
-    {
-        constructor(data)
-        {
-            this.data = data;
-        }
-
-        async arrayBuffer()
-        {
-            return this.data.buffer;
-        }
-
-        stream(from, to)
-        {
-            return new FileStream(this.data);
-        }
-
-        text()
-        {
-            return this.arrayBuffer();
-        }
-    }
-
 
     const d = new WeakMap();
 
@@ -49,49 +11,9 @@ shRequire(["shellfish/core", "shellfish/core/mime"], (core, mime) =>
         constructor()
         {
             super();
-            d.set(this, {
-                data: null
-            });
-
-            this.notifyable("data");
-
-            this.onDestruction = () =>
-            {
-                this.freeSharedResource("archive-" + this.objectId);
-            };
         }
 
-        get data() { return d.get(this).data; }
-        set data(dt)
-        {
-            if (dt !== d.get(this).data)
-            {
-                d.get(this).data = dt;
-                this.freeSharedResource("archive-" + this.objectId);
-                this.dataChanged();
-            }
-        }
-
-        async openArchive()
-        {
-            const wait = () =>
-            {
-                return new Promise(async (resolve, reject) =>
-                {
-                    if (this.awaitSharedResource("archive-" + this.objectId, () => resolve()))
-                    {
-                        const archive = await unrar.createExtractorFromData({ data: d.get(this).data });
-                        this.sharedResource("archive-" + this.objectId, () => archive);
-                    }
-                });
-            };
-
-            await wait();
-
-            return this.sharedResource("archive-" + this.objectId);
-        }
-
-        async fileInfo(path)
+        async vfsFileInfo(vfsData, path)
         {
             if (path === "" || path === "/")
             {
@@ -106,15 +28,15 @@ shRequire(["shellfish/core", "shellfish/core/mime"], (core, mime) =>
                     mtime: new Date()
                 };
             }
-            const files = await this.list(this.dirname(path));
+            const files = await this.vfsList(vfsData, this.dirname(path));
             const item = files.find(item => item.path === path || "/" + item.path === path);
             return item;
         }
 
-        async list(path)
+        async vfsList(vfsData, path)
         {
-            const archive = await this.openArchive();
-
+            const archive = await unrar.createExtractorFromData({ data: await vfsData.arrayBuffer() });
+            
             const fileList = archive.getFileList();
             const headers = [...fileList.fileHeaders];
 
@@ -137,16 +59,16 @@ shRequire(["shellfish/core", "shellfish/core/mime"], (core, mime) =>
             return items;
         }
 
-        async read(path)
+        async vfsRead(vfsData, path)
         {
-            const archive = await this.openArchive();
+            const archive = await unrar.createExtractorFromData({ data: await vfsData.arrayBuffer() });
 
             const extracted = archive.extract({ files: [path.substr(1)] });
             const files = [...extracted.files];
             
             if (files.length > 0)
             {
-                return new File(files[0].extraction);
+                return new core.FileData(files[0].extraction.buffer);
             }
             else
             {
