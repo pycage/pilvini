@@ -5,11 +5,9 @@ require "./epgservice.js";
 require "./pdffs.js";
 require "./proxysession.js";
 require "./virtualfs.js";
-require "./rarfs.js";
 require "./sevenzfs.js";
 require "./videoeditor.js";
 require "./viewsdavsession.js";
-require "./zipfs.js";
 
 HTTPServer {
 
