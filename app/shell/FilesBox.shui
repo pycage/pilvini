@@ -25,12 +25,7 @@ Box {
 
     function setPath(newPath)
     {
-        /*
-        if (newPath.endsWith(".zip"))
-        {
-            newPath += "/";
-        }
-        */
+        newPath += "/.";
 
         const currentPath = box.path;
         thisHistory.push(() =>
@@ -147,7 +142,7 @@ Box {
             priv.scrollPositionsMap.delete(file.path);
             // open
             console.log("OPEN AS DIR: " + file.path);
-            setPath(file.path + "/.");
+            setPath(file.path);
         }
         else if (file.mimetype.startsWith("audio/"))
         {

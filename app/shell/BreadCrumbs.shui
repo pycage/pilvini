@@ -23,6 +23,10 @@ Box {
         let currentPath = parts[0];
         for (let i = 1; i < parts.length; ++i)
         {
+            if (parts[i] === ".")
+            {
+                continue;
+            }
             if (parts[i].length > 0)
             {
                 currentPath += "/" + parts[i];
