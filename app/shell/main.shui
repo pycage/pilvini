@@ -371,7 +371,7 @@ Document {
             marginBottom: theme.paddingLarge
             fontSize: theme.fontSizeSmall
             color: theme.secondaryColor
-            text: "Copyright (c) 2017 - 2025 by Martin Grimme"
+            text: "Copyright (c) 2017 - 2026 by Martin Grimme"
         }
 
         Button {
